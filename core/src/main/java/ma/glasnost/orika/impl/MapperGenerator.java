@@ -81,7 +81,7 @@ public final class MapperGenerator {
 
 		out.append("\n}");
 
-		System.out.println(out);
+		// System.out.println(out);
 		mapperClass.addMethod(CtNewMethod.make(out.toString(), mapperClass));
 	}
 

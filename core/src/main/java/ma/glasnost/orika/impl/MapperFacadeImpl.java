@@ -13,13 +13,16 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.proxy.UnenhanceStrategy;
 
 public class MapperFacadeImpl implements MapperFacade {
 
 	private final MapperFactory mapperFactory;
+	private final UnenhanceStrategy unenhanceStrategy;
 
-	public MapperFacadeImpl(MapperFactory mapperFactory) {
+	public MapperFacadeImpl(MapperFactory mapperFactory, UnenhanceStrategy unenhanceStrategy) {
 		this.mapperFactory = mapperFactory;
+		this.unenhanceStrategy = unenhanceStrategy;
 	}
 
 	public <S, D> D map(S sourceObject, Class<D> destinationClass) {
@@ -30,6 +33,8 @@ public class MapperFacadeImpl implements MapperFacade {
 	public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
 		if (sourceObject == null)
 			throw new MappingException("Can not map a null object.");
+
+		sourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
 
 		// XXX when it's immutable it's ok to copy by ref
 		if (ClassUtil.isImmutable(sourceObject.getClass()) && sourceObject.getClass().equals(destinationClass)) {
@@ -53,7 +58,8 @@ public class MapperFacadeImpl implements MapperFacade {
 		return destinationObject;
 	}
 
-	public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
+	protected <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
+
 		Class<?> sourceClass = sourceObject.getClass();
 		Class<?> destinationClass = destinationObject.getClass();
 		while (!destinationClass.equals(Object.class)) {

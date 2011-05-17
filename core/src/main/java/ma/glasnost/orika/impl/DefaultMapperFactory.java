@@ -15,6 +15,7 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.proxy.UnenhanceStrategy;
 
 public class DefaultMapperFactory implements MapperFactory {
 
@@ -29,7 +30,7 @@ public class DefaultMapperFactory implements MapperFactory {
 			Set<ObjectFactory<?>> objectFactories) {
 		this.mapperGenerator = new MapperGenerator(this);
 		this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
-		this.mapperFacade = new MapperFacadeImpl(this);
+		this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
 		this.convertersRegistry = new ConcurrentHashMap<ConverterKey, Converter<?, ?>>();
 		this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
 
@@ -48,6 +49,26 @@ public class DefaultMapperFactory implements MapperFactory {
 			for (ObjectFactory<?> objectFactory : objectFactories) {
 				objectFactoryRegistry.put(objectFactory.getTargetClass(), objectFactory);
 			}
+		}
+	}
+
+	protected UnenhanceStrategy getUnenhanceStrategy() {
+		try {
+			Class.forName("org.hibernate.proxy.HibernateProxy");
+			return (UnenhanceStrategy) Class.forName("org.hibernate.proxy.HibernateProxy").newInstance();
+		} catch (Throwable e) {
+			// TODO add warning
+			return new UnenhanceStrategy() {
+
+				public <T> T unenhanceObject(T object) {
+					return object;
+				}
+
+				@SuppressWarnings("unchecked")
+				public <T> Class<T> unenhanceClass(T object) {
+					return (Class<T>) object.getClass();
+				}
+			};
 		}
 	}
 

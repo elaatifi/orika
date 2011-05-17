@@ -11,9 +11,10 @@ public interface MapperFacade {
 
 	<S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context);
 
-	<S, D> void map(S sourceObject, D destinationObject);
+	// <S, D> void map(S sourceObject, D destinationObject);
 
-	<S, D> void map(S sourceObject, D destinationObject, MappingContext context);
+	// <S, D> void map(S sourceObject, D destinationObject, MappingContext
+	// context);
 
 	<S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass);
 
