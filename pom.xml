@@ -1,0 +1,89 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>ma.glasnost.orika</groupId>
+    <artifactId>orika-parent</artifactId>
+    <name>Orika - parent</name>
+    <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <description>Orika parent project</description>
+    <url>http://code.google.com/p/orika</url>
+    <scm>
+        <url>https://orika.googlecode.com/svn/trunk</url>
+    </scm>
+    <organization>
+        <name>Glasnost</name>
+        <url>http://www.glasnost.ma</url>
+    </organization>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <javassist.version>3.12.0.GA</javassist.version>
+        <springframework.version>3.0.5.RELEASE</springframework.version>
+        <junit.version>4.0</junit.version>
+        <wagon-svn.version>1.8</wagon-svn.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>javassist</groupId>
+                <artifactId>javassist</artifactId>
+                <version>${javassist.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-context</artifactId>
+                <version>${springframework.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+	<distributionManagement>
+        <repository>
+            <uniqueVersion>false</uniqueVersion>
+            <id>googlecode</id>
+            <url>svn:https://orika.googlecode.com/svn/repo</url>
+        </repository>
+    </distributionManagement>
+    
+    <repositories>
+        <repository>
+            <id>maven2-repository.dev.java.net</id>
+            <name>Java.net Repository for Maven</name>
+            <url>http://download.java.net/maven/2/</url>
+        </repository>
+    </repositories>
+    
+    <build>
+    	<extensions>
+            <extension>
+                <groupId>org.jvnet.wagon-svn</groupId>
+                <artifactId>wagon-svn</artifactId>
+                <version>${wagon-svn.version}</version>
+            </extension>
+        </extensions>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+    <modules>
+        <module>core</module>
+    </modules>
+</project>
