@@ -1,5 +1,9 @@
 package ma.glasnost.orika.impl.util;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
@@ -13,69 +17,57 @@ import java.util.concurrent.ConcurrentHashMap;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 
-public abstract class PropertyUtil {
+public final class PropertyUtil {
 
 	public static Map<Class<?>, Map<String, Property>> propertiesCache = new ConcurrentHashMap<Class<?>, Map<String, Property>>();
 
+	private PropertyUtil() {
+
+	}
+
 	public static Map<String, Property> getProperties(Class<?> clazz) {
 		Map<String, Property> properties = new HashMap<String, Property>();
-		ofClass(clazz, properties);
+		if (propertiesCache.containsKey(clazz)) {
+			return propertiesCache.get(clazz);
+		}
+		BeanInfo beanInfo;
+		try {
+			beanInfo = Introspector.getBeanInfo(clazz);
+			for (PropertyDescriptor pd : beanInfo.getPropertyDescriptors()) {
+				try {
+					Property property = new Property();
+					property.setName(pd.getName());
+					if (pd.getReadMethod() != null)
+						property.setGetter(pd.getReadMethod().getName());
+					if (pd.getWriteMethod() != null)
+						property.setSetter(pd.getWriteMethod().getName());
+					property.setType(pd.getReadMethod().getDeclaringClass().getDeclaredMethod(property.getGetter(), new Class[0])
+							.getReturnType());
+					properties.put(pd.getName(), property);
+
+					if (pd.getReadMethod() != null) {
+						Method method = pd.getReadMethod();
+						if (property.getType() != null && Collection.class.isAssignableFrom(property.getType())) {
+							property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType())
+									.getActualTypeArguments()[0]);
+						}
+					} else if (pd.getWriteMethod() != null) {
+						Method method = pd.getWriteMethod();
+
+						if (Collection.class.isAssignableFrom(property.getType()) && method.getGenericParameterTypes().length > 0)
+							property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[0])
+									.getActualTypeArguments()[0]);
+					}
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+		} catch (IntrospectionException e) {
+			/* Ignore */
+		}
 
 		propertiesCache.put(clazz, Collections.unmodifiableMap(properties));
 		return properties;
-	}
-
-	// public static Set<String> intersectNames(Class<?> classA, Class<?>
-	// classB) {
-	// Map<String, Property> a = getProperties(classA);
-	// Map<String, Property> b = getProperties(classB);
-	//
-	// Set<String> properties = new HashSet<String>();
-	// for (String propertyName : a.keySet()) {
-	// if (b.containsKey(propertyName)) {
-	// properties.add(propertyName);
-	// }
-	// }
-	//
-	// return properties;
-	// }
-
-	private static void ofClass(Class<?> clazz, Map<String, Property> properties) {
-		for (Method method : clazz.getDeclaredMethods()) {
-			String methodName = method.getName();
-			if (methodName.startsWith("get") || methodName.startsWith("is")) {
-				final int pos = methodName.startsWith("is") ? 2 : 3;
-				String propertyName = Character.toLowerCase(methodName.charAt(pos)) + methodName.substring(pos + 1);
-				Property property = getOrPutProperty(properties, method, propertyName);
-				property.setType(method.getReturnType());
-				property.setGetter(methodName);
-
-				if (Collection.class.isAssignableFrom(property.getType()))
-					property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType())
-							.getActualTypeArguments()[0]);
-			} else if (methodName.startsWith("set") && method.getParameterTypes().length == 1) {
-				final int pos = 3;
-				String propertyName = Character.toLowerCase(methodName.charAt(pos)) + methodName.substring(pos + 1);
-				Property property = getOrPutProperty(properties, method, propertyName);
-				property.setSetter(methodName);
-				property.setType(method.getParameterTypes()[0]);
-
-				// destinationGeneric = method.getGenericParameterTypes()[0];
-				if (Collection.class.isAssignableFrom(property.getType()) && method.getGenericParameterTypes().length > 0)
-					property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[0])
-							.getActualTypeArguments()[0]);
-			}
-		}
-	}
-
-	private static Property getOrPutProperty(Map<String, Property> properties, Method method, String propertyName) {
-		Property property = properties.get(propertyName);
-		if (property == null) {
-			property = new Property();
-			property.setName(propertyName);
-			properties.put(propertyName, property);
-		}
-		return property;
 	}
 
 	public static NestedProperty getNestedProperty(Class<?> clazz, String p) {

@@ -3,7 +3,11 @@ package ma.glasnost.orika.impl;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 
-public abstract class Specifications {
+public final class Specifications {
+
+	private Specifications() {
+
+	}
 
 	public interface Specification {
 		boolean apply(FieldMap fieldMap);

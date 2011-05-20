@@ -1,7 +1,5 @@
 package ma.glasnost.orika.test.primitives;
 
-import java.util.Collection;
-
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.test.MappingUtil;
@@ -12,7 +10,7 @@ import org.junit.Test;
 public class PrimitivesTestCase {
 
 	@Test
-	public void testSimpleMapping() {
+	public void testPrimitivesToWrapper() {
 		MapperFactory factory = MappingUtil.getMapperFactory();
 		MapperFacade mapper = factory.getMapperFacade();
 
@@ -37,7 +35,6 @@ public class PrimitivesTestCase {
 		private String name;
 		private char sex;
 		private boolean vip;
-		private Collection<String> tags;
 
 		public int getAge() {
 			return age;
@@ -71,14 +68,6 @@ public class PrimitivesTestCase {
 			this.vip = vip;
 		}
 
-		public Collection<String> getTags() {
-			return tags;
-		}
-
-		public void setTags(Collection<String> tags) {
-			this.tags = tags;
-		}
-
 	}
 
 	public static class B {
@@ -86,7 +75,6 @@ public class PrimitivesTestCase {
 		private String name;
 		private Character sex;
 		private Boolean vip;
-		private Collection<String> tags;
 
 		public Integer getAge() {
 			return age;
@@ -118,14 +106,6 @@ public class PrimitivesTestCase {
 
 		public void setVip(Boolean vip) {
 			this.vip = vip;
-		}
-
-		public Collection<String> getTags() {
-			return tags;
-		}
-
-		public void setTags(Collection<String> tags) {
-			this.tags = tags;
 		}
 
 	}
