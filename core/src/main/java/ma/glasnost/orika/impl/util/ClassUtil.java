@@ -8,9 +8,9 @@ import java.util.Set;
 
 public final class ClassUtil {
 
-	public static final String CGLIB_ID = "$$EnhancerByCGLIB$$";
-	public static final String JAVASSIST_PACKAGE = "org.javassist.tmp.";
-	public static final String JAVASSIST_NAME = "_$$_javassist_";
+	private static final String CGLIB_ID = "$$EnhancerByCGLIB$$";
+	private static final String JAVASSIST_PACKAGE = "org.javassist.tmp.";
+	private static final String JAVASSIST_NAME = "_$$_javassist_";
 	private static final Set<Class<?>> IMMUTABLES_TYPES = getImmutablesTypes();
 
 	private ClassUtil() {

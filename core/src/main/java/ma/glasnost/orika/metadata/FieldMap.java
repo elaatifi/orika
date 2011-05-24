@@ -36,11 +36,11 @@ public class FieldMap {
         return destination;
     }
     
-    public String getSourceName() {
+    String getSourceName() {
         return source.getName();
     }
     
-    public String getDestinationName() {
+    String getDestinationName() {
         return destination.getName();
     }
     
@@ -49,8 +49,7 @@ public class FieldMap {
     }
     
     public FieldMap flip() {
-        FieldMap mirror = new FieldMap(destination, source, configured, excluded);
-        return mirror;
+        return new FieldMap(destination, source, configured, excluded);
     }
     
     public boolean is(Specification specification) {

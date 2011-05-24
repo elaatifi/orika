@@ -80,7 +80,7 @@ public final class ClassMapBuilder<A, B> {
         return new ClassMapBuilder<A, B>(new ClassMap<A, B>(aType, bType));
     }
     
-    public Property resolveAProperty(String expr) {
+    Property resolveAProperty(String expr) {
         Property property;
         if (PropertyUtil.isExpression(expr)) {
             property = PropertyUtil.getNestedProperty(classMap.getAType(), expr);
@@ -93,7 +93,7 @@ public final class ClassMapBuilder<A, B> {
         return property;
     }
     
-    public Property resolveBProperty(String expr) {
+    Property resolveBProperty(String expr) {
         Property property;
         if (PropertyUtil.isExpression(expr)) {
             property = PropertyUtil.getNestedProperty(classMap.getBType(), expr);

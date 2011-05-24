@@ -7,9 +7,9 @@ import ma.glasnost.orika.Mapper;
 
 public class ClassMap<A, B> {
 
-	Class<A> aType;
-	Class<B> bType;
-	Set<FieldMap> fieldsMapping;
+	final Class<A> aType;
+	final Class<B> bType;
+	final Set<FieldMap> fieldsMapping;
 	Mapper<A, B> customizedMapper;
 
 	public ClassMap(Class<A> aType, Class<B> bType) {

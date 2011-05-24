@@ -66,11 +66,9 @@ public class Property {
 			return false;
 		if (setter != null ? !setter.equals(property.setter) : property.setter != null)
 			return false;
-		if (type != null ? !type.equals(property.type) : property.type != null)
-			return false;
+        return !(type != null && !type.equals(property.type));
 
-		return true;
-	}
+    }
 
 	public boolean isPrimitive() {
 		return type.isPrimitive();

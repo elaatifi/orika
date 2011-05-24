@@ -17,9 +17,7 @@ public class MappingContext {
 
 		Class<?> clazz = mapping.get(sourceClass);
 		if (clazz != null && destinationClass.isAssignableFrom(clazz)) {
-			@SuppressWarnings("unchecked")
-			Class<? extends D> concreteClass = (Class<? extends D>) clazz;
-			return concreteClass;
+			return (Class<? extends D>) clazz;
 		}
 		return null;
 	}

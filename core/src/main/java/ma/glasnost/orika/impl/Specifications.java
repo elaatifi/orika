@@ -42,7 +42,7 @@ public final class Specifications {
 		return WRAPPER_TO_PRIMITIVE;
 	}
 
-	static final Specification IS_IMMUTABLE = new Specification() {
+	private static final Specification IS_IMMUTABLE = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
 			return ClassUtil.isImmutable(fieldMap.getSource().getType())
@@ -50,38 +50,35 @@ public final class Specifications {
 		}
 	};
 
-	static final Specification HAVE_COMPATIBLE_TYPES = new Specification() {
+	private static final Specification HAVE_COMPATIBLE_TYPES = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
 			return fieldMap.getDestination().isAssignableFrom(fieldMap.getSource());
 		}
 	};
 
-	static final Specification IS_ARRAY = new Specification() {
+	private static final Specification IS_ARRAY = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
-			if (fieldMap.getDestination().isArray() && (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection())) {
-				return true;
-			}
-			return false;
-		}
+            return fieldMap.getDestination().isArray() && (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection());
+        }
 	};
 
-	static final Specification IS_COLLECTION = new Specification() {
+	private static final Specification IS_COLLECTION = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
 			return (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection())
 					&& fieldMap.getDestination().isCollection();
 		}
 	};
-	static final Specification IS_PRIMITIVE = new Specification() {
+	private static final Specification IS_PRIMITIVE = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
 			return fieldMap.getSource().getType().isPrimitive() || fieldMap.getDestination().getType().isPrimitive();
 		}
 	};
 
-	static final Specification WRAPPER_TO_PRIMITIVE = new Specification() {
+	private static final Specification WRAPPER_TO_PRIMITIVE = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
 			return fieldMap.getDestination().isPrimitive() && !fieldMap.getSource().isPrimitive();
@@ -89,7 +86,7 @@ public final class Specifications {
 
 	};
 
-	static final Specification PRIMITIVE_TO_WRAPPER = new Specification() {
+	private static final Specification PRIMITIVE_TO_WRAPPER = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
 			return !fieldMap.getDestination().isPrimitive() && fieldMap.getSource().isPrimitive();

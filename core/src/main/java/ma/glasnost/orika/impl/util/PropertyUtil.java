@@ -19,7 +19,7 @@ import ma.glasnost.orika.metadata.Property;
 
 public final class PropertyUtil {
 
-	public static Map<Class<?>, Map<String, Property>> propertiesCache = new ConcurrentHashMap<Class<?>, Map<String, Property>>();
+	private static final Map<Class<?>, Map<String, Property>> PROPERTIES_CACHE = new ConcurrentHashMap<Class<?>, Map<String, Property>>();
 
 	private PropertyUtil() {
 
@@ -27,8 +27,8 @@ public final class PropertyUtil {
 
 	public static Map<String, Property> getProperties(Class<?> clazz) {
 		Map<String, Property> properties = new HashMap<String, Property>();
-		if (propertiesCache.containsKey(clazz)) {
-			return propertiesCache.get(clazz);
+		if (PROPERTIES_CACHE.containsKey(clazz)) {
+			return PROPERTIES_CACHE.get(clazz);
 		}
 		BeanInfo beanInfo;
 		try {
@@ -66,7 +66,7 @@ public final class PropertyUtil {
 			/* Ignore */
 		}
 
-		propertiesCache.put(clazz, Collections.unmodifiableMap(properties));
+		PROPERTIES_CACHE.put(clazz, Collections.unmodifiableMap(properties));
 		return properties;
 	}
 

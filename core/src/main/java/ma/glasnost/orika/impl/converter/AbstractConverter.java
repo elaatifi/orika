@@ -2,7 +2,7 @@ package ma.glasnost.orika.impl.converter;
 
 import ma.glasnost.orika.Converter;
 
-public abstract class AbstractConverter<S, D> implements Converter<S, D> {
+abstract class AbstractConverter<S, D> implements Converter<S, D> {
 
 	private final Class<S> sourceClass;
 

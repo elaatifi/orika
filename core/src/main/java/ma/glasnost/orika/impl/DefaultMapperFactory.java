@@ -27,7 +27,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
     private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
     
-    public DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, Set<Converter<?, ?>> converters, Set<ObjectFactory<?>> objectFactories) {
+    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, Set<Converter<?, ?>> converters, Set<ObjectFactory<?>> objectFactories) {
         this.mapperGenerator = new MapperGenerator(this);
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
@@ -52,7 +52,7 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     }
     
-    protected UnenhanceStrategy getUnenhanceStrategy() {
+    UnenhanceStrategy getUnenhanceStrategy() {
         try {
             Class.forName("org.hibernate.proxy.HibernateProxy");
             return new HibernateUnenhanceStrategy();
@@ -123,14 +123,8 @@ public class DefaultMapperFactory implements MapperFactory {
         
         for (Class<?> clazz : destinationSet) {
             if (destinationClass.isAssignableFrom(clazz)) {
-                if (concreteClass != null) {
-                    throw new MappingException("Can not decide which concrete destination class to pick for class: "
-                            + sourceClass.getName());
-                } else {
-                    @SuppressWarnings("unchecked")
-                    Class<? extends D> cls = (Class<? extends D>) clazz;
-                    concreteClass = cls;
-                }
+                return (Class<? extends D>) clazz;
+
             }
         }
         return concreteClass;

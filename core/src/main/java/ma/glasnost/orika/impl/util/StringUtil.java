@@ -1,6 +1,6 @@
 package ma.glasnost.orika.impl.util;
 
-public abstract class StringUtil {
+abstract class StringUtil {
 
 	public static String toString(String s) {
 		return s;

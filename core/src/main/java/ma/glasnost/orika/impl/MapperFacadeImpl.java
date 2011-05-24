@@ -33,42 +33,49 @@ public class MapperFacadeImpl implements MapperFacade {
     @SuppressWarnings("unchecked")
     public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
         if (destinationClass == null)
-            return null;
+            throw new MappingException("Can not map to a null class.");
         if (sourceObject == null)
             throw new MappingException("Can not map a null object.");
         
-        sourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
+        Class<S> sourceClass = unenhanceStrategy.unenhanceClass(sourceObject);
+        S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
         
         // XXX when it's immutable it's ok to copy by ref
-        if (ClassUtil.isImmutable(sourceObject.getClass()) && sourceObject.getClass().equals(destinationClass)) {
+        if (ClassUtil.isImmutable(sourceObject.getClass()) && sourceClass.equals(destinationClass)) {
             return (D) sourceObject;
         }
         
-        if (context.isAlreadyMapped(sourceObject)) {
-            return (D) context.getMappedObject(sourceObject);
+        if (context.isAlreadyMapped(unenhancedSourceObject)) {
+            return (D) context.getMappedObject(unenhancedSourceObject);
         }
         
         if (Modifier.isAbstract(destinationClass.getModifiers())) {
-            destinationClass = (Class<D>) mapperFactory.lookupConcreteDestinationClass(sourceObject.getClass(), destinationClass, context);
+            destinationClass = (Class<D>) mapperFactory.lookupConcreteDestinationClass(sourceClass, destinationClass, context);
         }
         
         D destinationObject = newObject(destinationClass);
         
-        context.cacheMappedObject(sourceObject, destinationObject);
+        context.cacheMappedObject(unenhancedSourceObject, destinationObject);
         
         map(sourceObject, destinationObject, context);
         return destinationObject;
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
-        sourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
-        Class<?> sourceClass = sourceObject.getClass();
+        // sourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
+        Class<?> sourceClass = unenhanceStrategy.unenhanceClass(sourceObject);
         Class<?> destinationClass = destinationObject.getClass();
-        while (!destinationClass.equals(Object.class)) {
-            mapDeclaredProperties(sourceObject, destinationObject, sourceClass, destinationClass, context);
-            destinationClass = destinationClass.getSuperclass();
-            sourceClass = sourceClass.getSuperclass();
-        }
+        // while (!(destinationClass.equals(Object.class) &&
+        // sourceClass.equals(Object.class))) {
+        // mapDeclaredProperties(sourceObject, destinationObject, sourceClass,
+        // destinationClass, context);
+        // destinationClass = destinationClass.equals(Object.class) ?
+        // destinationClass : destinationClass.getSuperclass();
+        // sourceClass = sourceClass.equals(Object.class) ? sourceClass :
+        // sourceClass.getSuperclass();
+        // }
+        
+        mapDeclaredProperties(sourceObject, destinationObject, sourceClass, destinationClass, context);
     }
     
     public <S, D> void map(S sourceObject, D destinationObject) {
@@ -139,7 +146,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    protected void mapDeclaredProperties(Object sourceObject, Object destinationObject, Class<?> sourceClass, Class<?> destinationClass,
+    void mapDeclaredProperties(Object sourceObject, Object destinationObject, Class<?> sourceClass, Class<?> destinationClass,
             MappingContext context) {
         MapperKey mapperKey = new MapperKey(sourceClass, destinationClass);
         GeneratedMapperBase mapper = mapperFactory.get(mapperKey);
@@ -159,7 +166,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    protected <D> D newObject(Class<D> destinationClass) {
+    <D> D newObject(Class<D> destinationClass) {
         
         try {
             ObjectFactory<D> objectFactory = mapperFactory.lookupObjectFactory(destinationClass);
@@ -175,8 +182,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    protected <S, D> Collection<D> mapAsCollection(Iterable<S> source, Class<D> destinationClass, Collection<D> destination,
-            MappingContext context) {
+    <S, D> Collection<D> mapAsCollection(Iterable<S> source, Class<D> destinationClass, Collection<D> destination, MappingContext context) {
         for (S item : source) {
             destination.add(map(item, destinationClass, context));
         }
@@ -185,7 +191,8 @@ public class MapperFacadeImpl implements MapperFacade {
     
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Class<D> destinationClass) {
-        Converter<S, D> converter = (Converter<S, D>) mapperFactory.lookupConverter(source.getClass(), destinationClass);
+        Class<? extends Object> sourceClass = unenhanceStrategy.unenhanceClass(source);
+        Converter<S, D> converter = (Converter<S, D>) mapperFactory.lookupConverter(sourceClass, destinationClass);
         return converter.convert(source);
     }
     

@@ -1,8 +1,12 @@
 package ma.glasnost.orika.impl.util;
 
-public abstract class CollectionUtil {
+final class CollectionUtil {
 
-	public static final boolean equalsAny(Object obj, Object... objects) {
+    private CollectionUtil() {
+
+    }
+
+	public static  boolean equalsAny(Object obj, Object... objects) {
 		for (Object o : objects) {
 			if (obj.equals(o)) {
 				return true;

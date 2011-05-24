@@ -52,7 +52,7 @@
 				<groupId>org.hibernate</groupId>
 				<artifactId>hibernate-core</artifactId>
 				<version>3.3.2.GA</version>
-				<scope>test</scope>
+				<scope>provided</scope>
 			</dependency>
 			<dependency>
 				<groupId>org.hibernate</groupId>
@@ -84,6 +84,7 @@
 				<groupId>org.slf4j</groupId>
 				<artifactId>slf4j-simple</artifactId>
 				<version>${slf4j.version}</version>
+                <scope>test</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -136,7 +137,6 @@
 			<plugin>
 				<artifactId>maven-pmd-plugin</artifactId>
 				<configuration>
-					<linkXref>true</linkXref>
 					<sourceEncoding>utf-8</sourceEncoding>
 					<minimumTokens>100</minimumTokens>
 					<targetJdk>1.5</targetJdk>
