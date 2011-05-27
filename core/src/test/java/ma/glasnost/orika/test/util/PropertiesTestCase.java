@@ -1,27 +1,12 @@
 package ma.glasnost.orika.test.util;
 
-import java.util.Map;
-
-import javax.swing.JButton;
-
 import junit.framework.Assert;
 import ma.glasnost.orika.impl.util.PropertyUtil;
 import ma.glasnost.orika.metadata.NestedProperty;
-import ma.glasnost.orika.metadata.Property;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class PropertiesTestCase {
-
-	@Test
-	@Ignore
-	public void testJButton() {
-
-		Map<String, Property> properties = PropertyUtil.getProperties(JButton.class);
-
-		// TODO To rewrite
-	}
 
 	@Test
 	public void testNestedProperty() {
