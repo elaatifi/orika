@@ -18,8 +18,6 @@
 
 package ma.glasnost.orika;
 
-import ma.glasnost.orika.impl.MappingContext;
-
 /**
  * Abstract super-class for all generated mappers and user custom mappers.
  * 
@@ -47,4 +45,11 @@ public abstract class MapperBase<A, B> implements Mapper<A, B> {
 		this.mapperFacade = mapper;
 	}
 
+	public Class<A> getAType() {
+		throw new IllegalStateException("Should not be called for a user custom mapper.");
+	}
+
+	public Class<B> getBType() {
+		throw new IllegalStateException("Should not be called for a user custom mapper.");
+	}
 }

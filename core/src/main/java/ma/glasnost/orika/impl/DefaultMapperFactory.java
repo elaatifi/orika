@@ -27,6 +27,7 @@ import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
@@ -35,22 +36,30 @@ import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.proxy.HibernateUnenhanceStrategy;
 import ma.glasnost.orika.proxy.UnenhanceStrategy;
 
+/**
+ * The mapper factory is the heart of Orika, a small container where metadata
+ * are stored, it's used by other component of engine, to look for generated
+ * mappers, converter, object factories ... etc.
+ * 
+ * @author S.M. El Aatifi
+ * 
+ */
 public class DefaultMapperFactory implements MapperFactory {
 
 	private final MapperFacade mapperFacade;
 	private final MapperGenerator mapperGenerator;
 	private final Map<MapperKey, GeneratedMapperBase> mappersRegistry;
-	private final Map<ConverterKey, Converter<?, ?>> convertersRegistry;
+	private final Map<Object, Converter<?, ?>> convertersRegistry;
 	private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
 	private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
 
 	private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, Set<Converter<?, ?>> converters,
 			Set<ObjectFactory<?>> objectFactories) {
-		this.mapperGenerator = new MapperGenerator(this);
 		this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
-		this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
-		this.convertersRegistry = new ConcurrentHashMap<ConverterKey, Converter<?, ?>>();
+		this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
 		this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
+		this.mapperGenerator = new MapperGenerator(this);
+		this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
 
 		if (classMaps != null) {
 			for (ClassMap<?, ?> classMap : classMaps) {
@@ -58,8 +67,10 @@ public class DefaultMapperFactory implements MapperFactory {
 			}
 		}
 
-		if (converters == null) {
-			// add builtin converter
+		if (converters != null) {
+			for (Converter<?, ?> c : converters) {
+				convertersRegistry.put(new ConverterKey(c.getSource(), c.getDestination()), c);
+			}
 		}
 
 		objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
@@ -68,6 +79,10 @@ public class DefaultMapperFactory implements MapperFactory {
 				objectFactoryRegistry.put(objectFactory.getTargetClass(), objectFactory);
 			}
 		}
+	}
+
+	public DefaultMapperFactory() {
+		this(null, null, null);
 	}
 
 	UnenhanceStrategy getUnenhanceStrategy() {
@@ -90,11 +105,7 @@ public class DefaultMapperFactory implements MapperFactory {
 		}
 	}
 
-	public DefaultMapperFactory() {
-		this(null, null, null);
-	}
-
-	public GeneratedMapperBase get(MapperKey mapperKey) {
+	public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
 		if (!mappersRegistry.containsKey(mapperKey)) {
 			ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault().toClassMap();
 			registerClassMap(classMap);

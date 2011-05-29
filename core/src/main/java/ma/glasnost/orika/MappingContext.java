@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.impl;
+package ma.glasnost.orika;
 
 import java.util.HashMap;
 import java.util.Map;

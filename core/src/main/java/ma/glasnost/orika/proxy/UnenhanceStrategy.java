@@ -18,6 +18,13 @@
 
 package ma.glasnost.orika.proxy;
 
+/**
+ * Defines a strategy to unenhance an object specially a proxy one like those of
+ * Hibernate.
+ * 
+ * @author S.M. El Aatifi
+ * 
+ */
 public interface UnenhanceStrategy {
 
 	public <T> T unenhanceObject(T object);

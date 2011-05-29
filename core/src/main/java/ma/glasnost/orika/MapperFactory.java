@@ -18,14 +18,17 @@
 
 package ma.glasnost.orika;
 
-import ma.glasnost.orika.impl.GeneratedMapperBase;
-import ma.glasnost.orika.impl.MappingContext;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.MapperKey;
 
+/**
+ * 
+ * @author S.M. El Aatifi
+ * 
+ */
 public interface MapperFactory {
 
-	GeneratedMapperBase get(MapperKey mapperKey);
+	<A, B> Mapper<A, B> lookupMapper(MapperKey mapperKey);
 
 	<S, D> void registerClassMap(ClassMap<S, D> classMap);
 

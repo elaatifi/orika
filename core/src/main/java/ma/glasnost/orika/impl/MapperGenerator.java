@@ -30,6 +30,7 @@ import javassist.CtClass;
 import javassist.CtNewMethod;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;

@@ -21,10 +21,33 @@ package ma.glasnost.orika;
 import java.util.List;
 import java.util.Set;
 
-import ma.glasnost.orika.impl.MappingContext;
 
 /**
+ * The main runtime interface between a Java application and Orika. This is the
+ * central interface abstracting the service of a Java bean mapping. <br>
+ * <br>
  * 
+ * The main operation of <code>MapperFacade</code> is <code>map()</code> that
+ * copy from a deeply structured one object to an other.<br>
+ * <br>
+ * 
+ * MapperFacade manages the state of a mapping operation through MappingContext.<br>
+ * The operation of mapping may include : <br>
+ * <ul>
+ * <li>Creation of new objects : <code>newObject()</code></li>
+ * <li>Conversion object to another type: <code>convert()</code></li>
+ * <li>Mapping recursively an object to an other class : <code>map()</code></li>
+ * </ul>
+ * <br>
+ * 
+ * Example of code to map an instance of <code>Entity</code>(<code>entity</code>
+ * ) to <code>DTO</code> class:<br>
+ * 
+ * <pre>
+ * ...
+ * DTO newDTO = mapperFacade.map(entity, DTO.class);
+ * ...
+ * </pre>
  * 
  * @author S.M. El Aatifi
  * 
@@ -66,12 +89,12 @@ public interface MapperFacade {
 	<S, D> D convert(S source, Class<D> destinationClass);
 
 	/**
-	 * Create new instance of a destination class. Abstract types are
-	 * unsupported.
+	 * Create new instance of a destination class. <strong>Abstract types are
+	 * unsupported</code>.
 	 * 
 	 * @param destinationClass
 	 * @param mappingContext
-	 * @return
+	 * @return new instance of <code>destinationClass</code>
 	 */
 	<D> D newObject(Class<? extends D> destinationClass, MappingContext mappingContext);
 

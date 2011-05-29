@@ -3,7 +3,7 @@ package ma.glasnost.orika.test.custommapper;
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperBase;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.MappingContext;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 

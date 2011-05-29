@@ -18,17 +18,14 @@
 
 package ma.glasnost.orika;
 
-import ma.glasnost.orika.impl.MappingContext;
-
 /**
  * Defines a contract bewteen internal parts of Orikas such as
  * <code>MapperFacade</code>, <code>MapperGenerator</code>,
- * <code>MapperFactory</code> and generated mappers
+ * <code>MapperFactory</code> and generated mappers.
  * 
  * @author S.M. El Aatifi
  * 
  * @see MapperFacade
- * @see ma.glasnost.orika.impl.MapperGenerator
  */
 public interface Mapper<A, B> {
 
@@ -37,5 +34,9 @@ public interface Mapper<A, B> {
 	void mapBtoA(B b, A a, MappingContext context);
 
 	void setMapperFacade(MapperFacade mapper);
+
+	Class<A> getAType();
+
+	Class<B> getBType();
 
 }

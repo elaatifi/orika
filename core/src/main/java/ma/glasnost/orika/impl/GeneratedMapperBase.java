@@ -28,9 +28,4 @@ public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
 	public void setCustomMapper(Mapper<Object, Object> customMapper) {
 		this.customMapper = customMapper;
 	}
-
-	public abstract Class<?> getAType();
-
-	public abstract Class<?> getBType();
-
 }

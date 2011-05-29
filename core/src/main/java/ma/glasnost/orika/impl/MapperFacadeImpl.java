@@ -26,8 +26,10 @@ import java.util.List;
 import java.util.Set;
 
 import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.impl.util.ClassUtil;
@@ -157,7 +159,7 @@ public class MapperFacadeImpl implements MapperFacade {
 	void mapDeclaredProperties(Object sourceObject, Object destinationObject, Class<?> sourceClass, Class<?> destinationClass,
 			MappingContext context) {
 		MapperKey mapperKey = new MapperKey(sourceClass, destinationClass);
-		GeneratedMapperBase mapper = mapperFactory.get(mapperKey);
+		Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
 
 		if (mapper == null) {
 			throw new IllegalStateException(String.format("Can not create a mapper for classes : %s, %s", destinationClass,
