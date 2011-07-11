@@ -24,7 +24,7 @@ import ma.glasnost.orika.test.MappingUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class BidirectionalMapppingTestCase {
+public class BidirectionalMappingTestCase {
 
 	@Test
 	public void testBidirectionalMapping() {

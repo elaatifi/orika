@@ -87,7 +87,7 @@ final class MapperGenerator {
         out.append(destinationClass.getName()).append(" destination = (").append(destinationClass.getName()).append(") b; \n");
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
-            if (!fieldMap.isExcluded()) {
+            if (!(aToB && classMap.isAExcludedField(fieldMap.getSource()) || classMap.isBExcludedField(fieldMap.getSource()))) {
                 try {
                     if (!aToB) {
                         fieldMap = fieldMap.flip();
@@ -124,14 +124,15 @@ final class MapperGenerator {
             } else if (fieldMap.is(anArray())) {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setArray(dp, sp).end();
             } else if (fieldMap.is(aCollection())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setCollection(dp, sp).end();
+                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setCollection(dp, sp, fieldMap.getInverse()).end();
             } else if (fieldMap.is(aWrapperToPrimitive())) {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setPrimitive(dp, sp).end();
             } else if (fieldMap.is(aPrimitiveToWrapper())) {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setWrapper(dp, sp).end();
             } else { /**/
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setObject(dp, sp).end();
+                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setObject(dp, sp, fieldMap.getInverse()).end();
             }
+            
         } catch (Exception e) {
             if (fieldMap.isConfigured())
                 throw e;
