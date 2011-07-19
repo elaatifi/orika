@@ -27,21 +27,20 @@ import ma.glasnost.orika.metadata.MapperKey;
  * 
  */
 public interface MapperFactory {
-
-	<A, B> Mapper<A, B> lookupMapper(MapperKey mapperKey);
-
-	<S, D> void registerClassMap(ClassMap<S, D> classMap);
-
-	<S, D> void registerConverter(Converter<S, D> converter);
-
-	<S, D> Converter<S, D> lookupConverter(Class<S> source, Class<D> destination);
-
-	<T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass);
-
-	<T> ObjectFactory<T> lookupObjectFactory(Class<T> targetClass);
-
-	<S, D> Class<? extends D> lookupConcreteDestinationClass(Class<S> sourceClass, Class<D> destinationClass,
-			MappingContext context);
-
-	MapperFacade getMapperFacade();
+    
+    <A, B> Mapper<A, B> lookupMapper(MapperKey mapperKey);
+    
+    <S, D> void registerClassMap(ClassMap<S, D> classMap);
+    
+    <S, D> void registerConverter(Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass);
+    
+    <S, D> Converter<S, D> lookupConverter(Class<S> source, Class<D> destination);
+    
+    <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass);
+    
+    <T> ObjectFactory<T> lookupObjectFactory(Class<T> targetClass);
+    
+    <S, D> Class<? extends D> lookupConcreteDestinationClass(Class<S> sourceClass, Class<D> destinationClass, MappingContext context);
+    
+    MapperFacade getMapperFacade();
 }

@@ -26,13 +26,15 @@ public class FieldMap {
     private final Property destination;
     private final Property aInverse;
     private final Property bInverse;
+    private final MappingDirection mappingDirection;
     private boolean configured;
     
-    public FieldMap(Property a, Property b, Property aInverse, Property bInverse, boolean configured) {
+    public FieldMap(Property a, Property b, Property aInverse, Property bInverse, MappingDirection mappingDirection, boolean configured) {
         this.source = a;
         this.destination = b;
         this.aInverse = aInverse;
         this.bInverse = bInverse;
+        this.mappingDirection = mappingDirection;
         this.configured = configured;
     }
     
@@ -45,11 +47,11 @@ public class FieldMap {
     }
     
     String getSourceName() {
-        return source.getName();
+        return source.getExpression();
     }
     
     String getDestinationName() {
-        return destination.getName();
+        return destination.getExpression();
     }
     
     public boolean isConfigured() {
@@ -64,8 +66,12 @@ public class FieldMap {
         return bInverse;
     }
     
+    public boolean isIgnored() {
+        return MappingDirection.B_TO_A == mappingDirection;
+    }
+    
     public FieldMap flip() {
-        return new FieldMap(destination, source, bInverse, aInverse, configured);
+        return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), configured);
     }
     
     public boolean is(Specification specification) {

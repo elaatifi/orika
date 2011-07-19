@@ -28,8 +28,6 @@ public class ClassMap<A, B> {
     final Class<A> aType;
     final Class<B> bType;
     final Set<FieldMap> fieldsMapping;
-    final Set<Property> aExcludedFields;
-    final Set<Property> bExcludedFields;
     Mapper<A, B> customizedMapper;
     
     public ClassMap(Class<A> aType, Class<B> bType) {
@@ -37,28 +35,10 @@ public class ClassMap<A, B> {
         this.bType = bType;
         
         fieldsMapping = new HashSet<FieldMap>();
-        aExcludedFields = new HashSet<Property>();
-        bExcludedFields = new HashSet<Property>();
     }
     
     public void addFieldMap(FieldMap fieldMap) {
         fieldsMapping.add(fieldMap);
-    }
-    
-    public void addAExcludedField(Property aProperty) {
-        aExcludedFields.add(aProperty);
-    }
-    
-    public void addBExcludedField(Property bProperty) {
-        bExcludedFields.add(bProperty);
-    }
-    
-    public boolean isAExcludedField(Property aProperty) {
-        return aExcludedFields.contains(aProperty);
-    }
-    
-    public boolean isBExcludedField(Property bProperty) {
-        return bExcludedFields.contains(bProperty);
     }
     
     public Class<?> getAType() {

@@ -230,7 +230,7 @@ public class CodeSourceBuilder {
             
             append("if(").append(destinationBase.toString()).append(".").append(p.getGetter()).append("() == null)");
             append(destinationBase.toString()).append(".").append(p.getSetter()).append("((").append(p.getType().getName());
-            append(")mapperFacade.newObject(").append(p.getType().getName()).append(".class, mappingContext));");
+            append(")mapperFacade.newObject(").append("source, ").append(p.getType().getName()).append(".class));");
             
             destinationBase.append(".").append(p.getGetter()).append("()");
         }

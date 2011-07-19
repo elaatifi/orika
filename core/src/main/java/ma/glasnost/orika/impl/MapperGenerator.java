@@ -69,8 +69,8 @@ final class MapperGenerator {
     private void addMapMethod(CtClass mapperClass, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
         CodeSourceBuilder out = new CodeSourceBuilder();
         String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
-        out.append("public void ").append(mapMethod).append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {",
-                MappingContext.class.getName());
+        out.append("public void ").append(mapMethod)
+                .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {", MappingContext.class.getName());
         
         Class<?> sourceClass, destinationClass;
         if (aToB) {
@@ -87,11 +87,11 @@ final class MapperGenerator {
         out.append(destinationClass.getName()).append(" destination = (").append(destinationClass.getName()).append(") b; \n");
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
-            if (!(aToB && classMap.isAExcludedField(fieldMap.getSource()) || classMap.isBExcludedField(fieldMap.getSource()))) {
+            if (!aToB) {
+                fieldMap = fieldMap.flip();
+            }
+            if (!fieldMap.isIgnored()) {
                 try {
-                    if (!aToB) {
-                        fieldMap = fieldMap.flip();
-                    }
                     generateFieldMapCode(out, fieldMap);
                 } catch (Exception e) {
                     throw new MappingException(e);
@@ -154,8 +154,8 @@ final class MapperGenerator {
     
     private void addGetTypeMethod(CtClass mapperClass, String methodName, Class<?> value) throws CannotCompileException {
         StringBuilder output = new StringBuilder();
-        output.append("\n").append("public java.lang.Class ").append(methodName).append("() { return ").append(value.getName()).append(
-                ".class; }");
+        output.append("\n").append("public java.lang.Class ").append(methodName).append("() { return ").append(value.getName())
+                .append(".class; }");
         mapperClass.addMethod(CtNewMethod.make(output.toString(), mapperClass));
     }
 }

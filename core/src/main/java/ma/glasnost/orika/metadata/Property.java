@@ -25,11 +25,20 @@ import java.util.Set;
 // XXX must be immutable
 public class Property {
     private static final Property[] EMPTY_PATH = new Property[0];
+    private String expression;
     private String name;
     private String getter;
     private String setter;
     private Class<?> type;
     private Class<?> parameterizedType;
+    
+    public String getExpression() {
+        return expression;
+    }
+    
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
     
     public String getName() {
         return name;
@@ -80,14 +89,13 @@ public class Property {
         
         Property property = (Property) o;
         
-        if (getter != null ? !getter.equals(property.getter) : property.getter != null)
+        if (!expression.equals(property.expression))
             return false;
-        if (!name.equals(property.name))
+        if (getter != null ? !getter.equals(property.getter) : property.getter != null)
             return false;
         if (setter != null ? !setter.equals(property.setter) : property.setter != null)
             return false;
         return !(type != null && !type.equals(property.type));
-        
     }
     
     public boolean isPrimitive() {

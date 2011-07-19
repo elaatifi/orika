@@ -30,6 +30,8 @@ public class FieldMapBuilder<A, B> {
     
     private Property bInverseProperty;
     
+    private MappingDirection mappingDirection = MappingDirection.BIDIRECTIONAL;
+    
     FieldMapBuilder(ClassMapBuilder<A, B> classMapBuilder, String a, String b) {
         this.classMapBuilder = classMapBuilder;
         
@@ -38,7 +40,7 @@ public class FieldMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> add() {
-        FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, true);
+        FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true);
         classMapBuilder.addFieldMap(fieldMap);
         
         return classMapBuilder;
@@ -54,6 +56,18 @@ public class FieldMapBuilder<A, B> {
     public FieldMapBuilder<A, B> bInverse(String bInverse) {
         Class<?> type = bProperty.isCollection() ? bProperty.getParameterizedType() : bProperty.getType();
         bInverseProperty = classMapBuilder.resolveProperty(type, bInverse);
+        
+        return this;
+    }
+    
+    public FieldMapBuilder<A, B> aToB() {
+        mappingDirection = MappingDirection.A_TO_B;
+        
+        return this;
+    }
+    
+    public FieldMapBuilder<A, B> bToA() {
+        mappingDirection = MappingDirection.B_TO_A;
         
         return this;
     }

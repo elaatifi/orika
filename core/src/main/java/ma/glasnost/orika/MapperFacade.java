@@ -21,7 +21,6 @@ package ma.glasnost.orika;
 import java.util.List;
 import java.util.Set;
 
-
 /**
  * The main runtime interface between a Java application and Orika. This is the
  * central interface abstracting the service of a Java bean mapping. <br>
@@ -53,49 +52,50 @@ import java.util.Set;
  * 
  */
 public interface MapperFacade {
-
-	<S, D> D map(S sourceObject, Class<D> destinationClass);
-
-	<S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context);
-
-	<S, D> void map(S sourceObject, D destinationObject);
-
-	<S, D> void map(S sourceObject, D destinationObject, MappingContext context);
-
-	<S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass);
-
-	<S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass, MappingContext context);
-
-	<S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass);
-
-	<S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass, MappingContext context);
-
-	<S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass);
-
-	<S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass, MappingContext context);
-
-	<S, D> List<D> mapAsList(S[] source, Class<D> destinationClass);
-
-	<S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context);
-
-	<S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass);
-
-	<S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass);
-
-	<S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context);
-
-	<S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context);
-
-	<S, D> D convert(S source, Class<D> destinationClass);
-
-	/**
-	 * Create new instance of a destination class. <strong>Abstract types are
-	 * unsupported</code>.
-	 * 
-	 * @param destinationClass
-	 * @param mappingContext
-	 * @return new instance of <code>destinationClass</code>
-	 */
-	<D> D newObject(Class<? extends D> destinationClass, MappingContext mappingContext);
-
+    
+    <S, D> D map(S sourceObject, Class<D> destinationClass);
+    
+    <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> void map(S sourceObject, D destinationObject);
+    
+    <S, D> void map(S sourceObject, D destinationObject, MappingContext context);
+    
+    <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass);
+    
+    <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass);
+    
+    <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass);
+    
+    <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass);
+    
+    <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass);
+    
+    <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass);
+    
+    <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context);
+    
+    <S, D> D convert(S source, Class<D> destinationClass);
+    
+    /**
+     * Create new instance of a destination class. <strong>Abstract types are
+     * unsupported</code>.
+     * 
+     * @param source
+     * @param destinationClass
+     * @return new instance of <code>destinationClass</code>
+     */
+    // TODO Utilité d'avoir cette méthode publique?
+    <S, D> D newObject(S source, Class<? extends D> destinationClass);
+    
 }

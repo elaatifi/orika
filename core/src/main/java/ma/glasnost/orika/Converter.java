@@ -27,10 +27,7 @@ package ma.glasnost.orika;
  * @author S.M. El Aaatifi
  */
 public interface Converter<S, D> {
-
-	D convert(S source) throws ConverterException;
-
-	Class<S> getSource();
-
-	Class<D> getDestination();
+    
+    D convert(S source) throws ConverterException;
+    
 }

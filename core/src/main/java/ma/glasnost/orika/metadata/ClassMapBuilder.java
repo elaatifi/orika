@@ -63,18 +63,6 @@ public final class ClassMapBuilder<A, B> {
         return fieldMapBuilder;
     }
     
-    public ClassMapBuilder<A, B> excludeAField(String a) {
-        classMap.addAExcludedField(resolveAProperty(a));
-        
-        return this;
-    }
-    
-    public ClassMapBuilder<A, B> excludeBField(String b) {
-        classMap.addBExcludedField(resolveAProperty(b));
-        
-        return this;
-    }
-    
     public ClassMapBuilder<A, B> customize(Mapper<A, B> customizedMapper) {
         classMap.setCustomizedMapper(customizedMapper);
         return this;
@@ -143,7 +131,7 @@ public final class ClassMapBuilder<A, B> {
     
     void addFieldMap(FieldMap fieldMap) {
         classMap.addFieldMap(fieldMap);
-        propertiesCache.add(fieldMap.getSource().getName());
+        propertiesCache.add(fieldMap.getSource().getExpression());
     }
     
 }
