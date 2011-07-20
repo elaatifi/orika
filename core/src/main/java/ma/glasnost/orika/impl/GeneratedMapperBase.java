@@ -22,10 +22,11 @@ import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperBase;
 
 public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
-
-	protected Mapper<Object, Object> customMapper;
-
-	public void setCustomMapper(Mapper<Object, Object> customMapper) {
-		this.customMapper = customMapper;
-	}
+    
+    protected Mapper<Object, Object> customMapper;
+    
+    public void setCustomMapper(Mapper<Object, Object> customMapper) {
+        this.customMapper = customMapper;
+        this.customMapper.setMapperFacade(mapperFacade);
+    }
 }

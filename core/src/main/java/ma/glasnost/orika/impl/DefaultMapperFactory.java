@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.impl;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -48,17 +49,19 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
+    private final Set<ClassMap<?, ?>> classMaps;
     private final Map<MapperKey, GeneratedMapperBase> mappersRegistry;
     private final Map<Object, Converter<?, ?>> convertersRegistry;
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
     private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
     
     private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, Set<ObjectFactory<?>> objectFactories) {
+        this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
+        this.mapperGenerator = new MapperGenerator(this);
+        this.classMaps = Collections.synchronizedSet(new HashSet<ClassMap<?, ?>>());
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
-        this.mapperGenerator = new MapperGenerator(this);
-        this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
         
         if (classMaps != null) {
             for (ClassMap<?, ?> classMap : classMaps) {
@@ -101,7 +104,7 @@ public class DefaultMapperFactory implements MapperFactory {
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
             ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault().toClassMap();
-            registerClassMap(classMap);
+            buildMapper(classMap);
         }
         return mappersRegistry.get(mapperKey);
     }
@@ -153,15 +156,28 @@ public class DefaultMapperFactory implements MapperFactory {
         return concreteClass;
     }
     
-    @SuppressWarnings("unchecked")
     public <S, D> void registerClassMap(ClassMap<S, D> classMap) {
+        classMaps.add(classMap);
+    }
+    
+    public void build() {
+        for (ClassMap<?, ?> classMap : classMaps) {
+            buildMapper(classMap);
+        }
+    }
+    
+    private void buildMapper(ClassMap<?, ?> classMap) {
         register(classMap.getAType(), classMap.getBType());
         register(classMap.getBType(), classMap.getAType());
         
         MapperKey mapperKey = new MapperKey(classMap.getAType(), classMap.getBType());
         GeneratedMapperBase mapper = this.mapperGenerator.build(classMap);
         mapper.setMapperFacade(mapperFacade);
-        mapper.setCustomMapper((Mapper<Object, Object>) classMap.getCustomizedMapper());
+        if (classMap.getCustomizedMapper() != null) {
+            @SuppressWarnings("unchecked")
+            Mapper<Object, Object> customizedMapper = (Mapper<Object, Object>) classMap.getCustomizedMapper();
+            mapper.setCustomMapper(customizedMapper);
+        }
         mappersRegistry.put(mapperKey, mapper);
     }
     
