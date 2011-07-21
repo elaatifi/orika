@@ -46,6 +46,8 @@ public class ConverterWithNestedPropertyTestCase {
         
         mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
+        mapperFactory.build();
+        
         Address address = new Address();
         address.setLine1("5 rue Blida");
         address.setLine2("Casablanca");

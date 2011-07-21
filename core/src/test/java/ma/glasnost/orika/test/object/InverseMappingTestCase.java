@@ -39,6 +39,8 @@ public class InverseMappingTestCase {
         classMapBuilder.fieldMap("address").bInverse("person").add();
         mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
+        mapperFactory.build();
+        
         MapperFacade mapper = mapperFactory.getMapperFacade();
         
         AddressDTO addressDTO = new AddressDTO();
@@ -66,6 +68,8 @@ public class InverseMappingTestCase {
         classMapBuilder.fieldMap("books").bInverse("publisher").add();
         mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
+        mapperFactory.build();
+        
         MapperFacade mapper = mapperFactory.getMapperFacade();
         
         BookDTO parisNoirDTO = new BookDTO();
@@ -92,6 +96,8 @@ public class InverseMappingTestCase {
         classMapBuilder.fieldMap("author").bInverse("books").add();
         mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
+        mapperFactory.build();
+        
         MapperFacade mapper = mapperFactory.getMapperFacade();
         
         AuthorDTO authorDTO = new AuthorDTO();
@@ -114,6 +120,8 @@ public class InverseMappingTestCase {
         ClassMapBuilder<ReaderDTO, Reader> classMapBuilder = ClassMapBuilder.map(ReaderDTO.class, Reader.class);
         classMapBuilder.fieldMap("books").bInverse("readers").add();
         mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+        
+        mapperFactory.build();
         
         MapperFacade mapper = mapperFactory.getMapperFacade();
         

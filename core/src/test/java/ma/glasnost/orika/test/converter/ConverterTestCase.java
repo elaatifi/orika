@@ -42,6 +42,8 @@ public class ConverterTestCase {
         
         factory.registerClassMap(ClassMapBuilder.map(A.class, B.class).field("id", "string").toClassMap());
         
+        factory.build();
+        
         A source = new A();
         source.setId(42L);
         
