@@ -123,7 +123,7 @@ public final class ClassMapBuilder<A, B> {
         } else if (bProperties.containsKey(expr)) {
             property = bProperties.get(expr);
         } else {
-            throw new MappingException(expr + " do not belongs to " + classMap.getATypeName());
+            throw new MappingException(expr + " do not belongs to " + classMap.getBTypeName());
         }
         
         return property;

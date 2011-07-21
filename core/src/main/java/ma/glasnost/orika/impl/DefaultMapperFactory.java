@@ -55,30 +55,24 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
     private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
     
-    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, Set<ObjectFactory<?>> objectFactories) {
+    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps) {
         this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
         this.mapperGenerator = new MapperGenerator(this);
         this.classMaps = Collections.synchronizedSet(new HashSet<ClassMap<?, ?>>());
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
+        objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
         
         if (classMaps != null) {
             for (ClassMap<?, ?> classMap : classMaps) {
                 registerClassMap(classMap);
             }
         }
-        
-        objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
-        if (objectFactories != null) {
-            for (ObjectFactory<?> objectFactory : objectFactories) {
-                objectFactoryRegistry.put(objectFactory.getTargetClass(), objectFactory);
-            }
-        }
     }
     
     public DefaultMapperFactory() {
-        this(null, null);
+        this(null);
     }
     
     UnenhanceStrategy getUnenhanceStrategy() {
@@ -122,8 +116,8 @@ public class DefaultMapperFactory implements MapperFactory {
         return mapperFacade;
     }
     
-    public <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass) {
-        objectFactoryRegistry.put(targetClass, objectFactory);
+    public <D> void registerObjectFactory(ObjectFactory<D> objectFactory, Class<D> destinationClass) {
+        objectFactoryRegistry.put(destinationClass, objectFactory);
     }
     
     @SuppressWarnings("unchecked")

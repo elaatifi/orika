@@ -181,7 +181,7 @@ public class MapperFacadeImpl implements MapperFacade {
         try {
             ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationClass);
             if (objectFactory != null) {
-                return objectFactory.create();
+                return objectFactory.create(sourceObject);
             } else {
                 return destinationClass.newInstance();
             }
