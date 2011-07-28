@@ -225,7 +225,7 @@ public class CodeSourceBuilder {
         for (Property p : property.getPath()) {
             int modifier = p.getType().getModifiers();
             if (Modifier.isAbstract(modifier) || Modifier.isInterface(modifier)) {
-                throw new MappingException("Abstract types are unsupported for nested properties");
+                throw new MappingException("Abstract types are unsupported for nested properties. \n" + property.toString());
             }
             
             append("if(").append(destinationBase.toString()).append(".").append(p.getGetter()).append("() == null)");

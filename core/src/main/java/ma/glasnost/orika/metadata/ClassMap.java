@@ -69,6 +69,13 @@ public class ClassMap<A, B> {
         this.customizedMapper = customizedMapper;
     }
     
+    public String getMapperClassName() {
+        // TODO This should be a strategy defined at the MapperGenerator level,
+        // something like mapperClassNameStrategy.getMapperClassName(ClassMap
+        // classMap)
+        return "Orika" + bType.getSimpleName() + getATypeName() + "Mapper" + System.identityHashCode(this);
+    }
+    
     @Override
     public int hashCode() {
         int result = 31;

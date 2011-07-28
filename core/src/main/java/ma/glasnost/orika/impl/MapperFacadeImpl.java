@@ -57,32 +57,43 @@ public class MapperFacadeImpl implements MapperFacade {
         if (sourceObject == null)
             throw new MappingException("Can not map a null object.");
         
-        Class<S> sourceClass = unenhanceStrategy.unenhanceClass(sourceObject);
-        S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
-        
-        // XXX when it's immutable it's ok to copy by ref
-        if (ClassUtil.isImmutable(sourceObject.getClass()) && sourceClass.equals(destinationClass)) {
-            return (D) sourceObject;
+        if (context.isAlreadyMapped(sourceObject)) {
+            return (D) context.getMappedObject(sourceObject);
         }
         
-        if (context.isAlreadyMapped(unenhancedSourceObject)) {
-            return (D) context.getMappedObject(unenhancedSourceObject);
+        S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
+        Class<S> sourceClass = (Class<S>) unenhancedSourceObject.getClass();
+        
+        // XXX when it's immutable it's ok to copy by ref
+        if (ClassUtil.isImmutable(unenhancedSourceObject.getClass()) && sourceClass.equals(destinationClass)) {
+            return (D) unenhancedSourceObject;
         }
         
         if (Modifier.isAbstract(destinationClass.getModifiers())) {
             destinationClass = (Class<D>) mapperFactory.lookupConcreteDestinationClass(sourceClass, destinationClass, context);
+            if (destinationClass == null) {
+                throw new MappingException("No concrete class mapping defined for source class " + sourceClass.getName());
+            }
         }
         
-        D destinationObject = newObject(sourceObject, destinationClass);
+        D destinationObject = newObject(unenhancedSourceObject, destinationClass);
         
-        context.cacheMappedObject(unenhancedSourceObject, destinationObject);
+        context.cacheMappedObject(sourceObject, destinationObject);
         
-        map(sourceObject, destinationObject, context);
+        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, destinationClass, context);
+        
         return destinationObject;
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
-        Class<?> sourceClass = unenhanceStrategy.unenhanceClass(sourceObject);
+        if (destinationObject == null)
+            throw new MappingException("[destinationObject] can not be null.");
+        if (sourceObject == null)
+            throw new MappingException("[sourceObject] can not be null.");
+        
+        S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
+        @SuppressWarnings("unchecked")
+        Class<S> sourceClass = (Class<S>) unenhancedSourceObject.getClass();
         Class<?> destinationClass = destinationObject.getClass();
         
         mapDeclaredProperties(sourceObject, destinationObject, sourceClass, destinationClass, context);

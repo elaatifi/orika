@@ -50,7 +50,7 @@ final class MapperGenerator {
     
     public GeneratedMapperBase build(ClassMap<?, ?> classMap) {
         
-        CtClass mapperClass = classPool.makeClass("PA_" + System.identityHashCode(classMap) + Math.round(Math.random()) + "_Mapper");
+        CtClass mapperClass = classPool.makeClass(classMap.getMapperClassName());
         
         try {
             CtClass abstractMapperClass = classPool.getCtClass(GeneratedMapperBase.class.getName());
@@ -102,7 +102,6 @@ final class MapperGenerator {
         
         out.append("\n}");
         
-        // System.out.println(out);
         mapperClass.addMethod(CtNewMethod.make(out.toString(), mapperClass));
     }
     
@@ -141,11 +140,12 @@ final class MapperGenerator {
     }
     
     private boolean generateConverterCode(final CodeSourceBuilder code, final FieldMap fieldMap) {
-        Class<?> destinationClass = fieldMap.getDestination().getType();
-        Property source = fieldMap.getSource();
-        Converter<?, ?> converter = mapperFactory.lookupConverter(source.getType(), destinationClass);
+        Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
+        
+        Class<?> destinationClass = dp.getType();
+        Converter<?, ?> converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
         if (converter != null) {
-            code.ifSourceNotNull(source).convert(fieldMap.getDestination(), source);
+            code.ifSourceNotNull(sp).then().ifDestinationNull(dp).convert(dp, sp).end();
             return true;
         } else {
             return false;
