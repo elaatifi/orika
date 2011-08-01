@@ -155,11 +155,16 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder setObject(Property dp, Property sp, Property ip) {
-        String getter = getGetter(sp);
+        String sourceGetter = getGetter(sp);
         
-        String setter = getSetter(dp);
-        append("destination.%s((%s)mapperFacade.map(source.%s, %s.class, mappingContext));\n", setter, dp.getType().getName(), getter, dp
-                .getType().getName());
+        String destinationGetter = getGetter(dp);
+        String destinationSetter = getSetter(dp);
+        append("if (destination.%s == null) {\n", destinationGetter);
+        append("destination.%s((%s)mapperFacade.map(source.%s, %s.class, mappingContext));\n", destinationSetter, dp.getType().getName(),
+                sourceGetter, dp.getType().getName());
+        append("} else {\n");
+        append("mapperFacade.map(source.%s, destination.%s, mappingContext);\n", sourceGetter, destinationGetter);
+        append("}\n");
         if (ip != null) {
             if (ip.isCollection()) {
                 append("if (destination.%s.%s == null) {\n", getGetter(dp), getGetter(ip));

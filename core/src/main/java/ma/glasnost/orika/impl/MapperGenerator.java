@@ -102,7 +102,13 @@ final class MapperGenerator {
         
         out.append("\n}");
         
-        mapperClass.addMethod(CtNewMethod.make(out.toString(), mapperClass));
+        try {
+            mapperClass.addMethod(CtNewMethod.make(out.toString(), mapperClass));
+        } catch (CannotCompileException e) {
+            System.out.println("An exception occured while compiling: " + out.toString());
+            e.printStackTrace();
+            throw e;
+        }
     }
     
     private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap) throws Exception {

@@ -69,18 +69,21 @@ public class MapperFacadeImpl implements MapperFacade {
             return (D) unenhancedSourceObject;
         }
         
-        if (Modifier.isAbstract(destinationClass.getModifiers())) {
-            destinationClass = (Class<D>) mapperFactory.lookupConcreteDestinationClass(sourceClass, destinationClass, context);
-            if (destinationClass == null) {
+        Class<? extends D> concreteDestinationClass = (Class<? extends D>) mapperFactory.lookupConcreteDestinationClass(sourceClass,
+                destinationClass, context);
+        if (concreteDestinationClass == null) {
+            if (Modifier.isAbstract(destinationClass.getModifiers())) {
                 throw new MappingException("No concrete class mapping defined for source class " + sourceClass.getName());
+            } else {
+                concreteDestinationClass = destinationClass;
             }
         }
         
-        D destinationObject = newObject(unenhancedSourceObject, destinationClass);
+        D destinationObject = newObject(unenhancedSourceObject, concreteDestinationClass);
         
         context.cacheMappedObject(sourceObject, destinationObject);
         
-        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, destinationClass, context);
+        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, concreteDestinationClass, context);
         
         return destinationObject;
     }
@@ -92,11 +95,14 @@ public class MapperFacadeImpl implements MapperFacade {
             throw new MappingException("[sourceObject] can not be null.");
         
         S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
+        D unenhancedDestinationObject = unenhanceStrategy.unenhanceObject(destinationObject);
+        
         @SuppressWarnings("unchecked")
         Class<S> sourceClass = (Class<S>) unenhancedSourceObject.getClass();
-        Class<?> destinationClass = destinationObject.getClass();
+        @SuppressWarnings("unchecked")
+        Class<D> destinationClass = (Class<D>) unenhancedDestinationObject.getClass();
         
-        mapDeclaredProperties(sourceObject, destinationObject, sourceClass, destinationClass, context);
+        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, destinationClass, context);
     }
     
     public <S, D> void map(S sourceObject, D destinationObject) {
