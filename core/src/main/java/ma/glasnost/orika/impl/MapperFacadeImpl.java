@@ -69,6 +69,12 @@ public class MapperFacadeImpl implements MapperFacade {
             return (D) unenhancedSourceObject;
         }
         
+        // Check if we have a converter
+        Converter<S, D> converter = (Converter<S, D>) mapperFactory.lookupConverter(sourceClass, destinationClass);
+        if (converter != null) {
+            return converter.convert(unenhancedSourceObject);
+        }
+        
         Class<? extends D> concreteDestinationClass = (Class<? extends D>) mapperFactory.lookupConcreteDestinationClass(sourceClass,
                 destinationClass, context);
         if (concreteDestinationClass == null) {
