@@ -60,8 +60,12 @@ public final class PropertyUtil {
                         property.setGetter(pd.getReadMethod().getName());
                     if (pd.getWriteMethod() != null)
                         property.setSetter(pd.getWriteMethod().getName());
-                    property.setType(pd.getReadMethod().getDeclaringClass().getDeclaredMethod(property.getGetter(), new Class[0])
-                            .getReturnType());
+                    try {
+                        property.setType(pd.getReadMethod().getDeclaringClass().getDeclaredMethod(property.getGetter(), new Class[0])
+                                .getReturnType());
+                    } catch (Exception e) {
+                        property.setType(pd.getPropertyType());
+                    }
                     properties.put(pd.getName(), property);
                     
                     if (pd.getReadMethod() != null) {
