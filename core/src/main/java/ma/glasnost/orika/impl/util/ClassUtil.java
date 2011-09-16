@@ -38,7 +38,7 @@ public final class ClassUtil {
 	@SuppressWarnings("unchecked")
 	private static Set<Class<?>> getImmutablesTypes() {
 		return new HashSet<Class<?>>(Arrays.asList(String.class, Integer.class, Long.class, Boolean.class, Character.class,
-				Byte.class, Double.class, Float.class, BigDecimal.class, Integer.TYPE, Boolean.TYPE, Long.TYPE, Float.TYPE,
+				Byte.class, Double.class, Float.class, BigDecimal.class, Byte.TYPE, Integer.TYPE, Boolean.TYPE, Long.TYPE, Float.TYPE,
 				Double.TYPE, Character.TYPE, Date.class, java.sql.Date.class));
 
 	}
