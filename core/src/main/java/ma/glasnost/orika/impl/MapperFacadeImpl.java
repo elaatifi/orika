@@ -108,7 +108,7 @@ public class MapperFacadeImpl implements MapperFacade {
         @SuppressWarnings("unchecked")
         Class<D> destinationClass = (Class<D>) unenhancedDestinationObject.getClass();
         
-        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, destinationClass, context);
+        mapDeclaredProperties(unenhancedSourceObject, unenhancedDestinationObject, sourceClass, destinationClass, context);
     }
     
     public <S, D> void map(S sourceObject, D destinationObject) {
