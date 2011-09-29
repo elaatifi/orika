@@ -58,17 +58,25 @@ public class CodeSourceBuilder {
     public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip) {
         Class<?> destinationElementClass = dp.getParameterizedType();
         String destinationCollection = "List";
+        String newStatement = "new java.util.ArrayList()";
         if (List.class.isAssignableFrom(dp.getType())) {
             destinationCollection = "List";
+            newStatement = "new java.util.ArrayList()";
         } else if (Set.class.isAssignableFrom(dp.getType())) {
             destinationCollection = "Set";
+            newStatement = "new java.util.HashSet()";
         }
         
-        String getter = getGetter(sp);
-        String setter = getSetter(dp);
+        String sourceGetter = getGetter(sp);
+        String destinationGetter = getGetter(dp);
+        String destinationSetter = getSetter(dp);
         
-        append("destination.%s(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", setter, destinationCollection, getter,
-                destinationElementClass.getName());
+        append("if (destination.%s == null) {\n", destinationGetter);
+        append("destination.%s(%s);\n", destinationSetter, newStatement);
+        append("}\n");
+        append("destination.%s.clear();\n", destinationGetter);
+        append("destination.%s.addAll(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", destinationGetter,
+                destinationCollection, sourceGetter, destinationElementClass.getName());
         if (ip != null) {
             if (ip.isCollection()) {
                 append("for (java.util.Iterator orikaIterator = destination.%s.iterator(); orikaIterator.hasNext();) {\n", getGetter(dp));
