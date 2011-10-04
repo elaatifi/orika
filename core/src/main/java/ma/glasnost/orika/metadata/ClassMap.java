@@ -79,30 +79,37 @@ public class ClassMap<A, B> {
     @Override
     public int hashCode() {
         int result = 31;
-        result = result + ((aType == null) ? 0 : aType.hashCode());
-        result = result + ((bType == null) ? 0 : bType.hashCode());
+        result = result + (aType == null ? 0 : aType.hashCode());
+        result = result + (bType == null ? 0 : bType.hashCode());
         return result;
     }
     
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
-        ClassMap<?, ?> other = (ClassMap<?, ?>) obj;
+        }
+        final ClassMap<?, ?> other = (ClassMap<?, ?>) obj;
         if (aType == null) {
-            if (other.aType != null)
+            if (other.aType != null) {
                 return false;
-        } else if (!aType.equals(other.aType))
+            }
+        } else if (!aType.equals(other.aType)) {
             return false;
+        }
         if (bType == null) {
-            if (other.bType != null)
+            if (other.bType != null) {
                 return false;
-        } else if (!bType.equals(other.bType))
+            }
+        } else if (!bType.equals(other.bType)) {
             return false;
+        }
         return true;
     }
     

@@ -82,19 +82,24 @@ public class Property {
     
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (o == null || getClass() != o.getClass()) {
             return false;
+        }
         
-        Property property = (Property) o;
+        final Property property = (Property) o;
         
-        if (!expression.equals(property.expression))
+        if (!expression.equals(property.expression)) {
             return false;
-        if (getter != null ? !getter.equals(property.getter) : property.getter != null)
+        }
+        if (getter != null ? !getter.equals(property.getter) : property.getter != null) {
             return false;
-        if (setter != null ? !setter.equals(property.setter) : property.setter != null)
+        }
+        if (setter != null ? !setter.equals(property.setter) : property.setter != null) {
             return false;
+        }
         return !(type != null && !type.equals(property.type));
     }
     

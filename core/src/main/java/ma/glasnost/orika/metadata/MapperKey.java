@@ -30,20 +30,22 @@ public class MapperKey {
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
+		if (this == o) {
+            return true;
+        }
+		if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
-		MapperKey mapperKey = (MapperKey) o;
+		final MapperKey mapperKey = (MapperKey) o;
 
-		return (equals(aType, mapperKey.aType) && equals(bType, mapperKey.bType))
-				|| (equals(aType, mapperKey.bType) || equals(bType, mapperKey.aType));
+		return equals(aType, mapperKey.aType) && equals(bType, mapperKey.bType)
+				|| equals(aType, mapperKey.bType) || equals(bType, mapperKey.aType);
 
 	}
 
 	private boolean equals(Class<?> a, Class<?> b) {
-		return (a == null ? b == null : a.equals(b));
+		return a == null ? b == null : a.equals(b);
 	}
 
 	@Override

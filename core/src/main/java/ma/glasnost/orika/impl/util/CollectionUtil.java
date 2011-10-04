@@ -25,7 +25,7 @@ final class CollectionUtil {
 	}
 
 	public static boolean equalsAny(Object obj, Object... objects) {
-		for (Object o : objects) {
+		for (final Object o : objects) {
 			if (obj.equals(o)) {
 				return true;
 			}

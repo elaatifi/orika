@@ -50,10 +50,10 @@ final class MapperGenerator {
     
     public GeneratedMapperBase build(ClassMap<?, ?> classMap) {
         
-        CtClass mapperClass = classPool.makeClass(classMap.getMapperClassName());
+        final CtClass mapperClass = classPool.makeClass(classMap.getMapperClassName());
         
         try {
-            CtClass abstractMapperClass = classPool.getCtClass(GeneratedMapperBase.class.getName());
+            final CtClass abstractMapperClass = classPool.getCtClass(GeneratedMapperBase.class.getName());
             mapperClass.setSuperclass(abstractMapperClass);
             addGetTypeMethod(mapperClass, "getAType", classMap.getAType());
             addGetTypeMethod(mapperClass, "getBType", classMap.getBType());
@@ -61,14 +61,14 @@ final class MapperGenerator {
             addMapMethod(mapperClass, false, classMap);
             
             return (GeneratedMapperBase) mapperClass.toClass().newInstance();
-        } catch (Exception e) {
+        } catch (final Exception e) {
             throw new MappingException(e);
         }
     }
     
     private void addMapMethod(CtClass mapperClass, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
-        CodeSourceBuilder out = new CodeSourceBuilder();
-        String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
+        final CodeSourceBuilder out = new CodeSourceBuilder();
+        final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("public void ").append(mapMethod)
                 .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {", MappingContext.class.getName());
         
@@ -93,7 +93,7 @@ final class MapperGenerator {
             if (!fieldMap.isIgnored()) {
                 try {
                     generateFieldMapCode(out, fieldMap);
-                } catch (Exception e) {
+                } catch (final Exception e) {
                     throw new MappingException(e);
                 }
             }
@@ -104,7 +104,7 @@ final class MapperGenerator {
         
         try {
             mapperClass.addMethod(CtNewMethod.make(out.toString(), mapperClass));
-        } catch (CannotCompileException e) {
+        } catch (final CannotCompileException e) {
             System.out.println("An exception occured while compiling: " + out.toString());
             e.printStackTrace();
             throw e;
@@ -112,7 +112,7 @@ final class MapperGenerator {
     }
     
     private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap) throws Exception {
-        Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
+        final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         
         if (sp.getGetter() == null || dp.getSetter() == null) {
             return;
@@ -138,18 +138,20 @@ final class MapperGenerator {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setObject(dp, sp, fieldMap.getInverse()).end();
             }
             
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (fieldMap.isConfigured())
+             {
                 throw e;
             // elsewise ignore
+            }
         }
     }
     
     private boolean generateConverterCode(final CodeSourceBuilder code, final FieldMap fieldMap) {
-        Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
+        final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         
-        Class<?> destinationClass = dp.getType();
-        Converter<?, ?> converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
+        final Class<?> destinationClass = dp.getType();
+        final Converter<?, ?> converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
         if (converter != null) {
             code.ifSourceNotNull(sp).then().ifDestinationNull(dp).convert(dp, sp).end();
             return true;
@@ -159,7 +161,7 @@ final class MapperGenerator {
     }
     
     private void addGetTypeMethod(CtClass mapperClass, String methodName, Class<?> value) throws CannotCompileException {
-        StringBuilder output = new StringBuilder();
+        final StringBuilder output = new StringBuilder();
         output.append("\n").append("public java.lang.Class ").append(methodName).append("() { return ").append(value.getName())
                 .append(".class; }");
         mapperClass.addMethod(CtNewMethod.make(output.toString(), mapperClass));

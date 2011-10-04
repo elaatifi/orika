@@ -65,7 +65,7 @@ public class DefaultMapperFactory implements MapperFactory {
         objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
         
         if (classMaps != null) {
-            for (ClassMap<?, ?> classMap : classMaps) {
+            for (final ClassMap<?, ?> classMap : classMaps) {
                 registerClassMap(classMap);
             }
         }
@@ -79,7 +79,7 @@ public class DefaultMapperFactory implements MapperFactory {
         try {
             Class.forName("org.hibernate.proxy.HibernateProxy");
             return new HibernateUnenhanceStrategy();
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             // TODO add warning
             return new UnenhanceStrategy() {
                 
@@ -97,7 +97,7 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
-            ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault().toClassMap();
+            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault().toClassMap();
             buildMapper(classMap);
         }
         return mappersRegistry.get(mapperKey);
@@ -130,18 +130,18 @@ public class DefaultMapperFactory implements MapperFactory {
     
     @SuppressWarnings("unchecked")
     public <S, D> Class<? extends D> lookupConcreteDestinationClass(Class<S> sourceClass, Class<D> destinationClass, MappingContext context) {
-        Class<? extends D> concreteClass = context.getConcreteClass(sourceClass, destinationClass);
+        final Class<? extends D> concreteClass = context.getConcreteClass(sourceClass, destinationClass);
         
         if (concreteClass != null) {
             return concreteClass;
         }
         
-        Set<Class<?>> destinationSet = aToBRegistry.get(sourceClass);
+        final Set<Class<?>> destinationSet = aToBRegistry.get(sourceClass);
         if (destinationSet == null || destinationSet.isEmpty()) {
             return null;
         }
         
-        for (Class<?> clazz : destinationSet) {
+        for (final Class<?> clazz : destinationSet) {
             if (destinationClass.isAssignableFrom(clazz)) {
                 return (Class<? extends D>) clazz;
                 
@@ -155,7 +155,7 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public void build() {
-        for (ClassMap<?, ?> classMap : classMaps) {
+        for (final ClassMap<?, ?> classMap : classMaps) {
             buildMapper(classMap);
         }
     }
@@ -164,11 +164,12 @@ public class DefaultMapperFactory implements MapperFactory {
         register(classMap.getAType(), classMap.getBType());
         register(classMap.getBType(), classMap.getAType());
         
-        MapperKey mapperKey = new MapperKey(classMap.getAType(), classMap.getBType());
-        GeneratedMapperBase mapper = this.mapperGenerator.build(classMap);
+        final MapperKey mapperKey = new MapperKey(classMap.getAType(), classMap.getBType());
+        final GeneratedMapperBase mapper = this.mapperGenerator.build(classMap);
         mapper.setMapperFacade(mapperFacade);
         if (classMap.getCustomizedMapper() != null) {
             @SuppressWarnings("unchecked")
+            final
             Mapper<Object, Object> customizedMapper = (Mapper<Object, Object>) classMap.getCustomizedMapper();
             mapper.setCustomMapper(customizedMapper);
         }

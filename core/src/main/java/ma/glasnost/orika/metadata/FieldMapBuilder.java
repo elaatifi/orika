@@ -40,21 +40,21 @@ public class FieldMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> add() {
-        FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true);
+        final FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true);
         classMapBuilder.addFieldMap(fieldMap);
         
         return classMapBuilder;
     }
     
     public FieldMapBuilder<A, B> aInverse(String aInverse) {
-        Class<?> type = aProperty.isCollection() ? aProperty.getParameterizedType() : aProperty.getType();
+        final Class<?> type = aProperty.isCollection() ? aProperty.getParameterizedType() : aProperty.getType();
         aInverseProperty = classMapBuilder.resolveProperty(type, aInverse);
         
         return this;
     }
     
     public FieldMapBuilder<A, B> bInverse(String bInverse) {
-        Class<?> type = bProperty.isCollection() ? bProperty.getParameterizedType() : bProperty.getType();
+        final Class<?> type = bProperty.isCollection() ? bProperty.getParameterizedType() : bProperty.getType();
         bInverseProperty = classMapBuilder.resolveProperty(type, bInverse);
         
         return this;

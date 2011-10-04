@@ -27,8 +27,8 @@ public class HibernateUnenhanceStrategy implements UnenhanceStrategy {
     @SuppressWarnings("unchecked")
     public <T> T unenhanceObject(T object) {
         if (object instanceof HibernateProxy) {
-            HibernateProxy hibernateProxy = (HibernateProxy) object;
-            LazyInitializer lazyInitializer = hibernateProxy.getHibernateLazyInitializer();
+            final HibernateProxy hibernateProxy = (HibernateProxy) object;
+            final LazyInitializer lazyInitializer = hibernateProxy.getHibernateLazyInitializer();
             
             return (T) lazyInitializer.getImplementation();
         }

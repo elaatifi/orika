@@ -44,48 +44,51 @@ public final class PropertyUtil {
     }
     
     public static Map<String, Property> getProperties(Class<?> clazz) {
-        Map<String, Property> properties = new HashMap<String, Property>();
+        final Map<String, Property> properties = new HashMap<String, Property>();
         if (PROPERTIES_CACHE.containsKey(clazz)) {
             return PROPERTIES_CACHE.get(clazz);
         }
         BeanInfo beanInfo;
         try {
             beanInfo = Introspector.getBeanInfo(clazz);
-            for (PropertyDescriptor pd : beanInfo.getPropertyDescriptors()) {
+            for (final PropertyDescriptor pd : beanInfo.getPropertyDescriptors()) {
                 try {
-                    Property property = new Property();
+                    final Property property = new Property();
                     property.setExpression(pd.getName());
                     property.setName(pd.getName());
-                    if (pd.getReadMethod() != null)
+                    if (pd.getReadMethod() != null) {
                         property.setGetter(pd.getReadMethod().getName());
-                    if (pd.getWriteMethod() != null)
+                    }
+                    if (pd.getWriteMethod() != null) {
                         property.setSetter(pd.getWriteMethod().getName());
+                    }
                     try {
                         property.setType(pd.getReadMethod().getDeclaringClass().getDeclaredMethod(property.getGetter(), new Class[0])
                                 .getReturnType());
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         property.setType(pd.getPropertyType());
                     }
                     properties.put(pd.getName(), property);
                     
                     if (pd.getReadMethod() != null) {
-                        Method method = pd.getReadMethod();
+                        final Method method = pd.getReadMethod();
                         if (property.getType() != null && Collection.class.isAssignableFrom(property.getType())) {
                             property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType())
                                     .getActualTypeArguments()[0]);
                         }
                     } else if (pd.getWriteMethod() != null) {
-                        Method method = pd.getWriteMethod();
+                        final Method method = pd.getWriteMethod();
                         
-                        if (Collection.class.isAssignableFrom(property.getType()) && method.getGenericParameterTypes().length > 0)
+                        if (Collection.class.isAssignableFrom(property.getType()) && method.getGenericParameterTypes().length > 0) {
                             property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[0])
                                     .getActualTypeArguments()[0]);
+                        }
                     }
-                } catch (Throwable e) {
+                } catch (final Throwable e) {
                     e.printStackTrace();
                 }
             }
-        } catch (IntrospectionException e) {
+        } catch (final IntrospectionException e) {
             /* Ignore */
         }
         
@@ -96,23 +99,26 @@ public final class PropertyUtil {
     public static NestedProperty getNestedProperty(Class<?> clazz, String p) {
         Map<String, Property> properties = getProperties(clazz);
         Property property = null;
-        List<Property> path = new ArrayList<Property>();
+        final List<Property> path = new ArrayList<Property>();
         if (p.indexOf('.') != -1) {
-            String[] ps = p.split("\\.");
+            final String[] ps = p.split("\\.");
             int i = 0;
             while (i < ps.length) {
-                if (!properties.containsKey(ps[i]))
+                if (!properties.containsKey(ps[i])) {
                     throw new RuntimeException(clazz.getName() + " do not contains [" + ps[i] + "] property.");
+                }
                 property = properties.get(ps[i]);
                 properties = getProperties(property.getType());
                 i++;
-                if (i < ps.length)
+                if (i < ps.length) {
                     path.add(property);
+                }
             }
         }
         
-        if (property == null)
+        if (property == null) {
             throw new RuntimeException(clazz.getName() + " do not contains [" + p + "] property.");
+        }
         
         return new NestedProperty(p, property, path.toArray(new Property[path.size()]));
     }

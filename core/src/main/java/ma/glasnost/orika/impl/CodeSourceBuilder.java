@@ -37,9 +37,9 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder convert(Property destination, Property source) {
-        String getter = getGetter(source);
-        String setter = getSetter(destination);
-        Class<?> destinationClass = destination.getType();
+        final String getter = getGetter(source);
+        final String setter = getSetter(destination);
+        final Class<?> destinationClass = destination.getType();
         append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class)); \n", setter, destinationClass.getName(), getter,
                 destinationClass.getName());
         return this;
@@ -47,8 +47,8 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder set(Property d, Property s) {
-        String getter = getGetter(s);
-        String setter = getSetter(d);
+        final String getter = getGetter(s);
+        final String setter = getSetter(d);
         
         append("destination.%s(source.%s);", setter, getter);
         
@@ -56,7 +56,7 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip) {
-        Class<?> destinationElementClass = dp.getParameterizedType();
+        final Class<?> destinationElementClass = dp.getParameterizedType();
         String destinationCollection = "List";
         String newStatement = "new java.util.ArrayList()";
         if (List.class.isAssignableFrom(dp.getType())) {
@@ -67,9 +67,9 @@ public class CodeSourceBuilder {
             newStatement = "new java.util.HashSet()";
         }
         
-        String sourceGetter = getGetter(sp);
-        String destinationGetter = getGetter(dp);
-        String destinationSetter = getSetter(dp);
+        final String sourceGetter = getGetter(sp);
+        final String destinationGetter = getGetter(dp);
+        final String destinationSetter = getSetter(dp);
         
         append("if (destination.%s == null) {\n", destinationGetter);
         append("destination.%s(%s);\n", destinationSetter, newStatement);
@@ -133,27 +133,27 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder setWrapper(Property dp, Property sp) {
-        String getter = getGetter(sp);
-        String setter = getSetter(dp);
+        final String getter = getGetter(sp);
+        final String setter = getSetter(dp);
         
         append("destination.%s(%s.valueOf((%s) source.%s));\n", setter, dp.getType().getName(), getPrimitiveType(dp.getType()), getter);
         return this;
     }
     
     public CodeSourceBuilder setPrimitive(Property dp, Property sp) {
-        String getter = getGetter(sp);
-        String setter = getSetter(dp);
+        final String getter = getGetter(sp);
+        final String setter = getSetter(dp);
         
         append("destination.%s(source.%s.%sValue());\n", setter, getter, getPrimitiveType(dp.getType()));
         return this;
     }
     
     public CodeSourceBuilder setArray(Property dp, Property sp) {
-        String getSizeCode = sp.getType().isArray() ? "length" : "size()";
-        String castSource = sp.getType().isArray() ? "Object[]" : "";
-        String paramType = dp.getType().getComponentType().getName();
-        String getter = getGetter(sp);
-        String setter = getSetter(dp);
+        final String getSizeCode = sp.getType().isArray() ? "length" : "size()";
+        final String castSource = sp.getType().isArray() ? "Object[]" : "";
+        final String paramType = dp.getType().getComponentType().getName();
+        final String getter = getGetter(sp);
+        final String setter = getSetter(dp);
         
         append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode).append(
                 "mapperFacade.mapAsArray((Object[])%s, (%s)source.%s, %s.class, mappingContext);", dp.getName(), castSource, getter,
@@ -163,10 +163,10 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder setObject(Property dp, Property sp, Property ip) {
-        String sourceGetter = getGetter(sp);
+        final String sourceGetter = getGetter(sp);
         
-        String destinationGetter = getGetter(dp);
-        String destinationSetter = getSetter(dp);
+        final String destinationGetter = getGetter(dp);
+        final String destinationSetter = getSetter(dp);
         append("if (destination.%s == null) {\n", destinationGetter);
         append("destination.%s((%s)mapperFacade.map(source.%s, %s.class, mappingContext));\n", destinationSetter, dp.getType().getName(),
                 sourceGetter, dp.getType().getName());
@@ -199,10 +199,10 @@ public class CodeSourceBuilder {
     public CodeSourceBuilder ifSourceNotNull(Property sp) {
         
         if (sp.hasPath()) {
-            StringBuilder sb = new StringBuilder("source");
+            final StringBuilder sb = new StringBuilder("source");
             int i = 0;
             append("if(");
-            for (Property p : sp.getPath()) {
+            for (final Property p : sp.getPath()) {
                 if (i != 0) {
                     append(" && ");
                 }
@@ -230,13 +230,14 @@ public class CodeSourceBuilder {
      * @return CodeSourceBuilder
      */
     public CodeSourceBuilder ifDestinationNull(Property property) {
-        if (!property.hasPath())
+        if (!property.hasPath()) {
             return this;
+        }
         
-        StringBuilder destinationBase = new StringBuilder("destination");
+        final StringBuilder destinationBase = new StringBuilder("destination");
         
-        for (Property p : property.getPath()) {
-            int modifier = p.getType().getModifiers();
+        for (final Property p : property.getPath()) {
+            final int modifier = p.getType().getModifiers();
             if (Modifier.isAbstract(modifier) || Modifier.isInterface(modifier)) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + property.toString());
             }
@@ -251,8 +252,8 @@ public class CodeSourceBuilder {
     }
     
     private String getLongGetter(NestedProperty property) {
-        StringBuilder sb = new StringBuilder();
-        for (Property p : property.getPath()) {
+        final StringBuilder sb = new StringBuilder();
+        for (final Property p : property.getPath()) {
             sb.append(".").append(p.getGetter()).append("()");
         }
         sb.append(".").append(property.getGetter()).append("()");
@@ -261,8 +262,8 @@ public class CodeSourceBuilder {
     }
     
     private String getLongSetter(NestedProperty property) {
-        StringBuilder sb = new StringBuilder();
-        for (Property p : property.getPath()) {
+        final StringBuilder sb = new StringBuilder();
+        for (final Property p : property.getPath()) {
             sb.append(".").append(p.getGetter()).append("()");
         }
         sb.append(".").append(property.getSetter());

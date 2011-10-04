@@ -51,7 +51,7 @@ public final class ClassUtil {
 		if (clazz.isInterface()) {
 			return false;
 		}
-		String className = clazz.getName();
+		final String className = clazz.getName();
 		return className.contains(CGLIB_ID) || className.startsWith(JAVASSIST_PACKAGE) || className.contains(JAVASSIST_NAME);
 	}
 }

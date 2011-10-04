@@ -34,7 +34,7 @@ public class MappingContext {
     @SuppressWarnings("unchecked")
     public <S, D> Class<? extends D> getConcreteClass(Class<S> sourceClass, Class<D> destinationClass) {
         
-        Class<?> clazz = mapping.get(sourceClass);
+        final Class<?> clazz = mapping.get(sourceClass);
         if (clazz != null && destinationClass.isAssignableFrom(clazz)) {
             return (Class<? extends D>) clazz;
         }

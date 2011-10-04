@@ -58,7 +58,7 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public FieldMapBuilder<A, B> fieldMap(String a, String b) {
-        FieldMapBuilder<A, B> fieldMapBuilder = new FieldMapBuilder<A, B>(this, a, b);
+        final FieldMapBuilder<A, B> fieldMapBuilder = new FieldMapBuilder<A, B>(this, a, b);
         
         return fieldMapBuilder;
     }
@@ -70,7 +70,7 @@ public final class ClassMapBuilder<A, B> {
     
     public ClassMapBuilder<A, B> byDefault() {
         
-        for (String propertyName : aProperties.keySet()) {
+        for (final String propertyName : aProperties.keySet()) {
             if (bProperties.containsKey(propertyName) && !propertiesCache.contains(propertyName)) {
                 fieldMap(propertyName).add();
             }
@@ -92,7 +92,7 @@ public final class ClassMapBuilder<A, B> {
         if (PropertyUtil.isExpression(expr)) {
             property = PropertyUtil.getNestedProperty(type, expr);
         } else {
-            Map<String, Property> properties = PropertyUtil.getProperties(type);
+            final Map<String, Property> properties = PropertyUtil.getProperties(type);
             if (properties.containsKey(expr)) {
                 property = properties.get(expr);
             } else {
