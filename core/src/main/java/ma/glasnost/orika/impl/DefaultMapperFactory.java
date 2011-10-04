@@ -18,8 +18,10 @@
 
 package ma.glasnost.orika.impl;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +38,8 @@ import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.proxy.HibernateUnenhanceStrategy;
 import ma.glasnost.orika.proxy.UnenhanceStrategy;
+
+import org.hibernate.MappingException;
 
 /**
  * The mapper factory is the heart of Orika, a small container where metadata
@@ -158,6 +162,26 @@ public class DefaultMapperFactory implements MapperFactory {
         for (final ClassMap<?, ?> classMap : classMaps) {
             buildMapper(classMap);
         }
+        
+        for (final ClassMap<?, ?> classMap : classMaps) {
+            setMapperParents(classMap);
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    private void setMapperParents(ClassMap<?, ?> classMap) {
+        Mapper<Object, Object> mapper = lookupMapper(new MapperKey(classMap.getAType(), classMap.getBType()));
+        
+        List<Mapper<Object, Object>> parentMappers = new ArrayList<Mapper<Object, Object>>();
+        
+        for (MapperKey parentMapperKey : classMap.getUsedMappers()) {
+            Mapper<Object, Object> parentMapper = lookupMapper(parentMapperKey);
+            if (parentMapper == null) {
+                throw new MappingException("Can not find used mappers for : " + classMap.getMapperClassName());
+            }
+            parentMappers.add(parentMapper);
+        }
+        mapper.setUsedMappers(parentMappers.toArray(new Mapper[parentMappers.size()]));
     }
     
     private void buildMapper(ClassMap<?, ?> classMap) {
@@ -169,8 +193,7 @@ public class DefaultMapperFactory implements MapperFactory {
         mapper.setMapperFacade(mapperFacade);
         if (classMap.getCustomizedMapper() != null) {
             @SuppressWarnings("unchecked")
-            final
-            Mapper<Object, Object> customizedMapper = (Mapper<Object, Object>) classMap.getCustomizedMapper();
+            final Mapper<Object, Object> customizedMapper = (Mapper<Object, Object>) classMap.getCustomizedMapper();
             mapper.setCustomMapper(customizedMapper);
         }
         mappersRegistry.put(mapperKey, mapper);

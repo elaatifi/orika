@@ -28,15 +28,17 @@ package ma.glasnost.orika;
  * @see MapperFacade
  */
 public interface Mapper<A, B> {
-
-	void mapAtoB(A a, B b, MappingContext context);
-
-	void mapBtoA(B b, A a, MappingContext context);
-
-	void setMapperFacade(MapperFacade mapper);
-
-	Class<A> getAType();
-
-	Class<B> getBType();
-
+    
+    void mapAtoB(A a, B b, MappingContext context);
+    
+    void mapBtoA(B b, A a, MappingContext context);
+    
+    void setMapperFacade(MapperFacade mapper);
+    
+    void setUsedMappers(Mapper<Object, Object>[] mapper);
+    
+    Class<A> getAType();
+    
+    Class<B> getBType();
+    
 }

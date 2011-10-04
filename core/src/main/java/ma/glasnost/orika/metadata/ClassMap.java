@@ -18,23 +18,28 @@
 
 package ma.glasnost.orika.metadata;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.Set;
 
 import ma.glasnost.orika.Mapper;
 
 public class ClassMap<A, B> {
     
-    final Class<A> aType;
-    final Class<B> bType;
-    final Set<FieldMap> fieldsMapping;
-    Mapper<A, B> customizedMapper;
+    final private Class<A> aType;
+    final private Class<B> bType;
+    final private Set<FieldMap> fieldsMapping;
+    final private Set<MapperKey> usedMappers;
     
-    public ClassMap(Class<A> aType, Class<B> bType) {
+    final private Mapper<A, B> customizedMapper;
+    
+    public ClassMap(Class<A> aType, Class<B> bType, Set<FieldMap> fieldsMapping, Mapper<A, B> customizedMapper, Set<MapperKey> usedMappers) {
         this.aType = aType;
         this.bType = bType;
         
-        fieldsMapping = new HashSet<FieldMap>();
+        this.customizedMapper = customizedMapper;
+        
+        this.fieldsMapping = Collections.unmodifiableSet(fieldsMapping);
+        this.usedMappers = Collections.unmodifiableSet(usedMappers);
     }
     
     public void addFieldMap(FieldMap fieldMap) {
@@ -65,10 +70,6 @@ public class ClassMap<A, B> {
         return customizedMapper;
     }
     
-    public void setCustomizedMapper(Mapper<A, B> customizedMapper) {
-        this.customizedMapper = customizedMapper;
-    }
-    
     public String getMapperClassName() {
         // TODO This should be a strategy defined at the MapperGenerator level,
         // something like mapperClassNameStrategy.getMapperClassName(ClassMap
@@ -82,6 +83,10 @@ public class ClassMap<A, B> {
         result = result + (aType == null ? 0 : aType.hashCode());
         result = result + (bType == null ? 0 : bType.hashCode());
         return result;
+    }
+    
+    public Set<MapperKey> getUsedMappers() {
+        return usedMappers;
     }
     
     @Override

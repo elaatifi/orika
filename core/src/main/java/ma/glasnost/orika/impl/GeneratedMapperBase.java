@@ -20,13 +20,45 @@ package ma.glasnost.orika.impl;
 
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperBase;
+import ma.glasnost.orika.MappingContext;
 
 public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
     
     protected Mapper<Object, Object> customMapper;
     
+    private Mapper<Object, Object>[] usedMappers;
+    
     public void setCustomMapper(Mapper<Object, Object> customMapper) {
         this.customMapper = customMapper;
         this.customMapper.setMapperFacade(mapperFacade);
     }
+    
+    protected Mapper<Object, Object>[] getUsedMappers() {
+        return usedMappers;
+    }
+    
+    public void setUsedMappers(Mapper<Object, Object>[] usedMappers) {
+        this.usedMappers = usedMappers;
+    }
+    
+    @Override
+    public void mapAtoB(Object a, Object b, MappingContext context) {
+        if (usedMappers == null) {
+            return;
+        }
+        for (Mapper<Object, Object> mapper : usedMappers) {
+            mapper.mapAtoB(a, b, context);
+        }
+    }
+    
+    @Override
+    public void mapBtoA(Object b, Object a, MappingContext context) {
+        if (usedMappers == null) {
+            return;
+        }
+        for (Mapper<Object, Object> mapper : usedMappers) {
+            mapper.mapBtoA(a, b, context);
+        }
+    }
+    
 }

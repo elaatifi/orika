@@ -28,16 +28,24 @@ import ma.glasnost.orika.impl.util.PropertyUtil;
 
 public final class ClassMapBuilder<A, B> {
     
-    private final ClassMap<A, B> classMap;
     private final Map<String, Property> aProperties;
     private final Map<String, Property> bProperties;
     private final Set<String> propertiesCache;
+    final private Class<A> aType;
+    final private Class<B> bType;
+    final private Set<FieldMap> fieldsMapping;
+    final private Set<MapperKey> usedMappers;
+    private Mapper<A, B> customizedMapper;
     
-    private ClassMapBuilder(ClassMap<A, B> classMap) {
-        this.classMap = classMap;
-        aProperties = PropertyUtil.getProperties(classMap.aType);
-        bProperties = PropertyUtil.getProperties(classMap.bType);
+    private ClassMapBuilder(Class<A> aType, Class<B> bType) {
+        aProperties = PropertyUtil.getProperties(aType);
+        bProperties = PropertyUtil.getProperties(bType);
         propertiesCache = new HashSet<String>();
+        
+        this.aType = aType;
+        this.bType = bType;
+        this.fieldsMapping = new HashSet<FieldMap>();
+        this.usedMappers = new HashSet<MapperKey>();
     }
     
     /**
@@ -64,7 +72,12 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> customize(Mapper<A, B> customizedMapper) {
-        classMap.setCustomizedMapper(customizedMapper);
+        this.customizedMapper = customizedMapper;
+        return this;
+    }
+    
+    public ClassMapBuilder<A, B> use(Class<?> aParentClass, Class<?> bParentClass) {
+        usedMappers.add(new MapperKey(aParentClass, bParentClass));
         return this;
     }
     
@@ -80,11 +93,11 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public ClassMap<A, B> toClassMap() {
-        return classMap;
+        return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers);
     }
     
     public static <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
-        return new ClassMapBuilder<A, B>(new ClassMap<A, B>(aType, bType));
+        return new ClassMapBuilder<A, B>(aType, bType);
     }
     
     Property resolveProperty(Class<?> type, String expr) {
@@ -106,11 +119,11 @@ public final class ClassMapBuilder<A, B> {
     Property resolveAProperty(String expr) {
         Property property;
         if (PropertyUtil.isExpression(expr)) {
-            property = PropertyUtil.getNestedProperty(classMap.getAType(), expr);
+            property = PropertyUtil.getNestedProperty(aType, expr);
         } else if (aProperties.containsKey(expr)) {
             property = aProperties.get(expr);
         } else {
-            throw new MappingException(expr + " do not belongs to " + classMap.getATypeName());
+            throw new MappingException(expr + " do not belongs to " + aType.getSimpleName());
         }
         
         return property;
@@ -119,18 +132,18 @@ public final class ClassMapBuilder<A, B> {
     Property resolveBProperty(String expr) {
         Property property;
         if (PropertyUtil.isExpression(expr)) {
-            property = PropertyUtil.getNestedProperty(classMap.getBType(), expr);
+            property = PropertyUtil.getNestedProperty(bType, expr);
         } else if (bProperties.containsKey(expr)) {
             property = bProperties.get(expr);
         } else {
-            throw new MappingException(expr + " do not belongs to " + classMap.getBTypeName());
+            throw new MappingException(expr + " do not belongs to " + bType.getSimpleName());
         }
         
         return property;
     }
     
     void addFieldMap(FieldMap fieldMap) {
-        classMap.addFieldMap(fieldMap);
+        this.fieldsMapping.add(fieldMap);
         propertiesCache.add(fieldMap.getSource().getExpression());
     }
     

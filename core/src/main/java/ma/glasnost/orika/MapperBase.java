@@ -26,30 +26,38 @@ package ma.glasnost.orika;
  * 
  */
 public abstract class MapperBase<A, B> implements Mapper<A, B> {
-
-	protected MapperFacade mapperFacade;
-
-	public MapperBase() {
-
-	}
-
-	public void mapAtoB(A a, B b, MappingContext context) {
-		/* */
-	}
-
-	public void mapBtoA(B b, A a, MappingContext context) {
-		/* */
-	}
-
-	public void setMapperFacade(MapperFacade mapper) {
-		this.mapperFacade = mapper;
-	}
-
-	public Class<A> getAType() {
-		throw new IllegalStateException("Should not be called for a user custom mapper.");
-	}
-
-	public Class<B> getBType() {
-		throw new IllegalStateException("Should not be called for a user custom mapper.");
-	}
+    
+    protected MapperFacade mapperFacade;
+    
+    public MapperBase() {
+        
+    }
+    
+    public void mapAtoB(A a, B b, MappingContext context) {
+        /* */
+    }
+    
+    public void mapBtoA(B b, A a, MappingContext context) {
+        /* */
+    }
+    
+    public void setMapperFacade(MapperFacade mapper) {
+        this.mapperFacade = mapper;
+    }
+    
+    public Class<A> getAType() {
+        throw throwShouldNotCalledCustomMapper();
+    }
+    
+    public Class<B> getBType() {
+        throw throwShouldNotCalledCustomMapper();
+    }
+    
+    public void setUsedMappers(Mapper<Object, Object>[] mapper) {
+        throw throwShouldNotCalledCustomMapper();
+    }
+    
+    private IllegalStateException throwShouldNotCalledCustomMapper() {
+        return new IllegalStateException("Should not be called for a user custom mapper.");
+    }
 }
