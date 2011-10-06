@@ -39,7 +39,7 @@ public class UsedMappersTestCase {
         
         {
             ClassMapBuilder<B, D> classMapBuilder = ClassMapBuilder.map(B.class, D.class);
-            classMapBuilder.field("ages", "age").use(A.class, C.class);
+            classMapBuilder.field("age", "ages").use(A.class, C.class);
             mapperFactory.registerClassMap(classMapBuilder.toClassMap());
         }
         
@@ -49,13 +49,41 @@ public class UsedMappersTestCase {
         
         B source = new B();
         source.setName("Israfil");
-        source.setAges(1000);
+        source.setAge(1000);
         
         D target = mapperFacade.map(source, D.class);
         
         Assert.assertEquals(source.getName(), target.getNom());
-        Assert.assertEquals(source.getAges(), target.getAge());
+        Assert.assertEquals(source.getAge(), target.getAges());
         
+    }
+    
+    @Test
+    public void testOneCallOfFieldMapping() {
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        {
+            ClassMapBuilder<A, E> classMapBuilder = ClassMapBuilder.map(A.class, E.class);
+            mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+        }
+        {
+            ClassMapBuilder<B, F> classMapBuilder = ClassMapBuilder.map(B.class, F.class);
+            classMapBuilder.byDefault().use(A.class, E.class);
+            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+        }
+        
+        mapperFactory.build();
+        
+        MapperFacade mapperFacade = mapperFactory.getMapperFacade();
+        
+        B source = new B();
+        source.setName("Israfil");
+        source.setAge(1000);
+        
+        F target = mapperFacade.map(source, F.class);
+        
+        Assert.assertEquals(source.getName(), target.getName());
+        Assert.assertEquals(source.getAge(), target.getAge());
+        Assert.assertEquals(1, target.getNameCalls());
     }
     
     public static abstract class A {
@@ -72,14 +100,14 @@ public class UsedMappersTestCase {
     }
     
     public static class B extends A {
-        private int ages;
+        private int age;
         
-        public int getAges() {
-            return ages;
+        public int getAge() {
+            return age;
         }
         
-        public void setAges(int ages) {
-            this.ages = ages;
+        public void setAge(int ages) {
+            this.age = ages;
         }
         
     }
@@ -98,14 +126,45 @@ public class UsedMappersTestCase {
     }
     
     public static class D extends C {
+        private int ages;
+        
+        public int getAges() {
+            return ages;
+        }
+        
+        public void setAges(int age) {
+            this.ages = age;
+        }
+    }
+    
+    public static abstract class E {
+        private String name;
+        private int nameCalls;
+        
+        public String getName() {
+            return name;
+        }
+        
+        public void setName(String name) {
+            this.name = name;
+            nameCalls++;
+        }
+        
+        public int getNameCalls() {
+            return nameCalls;
+        }
+        
+    }
+    
+    public static class F extends E {
         private int age;
         
         public int getAge() {
             return age;
         }
         
-        public void setAge(int age) {
-            this.age = age;
+        public void setAge(int ages) {
+            this.age = ages;
         }
         
     }

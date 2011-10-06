@@ -31,6 +31,7 @@ public class Property {
     private String setter;
     private Class<?> type;
     private Class<?> parameterizedType;
+    private boolean declared;
     
     public String getExpression() {
         return expression;
@@ -133,6 +134,14 @@ public class Property {
     
     public Property[] getPath() {
         return EMPTY_PATH;
+    }
+    
+    public boolean isDeclared() {
+        return declared;
+    }
+    
+    public void setDeclared(boolean declared) {
+        this.declared = declared;
     }
     
     @Override

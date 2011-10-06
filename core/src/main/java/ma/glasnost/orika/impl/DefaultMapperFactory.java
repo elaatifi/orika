@@ -20,6 +20,7 @@ package ma.glasnost.orika.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,8 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
     private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
     
+    private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
+    
     private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps) {
         this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
         this.mapperGenerator = new MapperGenerator(this);
@@ -66,6 +69,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
+        this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
         
         if (classMaps != null) {
@@ -159,29 +163,83 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public void build() {
+        
+        buildClassMapRegistry();
+        
         for (final ClassMap<?, ?> classMap : classMaps) {
             buildMapper(classMap);
         }
         
         for (final ClassMap<?, ?> classMap : classMaps) {
-            setMapperParents(classMap);
+            initializeUsedMappers(classMap);
         }
+        
+    }
+    
+    public Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey) {
+        Set<ClassMap<Object, Object>> usedClassMapSet = usedMapperMetadataRegistry.get(mapperKey);
+        if (usedClassMapSet == null) {
+            usedClassMapSet = Collections.emptySet();
+        }
+        return usedClassMapSet;
+    }
+    
+    private void buildClassMapRegistry() {
+        // prepare a map for classmap (stored as set)
+        Map<MapperKey, ClassMap<Object, Object>> classMapsDictionnary = new HashMap<MapperKey, ClassMap<Object, Object>>();
+        
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        Set<ClassMap<Object, Object>> set = (Set) classMaps;
+        
+        for (final ClassMap<Object, Object> classMap : set) {
+            classMapsDictionnary.put(new MapperKey(classMap.getAType(), classMap.getBType()), classMap);
+        }
+        
+        // for every classMap collect used classMaps
+        // and store the result in a Map, the key : a class map, value : Set of
+        // used class map
+        
+        for (final ClassMap<?, ?> classMap : classMaps) {
+            MapperKey key = new MapperKey(classMap.getAType(), classMap.getBType());
+            
+            Set<ClassMap<Object, Object>> usedClassMapSet = new HashSet<ClassMap<Object, Object>>();
+            
+            for (final MapperKey parentMapperKey : classMap.getUsedMappers()) {
+                ClassMap<Object, Object> usedClassMap = classMapsDictionnary.get(parentMapperKey);
+                if (usedClassMap == null) {
+                    throw new MappingException("Can not find class map of this used mappers for : " + classMap.getMapperClassName());
+                }
+                usedClassMapSet.add(usedClassMap);
+            }
+            usedMapperMetadataRegistry.put(key, usedClassMapSet);
+        }
+        
     }
     
     @SuppressWarnings("unchecked")
-    private void setMapperParents(ClassMap<?, ?> classMap) {
+    private void initializeUsedMappers(ClassMap<?, ?> classMap) {
         Mapper<Object, Object> mapper = lookupMapper(new MapperKey(classMap.getAType(), classMap.getBType()));
         
         List<Mapper<Object, Object>> parentMappers = new ArrayList<Mapper<Object, Object>>();
         
         for (MapperKey parentMapperKey : classMap.getUsedMappers()) {
-            Mapper<Object, Object> parentMapper = lookupMapper(parentMapperKey);
-            if (parentMapper == null) {
-                throw new MappingException("Can not find used mappers for : " + classMap.getMapperClassName());
-            }
-            parentMappers.add(parentMapper);
+            collectUsedMappers(classMap, parentMappers, parentMapperKey);
         }
+        
         mapper.setUsedMappers(parentMappers.toArray(new Mapper[parentMappers.size()]));
+    }
+    
+    private void collectUsedMappers(ClassMap<?, ?> classMap, List<Mapper<Object, Object>> parentMappers, MapperKey parentMapperKey) {
+        Mapper<Object, Object> parentMapper = lookupMapper(parentMapperKey);
+        if (parentMapper == null) {
+            throw new MappingException("Can not find used mappers for : " + classMap.getMapperClassName());
+        }
+        parentMappers.add(parentMapper);
+        
+        Set<ClassMap<Object, Object>> usedClassMapSet = usedMapperMetadataRegistry.get(parentMapperKey);
+        for (ClassMap<Object, Object> cm : usedClassMapSet) {
+            collectUsedMappers(cm, parentMappers, new MapperKey(cm.getAType(), cm.getBType()));
+        }
     }
     
     private void buildMapper(ClassMap<?, ?> classMap) {

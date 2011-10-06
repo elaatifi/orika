@@ -18,10 +18,17 @@
 
 package ma.glasnost.orika;
 
+import java.util.Set;
+
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.MapperKey;
 
 /**
+ * MapperFactory
+ * 
+ * The mapper factory is the heart of Orika, a small container where metadata
+ * are stored, it's used by other component of engine, to look for generated
+ * mappers, converter, object factories ... etc.
  * 
  * @author S.M. El Aatifi
  * 
@@ -45,4 +52,6 @@ public interface MapperFactory {
     MapperFacade getMapperFacade();
     
     void build();
+    
+    Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey);
 }

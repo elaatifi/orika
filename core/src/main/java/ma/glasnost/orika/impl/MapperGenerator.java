@@ -23,6 +23,9 @@ import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
 import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
 import static ma.glasnost.orika.impl.Specifications.anArray;
 import static ma.glasnost.orika.impl.Specifications.immutable;
+
+import java.util.Set;
+
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
@@ -34,6 +37,7 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
+import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 
 final class MapperGenerator {
@@ -88,6 +92,9 @@ final class MapperGenerator {
         out.append(destinationClass.getName()).append(" destination = (").append(destinationClass.getName()).append(") b; \n");
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
+            if (isAlreadyExistsInUsedMappers(fieldMap, classMap)) {
+                continue;
+            }
             if (!aToB) {
                 fieldMap = fieldMap.flip();
             }
@@ -112,6 +119,22 @@ final class MapperGenerator {
         }
     }
     
+    private boolean isAlreadyExistsInUsedMappers(FieldMap fieldMap, ClassMap<?, ?> classMap) {
+        
+        Set<ClassMap<Object, Object>> usedClassMapSet = mapperFactory.lookupUsedClassMap(new MapperKey(classMap.getAType(),
+                classMap.getBType()));
+        
+        boolean exists = false;
+        
+        for (ClassMap<Object, Object> usedClassMap : usedClassMapSet) {
+            if (usedClassMap.getFieldsMapping().contains(fieldMap))
+                exists = true;
+            break;
+        }
+        
+        return exists;
+    }
+    
     private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap) throws Exception {
         final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         
@@ -119,8 +142,6 @@ final class MapperGenerator {
             return;
         }
         
-        // if (fieldMap.getDestination().hasPath())
-        // return;
         if (generateConverterCode(code, fieldMap)) {
             return;
         }

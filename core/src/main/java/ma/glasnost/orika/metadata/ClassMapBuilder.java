@@ -38,6 +38,15 @@ public final class ClassMapBuilder<A, B> {
     private Mapper<A, B> customizedMapper;
     
     private ClassMapBuilder(Class<A> aType, Class<B> bType) {
+        
+        if (aType == null) {
+            throw new MappingException("[aType] is required");
+        }
+        
+        if (bType == null) {
+            throw new MappingException("[bType] is required");
+        }
+        
         aProperties = PropertyUtil.getProperties(aType);
         bProperties = PropertyUtil.getProperties(bType);
         propertiesCache = new HashSet<String>();
@@ -77,7 +86,16 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> use(Class<?> aParentClass, Class<?> bParentClass) {
+        if (aType.isAssignableFrom(aParentClass)) {
+            throw new MappingException(aType.getSimpleName() + " is not a subclass of " + aParentClass.getSimpleName());
+        }
+        
+        if (bType.isAssignableFrom(bParentClass)) {
+            throw new MappingException(bType.getSimpleName() + " is not a subclass of " + bParentClass.getSimpleName());
+        }
+        
         usedMappers.add(new MapperKey(aParentClass, bParentClass));
+        
         return this;
     }
     
