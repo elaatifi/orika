@@ -32,17 +32,17 @@ public class BooleanTestCase {
     public void testPrimtiveToWrapper() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Pojo.class, Pojo.class).field("primitive", "wrapper").toClassMap());
+        factory.registerClassMap(ClassMapBuilder.map(Primitive.class, Wrapper.class).field("primitive", "wrapper").toClassMap());
         
         factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
-        Pojo source = new Pojo();
-        source.setPrimitive(true);
+        Wrapper source = new Wrapper();
+        source.setWrapper(true);
         
-        Pojo destination = mapper.map(source, Pojo.class);
-        Assert.assertEquals(Boolean.TRUE, destination.getWrapper());
+        Primitive destination = mapper.map(source, Primitive.class);
+        Assert.assertEquals(Boolean.TRUE, destination.isPrimitive());
         
     }
     
@@ -50,23 +50,22 @@ public class BooleanTestCase {
     public void testWrapperToPrimtive() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Pojo.class, Pojo.class).field("wrapper", "primitive").toClassMap());
+        factory.registerClassMap(ClassMapBuilder.map(Wrapper.class, Primitive.class).field("wrapper", "primitive").toClassMap());
         
         factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
-        Pojo source = new Pojo();
-        source.setWrapper(true);
+        Primitive source = new Primitive();
+        source.setPrimitive(true);
         
-        Pojo destination = mapper.map(source, Pojo.class);
-        Assert.assertEquals(true, destination.isPrimitive());
+        Wrapper destination = mapper.map(source, Wrapper.class);
+        Assert.assertEquals(true, destination.getWrapper());
         
     }
     
-    public static class Pojo {
+    public static class Primitive {
         private boolean primitive;
-        private Boolean wrapper;
         
         public boolean isPrimitive() {
             return primitive;
@@ -75,6 +74,11 @@ public class BooleanTestCase {
         public void setPrimitive(boolean primitive) {
             this.primitive = primitive;
         }
+    }
+    
+    public static class Wrapper {
+        
+        private Boolean wrapper;
         
         public Boolean getWrapper() {
             return wrapper;
@@ -83,5 +87,7 @@ public class BooleanTestCase {
         public void setWrapper(Boolean wrapper) {
             this.wrapper = wrapper;
         }
+        
     }
+    
 }
