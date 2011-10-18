@@ -32,6 +32,7 @@ import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
@@ -40,12 +41,10 @@ import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.proxy.HibernateUnenhanceStrategy;
 import ma.glasnost.orika.proxy.UnenhanceStrategy;
 
-import org.hibernate.MappingException;
-
 /**
  * The mapper factory is the heart of Orika, a small container where metadata
- * are stored, it's used by other component of engine, to look for generated
- * mappers, converter, object factories ... etc.
+ * are stored, it's used by other components, to look up for generated mappers,
+ * converters, object factories ... etc.
  * 
  * @author S.M. El Aatifi
  * 
@@ -194,10 +193,6 @@ public class DefaultMapperFactory implements MapperFactory {
         for (final ClassMap<Object, Object> classMap : set) {
             classMapsDictionnary.put(new MapperKey(classMap.getAType(), classMap.getBType()), classMap);
         }
-        
-        // for every classMap collect used classMaps
-        // and store the result in a Map, the key : a class map, value : Set of
-        // used class map
         
         for (final ClassMap<?, ?> classMap : classMaps) {
             MapperKey key = new MapperKey(classMap.getAType(), classMap.getBType());
