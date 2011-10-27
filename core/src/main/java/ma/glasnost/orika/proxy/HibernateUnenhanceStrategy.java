@@ -38,6 +38,6 @@ public class HibernateUnenhanceStrategy implements UnenhanceStrategy {
     @SuppressWarnings("unchecked")
     public <T> Class<T> unenhanceClass(T object) {
         // return HibernateProxyHelper.getClassWithoutInitializingProxy(object);
-        return Hibernate.getClass(object);
+    	return Hibernate.getClass(object);
     }
 }

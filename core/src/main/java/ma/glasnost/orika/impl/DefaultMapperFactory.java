@@ -38,6 +38,7 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.proxy.DefaultUnenhanceStrategy;
 import ma.glasnost.orika.proxy.HibernateUnenhanceStrategy;
 import ma.glasnost.orika.proxy.UnenhanceStrategy;
 
@@ -62,14 +63,15 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps) {
-        this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
+        
         this.mapperGenerator = new MapperGenerator(this);
         this.classMaps = Collections.synchronizedSet(new HashSet<ClassMap<?, ?>>());
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
-        objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
+        this.objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
+        this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
         
         if (classMaps != null) {
             for (final ClassMap<?, ?> classMap : classMaps) {
@@ -82,24 +84,16 @@ public class DefaultMapperFactory implements MapperFactory {
         this(null);
     }
     
-    UnenhanceStrategy getUnenhanceStrategy() {
-        try {
+    protected UnenhanceStrategy getUnenhanceStrategy() {
+        
+    	DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(aToBRegistry);
+    	try {
             Class.forName("org.hibernate.proxy.HibernateProxy");
-            return new HibernateUnenhanceStrategy();
+            baseStrategy.addDelegateStrategy(new HibernateUnenhanceStrategy());
         } catch (final Throwable e) {
             // TODO add warning
-            return new UnenhanceStrategy() {
-                
-                public <T> T unenhanceObject(T object) {
-                    return object;
-                }
-                
-                @SuppressWarnings("unchecked")
-                public <T> Class<T> unenhanceClass(T object) {
-                    return (Class<T>) object.getClass();
-                }
-            };
         }
+        return baseStrategy;
     }
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {

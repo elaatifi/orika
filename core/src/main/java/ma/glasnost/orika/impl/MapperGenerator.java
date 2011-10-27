@@ -23,8 +23,12 @@ import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
 import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
 import static ma.glasnost.orika.impl.Specifications.anArray;
 import static ma.glasnost.orika.impl.Specifications.immutable;
+import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -44,6 +48,7 @@ final class MapperGenerator {
     
     private final MapperFactory mapperFactory;
     private final ClassPool classPool;
+    private final Set<ClassLoader> mappedLoaders = Collections.newSetFromMap(new ConcurrentHashMap<ClassLoader,Boolean>());
     
     public MapperGenerator(MapperFactory mapperFactory) {
         this.mapperFactory = mapperFactory;
@@ -52,8 +57,22 @@ final class MapperGenerator {
         classPool.insertClassPath(new ClassClassPath(this.getClass()));
     }
     
+    private void putClassLoadersIfAbsent(ClassMap<?,?> classMap) {
+    	if (!mappedLoaders.contains(classMap.getAType().getClassLoader())) {
+    		mappedLoaders.add(classMap.getAType().getClassLoader());
+    		classPool.insertClassPath(new ClassClassPath(classMap.getAType()));
+    	}
+    	
+    	if (!mappedLoaders.contains(classMap.getBType().getClassLoader())) {
+    		mappedLoaders.add(classMap.getBType().getClassLoader());
+    		classPool.insertClassPath(new ClassClassPath(classMap.getBType()));
+    	}
+    }
+    
     public GeneratedMapperBase build(ClassMap<?, ?> classMap) {
         
+    	putClassLoadersIfAbsent(classMap);
+    	
         final CtClass mapperClass = classPool.makeClass(classMap.getMapperClassName());
         
         try {
@@ -100,7 +119,7 @@ final class MapperGenerator {
             }
             if (!fieldMap.isIgnored()) {
                 try {
-                    generateFieldMapCode(out, fieldMap);
+                    generateFieldMapCode(out, fieldMap,destinationClass);
                 } catch (final Exception e) {
                     throw new MappingException(e);
                 }
@@ -135,10 +154,11 @@ final class MapperGenerator {
         return exists;
     }
     
-    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap) throws Exception {
+    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Class<?> destinationClass) throws Exception {
         final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         
-        if (sp.getGetter() == null || dp.getSetter() == null) {
+        if (sp.getGetter() == null || 
+        		((dp.getSetter() == null) && !Collection.class.isAssignableFrom(dp.getType()))) {
             return;
         }
         
@@ -146,12 +166,14 @@ final class MapperGenerator {
             return;
         }
         try {
-            if (fieldMap.is(immutable())) {
+        	if (fieldMap.is(toAnEnumeration())) {
+            	code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setToEnumeration(dp, sp).end();
+        	} else if (fieldMap.is(immutable())) {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).set(dp, sp).end();
             } else if (fieldMap.is(anArray())) {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setArray(dp, sp).end();
             } else if (fieldMap.is(aCollection())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setCollection(dp, sp, fieldMap.getInverse()).end();
+                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setCollection(dp, sp, fieldMap.getInverse(),destinationClass).end();
             } else if (fieldMap.is(aWrapperToPrimitive())) {
                 code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setPrimitive(dp, sp).end();
             } else if (fieldMap.is(aPrimitiveToWrapper())) {

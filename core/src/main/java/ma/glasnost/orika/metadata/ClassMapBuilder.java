@@ -127,7 +127,7 @@ public final class ClassMapBuilder<A, B> {
             if (properties.containsKey(expr)) {
                 property = properties.get(expr);
             } else {
-                throw new MappingException(expr + " do not belongs to " + type);
+                throw new MappingException(expr + " does not belong to " + type);
             }
         }
         
@@ -141,7 +141,7 @@ public final class ClassMapBuilder<A, B> {
         } else if (aProperties.containsKey(expr)) {
             property = aProperties.get(expr);
         } else {
-            throw new MappingException(expr + " do not belongs to " + aType.getSimpleName());
+            throw new MappingException(expr + " does not belong to " + aType.getSimpleName());
         }
         
         return property;
@@ -154,7 +154,7 @@ public final class ClassMapBuilder<A, B> {
         } else if (bProperties.containsKey(expr)) {
             property = bProperties.get(expr);
         } else {
-            throw new MappingException(expr + " do not belongs to " + bType.getSimpleName());
+            throw new MappingException(expr + " does not belong to " + bType.getSimpleName());
         }
         
         return property;

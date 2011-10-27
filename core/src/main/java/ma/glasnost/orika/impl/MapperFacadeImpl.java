@@ -64,10 +64,10 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         
         final S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
-        final Class<S> sourceClass = (Class<S>) unenhancedSourceObject.getClass();
+        final Class<S> sourceClass = (Class<S>) unenhanceStrategy.unenhanceClass(unenhancedSourceObject);
         
         // XXX when it's immutable it's ok to copy by ref
-        if (ClassUtil.isImmutable(unenhancedSourceObject.getClass()) && sourceClass.equals(destinationClass)) {
+        if (ClassUtil.isImmutable(sourceClass) && sourceClass.equals(destinationClass)) {
             return (D) unenhancedSourceObject;
         }
         
@@ -199,9 +199,14 @@ public class MapperFacadeImpl implements MapperFacade {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().equals(destinationClass)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
+        } else if (mapper.getAType().isAssignableFrom(sourceClass)) {
+            mapper.mapAtoB(sourceObject, destinationObject, context);
+        } else if (mapper.getAType().isAssignableFrom(destinationClass)) {
+            mapper.mapBtoA(sourceObject, destinationObject, context);
         } else {
             throw new IllegalStateException(String.format("Source object type's must be one of '%s' or '%s'.", mapper.getAType(),
                     mapper.getBType()));
+         
         }
     }
     

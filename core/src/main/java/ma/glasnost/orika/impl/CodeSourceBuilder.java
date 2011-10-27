@@ -55,7 +55,7 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip) {
+    public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip, Class<?> dc) {
         final Class<?> destinationElementClass = dp.getParameterizedType();
         String destinationCollection = "List";
         String newStatement = "new java.util.ArrayList()";
@@ -70,10 +70,20 @@ public class CodeSourceBuilder {
         final String sourceGetter = getGetter(sp);
         final String destinationGetter = getGetter(dp);
         final String destinationSetter = getSetter(dp);
+        boolean destinationHasSetter = false; 
+        try {
+        	destinationHasSetter = (dc.getMethod(destinationSetter, dp.getType())!=null);
+			
+		} catch (Exception e) {
+			/* ignored: no destination setter available */
+		} 
         
-        append("if (destination.%s == null) {\n", destinationGetter);
-        append("destination.%s(%s);\n", destinationSetter, newStatement);
-        append("}\n");
+		if (destinationHasSetter) {
+	        append("if (destination.%s == null) {\n", destinationGetter);
+	        append("destination.%s(%s);\n", destinationSetter, newStatement);
+	        append("}\n");
+		}
+        
         append("destination.%s.clear();\n", destinationGetter);
         append("destination.%s.addAll(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", destinationGetter,
                 destinationCollection, sourceGetter, destinationElementClass.getName());
@@ -162,6 +172,16 @@ public class CodeSourceBuilder {
         return this;
     }
     
+    public CodeSourceBuilder setToEnumeration(Property dp, Property sp) {
+    	final String getter = getGetter(sp);
+        final String setter = getSetter(dp);
+        
+        append("destination.%s((%s)Enum.valueOf(%s.class,\"\"+source.%s));\n", 
+        		setter, dp.getType().getName(), dp.getType().getName(), getter);
+        return this;
+    }
+    
+    
     public CodeSourceBuilder setObject(Property dp, Property sp, Property ip) {
         final String sourceGetter = getGetter(sp);
         
@@ -195,6 +215,8 @@ public class CodeSourceBuilder {
         
         return this;
     }
+    
+   
     
     public CodeSourceBuilder ifSourceNotNull(Property sp) {
         

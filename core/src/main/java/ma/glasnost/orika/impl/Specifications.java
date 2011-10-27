@@ -35,6 +35,10 @@ public final class Specifications {
 		return IS_IMMUTABLE;
 	}
 
+	public static Specification toAnEnumeration() {
+		return IS_TO_ENUMERATION;
+	}
+	
 	@Deprecated
 	public static Specification compatibleTypes() {
 		return HAVE_COMPATIBLE_TYPES;
@@ -68,6 +72,14 @@ public final class Specifications {
 		}
 	};
 
+	private static final Specification IS_TO_ENUMERATION = new Specification() {
+
+		public boolean apply(FieldMap fieldMap) {
+			return fieldMap.getDestination().getType().isEnum();
+		}
+	};
+	
+	
 	private static final Specification HAVE_COMPATIBLE_TYPES = new Specification() {
 
 		public boolean apply(FieldMap fieldMap) {
