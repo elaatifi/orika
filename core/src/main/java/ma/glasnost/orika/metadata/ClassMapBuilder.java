@@ -24,6 +24,7 @@ import java.util.Set;
 
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.impl.util.PropertyUtil;
 
 public final class ClassMapBuilder<A, B> {
@@ -99,11 +100,21 @@ public final class ClassMapBuilder<A, B> {
         return this;
     }
     
-    public ClassMapBuilder<A, B> byDefault() {
+    public ClassMapBuilder<A, B> byDefault(MappingHint...mappingHints) {
         
         for (final String propertyName : aProperties.keySet()) {
-            if (bProperties.containsKey(propertyName) && !propertiesCache.contains(propertyName)) {
-                fieldMap(propertyName).add();
+            if (!propertiesCache.contains(propertyName)) {
+                if(bProperties.containsKey(propertyName)) {
+                	fieldMap(propertyName).add();
+                } else {
+                	Property prop = aProperties.get(propertyName);
+                	for (MappingHint hint: mappingHints) {
+                		String suggestion = hint.suggestMappedField(propertyName,prop.getType());
+                		if (suggestion!=null && bProperties.containsKey(suggestion)) {
+                			fieldMap(propertyName,suggestion).add();
+                		}
+                	}
+                }
             }
         }
         

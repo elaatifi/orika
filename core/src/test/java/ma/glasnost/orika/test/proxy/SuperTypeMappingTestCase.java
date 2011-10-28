@@ -18,21 +18,32 @@
 
 package ma.glasnost.orika.test.proxy;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
+import java.util.Date;
+import java.util.GregorianCalendar;
+
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
+
+import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.ConverterException;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorChild;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookChild;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookDTO;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorChild;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorMyDTO;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorParent;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Book;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookChild;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookMyDTO;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookParent;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Library;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryChild;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryDTO;
+import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryMyDTO;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryParent;
 
 import org.junit.Assert;
@@ -70,7 +81,7 @@ public class SuperTypeMappingTestCase {
 		Book book = createBook(BookChild.class);
 		book.setAuthor(createAuthor(AuthorChild.class));
 		
-		BookDTO mappedBook = mapper.map(book, BookDTO.class);
+		BookMyDTO mappedBook = mapper.map(book, BookMyDTO.class);
 		
 		Assert.assertNotNull(mappedBook);
 		Assert.assertNull(mappedBook.getMyTitle());
@@ -82,15 +93,15 @@ public class SuperTypeMappingTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory();
 		
-		factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class)
 				.field("title","myTitle")
 				.field("books","myBooks")
 				.byDefault().toClassMap());
 		
-		factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class)
 				.field("name","myName")
 				.byDefault().toClassMap());
-		factory.registerClassMap(ClassMapBuilder.map(Book.class, BookDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class)
 				.field("title","myTitle")
 				.field("author","myAuthor")
 				.byDefault().toClassMap());
@@ -104,7 +115,7 @@ public class SuperTypeMappingTestCase {
 		Library lib = createLibrary(LibraryParent.class);
 		lib.getBooks().add(book);
 		
-		LibraryDTO mappedLib = mapper.map(lib, LibraryDTO.class);
+		LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
 		
 		Assert.assertEquals(lib.getTitle(),mappedLib.getMyTitle());
 		Assert.assertEquals(book.getTitle(),mappedLib.getMyBooks().get(0).getMyTitle());
@@ -115,15 +126,15 @@ public class SuperTypeMappingTestCase {
 	public void testMappingInterfaceImplementationWithExistingInheritedMapping() throws Exception  {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory();
-		factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class)
 				.field("title","myTitle")
 				.field("books","myBooks")
 				.byDefault().toClassMap());
 		
-		factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class)
 				.field("name","myName")
 				.byDefault().toClassMap());
-		factory.registerClassMap(ClassMapBuilder.map(Book.class, BookDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class)
 				.field("title","myTitle")
 				.field("author","myAuthor")
 				.byDefault().toClassMap());
@@ -138,7 +149,7 @@ public class SuperTypeMappingTestCase {
 		Library lib = createLibrary(LibraryChild.class);
 		lib.getBooks().add(book);
 		
-		LibraryDTO mappedLib = mapper.map(lib, LibraryDTO.class);
+		LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
 		
 		Assert.assertEquals(lib.getTitle(),mappedLib.getMyTitle());
 		Assert.assertEquals(book.getTitle(),mappedLib.getMyBooks().get(0).getMyTitle());
@@ -150,10 +161,10 @@ public class SuperTypeMappingTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory();
 		
-		factory.registerClassMap(ClassMapBuilder.map(AuthorParent.class, AuthorDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(AuthorParent.class, AuthorMyDTO.class)
 				.field("name","myName")
 				.byDefault().toClassMap());
-		factory.registerClassMap(ClassMapBuilder.map(BookParent.class, BookDTO.class)
+		factory.registerClassMap(ClassMapBuilder.map(BookParent.class, BookMyDTO.class)
 				.field("title","myTitle")
 				.field("author","myAuthor")
 				.byDefault().toClassMap());
@@ -164,13 +175,75 @@ public class SuperTypeMappingTestCase {
 		Book book = createBook(BookChild.class);
 		book.setAuthor(createAuthor(AuthorChild.class));
 		
-		BookDTO mappedBook = mapper.map(book, BookDTO.class);
+		BookMyDTO mappedBook = mapper.map(book, BookMyDTO.class);
 		
 		Assert.assertEquals(book.getTitle(),mappedBook.getMyTitle());
 		Assert.assertEquals(book.getAuthor().getName(),mappedBook.getMyAuthor().getMyName());
 	}
 	
+	public static class A {
+        XMLGregorianCalendar time ;
+
+        public A() {
+        }
+
+        public XMLGregorianCalendar getTime() {
+                return time;
+        }
+
+        public void setTime(XMLGregorianCalendar time) {
+                this.time = time;
+        }
+	}
+
+	public static class B {
+        Date time;
+
+        public B() {
+        }
+
+        public Date getTime() {
+                return time;
+        }
+
+        public void setTime(Date time) {
+                this.time = time;
+        }
+	}
 	
-	
+	@Test
+	public void testSuperTypeConverterMapping() throws Exception {
+		
+		
+		MapperFactory factory = MappingUtil.getMapperFactory();
+		
+		factory.registerConverter(
+				new Converter<XMLGregorianCalendar,Date>() {
+				                        
+					public Date convert(XMLGregorianCalendar source) throws ConverterException {
+                            Date target = null;
+                            if (source != null) {
+                                    target = source.toGregorianCalendar().getTime();
+                            }
+                            return target;
+                    }
+				}, 
+				XMLGregorianCalendar.class, 
+				Date.class);
+
+		factory.build();
+		
+		A a = new A();
+		Date date = new Date();
+		GregorianCalendar c = new GregorianCalendar();
+		c.setTime(date);
+		a.setTime(DatatypeFactory.newInstance().newXMLGregorianCalendar(c));
+		
+		B mapped = factory.getMapperFacade().map(a, B.class);
+		
+		assertNotNull(mapped);
+		assertEquals(date,mapped.getTime());
+		
+	}
 	
 }

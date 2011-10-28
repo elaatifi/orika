@@ -19,6 +19,7 @@
 package ma.glasnost.orika.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
@@ -33,7 +35,11 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.inheritance.DefaultSuperTypeResolverStrategy;
+import ma.glasnost.orika.inheritance.SuperTypeResolver;
+import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.ConverterKey;
@@ -52,6 +58,8 @@ import ma.glasnost.orika.proxy.UnenhanceStrategy;
  */
 public class DefaultMapperFactory implements MapperFactory {
     
+	public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.MapperGenerator.writeClassFiles";
+	
     private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
     private final Set<ClassMap<?, ?>> classMaps;
@@ -59,6 +67,9 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<Object, Converter<?, ?>> convertersRegistry;
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
     private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
+    private final Map<Class<?>, Class<?>> mappedConverters;
+    private final List<MappingHint> mappingHints;
+    private final UnenhanceStrategy unenhanceStrategy;
     
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
@@ -69,9 +80,12 @@ public class DefaultMapperFactory implements MapperFactory {
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
+        this.mappedConverters = new ConcurrentHashMap<Class<?>, Class<?>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
-        this.mapperFacade = new MapperFacadeImpl(this, getUnenhanceStrategy());
+        this.mappingHints = new CopyOnWriteArrayList<MappingHint>();
+        this.unenhanceStrategy = getUnenhanceStrategy();
+        this.mapperFacade = new MapperFacadeImpl(this, unenhanceStrategy);
         
         if (classMaps != null) {
             for (final ClassMap<?, ?> classMap : classMaps) {
@@ -86,8 +100,27 @@ public class DefaultMapperFactory implements MapperFactory {
     
     protected UnenhanceStrategy getUnenhanceStrategy() {
         
-    	DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(aToBRegistry);
-    	try {
+    	final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
+
+			public boolean isAcceptable(Class<?> proposedClass) {
+				return aToBRegistry.containsKey(proposedClass) ||
+					mappedConverters.containsKey(proposedClass);
+			}
+		};
+    	
+    	DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(registeredMappersStrategy);
+    	
+    	final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
+
+			public boolean isAcceptable(Class<?> proposedClass) {
+				return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
+			}
+
+		};
+    	
+		baseStrategy.addDelegateStrategy(new DefaultUnenhanceStrategy(inaccessibleTypeStrategy));
+    	
+		try {
             Class.forName("org.hibernate.proxy.HibernateProxy");
             baseStrategy.addDelegateStrategy(new HibernateUnenhanceStrategy());
         } catch (final Throwable e) {
@@ -98,14 +131,15 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
-            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault().toClassMap();
+            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault(this.mappingHints.toArray(new MappingHint[0])).toClassMap();
             buildMapper(classMap);
         }
         return mappersRegistry.get(mapperKey);
     }
     
-    public <S, D> void registerConverter(Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass) {
+    public <S, D> void registerConverter(final Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass) {
         convertersRegistry.put(new ConverterKey(sourceClass, destinationClass), converter);
+        mappedConverters.put(sourceClass, destinationClass);
     }
     
     @SuppressWarnings("unchecked")
@@ -119,6 +153,10 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public <D> void registerObjectFactory(ObjectFactory<D> objectFactory, Class<D> destinationClass) {
         objectFactoryRegistry.put(destinationClass, objectFactory);
+    }
+    
+    public void registerMappingHint(MappingHint...hints) {
+    	this.mappingHints.addAll(Arrays.asList(hints));
     }
     
     @SuppressWarnings("unchecked")
@@ -196,7 +234,7 @@ public class DefaultMapperFactory implements MapperFactory {
             for (final MapperKey parentMapperKey : classMap.getUsedMappers()) {
                 ClassMap<Object, Object> usedClassMap = classMapsDictionnary.get(parentMapperKey);
                 if (usedClassMap == null) {
-                    throw new MappingException("Can not find class map of this used mappers for : " + classMap.getMapperClassName());
+                    throw new MappingException("Cannot find class mapping using mapper : " + classMap.getMapperClassName());
                 }
                 usedClassMapSet.add(usedClassMap);
             }

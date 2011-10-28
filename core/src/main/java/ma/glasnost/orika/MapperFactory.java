@@ -49,6 +49,8 @@ public interface MapperFactory {
     
     <S, D> Class<? extends D> lookupConcreteDestinationClass(Class<S> sourceClass, Class<D> destinationClass, MappingContext context);
     
+    void registerMappingHint(MappingHint...hint);
+    
     MapperFacade getMapperFacade();
     
     void build();

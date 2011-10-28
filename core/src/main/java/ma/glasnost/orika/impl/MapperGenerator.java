@@ -42,13 +42,19 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.metadata.MappingDirection;
 import ma.glasnost.orika.metadata.Property;
 
 final class MapperGenerator {
     
+	
+	private static final String TEST_METHOD_CLASS_NAME = "$Method$Test$Class$";
+	
     private final MapperFactory mapperFactory;
     private final ClassPool classPool;
     private final Map<ClassLoader, Boolean> mappedLoaders;
+    private final boolean writeClassFiles;
+    private final CtClass methodTestClass;
     
     public MapperGenerator(MapperFactory mapperFactory) {
         this.mapperFactory = mapperFactory;
@@ -57,23 +63,43 @@ final class MapperGenerator {
         classPool.insertClassPath(new ClassClassPath(this.getClass()));
         
         mappedLoaders = new ConcurrentHashMap<ClassLoader, Boolean>();
+        // set this system property to true to enable writing out of class files;
+        // improves debugging
+        writeClassFiles = Boolean.valueOf(System.getProperty(DefaultMapperFactory.PROPERTY_WRITE_CLASS_FILES));
+        this.methodTestClass = classPool.makeClass(TEST_METHOD_CLASS_NAME);
     }
     
-    private void putClassLoadersIfAbsent(ClassMap<?, ?> classMap) {
-        if (!mappedLoaders.containsKey(classMap.getAType().getClassLoader())) {
-            mappedLoaders.put(classMap.getAType().getClassLoader(), Boolean.TRUE);
-            classPool.insertClassPath(new ClassClassPath(classMap.getAType()));
-        }
-        
-        if (!mappedLoaders.containsKey(classMap.getBType().getClassLoader())) {
-            mappedLoaders.put(classMap.getBType().getClassLoader(), Boolean.TRUE);
-            classPool.insertClassPath(new ClassClassPath(classMap.getBType()));
-        }
+    /**
+     * @param type
+     * @return
+     */
+    public boolean isTypeAccessible(Class<?> type) {
+    	
+		try {
+			ClassLoader loader = type.getClassLoader();
+			if (loader!=null && !mappedLoaders.containsKey(loader)) {
+	    		mappedLoaders.put(loader, Boolean.TRUE);
+	    		classPool.insertClassPath(new ClassClassPath(type));
+	    	}
+			CtNewMethod.make("public void test(" + type.getName() + " t) { }", methodTestClass);
+			return true;
+		} catch (CannotCompileException e) {
+			return false;
+		} 
     }
     
+    private void assertClassLoaderAccessible(Class<?> type) {
+    	ClassLoader loader = type.getClassLoader();
+        if (loader!=null && !mappedLoaders.containsKey(loader)) {
+    		mappedLoaders.put(loader, Boolean.TRUE);
+    		classPool.insertClassPath(new ClassClassPath(type));
+    	}
+    }
+ 
     public GeneratedMapperBase build(ClassMap<?, ?> classMap) {
         
-        putClassLoadersIfAbsent(classMap);
+    	assertClassLoaderAccessible(classMap.getAType());
+    	assertClassLoaderAccessible(classMap.getBType());	
         
         final CtClass mapperClass = classPool.makeClass(classMap.getMapperClassName());
         
@@ -85,7 +111,16 @@ final class MapperGenerator {
             addMapMethod(mapperClass, true, classMap);
             addMapMethod(mapperClass, false, classMap);
             
-            return (GeneratedMapperBase) mapperClass.toClass().newInstance();
+            Class<?> compiledClass = mapperClass.toClass();
+            
+            if (writeClassFiles) {
+	            String rootPath = getClass().getResource("/").getFile().toString();
+	            String packagePath =mapperClass.getPackageName()!=null 
+	            	? mapperClass.getPackageName().replaceAll("\\.", "/") + "/" : "";
+	            mapperClass.writeFile(rootPath + packagePath);
+            }
+            
+            return (GeneratedMapperBase)compiledClass.newInstance();
         } catch (final Exception e) {
             throw new MappingException(e);
         }
@@ -162,6 +197,10 @@ final class MapperGenerator {
         if (sp.getGetter() == null || ((dp.getSetter() == null) && !Collection.class.isAssignableFrom(dp.getType()))) {
             return;
         }
+        
+        // Make sure the source and destination types are accessible to the builder
+        assertClassLoaderAccessible(sp.getType());
+        assertClassLoaderAccessible(dp.getType());
         
         if (generateConverterCode(code, fieldMap)) {
             return;

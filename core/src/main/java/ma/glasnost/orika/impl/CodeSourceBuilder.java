@@ -57,6 +57,11 @@ public class CodeSourceBuilder {
     
     public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip, Class<?> dc) {
         final Class<?> destinationElementClass = dp.getParameterizedType();
+        
+        if (destinationElementClass==null) {
+        	throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + dp.getName());
+        }
+        
         String destinationCollection = "List";
         String newStatement = "new java.util.ArrayList()";
         if (List.class.isAssignableFrom(dp.getType())) {

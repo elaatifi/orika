@@ -62,6 +62,11 @@ public final class PropertyUtil {
                     if (pd.getWriteMethod() != null) {
                         property.setSetter(pd.getWriteMethod().getName());
                     }
+                    
+                    if (pd.getReadMethod()==null && pd.getWriteMethod()==null) {
+                    	continue;
+                    }
+                    
                     try {
                         property.setType(pd.getReadMethod().getDeclaringClass().getDeclaredMethod(property.getGetter(), new Class[0])
                                 .getReturnType());
@@ -73,8 +78,10 @@ public final class PropertyUtil {
                     if (pd.getReadMethod() != null) {
                         final Method method = pd.getReadMethod();
                         if (property.getType() != null && Collection.class.isAssignableFrom(property.getType())) {
-                            property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType())
-                                    .getActualTypeArguments()[0]);
+                            if (method.getGenericReturnType() instanceof ParameterizedType) {
+	                        	property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType())
+	                                    .getActualTypeArguments()[0]);
+                            } 
                         }
                     } else if (pd.getWriteMethod() != null) {
                         final Method method = pd.getWriteMethod();
@@ -83,13 +90,16 @@ public final class PropertyUtil {
                             property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[0])
                                     .getActualTypeArguments()[0]);
                         }
+                    } else {
+                    	
                     }
                 } catch (final Throwable e) {
                     e.printStackTrace();
                 }
             }
         } catch (final IntrospectionException e) {
-            /* Ignore */
+            e.printStackTrace();
+        	/* Ignore */
         }
         
         PROPERTIES_CACHE.put(clazz, Collections.unmodifiableMap(properties));

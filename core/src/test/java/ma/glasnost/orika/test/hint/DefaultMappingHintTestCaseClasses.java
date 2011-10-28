@@ -16,12 +16,12 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.proxy;
+package ma.glasnost.orika.test.hint;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public interface SuperTypeTestCaseClasses {
+public interface DefaultMappingHintTestCaseClasses {
 
 	public interface Book {
 		
@@ -147,91 +147,8 @@ public interface SuperTypeTestCaseClasses {
 		}
 	}
 	
+	
 	public class AuthorDTO {
-		
-		private String name;
-		private String additionalValue;
-		
-		public String getAdditionalValue() {
-			return additionalValue;
-		}
-
-		public void setAdditionalValue(String additionalValue) {
-			this.additionalValue = additionalValue;
-		}
-
-		public String getName() {
-			return name;
-		}
-
-		public void setName(String name) {
-			this.name = name;
-		}
-	}
-	
-	public class BookDTO {
-
-		private String title;
-		private AuthorDTO author;
-		private String additionalValue;
-		
-		public String getAdditionalValue() {
-			return additionalValue;
-		}
-
-		public void setAdditionalValue(String additionalValue) {
-			this.additionalValue = additionalValue;
-		}
-
-		public String getTitle() {
-			return title;
-		}
-
-		public void setTitle(String title) {
-			this.title = title;
-		}
-
-		public AuthorDTO getAuthor() {
-			return author;
-		}
-
-		public void setAuthor(AuthorDTO author) {
-			this.author = author;
-		}
-	}
-	
-	public class LibraryDTO {
-		
-		private String title;
-		private List<BookDTO> books;
-		private String additionalValue;
-		
-		public String getAdditionalValue() {
-			return additionalValue;
-		}
-
-		public void setAdditionalValue(String additionalValue) {
-			this.additionalValue = additionalValue;
-		}
-		
-		public String getTitle() {
-			return title;
-		}
-
-		public void setTitle(String title) {
-			this.title = title;
-		}
-
-		public List<BookDTO> getBooks() {
-			if (books==null) {
-				books = new ArrayList<BookDTO>();
-			}
-			return books;
-		}
-	}
-	
-	
-	public class AuthorMyDTO {
 	
 		private String name;
 		private String additionalValue;
@@ -253,10 +170,10 @@ public interface SuperTypeTestCaseClasses {
 		}
 	}
 	
-	public class BookMyDTO {
+	public class BookDTO {
 
 		private String title;
-		private AuthorMyDTO author;
+		private AuthorDTO author;
 		private String additionalValue;
 		
 		public String getMyAdditionalValue() {
@@ -275,19 +192,19 @@ public interface SuperTypeTestCaseClasses {
 			this.title = title;
 		}
 
-		public AuthorMyDTO getMyAuthor() {
+		public AuthorDTO getMyAuthor() {
 			return author;
 		}
 
-		public void setMyAuthor(AuthorMyDTO author) {
+		public void setMyAuthor(AuthorDTO author) {
 			this.author = author;
 		}
 	}
 	
-	public class LibraryMyDTO {
+	public class LibraryDTO {
 		
 		private String title;
-		private List<BookMyDTO> books;
+		private List<BookDTO> books;
 		private String additionalValue;
 		
 		public String getMyAdditionalValue() {
@@ -306,9 +223,9 @@ public interface SuperTypeTestCaseClasses {
 			this.title = title;
 		}
 
-		public List<BookMyDTO> getMyBooks() {
+		public List<BookDTO> getMyBooks() {
 			if (books==null) {
-				books = new ArrayList<BookMyDTO>();
+				books = new ArrayList<BookDTO>();
 			}
 			return books;
 		}

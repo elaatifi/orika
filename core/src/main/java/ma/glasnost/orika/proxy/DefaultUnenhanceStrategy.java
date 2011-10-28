@@ -18,22 +18,23 @@
 
 package ma.glasnost.orika.proxy;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import ma.glasnost.orika.inheritance.SuperTypeResolver;
+import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
+
 public class DefaultUnenhanceStrategy implements UnenhanceStrategy {
     
-	private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
 	private final ConcurrentHashMap<Class<?>,Class<?>> mappedSuperTypes;
 	private final Queue<UnenhanceStrategy> strategyChain = new LinkedBlockingQueue<UnenhanceStrategy>();
+	private final SuperTypeResolver superTypeUtil; 
 	
-	public DefaultUnenhanceStrategy(Map<Class<?>, Set<Class<?>>> aToBRegistry) {
-		this.aToBRegistry = aToBRegistry!=null ? aToBRegistry : Collections.<Class<?>, Set<Class<?>>>emptyMap();
+	public DefaultUnenhanceStrategy(final SuperTypeResolverStrategy strategy) {
+		
 		this.mappedSuperTypes = new ConcurrentHashMap<Class<?>,Class<?>>();
+		this.superTypeUtil = new SuperTypeResolver(strategy);
 	}
 
 	public void addDelegateStrategy(UnenhanceStrategy strategy) {
@@ -53,71 +54,18 @@ public class DefaultUnenhanceStrategy implements UnenhanceStrategy {
     		Class<T> delegateUnenhanced = (Class<T>) strategy.unenhanceClass(object);
     		// Accept the first delegate strategy result which produces 
     		// something different than the object's getClass method
-    		if (!delegateUnenhanced.equals(unenhancedClass)) {
+    		if (delegateUnenhanced!=null && !unenhancedClass.equals(delegateUnenhanced)) {
     			unenhancedClass = delegateUnenhanced;
     			break;
     		}
     	}
     	
-    	unenhancedClass = getUnenhancedClass(unenhancedClass);
-    	
+    	Class<?> superType = superTypeUtil.getSuperType(unenhancedClass);
+    	if (superType!=null && !unenhancedClass.equals(superType)) {
+    		mappedSuperTypes.putIfAbsent(unenhancedClass, superType);
+    		unenhancedClass = (Class<T>)superType;
+    	}
     	return unenhancedClass;	
-    }
-    
-    @SuppressWarnings("unchecked")
-    protected <T> Class<T> getUnenhancedClass(final Class<?> enhancedClass) {
-    	
-		Class<T> mappedClass = (Class<T>) enhancedClass;
-    	if (!aToBRegistry.containsKey(mappedClass)) {
-    		Class<T> mappedSuper = (Class<T>) lookupMappedSuperType(mappedClass);
-    		if (mappedSuper!=null) {
-    			mappedClass = mappedSuper;
-    		} else {
-    			mappedSuper = (Class<T>) lookupMappedInterface(mappedClass);
-    			if (mappedSuper!=null) {
-        			mappedClass = mappedSuper;
-        		}
-    		}
-    	}
-    	return mappedClass;
-    }
-    
-	private Class<?> lookupMappedSuperType(final Class<?> theClass) {
-    	
-		Class<?> targetClass = theClass.getSuperclass();
-		Class<?> mappedClass = mappedSuperTypes.get(targetClass);
-    	
-    	while (mappedClass==null && !targetClass.equals(Object.class)) {
-    		if(aToBRegistry.containsKey(targetClass)) {
-    			mappedClass = targetClass;
-    			mappedSuperTypes.putIfAbsent(theClass, mappedClass);
-    			break;
-    		} 
-    		targetClass = targetClass.getSuperclass();
-    	}
-    	
-    	return mappedClass;
-    }
-    
-    private Class<?> lookupMappedInterface(final Class<?> theClass) {
-    	
-    	Class<?> targetClass = theClass;
-		Class<?> mappedClass = mappedSuperTypes.get(targetClass);
-    	
-		while (mappedClass==null && !targetClass.equals(Object.class)) {
-	    	
-    		for (Class<?> theInterface: targetClass.getInterfaces()) {
-	    		if(aToBRegistry.containsKey(theInterface)) {
-	    			mappedClass = theInterface;
-	    			mappedSuperTypes.putIfAbsent(theClass, mappedClass);
-	    			break;
-	    		} 
-    		}
-    		targetClass = targetClass.getSuperclass();
-		}
-    	
-    	return mappedClass;
-
     }
     
 }
