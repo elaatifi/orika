@@ -38,7 +38,6 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.inheritance.DefaultSuperTypeResolverStrategy;
-import ma.glasnost.orika.inheritance.SuperTypeResolver;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
@@ -58,8 +57,8 @@ import ma.glasnost.orika.proxy.UnenhanceStrategy;
  */
 public class DefaultMapperFactory implements MapperFactory {
     
-	public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.MapperGenerator.writeClassFiles";
-	
+    public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.MapperGenerator.writeClassFiles";
+    
     private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
     private final Set<ClassMap<?, ?>> classMaps;
@@ -100,27 +99,26 @@ public class DefaultMapperFactory implements MapperFactory {
     
     protected UnenhanceStrategy getUnenhanceStrategy() {
         
-    	final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
-
-			public boolean isAcceptable(Class<?> proposedClass) {
-				return aToBRegistry.containsKey(proposedClass) ||
-					mappedConverters.containsKey(proposedClass);
-			}
-		};
-    	
-    	DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(registeredMappersStrategy);
-    	
-    	final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
-
-			public boolean isAcceptable(Class<?> proposedClass) {
-				return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
-			}
-
-		};
-    	
-		baseStrategy.addDelegateStrategy(new DefaultUnenhanceStrategy(inaccessibleTypeStrategy));
-    	
-		try {
+        final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
+            
+            public boolean isAcceptable(Class<?> proposedClass) {
+                return aToBRegistry.containsKey(proposedClass) || mappedConverters.containsKey(proposedClass);
+            }
+        };
+        
+        DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(registeredMappersStrategy);
+        
+        final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
+            
+            public boolean isAcceptable(Class<?> proposedClass) {
+                return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
+            }
+            
+        };
+        
+        baseStrategy.addDelegateStrategy(new DefaultUnenhanceStrategy(inaccessibleTypeStrategy));
+        
+        try {
             Class.forName("org.hibernate.proxy.HibernateProxy");
             baseStrategy.addDelegateStrategy(new HibernateUnenhanceStrategy());
         } catch (final Throwable e) {
@@ -131,13 +129,16 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
-            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType()).byDefault(this.mappingHints.toArray(new MappingHint[0])).toClassMap();
+            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType())
+                    .byDefault(this.mappingHints.toArray(new MappingHint[0]))
+                    .toClassMap();
             buildMapper(classMap);
         }
         return mappersRegistry.get(mapperKey);
     }
     
-    public <S, D> void registerConverter(final Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass) {
+    public <S, D> void registerConverter(final Converter<S, D> converter, Class<? extends S> sourceClass,
+            Class<? extends D> destinationClass) {
         convertersRegistry.put(new ConverterKey(sourceClass, destinationClass), converter);
         mappedConverters.put(sourceClass, destinationClass);
     }
@@ -155,8 +156,8 @@ public class DefaultMapperFactory implements MapperFactory {
         objectFactoryRegistry.put(destinationClass, objectFactory);
     }
     
-    public void registerMappingHint(MappingHint...hints) {
-    	this.mappingHints.addAll(Arrays.asList(hints));
+    public void registerMappingHint(MappingHint... hints) {
+        this.mappingHints.addAll(Arrays.asList(hints));
     }
     
     @SuppressWarnings("unchecked")

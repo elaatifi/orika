@@ -37,7 +37,7 @@ public interface MapperFactory {
     
     <A, B> Mapper<A, B> lookupMapper(MapperKey mapperKey);
     
-    <S, D> void registerClassMap(ClassMap<S, D> classMap);
+    <A, B> void registerClassMap(ClassMap<A, B> classMap);
     
     <S, D> void registerConverter(Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass);
     
@@ -49,7 +49,7 @@ public interface MapperFactory {
     
     <S, D> Class<? extends D> lookupConcreteDestinationClass(Class<S> sourceClass, Class<D> destinationClass, MappingContext context);
     
-    void registerMappingHint(MappingHint...hint);
+    void registerMappingHint(MappingHint... hint);
     
     MapperFacade getMapperFacade();
     
