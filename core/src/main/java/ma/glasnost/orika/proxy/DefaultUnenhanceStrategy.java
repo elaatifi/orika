@@ -25,6 +25,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import ma.glasnost.orika.inheritance.SuperTypeResolver;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 
+/**
+ * Provides a delegating unenhance strategy which post-processes the
+ * unenhancement results using the specified super-type strategy.<br>
+ * See {#SuperTypeResolverStrategy}
+ * 
+ * @author matt.deboer@gmail.com
+ */
 public class DefaultUnenhanceStrategy implements UnenhanceStrategy {
     
 	private final ConcurrentHashMap<Class<?>,Class<?>> mappedSuperTypes;
@@ -62,7 +69,10 @@ public class DefaultUnenhanceStrategy implements UnenhanceStrategy {
     	
     	Class<?> superType = superTypeUtil.getSuperType(unenhancedClass);
     	if (superType!=null && !unenhancedClass.equals(superType)) {
-    		mappedSuperTypes.putIfAbsent(unenhancedClass, superType);
+    		Class<?> superTypePutResult = mappedSuperTypes.putIfAbsent(unenhancedClass, superType);
+    		if (superTypePutResult!=null) {
+    			superType = superTypePutResult;
+    		}
     		unenhancedClass = (Class<T>)superType;
     	}
     	return unenhancedClass;	

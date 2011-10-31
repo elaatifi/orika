@@ -42,4 +42,12 @@ public class NestedProperty extends Property {
         return true;
     }
     
+    public boolean equals(Object other) {
+    	return super.equals(other);
+    }
+    
+    public int hashCode() {
+    	return super.hashCode();
+    }
+    
 }

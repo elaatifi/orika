@@ -42,7 +42,6 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.metadata.MappingDirection;
 import ma.glasnost.orika.metadata.Property;
 
 final class MapperGenerator {
@@ -76,6 +75,10 @@ final class MapperGenerator {
     public boolean isTypeAccessible(Class<?> type) {
     	
 		try {
+			Class<?> loadedType = Thread.currentThread().getContextClassLoader().loadClass(type.getName());
+			if (!type.equals(loadedType)) {
+				return false;
+			}
 			ClassLoader loader = type.getClassLoader();
 			if (loader!=null && !mappedLoaders.containsKey(loader)) {
 	    		mappedLoaders.put(loader, Boolean.TRUE);
@@ -84,6 +87,8 @@ final class MapperGenerator {
 			CtNewMethod.make("public void test(" + type.getName() + " t) { }", methodTestClass);
 			return true;
 		} catch (CannotCompileException e) {
+			return false;
+		} catch (ClassNotFoundException e) {
 			return false;
 		} 
     }
@@ -244,7 +249,9 @@ final class MapperGenerator {
     }
     
     private void addGetTypeMethod(CtClass mapperClass, String methodName, Class<?> value) throws CannotCompileException {
-        final StringBuilder output = new StringBuilder();
+    	assertClassLoaderAccessible(value);
+        
+    	final StringBuilder output = new StringBuilder();
         output.append("\n")
                 .append("public java.lang.Class ")
                 .append(methodName)

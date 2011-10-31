@@ -99,26 +99,37 @@ public class DefaultMapperFactory implements MapperFactory {
     
     protected UnenhanceStrategy getUnenhanceStrategy() {
         
-        final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
-            
-            public boolean isAcceptable(Class<?> proposedClass) {
-                return aToBRegistry.containsKey(proposedClass) || mappedConverters.containsKey(proposedClass);
-            }
-        };
-        
-        DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(registeredMappersStrategy);
-        
-        final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
-            
-            public boolean isAcceptable(Class<?> proposedClass) {
-                return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
-            }
-            
-        };
-        
-        baseStrategy.addDelegateStrategy(new DefaultUnenhanceStrategy(inaccessibleTypeStrategy));
-        
-        try {
+    	/*
+    	 * This strategy attempts to lookup super-type that has a registered mapper or converter 
+    	 * whenever it is offered a class that is not currently mapped 
+    	 */
+    	final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
+
+			public boolean isAcceptable(Class<?> proposedClass) {
+				return aToBRegistry.containsKey(proposedClass) ||
+					mappedConverters.containsKey(proposedClass);
+			}
+		};
+    	
+    	
+    	/*
+    	 * This strategy produces super-types whenever the proposed class type is not accessible to
+    	 * the (javassist) byte-code generator;
+    	 */
+    	final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
+
+			public boolean isAcceptable(Class<?> proposedClass) {
+				return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
+			}
+
+		};
+    	
+		DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(registeredMappersStrategy);
+    	
+		baseStrategy.addDelegateStrategy(new DefaultUnenhanceStrategy(inaccessibleTypeStrategy));
+    	
+		// TODO: this delegate strategy may no longer be needed...
+		try {
             Class.forName("org.hibernate.proxy.HibernateProxy");
             baseStrategy.addDelegateStrategy(new HibernateUnenhanceStrategy());
         } catch (final Throwable e) {

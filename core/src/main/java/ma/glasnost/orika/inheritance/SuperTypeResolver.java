@@ -63,12 +63,13 @@ public class SuperTypeResolver {
 		}
 	}
 	
-	private Class<?> lookupMappedSuperType(final Class<?> theClass) {
+	private Class<?> lookupMappedSuperType(final Class<?> theClass) { 
     	
 		Class<?> targetClass = theClass.getSuperclass();
 		Class<?> mappedClass = null;
     	
-    	while (mappedClass==null && !targetClass.equals(Object.class)) {
+    	while (mappedClass==null && targetClass!=null && !targetClass.equals(Object.class)) {
+    		
     		if(strategy.accept(targetClass)) {
     			mappedClass = targetClass;
     			break;
@@ -84,7 +85,7 @@ public class SuperTypeResolver {
     	Class<?> targetClass = theClass;
 		Class<?> mappedClass = null;
     	
-		while (mappedClass==null && !targetClass.equals(Object.class)) {
+		while (mappedClass==null && targetClass!=null && !targetClass.equals(Object.class)) {
 	    	
     		for (Class<?> theInterface: targetClass.getInterfaces()) {
 	    		if(strategy.accept(theInterface)) {

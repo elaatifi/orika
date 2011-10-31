@@ -21,6 +21,12 @@ package ma.glasnost.orika.test.proxy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -31,6 +37,7 @@ import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.ConverterException;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
@@ -52,22 +59,22 @@ import org.junit.Test;
 public class SuperTypeMappingTestCase {
 
 	
-	private Author createAuthor(Class<? extends AuthorParent> type) throws InstantiationException, IllegalAccessException {
-		AuthorParent author = (AuthorParent) type.newInstance();
+	private Author createAuthor(Class<? extends Author> type) throws InstantiationException, IllegalAccessException {
+		Author author = (Author) type.newInstance();
 		author.setName("Khalil Gebran");
 		
 		return author;
 	}
 	
-	private Book createBook(Class<? extends BookParent> type) throws InstantiationException, IllegalAccessException {
-		BookParent book = (BookParent)type.newInstance();
+	private Book createBook(Class<? extends Book> type) throws InstantiationException, IllegalAccessException {
+		Book book = (Book)type.newInstance();
 		book.setTitle("The Prophet");
 		
 		return book;
 	}
 	
-	private Library createLibrary(Class<? extends LibraryParent> type) throws InstantiationException, IllegalAccessException {
-		LibraryParent lib = (LibraryParent)type.newInstance();
+	private Library createLibrary(Class<? extends Library> type) throws InstantiationException, IllegalAccessException {
+		Library lib = (Library)type.newInstance();
 		lib.setTitle("Test Library");
 		
 		return lib;
@@ -122,6 +129,7 @@ public class SuperTypeMappingTestCase {
 		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
 	}
 	
+	
 	@Test
 	public void testMappingInterfaceImplementationWithExistingInheritedMapping() throws Exception  {
 		
@@ -157,6 +165,39 @@ public class SuperTypeMappingTestCase {
 	}
 	
 	@Test
+	public void testMappingSubclassImplementationWithoutExistingMapping() throws Exception  {
+		
+		MapperFactory factory = MappingUtil.getMapperFactory();
+		MappingHint myHint = 
+			/**
+			 * This sample hint converts "myProperty" to "property", and vis-versa.
+			 */
+			new MappingHint() {
+
+				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+					if (fromProperty.startsWith("my")) {
+						return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
+					} else {
+						return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
+					}	
+				}
+				
+			};
+		factory.registerMappingHint(myHint);
+		factory.build();
+		
+		MapperFacade mapper = factory.getMapperFacade();
+		
+		Book book = createBook(BookChild.class);
+		book.setAuthor(createAuthor(AuthorChild.class));
+		
+		BookMyDTO mappedBook = mapper.map(book, BookMyDTO.class);
+		
+		Assert.assertEquals(book.getTitle(),mappedBook.getMyTitle());
+		Assert.assertEquals(book.getAuthor().getName(),mappedBook.getMyAuthor().getMyName());
+	}
+	
+	@Test
 	public void testMappingSubclassImplementationWithExistingMapping() throws Exception  {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory();
@@ -180,6 +221,7 @@ public class SuperTypeMappingTestCase {
 		Assert.assertEquals(book.getTitle(),mappedBook.getMyTitle());
 		Assert.assertEquals(book.getAuthor().getName(),mappedBook.getMyAuthor().getMyName());
 	}
+
 	
 	public static class A {
         XMLGregorianCalendar time ;
@@ -245,5 +287,143 @@ public class SuperTypeMappingTestCase {
 		assertEquals(date,mapped.getTime());
 		
 	}
+	
+	/**
+	 * This test is a bit complicated: it verifies that super-type lookup occurs properly
+	 * if presented with a class that is not accessible from the current class loader, but
+	 * which extends some super-type (or implements an interface) which is accessible.<br>
+	 * This type of scenario might occur in web-module to ejb jar interactions...
+	 *  
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void testSuperTypeForInaccessibleClassWithAccessibleSupertype() throws Exception {
+	
+		
+		MapperFactory factory = MappingUtil.getMapperFactory();
+		MappingHint myHint = 
+			/**
+			 * This sample hint converts "myProperty" to "property", and vis-versa.
+			 */
+			new MappingHint() {
+
+				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+					if (fromProperty.startsWith("my")) {
+						return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
+					} else {
+						return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
+					}	
+				}
+				
+			};
+		factory.registerMappingHint(myHint);
+		factory.build();
+		
+		MapperFacade mapper = factory.getMapperFacade();
+		
+		// -----------------------------------------------------------------------------
+		
+		File testClassPathRoot = new File(getClass().getResource("/").getFile());
+		File projectRoot = testClassPathRoot.getParentFile().getParentFile();
+		File hiddenClassPathRoot = new File(testClassPathRoot.getParentFile(),"hidden-test-classes");
+		if (!hiddenClassPathRoot.exists() && !hiddenClassPathRoot.mkdir()) {
+			Assert.fail("couldn't create output folder");
+		}
+		
+		compile(new File(projectRoot,"src/test/java-hidden/types"),hiddenClassPathRoot,""+testClassPathRoot);
+		
+
+		URL hiddenClassesRootURL = new URL(hiddenClassPathRoot.toURI().toString());
+		ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader childLoader = new URLClassLoader(new URL[]{hiddenClassesRootURL}, threadContextLoader);
+		
+		@SuppressWarnings("unchecked")
+		Class<? extends Library> hiddenLibraryType = (Class<? extends Library>)childLoader.loadClass("types.LibraryHidden");
+		@SuppressWarnings("unchecked")
+		Class<? extends Author> hiddenAuthorType = (Class<? extends Author>)childLoader.loadClass("types.AuthorHidden");
+		@SuppressWarnings("unchecked")
+		Class<? extends Book> hiddenBookType = (Class<? extends Book>)childLoader.loadClass("types.BookHidden");
+		
+		try {
+			threadContextLoader.loadClass("types.LibraryHidden");
+			Assert.fail("types.LibraryHidden should not be accessible to the thread context class loader");
+		} catch (ClassNotFoundException e0) {
+			try {
+				threadContextLoader.loadClass("types.AuthorHidden");
+				Assert.fail("types.AuthorHidden should not be accessible to the thread context class loader");
+			} catch (ClassNotFoundException e1) {
+				try {
+					threadContextLoader.loadClass("types.BookHidden");
+					Assert.fail("types.BookHidden should not be accessible to the thread context class loader");
+				} catch (ClassNotFoundException e2) {
+					/* good: all of these types should be inaccessible */
+				}
+			}
+		}
+		// Now, these types are hidden from the current class-loader, but they implement types
+		// that are accessible to this loader
+		// -----------------------------------------------------------------------------
+		
+		
+		Book book = createBook(hiddenBookType);
+		book.setAuthor(createAuthor(hiddenAuthorType));
+		Library lib = createLibrary(hiddenLibraryType);
+		lib.getBooks().add(book);
+		
+		LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
+		
+		Assert.assertEquals(lib.getTitle(),mappedLib.getMyTitle());
+		Assert.assertEquals(book.getTitle(),mappedLib.getMyBooks().get(0).getMyTitle());
+		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
+
+	}
+	
+	public static void compile(File sourcePath, File destPath, String classPath) {
+
+        String s = null;
+        Process p = null;
+        BufferedReader stdInput = null;
+        BufferedReader stdError = null;
+        try {
+            
+            p = Runtime.getRuntime().exec("javac -d " + destPath + " -cp " + classPath + " " + sourcePath + "/*.java");
+            
+            stdInput = new BufferedReader(new 
+                 InputStreamReader(p.getInputStream()));
+
+            stdError = new BufferedReader(new 
+                 InputStreamReader(p.getErrorStream()));
+
+            // read the output from the command
+            while ((s = stdInput.readLine()) != null) {
+                System.out.println(s);
+            }
+            
+            // read any errors from the attempted command
+            while ((s = stdError.readLine()) != null) {
+                System.out.println(s);
+            }
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+        	p.destroy();
+        	if (stdInput!=null) {
+        		try {
+					stdInput.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+        	}
+        	if (stdError!=null) {
+        		try {
+        			stdError.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+        	}
+        }
+    }
 	
 }

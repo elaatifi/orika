@@ -237,7 +237,7 @@ public class CodeSourceBuilder {
                 append("%s != null", sb.toString());
                 i++;
             }
-            if (!sp.isPrimitive()) {
+            if (!sp.isPrimitive() && sp instanceof NestedProperty) {
                 append(" && source.").append(getLongGetter((NestedProperty) sp)).append(" != null");
             }
             append(")");
