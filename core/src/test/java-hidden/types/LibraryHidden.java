@@ -10,7 +10,7 @@ public class LibraryHidden implements Library {
 		
 	private String title;
 
-	private List<Book> books;
+	private List/*<Book>*/ books;
 
 	public String getTitle() {
 		return title;
@@ -20,9 +20,9 @@ public class LibraryHidden implements Library {
 		this.title = title;
 	}
 
-	public List<Book> getBooks() {
+	public List/*<Book>*/ getBooks() {
 		if (books==null) {
-			books = new ArrayList<Book>();
+			books = new ArrayList/*<Book>*/();
 		}
 		return books;
 	}

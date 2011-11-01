@@ -53,6 +53,8 @@ import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryChild;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryMyDTO;
 import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryParent;
 
+import org.codehaus.janino.DebuggingInformation;
+import org.codehaus.janino.JavaSourceClassLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -323,27 +325,24 @@ public class SuperTypeMappingTestCase {
 		MapperFacade mapper = factory.getMapperFacade();
 		
 		// -----------------------------------------------------------------------------
-		
 		File testClassPathRoot = new File(getClass().getResource("/").getFile());
 		File projectRoot = testClassPathRoot.getParentFile().getParentFile();
-		File hiddenClassPathRoot = new File(testClassPathRoot.getParentFile(),"hidden-test-classes");
-		if (!hiddenClassPathRoot.exists() && !hiddenClassPathRoot.mkdir()) {
-			Assert.fail("couldn't create output folder");
-		}
 		
-		compile(new File(projectRoot,"src/test/java-hidden/types"),hiddenClassPathRoot,""+testClassPathRoot);
-		
-
-		URL hiddenClassesRootURL = new URL(hiddenClassPathRoot.toURI().toString());
 		ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
-		ClassLoader childLoader = new URLClassLoader(new URL[]{hiddenClassesRootURL}, threadContextLoader);
 		
-		@SuppressWarnings("unchecked")
-		Class<? extends Library> hiddenLibraryType = (Class<? extends Library>)childLoader.loadClass("types.LibraryHidden");
+		ClassLoader childLoader = new JavaSourceClassLoader(     
+				threadContextLoader,    
+				new File[] { new File(projectRoot,"src/test/java-hidden") },      
+				"UTF-8",                     
+				DebuggingInformation.ALL         
+				); 
+		
 		@SuppressWarnings("unchecked")
 		Class<? extends Author> hiddenAuthorType = (Class<? extends Author>)childLoader.loadClass("types.AuthorHidden");
 		@SuppressWarnings("unchecked")
 		Class<? extends Book> hiddenBookType = (Class<? extends Book>)childLoader.loadClass("types.BookHidden");
+		@SuppressWarnings("unchecked")
+		Class<? extends Library> hiddenLibraryType = (Class<? extends Library>)childLoader.loadClass("types.LibraryHidden");
 		
 		try {
 			threadContextLoader.loadClass("types.LibraryHidden");
@@ -365,7 +364,6 @@ public class SuperTypeMappingTestCase {
 		// that are accessible to this loader
 		// -----------------------------------------------------------------------------
 		
-		
 		Book book = createBook(hiddenBookType);
 		book.setAuthor(createAuthor(hiddenAuthorType));
 		Library lib = createLibrary(hiddenLibraryType);
@@ -378,52 +376,5 @@ public class SuperTypeMappingTestCase {
 		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
 
 	}
-	
-	public static void compile(File sourcePath, File destPath, String classPath) {
-
-        String s = null;
-        Process p = null;
-        BufferedReader stdInput = null;
-        BufferedReader stdError = null;
-        try {
-            
-            p = Runtime.getRuntime().exec("javac -d " + destPath + " -cp " + classPath + " " + sourcePath + "/*.java");
-            
-            stdInput = new BufferedReader(new 
-                 InputStreamReader(p.getInputStream()));
-
-            stdError = new BufferedReader(new 
-                 InputStreamReader(p.getErrorStream()));
-
-            // read the output from the command
-            while ((s = stdInput.readLine()) != null) {
-                System.out.println(s);
-            }
-            
-            // read any errors from the attempted command
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
-            }
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-        	p.destroy();
-        	if (stdInput!=null) {
-        		try {
-					stdInput.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-        	}
-        	if (stdError!=null) {
-        		try {
-        			stdError.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-        	}
-        }
-    }
 	
 }

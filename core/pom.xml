@@ -37,6 +37,11 @@
             <artifactId>easymock</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>janino</groupId>
+            <artifactId>janino</artifactId>
+        </dependency>
+
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
