@@ -46,29 +46,26 @@ import ma.glasnost.orika.metadata.Property;
 
 final class MapperGenerator {
     
-	
+
 	private static final String TEST_METHOD_CLASS_NAME = "$Method$Test$Class$";
 	
     private final MapperFactory mapperFactory;
     private final ClassPool classPool;
     private final Map<ClassLoader, Boolean> mappedLoaders;
-    private final boolean writeClassFiles;
     private final CtClass methodTestClass;
     
     public MapperGenerator(MapperFactory mapperFactory) {
         this.mapperFactory = mapperFactory;
         this.classPool = ClassPool.getDefault();
-        
-        classPool.insertClassPath(new ClassClassPath(this.getClass()));
-        
+        classPool.insertClassPath(new ClassClassPath(this.getClass())); 
         mappedLoaders = new ConcurrentHashMap<ClassLoader, Boolean>();
-        // set this system property to true to enable writing out of class files;
-        // improves debugging
-        writeClassFiles = Boolean.valueOf(System.getProperty(DefaultMapperFactory.PROPERTY_WRITE_CLASS_FILES));
         this.methodTestClass = classPool.makeClass(TEST_METHOD_CLASS_NAME);
     }
     
     /**
+     * Tests whether the specified type is accessible to both the current thread's class-loader,
+     * and the byte code generator.
+     * 
      * @param type
      * @return
      */
@@ -93,6 +90,9 @@ final class MapperGenerator {
 		} 
     }
     
+    /**
+     * @param type
+     */
     private void assertClassLoaderAccessible(Class<?> type) {
     	ClassLoader loader = type.getClassLoader();
         if (loader!=null && !mappedLoaders.containsKey(loader)) {
@@ -106,37 +106,27 @@ final class MapperGenerator {
     	assertClassLoaderAccessible(classMap.getAType());
     	assertClassLoaderAccessible(classMap.getBType());	
         
-        final CtClass mapperClass = classPool.makeClass(classMap.getMapperClassName());
-        
         try {
-            final CtClass abstractMapperClass = classPool.getCtClass(GeneratedMapperBase.class.getName());
-            mapperClass.setSuperclass(abstractMapperClass);
-            addGetTypeMethod(mapperClass, "getAType", classMap.getAType());
-            addGetTypeMethod(mapperClass, "getBType", classMap.getBType());
-            addMapMethod(mapperClass, true, classMap);
-            addMapMethod(mapperClass, false, classMap);
+            final GeneratedMapperSourceCode mapperCode = new GeneratedMapperSourceCode(classMap.getMapperClassName(),classPool);
+        	
+            addGetTypeMethod(mapperCode, "getAType", classMap.getAType());
+            addGetTypeMethod(mapperCode, "getBType", classMap.getBType());
+            addMapMethod(mapperCode, true, classMap);
+            addMapMethod(mapperCode, false, classMap);
             
-            Class<?> compiledClass = mapperClass.toClass();
+            return mapperCode.getInstance();
             
-            if (writeClassFiles) {
-	            String rootPath = getClass().getResource("/").getFile().toString();
-	            String packagePath =mapperClass.getPackageName()!=null 
-	            	? mapperClass.getPackageName().replaceAll("\\.", "/") + "/" : "";
-	            mapperClass.writeFile(rootPath + packagePath);
-            }
-            
-            return (GeneratedMapperBase)compiledClass.newInstance();
         } catch (final Exception e) {
             throw new MappingException(e);
         }
     }
     
-    private void addMapMethod(CtClass mapperClass, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
-        final CodeSourceBuilder out = new CodeSourceBuilder();
+    private void addMapMethod(GeneratedMapperSourceCode context, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
+        final CodeSourceBuilder out = new CodeSourceBuilder(2);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
-        out.append("public void ")
+        out.append("\tpublic void ")
                 .append(mapMethod)
-                .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {", MappingContext.class.getName());
+                .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {\n\n", MappingContext.class.getName());
         
         Class<?> sourceClass, destinationClass;
         if (aToB) {
@@ -148,9 +138,9 @@ final class MapperGenerator {
         }
         out.assertType("a", sourceClass);
         out.assertType("b", destinationClass);
-        out.append("super.").append(mapMethod).append("(a,b, mappingContext);\n");
-        out.append(sourceClass.getName()).append(" source = (").append(sourceClass.getName()).append(") a; \n");
-        out.append(destinationClass.getName()).append(" destination = (").append(destinationClass.getName()).append(") b; \n");
+        out.append("\n\t\tsuper.").append(mapMethod).append("(a,b, mappingContext);\n\n");
+        out.append("\t\t" + sourceClass.getName()).append(" source = \n\t\t\t\t (").append(sourceClass.getName()).append(") a; \n");
+        out.append("\t\t" + destinationClass.getName()).append(" destination = \n\t\t\t\t (").append(destinationClass.getName()).append(") b; \n\n");
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
             if (isAlreadyExistsInUsedMappers(fieldMap, classMap)) {
@@ -167,12 +157,12 @@ final class MapperGenerator {
                 }
             }
         }
-        out.append("\nif(customMapper != null) customMapper.").append(mapMethod).append("(source, destination, mappingContext);\n");
+        out.append("\n\t\tif(customMapper != null) { \n\t\t\t customMapper.").append(mapMethod).append("(source, destination, mappingContext);\n\t\t}");
         
-        out.append("\n}");
+        out.append("\n\t}");
         
         try {
-            mapperClass.addMethod(CtNewMethod.make(out.toString(), mapperClass));
+            context.addMethod(out.toString());
         } catch (final CannotCompileException e) {
             System.out.println("An exception occured while compiling: " + out.toString());
             e.printStackTrace();
@@ -248,16 +238,17 @@ final class MapperGenerator {
         }
     }
     
-    private void addGetTypeMethod(CtClass mapperClass, String methodName, Class<?> value) throws CannotCompileException {
+    private void addGetTypeMethod(GeneratedMapperSourceCode mapperCode, String methodName, Class<?> value) throws CannotCompileException {
     	assertClassLoaderAccessible(value);
         
     	final StringBuilder output = new StringBuilder();
         output.append("\n")
-                .append("public java.lang.Class ")
+                .append("\tpublic java.lang.Class ")
                 .append(methodName)
-                .append("() { return ")
+                .append("() { \n\t\treturn ")
                 .append(value.getName())
-                .append(".class; }");
-        mapperClass.addMethod(CtNewMethod.make(output.toString(), mapperClass));
+                .append(".class; \n\t}");
+        
+        mapperCode.addMethod(output.toString());
     }
 }

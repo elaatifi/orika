@@ -3,8 +3,8 @@ package types;
 import java.util.ArrayList;
 import java.util.List;
 
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Book;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Library;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Library;
 
 public class LibraryHidden implements Library {
 		

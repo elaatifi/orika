@@ -19,25 +19,20 @@
 package ma.glasnost.orika.inheritance;
 
 
-public class SuperTypeResolver {
+public final class SuperTypeResolver {
 	
-	private final SuperTypeResolverStrategy strategy;
-	
-	public SuperTypeResolver(SuperTypeResolverStrategy strategy) {
-		this.strategy = strategy;
-	}
 	
 	@SuppressWarnings("unchecked")
-    public <T> Class<T> getSuperType(final Class<?> enhancedClass) {
+    public static <T> Class<T> getSuperType(final Class<?> enhancedClass, final SuperTypeResolverStrategy strategy) {
     	
 		Class<T> mappedClass = (Class<T>) enhancedClass;
     	if (strategy.shouldLookupSuperType(mappedClass)) {
     		
-    		Class<T> mappedSuper = (Class<T>) tryFirstLookupOption(mappedClass);
+    		Class<T> mappedSuper = (Class<T>) tryFirstLookupOption(mappedClass,strategy);
     		if (mappedSuper!=null) {
     			mappedClass = mappedSuper;
     		} else {
-    			mappedSuper = (Class<T>) trySecondLookupOption(mappedClass);
+    			mappedSuper = (Class<T>) trySecondLookupOption(mappedClass,strategy);
     			if (mappedSuper!=null) {
         			mappedClass = mappedSuper;
         		}
@@ -47,23 +42,23 @@ public class SuperTypeResolver {
     	return mappedClass;
     }
 	
-	private Class<?> tryFirstLookupOption(final Class<?> theClass) {
+	private static Class<?> tryFirstLookupOption(final Class<?> theClass, final SuperTypeResolverStrategy strategy) {
 		if (strategy.shouldPreferClassOverInterface()) {
-			return lookupMappedSuperType(theClass);
+			return lookupMappedSuperType(theClass,strategy);
 		} else {
-			return lookupMappedInterface(theClass);
+			return lookupMappedInterface(theClass,strategy);
 		}
 	}
 	
-	private Class<?> trySecondLookupOption(final Class<?> theClass) {
+	private static Class<?> trySecondLookupOption(final Class<?> theClass, final SuperTypeResolverStrategy strategy) {
 		if (strategy.shouldPreferClassOverInterface()) {
-			return lookupMappedInterface(theClass);
+			return lookupMappedInterface(theClass,strategy);
 		} else {
-			return lookupMappedSuperType(theClass);
+			return lookupMappedSuperType(theClass,strategy);
 		}
 	}
 	
-	private Class<?> lookupMappedSuperType(final Class<?> theClass) { 
+	private static Class<?> lookupMappedSuperType(final Class<?> theClass, final SuperTypeResolverStrategy strategy) { 
     	
 		Class<?> targetClass = theClass.getSuperclass();
 		Class<?> mappedClass = null;
@@ -80,7 +75,7 @@ public class SuperTypeResolver {
     	return mappedClass;
     }
     
-    private Class<?> lookupMappedInterface(final Class<?> theClass) {
+    private static Class<?> lookupMappedInterface(final Class<?> theClass, final SuperTypeResolverStrategy strategy) {
     	
     	Class<?> targetClass = theClass;
 		Class<?> mappedClass = null;

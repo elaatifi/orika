@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.proxy;
+package ma.glasnost.orika.test.unenhance;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;

@@ -34,7 +34,7 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.proxy.UnenhanceStrategy;
+import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
 public class MapperFacadeImpl implements MapperFacade {
     

@@ -16,17 +16,12 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.proxy;
+package ma.glasnost.orika.test.unenhance;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -40,18 +35,18 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorChild;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Book;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookChild;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Library;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryChild;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorChild;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorMyDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.BookChild;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.BookMyDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.BookParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Library;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryChild;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryMyDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryParent;
 
 import org.codehaus.janino.DebuggingInformation;
 import org.codehaus.janino.JavaSourceClassLoader;
@@ -376,5 +371,5 @@ public class SuperTypeMappingTestCase {
 		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
 
 	}
-	
+
 }

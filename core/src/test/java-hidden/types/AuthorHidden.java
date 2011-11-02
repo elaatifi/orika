@@ -1,6 +1,6 @@
 package types;
 
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
 
 public class AuthorHidden implements Author {
 

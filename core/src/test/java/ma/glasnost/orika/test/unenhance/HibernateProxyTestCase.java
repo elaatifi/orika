@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.proxy;
+package ma.glasnost.orika.test.unenhance;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.test.HibernateUtil;

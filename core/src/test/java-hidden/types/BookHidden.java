@@ -1,7 +1,7 @@
 package types;
 
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Book;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
 
 public class BookHidden implements Book {
 

@@ -16,18 +16,37 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.proxy;
+package ma.glasnost.orika.test.unenhance;
 
-/**
- * Defines a strategy to unenhance an object specially a proxy one like those of
- * Hibernate.
- * 
- * @author S.M. El Aatifi
- * 
- */
-public interface UnenhanceStrategy {
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 
-	public <T> T unenhanceObject(T object);
+@Entity
+public class Author {
 
-	public <T> Class<T> unenhanceClass(T object);
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	private Long id;
+
+	@Column
+	private String name;
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
 }

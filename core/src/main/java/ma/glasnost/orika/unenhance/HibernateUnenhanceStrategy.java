@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.proxy;
+package ma.glasnost.orika.unenhance;
 
 import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;

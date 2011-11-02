@@ -20,24 +20,32 @@ package ma.glasnost.orika.test.hint;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.MappingHint;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
+import ma.glasnost.orika.impl.GeneratedMapperSourceCode;
+import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Book;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Library;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorMyDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.BookMyDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.BookParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Library;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryMyDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryParent;
 
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class DefaultMappingHintTestCase {
 
+	
+	@Before
+	public void setUp() {
+		System.setProperty(GeneratedMapperSourceCode.PROPERTY_WRITE_SOURCE_FILES,"true"); 
+	}
 	
 	private Author createAuthor(Class<? extends AuthorParent> type) throws InstantiationException, IllegalAccessException {
 		AuthorParent author = (AuthorParent) type.newInstance();

@@ -14,8 +14,8 @@
 		<property name="hibernate.hbm2ddl.auto">update</property>
 		
 		<mapping package="ma.glasnost.orika.test"/>
-		<mapping class="ma.glasnost.orika.test.proxy.Author"/>
-		<mapping class="ma.glasnost.orika.test.proxy.Book"/>
+		<mapping class="ma.glasnost.orika.test.unenhance.Author"/>
+		<mapping class="ma.glasnost.orika.test.unenhance.Book"/>
 		
 	</session-factory>
 </hibernate-configuration>

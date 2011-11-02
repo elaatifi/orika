@@ -16,22 +16,20 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.proxy;
+package ma.glasnost.orika.test.unenhance;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.test.MappingUtil;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Author;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.AuthorParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Book;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.BookParent;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.Library;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryMyDTO;
-import ma.glasnost.orika.test.proxy.SuperTypeTestCaseClasses.LibraryParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.BookParent;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Library;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryDTO;
+import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryParent;
 
 import org.easymock.EasyMock;
 import org.junit.Assert;

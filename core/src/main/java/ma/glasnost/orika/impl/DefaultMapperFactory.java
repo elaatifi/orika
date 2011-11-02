@@ -43,9 +43,9 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.proxy.DefaultUnenhanceStrategy;
-import ma.glasnost.orika.proxy.HibernateUnenhanceStrategy;
-import ma.glasnost.orika.proxy.UnenhanceStrategy;
+import ma.glasnost.orika.unenhance.BaseUnenhancer;
+import ma.glasnost.orika.unenhance.HibernateUnenhanceStrategy;
+import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
 /**
  * The mapper factory is the heart of Orika, a small container where metadata
@@ -72,7 +72,8 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
-    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps) {
+    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy, 
+    		SuperTypeResolverStrategy superTypeStrategy) {
         
         this.mapperGenerator = new MapperGenerator(this);
         this.classMaps = Collections.synchronizedSet(new HashSet<ClassMap<?, ?>>());
@@ -83,7 +84,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
         this.mappingHints = new CopyOnWriteArrayList<MappingHint>();
-        this.unenhanceStrategy = getUnenhanceStrategy();
+        this.unenhanceStrategy = buildUnenhanceStrategy(delegateStrategy,superTypeStrategy);
         this.mapperFacade = new MapperFacadeImpl(this, unenhanceStrategy);
         
         if (classMaps != null) {
@@ -93,28 +94,91 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     }
     
+    /**
+     * Construct an instance of DefaultMapperFactory with a default UnenhanceStrategy
+     */
     public DefaultMapperFactory() {
-        this(null);
+        this(null,null,null);
     }
     
-    protected UnenhanceStrategy getUnenhanceStrategy() {
+    /**
+     * Constructs an instance of DefaultMapperFactory using the specified UnenhanceStrategy
+     * @param unenhanceStrategy used to provide custom unenhancement of mapped objects before processing
+     */
+    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy) {
+    	this(null,unenhanceStrategy,null);
+    }
+    
+    /**
+     * Constructs an instance of DefaultMapperFactory using the specified UnenhanceStrategy,
+     * with the possibility to override the default unenhancement behavior.
+	 *
+     * @param unenhanceStrategy used to provide custom unenhancement of mapped objects before processing
+     * @param superTypeStrategy similar to the unenhance strategy, but used when a recommended type
+     * is not usable (in case it is inaccessible, or similar situation) 
+     */
+    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
+    	this(null,unenhanceStrategy,superTypeStrategy);
+    }
+    
+    
+    /**
+     * Generates the UnenhanceStrategy to be used for this MapperFactory, applying
+     * the passed delegateStrategy if not null.
+     * 
+     * @param unenhanceStrategy
+     * @param overrideDefaultUnenhanceBehavior true if the passed UnenhanceStrategy should take
+     * full responsibility for un-enhancement; false if the default behavior should be applied as
+     * a fail-safe after consulting the passed strategy. 
+     * 
+     * @return
+     */
+    protected UnenhanceStrategy buildUnenhanceStrategy(UnenhanceStrategy unenhanceStrategy, 
+    		SuperTypeResolverStrategy superTypeStrategy) {
         
-    	/*
-    	 * This strategy attempts to lookup super-type that has a registered mapper or converter 
-    	 * whenever it is offered a class that is not currently mapped 
-    	 */
-    	final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
-
-			public boolean isAcceptable(Class<?> proposedClass) {
-				return aToBRegistry.containsKey(proposedClass) ||
-					mappedConverters.containsKey(proposedClass);
-			}
-		};
+    	BaseUnenhancer unenhancer = new BaseUnenhancer();
     	
+    	
+    	if (unenhanceStrategy!=null) {
+    		unenhancer.addUnenhanceStrategy(unenhanceStrategy);
+    	} else {
+    		// TODO: this delegate strategy may no longer be needed...
+			try {
+	            Class.forName("org.hibernate.proxy.HibernateProxy");
+	            unenhancer.addUnenhanceStrategy(new HibernateUnenhanceStrategy());
+	        } catch (final Throwable e) {
+	            // TODO add warning
+	        }
+
+    	}
+    	
+    	/*
+    	 * If the passed strategy wants complete control, they can have it
+    	 */
+    	if (superTypeStrategy!=null) {
+    		unenhancer.addSuperTypeResolverStrategy(superTypeStrategy);
+    	} else {
+    	
+	    	/*
+	    	 * This strategy attempts to lookup super-type that has a registered mapper or converter 
+	    	 * whenever it is offered a class that is not currently mapped 
+	    	 */
+	    	final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
+	
+				public boolean isAcceptable(Class<?> proposedClass) {
+					return aToBRegistry.containsKey(proposedClass) ||
+						mappedConverters.containsKey(proposedClass);
+				}
+			};
+			
+			unenhancer.addSuperTypeResolverStrategy(registeredMappersStrategy);
+    	}	
     	
     	/*
     	 * This strategy produces super-types whenever the proposed class type is not accessible to
-    	 * the (javassist) byte-code generator;
+    	 * the (javassist) byte-code generator and/or the current thread context class laoder;
+    	 * it is added last as a fail-safe in case a suggested type cannot be used. It is automatically
+    	 * included, as there's no case when skipping it would be desired....
     	 */
     	final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
 
@@ -124,18 +188,10 @@ public class DefaultMapperFactory implements MapperFactory {
 
 		};
     	
-		DefaultUnenhanceStrategy baseStrategy = new DefaultUnenhanceStrategy(registeredMappersStrategy);
+    	unenhancer.addSuperTypeResolverStrategy(inaccessibleTypeStrategy);		
     	
-		baseStrategy.addDelegateStrategy(new DefaultUnenhanceStrategy(inaccessibleTypeStrategy));
+    	return unenhancer;
     	
-		// TODO: this delegate strategy may no longer be needed...
-		try {
-            Class.forName("org.hibernate.proxy.HibernateProxy");
-            baseStrategy.addDelegateStrategy(new HibernateUnenhanceStrategy());
-        } catch (final Throwable e) {
-            // TODO add warning
-        }
-        return baseStrategy;
     }
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
