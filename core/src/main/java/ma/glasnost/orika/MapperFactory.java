@@ -56,4 +56,9 @@ public interface MapperFactory {
     void build();
     
     Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey);
+    
+    <A, B> ClassMap<A, B> getClassMap(MapperKey mapperKey);
+    
+    Set<Class<Object>> lookupMappedClasses(Class<Object> clazz);
+    
 }

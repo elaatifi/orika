@@ -32,11 +32,11 @@ public class CodeSourceBuilder {
     private int currentIndent = 1;
     
     public CodeSourceBuilder(int indent) {
-    	this.currentIndent = indent;
+        this.currentIndent = indent;
     }
     
     public CodeSourceBuilder assertType(String var, Class<?> clazz) {
-    	newLine();
+        newLine();
         append("if(!(" + var + " instanceof ").append(clazz.getName()).append(")) ");
         begin();
         append("throw new IllegalStateException(\"[" + var + "] is not an instance of " + clazz.getName() + " \");");
@@ -46,18 +46,16 @@ public class CodeSourceBuilder {
     
     public CodeSourceBuilder convert(Property destination, Property source) {
         
-    	final String getter = getGetter(source);
+        final String getter = getGetter(source);
         final String setter = getSetter(destination);
         final Class<?> destinationClass = destination.getType();
-        return newLine()
-        	.append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class));", setter, destinationClass.getName(), getter,
-                destinationClass.getName())
-            .newLine();  
+        return newLine().append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class));", setter, destinationClass.getName(),
+                getter, destinationClass.getName()).newLine();
     }
     
     public CodeSourceBuilder set(Property d, Property s) {
         
-    	final String getter = getGetter(s);
+        final String getter = getGetter(s);
         final String setter = getSetter(d);
         return newLine().append("destination.%s(source.%s);", setter, getter);
     }
@@ -65,8 +63,8 @@ public class CodeSourceBuilder {
     public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip, Class<?> dc) {
         final Class<?> destinationElementClass = dp.getParameterizedType();
         
-        if (destinationElementClass==null) {
-        	throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + dp.getName());
+        if (destinationElementClass == null) {
+            throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + dp.getName());
         }
         
         String destinationCollection = "List";
@@ -82,30 +80,30 @@ public class CodeSourceBuilder {
         final String sourceGetter = getGetter(sp);
         final String destinationGetter = getGetter(dp);
         final String destinationSetter = getSetter(dp);
-        boolean destinationHasSetter = false; 
+        boolean destinationHasSetter = false;
         try {
-        	destinationHasSetter = (dc.getMethod(destinationSetter, dp.getType())!=null);
-			
-		} catch (Exception e) {
-			/* ignored: no destination setter available */
-		} 
+            destinationHasSetter = (dc.getMethod(destinationSetter, dp.getType()) != null);
+            
+        } catch (Exception e) {
+            /* ignored: no destination setter available */
+        }
         
-		if (destinationHasSetter) {
-	        newLine()
-	        	.append("if (destination.%s == null) ", destinationGetter)
-	        	.begin()
-	        	.append("destination.%s(%s);", destinationSetter, newStatement)
-	        	.end();
-		}
+        if (destinationHasSetter) {
+            newLine().append("if (destination.%s == null) ", destinationGetter)
+                    .begin()
+                    .append("destination.%s(%s);", destinationSetter, newStatement)
+                    .end();
+        }
         
         newLine().append("destination.%s.clear();", destinationGetter);
         newLine().append("destination.%s.addAll(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", destinationGetter,
                 destinationCollection, sourceGetter, destinationElementClass.getName());
         if (ip != null) {
             if (ip.isCollection()) {
-                newLine().append("for (java.util.Iterator orikaIterator = destination.%s.iterator(); orikaIterator.hasNext();) ", getGetter(dp));
-                begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getParameterizedType().getName(), dp
-                        .getParameterizedType().getName());
+                newLine().append("for (java.util.Iterator orikaIterator = destination.%s.iterator(); orikaIterator.hasNext();) ",
+                        getGetter(dp));
+                begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getParameterizedType().getName(),
+                        dp.getParameterizedType().getName());
                 newLine().append("if (orikaCollectionItem.%s == null) ", getGetter(ip));
                 begin();
                 if (ip.isSet()) {
@@ -123,9 +121,10 @@ public class CodeSourceBuilder {
             } else if (ip.isArray()) {
                 // TODO To implement
             } else {
-                newLine().append("for (java.util.Iterator orikaIterator = destination.%s.iterator(); orikaIterator.hasNext();)", getGetter(dp));
-                begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getParameterizedType().getName(), dp
-                        .getParameterizedType().getName());
+                newLine().append("for (java.util.Iterator orikaIterator = destination.%s.iterator(); orikaIterator.hasNext();)",
+                        getGetter(dp));
+                begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getParameterizedType().getName(),
+                        dp.getParameterizedType().getName());
                 newLine().append("orikaCollectionItem.%s(destination);", getSetter(ip));
                 end();
             }
@@ -135,11 +134,11 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder newLine() {
-    	out.append("\n");
-    	for(int i = 0; i < currentIndent; ++i) {
-    		out.append("\t");
-    	}
-    	return this;
+        out.append("\n");
+        for (int i = 0; i < currentIndent; ++i) {
+            out.append("\t");
+        }
+        return this;
     }
     
     public CodeSourceBuilder append(String str, Object... args) {
@@ -159,7 +158,7 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder begin() {
-    	return then();
+        return then();
     }
     
     public CodeSourceBuilder end() {
@@ -186,7 +185,8 @@ public class CodeSourceBuilder {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
-        newLine().append("destination.%s(%s.valueOf((%s) source.%s));", setter, dp.getType().getName(), getPrimitiveType(dp.getType()), getter);
+        newLine().append("destination.%s(%s.valueOf((%s) source.%s));", setter, dp.getType().getName(), getPrimitiveType(dp.getType()),
+                getter);
         return this;
     }
     
@@ -205,22 +205,22 @@ public class CodeSourceBuilder {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
-        newLine().append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode).append(
-                "mapperFacade.mapAsArray((Object[])%s, (%s)source.%s, %s.class, mappingContext);", dp.getName(), castSource, getter,
-                paramType).append("destination.%s(%s);", setter, dp.getName());
+        newLine().append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode)
+                .append("mapperFacade.mapAsArray((Object[])%s, (%s)source.%s, %s.class, mappingContext);", dp.getName(), castSource,
+                        getter, paramType)
+                .append("destination.%s(%s);", setter, dp.getName());
         
         return this;
     }
     
     public CodeSourceBuilder setToEnumeration(Property dp, Property sp) {
-    	final String getter = getGetter(sp);
+        final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
-        newLine().append("destination.%s((%s)Enum.valueOf(%s.class,\"\"+source.%s));", 
-        		setter, dp.getType().getName(), dp.getType().getName(), getter);
+        newLine().append("destination.%s((%s)Enum.valueOf(%s.class,\"\"+source.%s));", setter, dp.getType().getName(),
+                dp.getType().getName(), getter);
         return this;
     }
-    
     
     public CodeSourceBuilder setObject(Property dp, Property sp, Property ip) {
         final String sourceGetter = getGetter(sp);
@@ -228,8 +228,8 @@ public class CodeSourceBuilder {
         final String destinationGetter = getGetter(dp);
         final String destinationSetter = getSetter(dp);
         newLine().append("if (destination.%s == null) ", destinationGetter);
-        begin().append("destination.%s((%s)mapperFacade.map(source.%s, %s.class, mappingContext));", destinationSetter, dp.getType().getName(),
-                sourceGetter, dp.getType().getName());
+        begin().append("destination.%s((%s)mapperFacade.map(source.%s, %s.class, mappingContext));", destinationSetter,
+                dp.getType().getName(), sourceGetter, dp.getType().getName());
         elze();
         append("mapperFacade.map(source.%s, destination.%s, mappingContext);", sourceGetter, destinationGetter);
         end();
@@ -256,11 +256,9 @@ public class CodeSourceBuilder {
         return this;
     }
     
-   
-    
     public CodeSourceBuilder ifSourceNotNull(Property sp) {
         
-    	newLine();
+        newLine();
         if (sp.hasPath()) {
             final StringBuilder sb = new StringBuilder("source");
             int i = 0;
@@ -293,8 +291,8 @@ public class CodeSourceBuilder {
      * @return CodeSourceBuilder
      */
     public CodeSourceBuilder ifDestinationNull(Property property) {
-    	
-    	if (!property.hasPath()) {
+        
+        if (!property.hasPath()) {
             return this;
         }
         
@@ -316,6 +314,11 @@ public class CodeSourceBuilder {
         return this;
     }
     
+    public CodeSourceBuilder ifSourceInstanceOf(Class<Object> sourceClass) {
+        append("if(s instanceof %s)", sourceClass.getName());
+        return this;
+    }
+
     private String getLongGetter(NestedProperty property) {
         final StringBuilder sb = new StringBuilder();
         for (final Property p : property.getPath()) {
@@ -351,5 +354,84 @@ public class CodeSourceBuilder {
             type = "char";
         }
         return type;
+    }
+    
+    public CodeSourceBuilder declareVar(Class<?> clazz, String var) {
+        append("\n%s %s = %s;", clazz.getName(), var, clazz.isPrimitive() ? getDefaultPrimtiveValue(clazz) : "null");
+        return this;
+    }
+    
+    public CodeSourceBuilder assignImmutableVar(String var, Property sp) {
+        append("%s = source.%s;", var, getGetter(sp));
+        return this;
+    }
+    
+    public CodeSourceBuilder assignObjectVar(String var, Property sp, Class<?> targetClass) {
+        append("%s = (%s) mapperFacade.map(source.%s, %s.class);", var, targetClass.getName(), getGetter(sp), targetClass.getName());
+        return this;
+    }
+    
+    public CodeSourceBuilder assignCollectionVar(String var, Property sp, Property dp) {
+        final Class<?> destinationElementClass = dp.getParameterizedType();
+        String destinationCollection = "List";
+        String newStatement = "new java.util.ArrayList()";
+        if (List.class.isAssignableFrom(dp.getType())) {
+            destinationCollection = "List";
+            newStatement = "new java.util.ArrayList()";
+        } else if (Set.class.isAssignableFrom(dp.getType())) {
+            destinationCollection = "Set";
+            newStatement = "new java.util.HashSet()";
+        }
+        
+        final String sourceGetter = getGetter(sp);
+        final String destinationGetter = getGetter(dp);
+        final String destinationSetter = getSetter(dp);
+        
+        append("if (destination.%s == null) {\n", destinationGetter);
+        append("destination.%s(%s);\n", destinationSetter, newStatement);
+        append("}\n");
+        append("destination.%s.clear();\n", destinationGetter);
+        append("destination.%s.addAll(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", destinationGetter,
+                destinationCollection, sourceGetter, destinationElementClass.getName());
+        return this;
+    }
+    
+    public CodeSourceBuilder assignArrayVar(String var, Property sp, Class<?> targetClass) {
+        String getter = getGetter(sp);
+        final String getSizeCode = sp.getType().isArray() ? "length" : "size()";
+        final String castSource = sp.getType().isArray() ? "Object[]" : "";
+        append("%s[] %s = new %s[source.%s.%s];", targetClass, var, targetClass.getName(), getter, getSizeCode).append(
+                "mapperFacade.mapAsArray((Object[])%s, (%s)source.%s, %s.class, mappingContext);", var, castSource, getter,
+                targetClass.getName());
+        return this;
+    }
+    
+    public CodeSourceBuilder assignPrimtiveToWrapperVar(String var, Property sp, Class<?> targetClass) {
+        final String getter = getGetter(sp);
+        
+        append("%s = %s.valueOf((%s) source.%s));\n", var, targetClass.getName(), getPrimitiveType(targetClass), getter);
+        return this;
+    }
+    
+    public CodeSourceBuilder assignWrapperToPrimitiveVar(String var, Property sp, Class<?> targetClass) {
+        String getter = getGetter(sp);
+        append("%s = source.%s.%sValue();\n", var, getter, getPrimitiveType(targetClass));
+        return this;
+    }
+    
+    public CodeSourceBuilder assignConvertedVar(String var, Property source, Class<?> targetClass) {
+        final String getter = getGetter(source);
+        append("%s = ((%s)mapperFacade.convert(source.%s, %s.class)); \n", var, targetClass.getName(), getter, targetClass.getName());
+        return this;
+        
+    }
+    
+    private String getDefaultPrimtiveValue(Class<?> clazz) {
+        if (Boolean.TYPE.equals(clazz))
+            return "false";
+        else if (Character.TYPE.equals(clazz))
+            return "'\0'";
+        else
+            return "0";
     }
 }

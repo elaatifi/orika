@@ -37,6 +37,8 @@ public final class ClassMapBuilder<A, B> {
     final private Set<FieldMap> fieldsMapping;
     final private Set<MapperKey> usedMappers;
     private Mapper<A, B> customizedMapper;
+    private String[] constructorA;
+    private String[] constructorB;
     
     private ClassMapBuilder(Class<A> aType, Class<B> bType) {
         
@@ -100,20 +102,20 @@ public final class ClassMapBuilder<A, B> {
         return this;
     }
     
-    public ClassMapBuilder<A, B> byDefault(MappingHint...mappingHints) {
+    public ClassMapBuilder<A, B> byDefault(MappingHint... mappingHints) {
         
         for (final String propertyName : aProperties.keySet()) {
             if (!propertiesCache.contains(propertyName)) {
-                if(bProperties.containsKey(propertyName)) {
-                	fieldMap(propertyName).add();
+                if (bProperties.containsKey(propertyName)) {
+                    fieldMap(propertyName).add();
                 } else {
-                	Property prop = aProperties.get(propertyName);
-                	for (MappingHint hint: mappingHints) {
-                		String suggestion = hint.suggestMappedField(propertyName,prop.getType());
-                		if (suggestion!=null && bProperties.containsKey(suggestion)) {
-                			fieldMap(propertyName,suggestion).add();
-                		}
-                	}
+                    Property prop = aProperties.get(propertyName);
+                    for (MappingHint hint : mappingHints) {
+                        String suggestion = hint.suggestMappedField(propertyName, prop.getType());
+                        if (suggestion != null && bProperties.containsKey(suggestion)) {
+                            fieldMap(propertyName, suggestion).add();
+                        }
+                    }
                 }
             }
         }
@@ -122,7 +124,7 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public ClassMap<A, B> toClassMap() {
-        return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers);
+        return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
     }
     
     public static <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
@@ -174,6 +176,16 @@ public final class ClassMapBuilder<A, B> {
     void addFieldMap(FieldMap fieldMap) {
         this.fieldsMapping.add(fieldMap);
         propertiesCache.add(fieldMap.getSource().getExpression());
+    }
+    
+    public ClassMapBuilder<A, B> constructorA(String... args) {
+        this.constructorA = args.clone();
+        return this;
+    }
+    
+    public ClassMapBuilder<A, B> constructorB(String... args) {
+        this.constructorB = args.clone();
+        return this;
     }
     
 }

@@ -25,14 +25,18 @@ import ma.glasnost.orika.Mapper;
 
 public class ClassMap<A, B> {
     
-    final private Class<A> aType;
-    final private Class<B> bType;
-    final private Set<FieldMap> fieldsMapping;
-    final private Set<MapperKey> usedMappers;
+    private final Class<A> aType;
+    private final Class<B> bType;
+    private final Set<FieldMap> fieldsMapping;
+    private final Set<MapperKey> usedMappers;
     
-    final private Mapper<A, B> customizedMapper;
+    private final Mapper<A, B> customizedMapper;
     
-    public ClassMap(Class<A> aType, Class<B> bType, Set<FieldMap> fieldsMapping, Mapper<A, B> customizedMapper, Set<MapperKey> usedMappers) {
+    private final String[] constructorA;
+    private final String[] constructorB;
+    
+    public ClassMap(Class<A> aType, Class<B> bType, Set<FieldMap> fieldsMapping, Mapper<A, B> customizedMapper, Set<MapperKey> usedMappers,
+            String[] constructorA, String[] constructorB) {
         this.aType = aType;
         this.bType = bType;
         
@@ -40,6 +44,18 @@ public class ClassMap<A, B> {
         
         this.fieldsMapping = Collections.unmodifiableSet(fieldsMapping);
         this.usedMappers = Collections.unmodifiableSet(usedMappers);
+        
+        if (constructorA != null) {
+            this.constructorA = constructorA.clone();
+        } else {
+            this.constructorA = null;
+        }
+        
+        if (constructorB != null) {
+            this.constructorB = constructorB.clone();
+        } else {
+            this.constructorB = null;
+        }
     }
     
     public void addFieldMap(FieldMap fieldMap) {
@@ -75,6 +91,14 @@ public class ClassMap<A, B> {
         // something like mapperClassNameStrategy.getMapperClassName(ClassMap
         // classMap)
         return "Orika" + bType.getSimpleName() + getATypeName() + "Mapper" + System.identityHashCode(this);
+    }
+    
+    public String[] getConstructorA() {
+        return constructorA;
+    }
+    
+    public String[] getConstructorB() {
+        return constructorB;
     }
     
     @Override

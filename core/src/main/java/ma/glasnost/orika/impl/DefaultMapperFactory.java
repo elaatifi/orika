@@ -61,7 +61,9 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
-    private final Set<ClassMap<?, ?>> classMaps;
+    private final ObjectFactoryGenerator objectFactoryGenerator;
+    
+    private final Map<MapperKey, ClassMap<Object, Object>> classMapRegistry;
     private final Map<MapperKey, GeneratedMapperBase> mappersRegistry;
     private final Map<Object, Converter<?, ?>> convertersRegistry;
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
@@ -72,11 +74,13 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
-    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy, 
-    		SuperTypeResolverStrategy superTypeStrategy) {
+    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
+            SuperTypeResolverStrategy superTypeStrategy) {
         
         this.mapperGenerator = new MapperGenerator(this);
-        this.classMaps = Collections.synchronizedSet(new HashSet<ClassMap<?, ?>>());
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this);
+        
+        this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
@@ -84,7 +88,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Class<?>, ObjectFactory<?>>();
         this.mappingHints = new CopyOnWriteArrayList<MappingHint>();
-        this.unenhanceStrategy = buildUnenhanceStrategy(delegateStrategy,superTypeStrategy);
+        this.unenhanceStrategy = buildUnenhanceStrategy(delegateStrategy, superTypeStrategy);
         this.mapperFacade = new MapperFacadeImpl(this, unenhanceStrategy);
         
         if (classMaps != null) {
@@ -95,103 +99,115 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     /**
-     * Construct an instance of DefaultMapperFactory with a default UnenhanceStrategy
+     * Construct an instance of DefaultMapperFactory with a default
+     * UnenhanceStrategy
      */
     public DefaultMapperFactory() {
-        this(null,null,null);
+        this(null, null, null);
     }
     
     /**
-     * Constructs an instance of DefaultMapperFactory using the specified UnenhanceStrategy
-     * @param unenhanceStrategy used to provide custom unenhancement of mapped objects before processing
-     */
-    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy) {
-    	this(null,unenhanceStrategy,null);
-    }
-    
-    /**
-     * Constructs an instance of DefaultMapperFactory using the specified UnenhanceStrategy,
-     * with the possibility to override the default unenhancement behavior.
-	 *
-     * @param unenhanceStrategy used to provide custom unenhancement of mapped objects before processing
-     * @param superTypeStrategy similar to the unenhance strategy, but used when a recommended type
-     * is not usable (in case it is inaccessible, or similar situation) 
-     */
-    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
-    	this(null,unenhanceStrategy,superTypeStrategy);
-    }
-    
-    
-    /**
-     * Generates the UnenhanceStrategy to be used for this MapperFactory, applying
-     * the passed delegateStrategy if not null.
+     * Constructs an instance of DefaultMapperFactory using the specified
+     * UnenhanceStrategy
      * 
      * @param unenhanceStrategy
-     * @param overrideDefaultUnenhanceBehavior true if the passed UnenhanceStrategy should take
-     * full responsibility for un-enhancement; false if the default behavior should be applied as
-     * a fail-safe after consulting the passed strategy. 
+     *            used to provide custom unenhancement of mapped objects before
+     *            processing
+     */
+    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy) {
+        this(null, unenhanceStrategy, null);
+    }
+    
+    /**
+     * Constructs an instance of DefaultMapperFactory using the specified
+     * UnenhanceStrategy, with the possibility to override the default
+     * unenhancement behavior.
+     * 
+     * @param unenhanceStrategy
+     *            used to provide custom unenhancement of mapped objects before
+     *            processing
+     * @param superTypeStrategy
+     *            similar to the unenhance strategy, but used when a recommended
+     *            type is not usable (in case it is inaccessible, or similar
+     *            situation)
+     */
+    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
+        this(null, unenhanceStrategy, superTypeStrategy);
+    }
+    
+    /**
+     * Generates the UnenhanceStrategy to be used for this MapperFactory,
+     * applying the passed delegateStrategy if not null.
+     * 
+     * @param unenhanceStrategy
+     * @param overrideDefaultUnenhanceBehavior
+     *            true if the passed UnenhanceStrategy should take full
+     *            responsibility for un-enhancement; false if the default
+     *            behavior should be applied as a fail-safe after consulting the
+     *            passed strategy.
      * 
      * @return
      */
-    protected UnenhanceStrategy buildUnenhanceStrategy(UnenhanceStrategy unenhanceStrategy, 
-    		SuperTypeResolverStrategy superTypeStrategy) {
+    protected UnenhanceStrategy buildUnenhanceStrategy(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
         
-    	BaseUnenhancer unenhancer = new BaseUnenhancer();
-    	
-    	
-    	if (unenhanceStrategy!=null) {
-    		unenhancer.addUnenhanceStrategy(unenhanceStrategy);
-    	} else {
-    		// TODO: this delegate strategy may no longer be needed...
-			try {
-	            Class.forName("org.hibernate.proxy.HibernateProxy");
-	            unenhancer.addUnenhanceStrategy(new HibernateUnenhanceStrategy());
-	        } catch (final Throwable e) {
-	            // TODO add warning
-	        }
-
-    	}
-    	
-    	/*
-    	 * If the passed strategy wants complete control, they can have it
-    	 */
-    	if (superTypeStrategy!=null) {
-    		unenhancer.addSuperTypeResolverStrategy(superTypeStrategy);
-    	} else {
-    	
-	    	/*
-	    	 * This strategy attempts to lookup super-type that has a registered mapper or converter 
-	    	 * whenever it is offered a class that is not currently mapped 
-	    	 */
-	    	final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
-	
-				public boolean isAcceptable(Class<?> proposedClass) {
-					return aToBRegistry.containsKey(proposedClass) ||
-						mappedConverters.containsKey(proposedClass);
-				}
-			};
-			
-			unenhancer.addSuperTypeResolverStrategy(registeredMappersStrategy);
-    	}	
-    	
-    	/*
-    	 * This strategy produces super-types whenever the proposed class type is not accessible to
-    	 * the (javassist) byte-code generator and/or the current thread context class laoder;
-    	 * it is added last as a fail-safe in case a suggested type cannot be used. It is automatically
-    	 * included, as there's no case when skipping it would be desired....
-    	 */
-    	final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
-
-			public boolean isAcceptable(Class<?> proposedClass) {
-				return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
-			}
-
-		};
-    	
-    	unenhancer.addSuperTypeResolverStrategy(inaccessibleTypeStrategy);		
-    	
-    	return unenhancer;
-    	
+        BaseUnenhancer unenhancer = new BaseUnenhancer();
+        
+        if (unenhanceStrategy != null) {
+            unenhancer.addUnenhanceStrategy(unenhanceStrategy);
+        } else {
+            // TODO: this delegate strategy may no longer be needed...
+            try {
+                Class.forName("org.hibernate.proxy.HibernateProxy");
+                unenhancer.addUnenhanceStrategy(new HibernateUnenhanceStrategy());
+            } catch (final Throwable e) {
+                // TODO add warning
+            }
+            
+        }
+        
+        /*
+         * If the passed strategy wants complete control, they can have it
+         */
+        if (superTypeStrategy != null) {
+            unenhancer.addSuperTypeResolverStrategy(superTypeStrategy);
+        } else {
+            
+            /*
+             * This strategy attempts to lookup super-type that has a registered
+             * mapper or converter whenever it is offered a class that is not
+             * currently mapped
+             */
+            final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
+                
+                @Override
+                public boolean isAcceptable(Class<?> proposedClass) {
+                    return aToBRegistry.containsKey(proposedClass) || mappedConverters.containsKey(proposedClass);
+                }
+            };
+            
+            unenhancer.addSuperTypeResolverStrategy(registeredMappersStrategy);
+        }
+        
+        /*
+         * This strategy produces super-types whenever the proposed class type
+         * is not accessible to the (javassist) byte-code generator and/or the
+         * current thread context class laoder; it is added last as a fail-safe
+         * in case a suggested type cannot be used. It is automatically
+         * included, as there's no case when skipping it would be desired....
+         */
+        final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
+            
+            @Override
+            public boolean isAcceptable(Class<?> proposedClass) {
+                return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
+            }
+            
+        };
+        
+        unenhancer.addSuperTypeResolverStrategy(inaccessibleTypeStrategy);
+        
+        return unenhancer;
+        
     }
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
@@ -257,19 +273,21 @@ public class DefaultMapperFactory implements MapperFactory {
         return concreteClass;
     }
     
-    public <S, D> void registerClassMap(ClassMap<S, D> classMap) {
-        classMaps.add(classMap);
+    @SuppressWarnings("unchecked")
+    public <A, B> void registerClassMap(ClassMap<A, B> classMap) {
+        classMapRegistry.put(new MapperKey(classMap.getAType(), classMap.getBType()), (ClassMap<Object, Object>) classMap);
     }
     
     public void build() {
         
         buildClassMapRegistry();
         
-        for (final ClassMap<?, ?> classMap : classMaps) {
+        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
             buildMapper(classMap);
         }
         
-        for (final ClassMap<?, ?> classMap : classMaps) {
+        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
+            buildObjectFactories(classMap);
             initializeUsedMappers(classMap);
         }
         
@@ -287,10 +305,9 @@ public class DefaultMapperFactory implements MapperFactory {
         // prepare a map for classmap (stored as set)
         Map<MapperKey, ClassMap<Object, Object>> classMapsDictionnary = new HashMap<MapperKey, ClassMap<Object, Object>>();
         
-        @SuppressWarnings({ "rawtypes", "unchecked" })
-        Set<ClassMap<Object, Object>> set = (Set) classMaps;
+        Set<ClassMap<Object, Object>> classMaps = new HashSet<ClassMap<Object, Object>>(classMapRegistry.values());
         
-        for (final ClassMap<Object, Object> classMap : set) {
+        for (final ClassMap<Object, Object> classMap : classMaps) {
             classMapsDictionnary.put(new MapperKey(classMap.getAType(), classMap.getBType()), classMap);
         }
         
@@ -309,6 +326,21 @@ public class DefaultMapperFactory implements MapperFactory {
             usedMapperMetadataRegistry.put(key, usedClassMapSet);
         }
         
+    }
+    
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    private <S, D> void buildObjectFactories(ClassMap<S, D> classMap) {
+        Class aType = classMap.getAType();
+        Class bType = classMap.getBType();
+        if (classMap.getConstructorA() != null && lookupObjectFactory(aType) == null) {
+            GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(aType);
+            registerObjectFactory(objectFactory, aType);
+        }
+        
+        if (classMap.getConstructorB() != null && lookupObjectFactory(bType) == null) {
+            GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(bType);
+            registerObjectFactory(objectFactory, bType);
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -360,4 +392,15 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         destinationSet.add(destinationClass);
     }
+    
+    @SuppressWarnings("unchecked")
+    public <A, B> ClassMap<A, B> getClassMap(MapperKey mapperKey) {
+        return (ClassMap<A, B>) classMapRegistry.get(mapperKey);
+    }
+    
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public Set<Class<Object>> lookupMappedClasses(Class<Object> clazz) {
+        return (Set) aToBRegistry.get(clazz);
+    }
+    
 }

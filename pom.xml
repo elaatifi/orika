@@ -26,6 +26,8 @@
 		<wagon-svn.version>1.8</wagon-svn.version>
 		<h2.version>1.3.154</h2.version>
 		<slf4j.version>1.5.8</slf4j.version>
+		<paranamer.version>2.3</paranamer.version>
+		
 	</properties>
 
 	<dependencyManagement>
@@ -36,6 +38,12 @@
 				<version>${javassist.version}</version>
 			</dependency>
 
+			<dependency>
+				<groupId>com.thoughtworks.paranamer</groupId>
+				<artifactId>paranamer</artifactId>
+				<version>${paranamer.version}</version>
+			</dependency>
+			
 			<dependency>
 				<groupId>junit</groupId>
 				<artifactId>junit</artifactId>
