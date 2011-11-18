@@ -19,8 +19,7 @@ import javassist.CtNewMethod;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.constructor.PickingConstructorStrategy;
-import ma.glasnost.orika.constructor.SimplePickingConstructorStrategy;
+import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
@@ -39,19 +38,19 @@ public class ObjectFactoryGenerator {
     
     private final static Logger LOG = LoggerFactory.getLogger(ObjectFactoryGenerator.class);
     
-    private final PickingConstructorStrategy pickConstructorStrategy;
+    private final ConstructorResolverStrategy constructorResolverStrategy;
     private final MapperFactory mapperFactory;
     private final ClassPool classPool;
     private final Paranamer paranamer;
     
-    public ObjectFactoryGenerator(MapperFactory mapperFactory) {
+    public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy) {
         this.mapperFactory = mapperFactory;
         this.classPool = ClassPool.getDefault();
         this.paranamer = new CachingParanamer(new AdaptiveParanamer(new BytecodeReadingParanamer(), new AnnotationParanamer()));
         
         classPool.insertClassPath(new ClassClassPath(this.getClass()));
         
-        pickConstructorStrategy = new SimplePickingConstructorStrategy();
+        this.constructorResolverStrategy = constructorResolverStrategy;
     }
     
     public GeneratedObjectFactory build(Class<Object> clazz) {
@@ -74,9 +73,6 @@ public class ObjectFactoryGenerator {
             throw new MappingException(e);
         } finally {
             // reduce memory consumption
-            if (abstractObjectFactoryClass != null) {
-                abstractObjectFactoryClass.detach();
-            }
             if (objectFactoryClass != null) {
                 objectFactoryClass.detach();
             }
@@ -113,7 +109,7 @@ public class ObjectFactoryGenerator {
         boolean aToB = classMap.getBType().equals(clazz);
         
         try {
-            Constructor<Object> constructor = pickConstructorStrategy.pick(classMap, clazz);
+            Constructor<Object> constructor = constructorResolverStrategy.resolve(classMap, clazz);
             
             String[] parameters = paranamer.lookupParameterNames(constructor);
             Class<?>[] constructorArguments = constructor.getParameterTypes();
@@ -177,7 +173,6 @@ public class ObjectFactoryGenerator {
             }
             out.append(");").end();
             
-            System.out.println(out);
         } catch (Exception e) {
             LOG.warn("Can not find " + clazz.getName() + "constructor's parameters name");
             /* SKIP */

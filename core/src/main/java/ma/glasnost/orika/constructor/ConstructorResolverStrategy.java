@@ -4,7 +4,7 @@ import java.lang.reflect.Constructor;
 
 import ma.glasnost.orika.metadata.ClassMap;
 
-public interface PickingConstructorStrategy {
+public interface ConstructorResolverStrategy {
     
-    <T, A, B> Constructor<T> pick(ClassMap<A, B> classMap, Class<T> sourceClass);
+    <T, A, B> Constructor<T> resolve(ClassMap<A, B> classMap, Class<T> sourceClass);
 }

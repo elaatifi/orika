@@ -37,6 +37,8 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
+import ma.glasnost.orika.constructor.SimpleConstructorResolverStrategy;
 import ma.glasnost.orika.inheritance.DefaultSuperTypeResolverStrategy;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
@@ -75,10 +77,11 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
-            SuperTypeResolverStrategy superTypeStrategy) {
+            SuperTypeResolverStrategy superTypeStrategy, ConstructorResolverStrategy constructorResolverStrategy) {
         
-        this.mapperGenerator = new MapperGenerator(this);
-        this.objectFactoryGenerator = new ObjectFactoryGenerator(this);
+        if (constructorResolverStrategy == null) {
+            constructorResolverStrategy = new SimpleConstructorResolverStrategy();
+        }
         
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
@@ -96,6 +99,9 @@ public class DefaultMapperFactory implements MapperFactory {
                 registerClassMap(classMap);
             }
         }
+        
+        this.mapperGenerator = new MapperGenerator(this);
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, constructorResolverStrategy);
     }
     
     /**
@@ -103,7 +109,7 @@ public class DefaultMapperFactory implements MapperFactory {
      * UnenhanceStrategy
      */
     public DefaultMapperFactory() {
-        this(null, null, null);
+        this(null, null, null, null);
     }
     
     /**
@@ -115,7 +121,7 @@ public class DefaultMapperFactory implements MapperFactory {
      *            processing
      */
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy) {
-        this(null, unenhanceStrategy, null);
+        this(null, unenhanceStrategy, null, null);
     }
     
     /**
@@ -132,7 +138,29 @@ public class DefaultMapperFactory implements MapperFactory {
      *            situation)
      */
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
-        this(null, unenhanceStrategy, superTypeStrategy);
+        this(null, unenhanceStrategy, superTypeStrategy, null);
+    }
+    
+    /**
+     * Constructs an instance of DefaultMapperFactory using the specified
+     * UnenhanceStrategy, with the possibility to override the default
+     * unenhancement behavior and the specified ConstructorResolverStrategy.
+     * 
+     * @param unenhanceStrategy
+     *            used to provide custom unenhancement of mapped objects before
+     *            processing
+     * @param superTypeStrategy
+     *            similar to the unenhance strategy, but used when a recommended
+     *            type is not usable (in case it is inaccessible, or similar
+     *            situation)
+     * 
+     * @param constructorResolverStrategy
+     *            used to provide custom resolver strategy of mapped object
+     *            constructor to generate an object factory
+     */
+    public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy,
+            ConstructorResolverStrategy constructorResolverStrategy) {
+        this(null, unenhanceStrategy, superTypeStrategy, constructorResolverStrategy);
     }
     
     /**
