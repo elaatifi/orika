@@ -30,35 +30,41 @@ import javassist.NotFoundException;
 
 /**
  * Acts as an intermediate to gather source code as methods are added
- * to the mapper; allows for easy generation of source files for the mapper 
- * if desired.
+ * to an object which is being generated; useful for providing source code
+ * for troubleshooting of generated objects as desired.
  * 
  * @author matt.deboer@gmail.com
- *
  */
-public class GeneratedMapperSourceCode {
+public class GeneratedSourceCode {
 	
 	/**
 	 * Set this system property to "true" to cause class files to be written for automatically generated classes
 	 */
-	public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.GeneratedMapperSourceCode.writeClassFiles";
+	public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.GeneratedSourceCode.writeClassFiles";
 	
 	/**
 	 * Set this system property to "true" to cause source files to be written for automatically generated classes
 	 */
-	public static final String PROPERTY_WRITE_SOURCE_FILES = "ma.glasnost.orika.GeneratedMapperSourceCode.writeSourceFiles";
+	public static final String PROPERTY_WRITE_SOURCE_FILES = "ma.glasnost.orika.GeneratedSourceCode.writeSourceFiles";
 	
 	private CtClass byteCodeClass;
 	private StringBuilder sourceBuilder;
-	private Class<? extends GeneratedMapperBase> compiledClass;
+	private Class<?> compiledClass;
 	private final boolean writeClassFiles;
 	private final boolean writeSourceFiles;
 	private String className;
 	private String packageName;
 	
-	public GeneratedMapperSourceCode(final String className, final ClassPool classPool) throws CannotCompileException, NotFoundException {
+	/**
+	 * @param className The name of the class to generated
+	 * @param classPool The shared class pool from which to obtain/create object definitions
+	 * @param superClass The type of the base class to be extended by the generated class
+	 * @throws CannotCompileException
+	 * @throws NotFoundException
+	 */
+	public GeneratedSourceCode(final String className, final ClassPool classPool, Class<?> superClass) throws CannotCompileException, NotFoundException {
 		this.byteCodeClass = classPool.makeClass(className);
-    	final CtClass abstractMapperClass = classPool.getCtClass(GeneratedMapperBase.class.getName());
+    	final CtClass abstractMapperClass = classPool.getCtClass(superClass.getName());
     	this.sourceBuilder = new StringBuilder();
     	this.className = className;
     	
@@ -67,13 +73,13 @@ public class GeneratedMapperSourceCode {
     		this.packageName = className.substring(0,namePos-1);
     		this.className = className.substring(namePos+1);
     	} else {
-    		this.packageName = "ma.glasnost.orika.generated.mapper";
+    		this.packageName = "ma.glasnost.orika.generated";
     	}
     	
     	byteCodeClass.setSuperclass(abstractMapperClass);
     	
     	sourceBuilder.append("package " + packageName + ";\n\n");
-    	sourceBuilder.append("public class " + className + " extends " + GeneratedMapperBase.class.getName() + " {\n");
+    	sourceBuilder.append("public class " + className + " extends " + superClass.getName() + " {\n");
     	
         writeClassFiles = Boolean.valueOf(System.getProperty(PROPERTY_WRITE_CLASS_FILES));
         writeSourceFiles = Boolean.valueOf(System.getProperty(PROPERTY_WRITE_SOURCE_FILES));
@@ -129,10 +135,9 @@ public class GeneratedMapperSourceCode {
 	 * @throws CannotCompileException
 	 * @throws IOException
 	 */
-	@SuppressWarnings("unchecked")
-	private Class<? extends GeneratedMapperBase> getCompiledClass() throws CannotCompileException, IOException {
+	private Class<?> getCompiledClass() throws CannotCompileException, IOException {
 		if (compiledClass==null) {
-			compiledClass = (Class<? extends GeneratedMapperBase>)byteCodeClass.toClass();
+			compiledClass = (Class<?>)byteCodeClass.toClass();
 	        writeFiles();
 		}
 		return compiledClass;
@@ -145,9 +150,10 @@ public class GeneratedMapperSourceCode {
 	 * @throws InstantiationException
 	 * @throws IllegalAccessException
 	 */
-	public GeneratedMapperBase getInstance() throws CannotCompileException, IOException, InstantiationException, IllegalAccessException {
+	@SuppressWarnings("unchecked")
+	public <T> T getInstance() throws CannotCompileException, IOException, InstantiationException, IllegalAccessException {
 		
-        return (GeneratedMapperBase)getCompiledClass().newInstance();
+        return (T)getCompiledClass().newInstance();
 	}
 	
 }

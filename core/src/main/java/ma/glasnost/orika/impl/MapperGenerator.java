@@ -107,7 +107,7 @@ final class MapperGenerator {
     	assertClassLoaderAccessible(classMap.getBType());	
         
         try {
-            final GeneratedMapperSourceCode mapperCode = new GeneratedMapperSourceCode(classMap.getMapperClassName(),classPool);
+            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(classMap.getMapperClassName(),classPool, GeneratedMapperBase.class);
         	
             addGetTypeMethod(mapperCode, "getAType", classMap.getAType());
             addGetTypeMethod(mapperCode, "getBType", classMap.getBType());
@@ -121,7 +121,7 @@ final class MapperGenerator {
         }
     }
     
-    private void addMapMethod(GeneratedMapperSourceCode context, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
+    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
         final CodeSourceBuilder out = new CodeSourceBuilder(2);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ")
@@ -238,7 +238,7 @@ final class MapperGenerator {
         }
     }
     
-    private void addGetTypeMethod(GeneratedMapperSourceCode mapperCode, String methodName, Class<?> value) throws CannotCompileException {
+    private void addGetTypeMethod(GeneratedSourceCode mapperCode, String methodName, Class<?> value) throws CannotCompileException {
     	assertClassLoaderAccessible(value);
         
     	final StringBuilder output = new StringBuilder();
