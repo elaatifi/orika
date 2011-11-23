@@ -14,8 +14,6 @@ import java.util.Set;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtNewMethod;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
@@ -55,31 +53,24 @@ public class ObjectFactoryGenerator {
     
     public GeneratedObjectFactory build(Class<Object> clazz) {
         
-        final CtClass objectFactoryClass = classPool.makeClass(clazz.getSimpleName() + "ObjectFactory" + System.identityHashCode(clazz));
-        CtClass abstractObjectFactoryClass = null;
+        final String className = clazz.getSimpleName() + "ObjectFactory" + System.identityHashCode(clazz);
+        
         try {
+        	final GeneratedSourceCode factoryCode = new GeneratedSourceCode(className,classPool, GeneratedObjectFactory.class);
+        	
+            addCreateMethod(factoryCode, clazz);
             
-            abstractObjectFactoryClass = classPool.getCtClass(GeneratedObjectFactory.class.getName());
-            objectFactoryClass.setSuperclass(abstractObjectFactoryClass);
-            
-            addCreateMethod(objectFactoryClass, clazz);
-            
-            GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) objectFactoryClass.toClass().newInstance();
+            GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
             
             return objectFactory;
             
         } catch (final Exception e) {
             throw new MappingException(e);
-        } finally {
-            // reduce memory consumption
-            if (objectFactoryClass != null) {
-                objectFactoryClass.detach();
-            }
-        }
+        } 
     }
     
-    private void addCreateMethod(CtClass objectFactoryClass, Class<Object> clazz) throws CannotCompileException {
+    private void addCreateMethod(GeneratedSourceCode context, Class<Object> clazz) throws CannotCompileException {
         final CodeSourceBuilder out = new CodeSourceBuilder(1);
         out.append("public Object create(Object s) {");
         out.append("if(s == null) throw new %s(\"[s] must be not null\");", IllegalArgumentException.class.getName());
@@ -96,7 +87,7 @@ public class ObjectFactoryGenerator {
         out.append("\n}");
         
         try {
-            objectFactoryClass.addMethod(CtNewMethod.make(out.toString(), objectFactoryClass));
+            context.addMethod(out.toString());
         } catch (final CannotCompileException e) {
             LOG.error("An exception occured while compiling: " + out.toString(), e);
             throw e;

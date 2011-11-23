@@ -25,6 +25,7 @@ import java.io.IOException;
 import javassist.CannotCompileException;
 import javassist.ClassPool;
 import javassist.CtClass;
+import javassist.CtField;
 import javassist.CtNewMethod;
 import javassist.NotFoundException;
 
@@ -54,6 +55,7 @@ public class GeneratedSourceCode {
 	private final boolean writeSourceFiles;
 	private String className;
 	private String packageName;
+	private boolean detached = false;
 	
 	/**
 	 * @param className The name of the class to generated
@@ -85,25 +87,66 @@ public class GeneratedSourceCode {
         writeSourceFiles = Boolean.valueOf(System.getProperty(PROPERTY_WRITE_SOURCE_FILES));
 	}
 	
-	public CtClass getByteCodeClass() {
+	/**
+	 * @return the Javassist CtClass representing the byte code class definition.
+	 */
+	protected CtClass getByteCodeClass() {
 		return byteCodeClass;
 	}
-	public void setByteCodeClass(CtClass byteCodeClass) {
-		this.byteCodeClass = byteCodeClass;
-	}
-	public StringBuilder getSourceBuilder() {
+	
+	/**
+	 * @return the StringBuilder containing the current accumulated source.
+	 */
+	protected StringBuilder getSourceBuilder() {
 		return sourceBuilder;
 	}
 	
+	/**
+	 * Adds a method definition to the class based on the provided source.
+	 * 
+	 * @param methodSource
+	 * @throws CannotCompileException
+	 */
 	public void addMethod(String methodSource) throws CannotCompileException {
+		assertNotDetached();
 		sourceBuilder.append("\n" + methodSource + "\n");
 		byteCodeClass.addMethod(CtNewMethod.make(methodSource, byteCodeClass));
 	}
 	
+	/**
+	 * Adds a field definition to the class based on the provided source.
+	 * 
+	 * @param fieldSource the source from which to compile the field
+	 * @throws CannotCompileException
+	 */
+	public void addField(String fieldSource) throws CannotCompileException {
+		assertNotDetached();
+		sourceBuilder.append("\n" + fieldSource + "\n");
+		byteCodeClass.addField(CtField.make(fieldSource, byteCodeClass));
+	}
+	
+	/**
+	 * Confirms that the byte code class has not been detached
+	 */
+	private void assertNotDetached() {
+		if (detached) {
+			throw new IllegalStateException("modification cannot be performed after instantiation");
+		}
+	}
+	
+	/**
+	 * @return the completed generated java source for the class.
+	 */
 	public String toSourceFile() {
 		return sourceBuilder.toString() + "\n}";
 	}
 	
+	/**
+	 * Produces the requested source and/or class files for debugging purposes.
+	 * 
+	 * @throws CannotCompileException
+	 * @throws IOException
+	 */
 	private void writeFiles() throws CannotCompileException, IOException {
 		
 		if (writeClassFiles || writeSourceFiles) {
@@ -131,14 +174,20 @@ public class GeneratedSourceCode {
 	}
 	
 	/**
+	 * Compile and return the (generated) class; this will also cause the generated
+	 * class to be detached from the class-pool, and any (optional) source and/or
+	 * class files to be written.
+	 * 
 	 * @return the (generated) compiled class
 	 * @throws CannotCompileException
 	 * @throws IOException
 	 */
-	private Class<?> getCompiledClass() throws CannotCompileException, IOException {
+	private Class<?> compiledClass() throws CannotCompileException, IOException {
 		if (compiledClass==null) {
 			compiledClass = (Class<?>)byteCodeClass.toClass();
 	        writeFiles();
+			byteCodeClass.detach();
+			this.detached = true; // No more modifications allowed
 		}
 		return compiledClass;
 	}
@@ -153,7 +202,7 @@ public class GeneratedSourceCode {
 	@SuppressWarnings("unchecked")
 	public <T> T getInstance() throws CannotCompileException, IOException, InstantiationException, IllegalAccessException {
 		
-        return (T)getCompiledClass().newInstance();
+        return (T)compiledClass().newInstance();
 	}
 	
 }

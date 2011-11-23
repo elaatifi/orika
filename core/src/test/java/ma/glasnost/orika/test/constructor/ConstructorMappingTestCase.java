@@ -7,6 +7,7 @@ import junit.framework.Assert;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.ConverterException;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.GeneratedSourceCode;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
@@ -16,7 +17,10 @@ public class ConstructorMappingTestCase {
     
     @Test
     public void testSimpleCase() throws Throwable {
-        final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+        
+    	System.setProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES, "true");
+    	
+    	final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
         MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(ClassMapBuilder.map(PersonVO.class, Person.class)
