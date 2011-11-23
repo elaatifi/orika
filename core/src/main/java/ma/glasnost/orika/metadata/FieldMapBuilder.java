@@ -30,6 +30,8 @@ public class FieldMapBuilder<A, B> {
     
     private Property bInverseProperty;
     
+    private String converterId;
+    
     private MappingDirection mappingDirection = MappingDirection.BIDIRECTIONAL;
     
     FieldMapBuilder(ClassMapBuilder<A, B> classMapBuilder, String a, String b) {
@@ -40,7 +42,8 @@ public class FieldMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> add() {
-        final FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true);
+        final FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true,
+                converterId);
         classMapBuilder.addFieldMap(fieldMap);
         
         return classMapBuilder;
@@ -69,6 +72,11 @@ public class FieldMapBuilder<A, B> {
     public FieldMapBuilder<A, B> bToA() {
         mappingDirection = MappingDirection.B_TO_A;
         
+        return this;
+    }
+    
+    public FieldMapBuilder<A, B> converter(String id) {
+        this.converterId = id;
         return this;
     }
     

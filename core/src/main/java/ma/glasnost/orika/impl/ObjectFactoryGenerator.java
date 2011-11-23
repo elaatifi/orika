@@ -132,7 +132,7 @@ public class ObjectFactoryGenerator {
                 out.declareVar(targetClass, var);
                 argIndex++;
                 
-                if (generateConverterCode(out, var, sp, dp)) {
+                if (generateConverterCode(out, var, fieldMap)) {
                     continue;
                 }
                 try {
@@ -170,11 +170,17 @@ public class ObjectFactoryGenerator {
         }
     }
     
-    private boolean generateConverterCode(final CodeSourceBuilder code, String var, Property sp, Property dp) {
+    private boolean generateConverterCode(final CodeSourceBuilder code, String var, FieldMap fieldMap) {
+        Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         final Class<?> destinationClass = dp.getType();
-        final Converter<?, ?> converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
+        Converter<?, ?> converter = null;
+        if (fieldMap.getConverterId() != null) {
+            converter = mapperFactory.lookupConverter(fieldMap.getConverterId());
+        } else {
+            converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
+        }
         if (converter != null) {
-            code.ifSourceNotNull(sp).then().assignConvertedVar(var, sp, destinationClass).end();
+            code.ifSourceNotNull(sp).then().assignConvertedVar(var, sp, destinationClass, fieldMap.getConverterId()).end();
             return true;
         } else {
             return false;

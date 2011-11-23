@@ -41,7 +41,11 @@ public interface MapperFactory {
     
     <S, D> void registerConverter(Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass);
     
+    <S, D> void registerConverter(Converter<S, D> converter, String converterId);
+    
     <S, D> Converter<S, D> lookupConverter(Class<S> source, Class<D> destination);
+    
+    <S, D> Converter<S, D> lookupConverter(String converterId);
     
     <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass);
     
@@ -60,5 +64,4 @@ public interface MapperFactory {
     <A, B> ClassMap<A, B> getClassMap(MapperKey mapperKey);
     
     Set<Class<Object>> lookupMappedClasses(Class<Object> clazz);
-    
 }

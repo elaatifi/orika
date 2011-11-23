@@ -64,7 +64,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         
         final S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);
-        final Class<S> sourceClass = (Class<S>) unenhanceStrategy.unenhanceClass(unenhancedSourceObject);
+        final Class<S> sourceClass = unenhanceStrategy.unenhanceClass(unenhancedSourceObject);
         
         // XXX when it's immutable it's ok to copy by ref
         if (ClassUtil.isImmutable(sourceClass) && sourceClass.equals(destinationClass)) {
@@ -77,8 +77,7 @@ public class MapperFacadeImpl implements MapperFacade {
             return converter.convert(unenhancedSourceObject);
         }
         
-        Class<? extends D> concreteDestinationClass = mapperFactory.lookupConcreteDestinationClass(sourceClass,
-                destinationClass, context);
+        Class<? extends D> concreteDestinationClass = mapperFactory.lookupConcreteDestinationClass(sourceClass, destinationClass, context);
         if (concreteDestinationClass == null) {
             if (Modifier.isAbstract(destinationClass.getModifiers())) {
                 throw new MappingException("No concrete class mapping defined for source class " + sourceClass.getName());
@@ -108,11 +107,9 @@ public class MapperFacadeImpl implements MapperFacade {
         final D unenhancedDestinationObject = unenhanceStrategy.unenhanceObject(destinationObject);
         
         @SuppressWarnings("unchecked")
-        final
-        Class<S> sourceClass = (Class<S>) unenhancedSourceObject.getClass();
+        final Class<S> sourceClass = (Class<S>) unenhancedSourceObject.getClass();
         @SuppressWarnings("unchecked")
-        final
-        Class<D> destinationClass = (Class<D>) unenhancedDestinationObject.getClass();
+        final Class<D> destinationClass = (Class<D>) unenhancedDestinationObject.getClass();
         
         mapDeclaredProperties(unenhancedSourceObject, unenhancedDestinationObject, sourceClass, destinationClass, context);
     }
@@ -206,7 +203,7 @@ public class MapperFacadeImpl implements MapperFacade {
         } else {
             throw new IllegalStateException(String.format("Source object type's must be one of '%s' or '%s'.", mapper.getAType(),
                     mapper.getBType()));
-         
+            
         }
     }
     
@@ -234,9 +231,15 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <S, D> D convert(S source, Class<D> destinationClass) {
+    public <S, D> D convert(S source, Class<D> destinationClass, String converterId) {
         final Class<? extends Object> sourceClass = unenhanceStrategy.unenhanceClass(source);
-        final Converter<S, D> converter = (Converter<S, D>) mapperFactory.lookupConverter(sourceClass, destinationClass);
+        Converter<S, D> converter;
+        if (converterId == null) {
+            converter = (Converter<S, D>) mapperFactory.lookupConverter(sourceClass, destinationClass);
+        } else {
+            converter = (Converter<S, D>) mapperFactory.lookupConverter(converterId);
+        }
+        
         return converter.convert(source);
     }
     

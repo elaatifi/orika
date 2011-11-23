@@ -85,7 +85,7 @@ public interface MapperFacade {
     
     <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context);
     
-    <S, D> D convert(S source, Class<D> destinationClass);
+    <S, D> D convert(S source, Class<D> destinationClass, String converterId);
     
     /**
      * Create new instance of a destination class. <strong>Abstract types are

@@ -28,14 +28,17 @@ public class FieldMap {
     private final Property bInverse;
     private final MappingDirection mappingDirection;
     private boolean configured;
+    private final String converterId;
     
-    public FieldMap(Property a, Property b, Property aInverse, Property bInverse, MappingDirection mappingDirection, boolean configured) {
+    public FieldMap(Property a, Property b, Property aInverse, Property bInverse, MappingDirection mappingDirection, boolean configured,
+            String converterId) {
         this.source = a;
         this.destination = b;
         this.aInverse = aInverse;
         this.bInverse = bInverse;
         this.mappingDirection = mappingDirection;
         this.configured = configured;
+        this.converterId = converterId;
     }
     
     public Property getSource() {
@@ -71,7 +74,7 @@ public class FieldMap {
     }
     
     public FieldMap flip() {
-        return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), configured);
+        return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), configured, converterId);
     }
     
     public boolean is(Specification specification) {
@@ -80,6 +83,10 @@ public class FieldMap {
     
     public boolean have(Specification specification) {
         return specification.apply(this);
+    }
+    
+    public String getConverterId() {
+        return converterId;
     }
     
     @Override

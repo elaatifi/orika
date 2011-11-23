@@ -44,17 +44,22 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder convert(Property destination, Property source) {
+    public CodeSourceBuilder convert(Property destination, Property source, String converterId) {
         
         final String getter = getGetter(source);
         final String setter = getSetter(destination);
         final Class<?> destinationClass = destination.getType();
-        return newLine().append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class));", setter, destinationClass.getName(),
-                getter, destinationClass.getName()).newLine();
+        converterId = getConverterId(converterId);
+        return newLine().append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class, %s));", setter, destinationClass.getName(),
+                getter, destinationClass.getName(), converterId).newLine();
+    }
+    
+    private String getConverterId(String converterId) {
+        converterId = converterId == null ? "null" : ("\"" + converterId + "\"");
+        return converterId;
     }
     
     public CodeSourceBuilder set(Property d, Property s) {
-        
         final String getter = getGetter(s);
         final String setter = getSetter(d);
         return newLine().append("destination.%s(source.%s);", setter, getter);
@@ -318,7 +323,7 @@ public class CodeSourceBuilder {
         append("if(s instanceof %s)", sourceClass.getName());
         return this;
     }
-
+    
     private String getLongGetter(NestedProperty property) {
         final StringBuilder sb = new StringBuilder();
         for (final Property p : property.getPath()) {
@@ -419,9 +424,11 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder assignConvertedVar(String var, Property source, Class<?> targetClass) {
+    public CodeSourceBuilder assignConvertedVar(String var, Property source, Class<?> targetClass, String converterId) {
         final String getter = getGetter(source);
-        append("%s = ((%s)mapperFacade.convert(source.%s, %s.class)); \n", var, targetClass.getName(), getter, targetClass.getName());
+        converterId = getConverterId(converterId);
+        append("%s = ((%s)mapperFacade.convert(source.%s, %s.class, %s)); \n", var, targetClass.getName(), getter, targetClass.getName(),
+                converterId);
         return this;
         
     }

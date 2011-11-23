@@ -254,9 +254,18 @@ public class DefaultMapperFactory implements MapperFactory {
         mappedConverters.put(sourceClass, destinationClass);
     }
     
+    public <S, D> void registerConverter(final Converter<S, D> converter, String converterId) {
+        convertersRegistry.put(new ConverterKey(converterId), converter);
+    }
+    
     @SuppressWarnings("unchecked")
     public <S, D> Converter<S, D> lookupConverter(Class<S> source, Class<D> destination) {
         return (Converter<S, D>) convertersRegistry.get(new ConverterKey(source, destination));
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <S, D> Converter<S, D> lookupConverter(String converterId) {
+        return (Converter<S, D>) convertersRegistry.get(new ConverterKey(converterId));
     }
     
     public MapperFacade getMapperFacade() {
@@ -430,5 +439,4 @@ public class DefaultMapperFactory implements MapperFactory {
     public Set<Class<Object>> lookupMappedClasses(Class<Object> clazz) {
         return (Set) aToBRegistry.get(clazz);
     }
-    
 }
