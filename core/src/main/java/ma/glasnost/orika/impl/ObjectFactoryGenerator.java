@@ -14,10 +14,11 @@ import java.util.Set;
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
 import javassist.ClassPool;
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
+import ma.glasnost.orika.converter.Converter;
+import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
@@ -56,8 +57,8 @@ public class ObjectFactoryGenerator {
         final String className = clazz.getSimpleName() + "ObjectFactory" + System.identityHashCode(clazz);
         
         try {
-        	final GeneratedSourceCode factoryCode = new GeneratedSourceCode(className,classPool, GeneratedObjectFactory.class);
-        	
+            final GeneratedSourceCode factoryCode = new GeneratedSourceCode(className, classPool, GeneratedObjectFactory.class);
+            
             addCreateMethod(factoryCode, clazz);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
@@ -67,7 +68,7 @@ public class ObjectFactoryGenerator {
             
         } catch (final Exception e) {
             throw new MappingException(e);
-        } 
+        }
     }
     
     private void addCreateMethod(GeneratedSourceCode context, Class<Object> clazz) throws CannotCompileException {
@@ -170,15 +171,19 @@ public class ObjectFactoryGenerator {
         }
     }
     
+    @SuppressWarnings("unchecked")
     private boolean generateConverterCode(final CodeSourceBuilder code, String var, FieldMap fieldMap) {
         Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         final Class<?> destinationClass = dp.getType();
-        Converter<?, ?> converter = null;
+        
+        Converter<Object, Object> converter = null;
+        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (fieldMap.getConverterId() != null) {
-            converter = mapperFactory.lookupConverter(fieldMap.getConverterId());
+            converter = converterFactory.getConverter(fieldMap.getConverterId());
         } else {
-            converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
+            converter = converterFactory.getConverter((Class<Object>) sp.getType(), (Class<Object>) destinationClass);
         }
+        
         if (converter != null) {
             code.ifSourceNotNull(sp).then().assignConvertedVar(var, sp, destinationClass, fieldMap.getConverterId()).end();
             return true;

@@ -15,28 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ma.glasnost.orika.test.converter;
 
-package ma.glasnost.orika.impl.converter;
+import ma.glasnost.orika.converter.Converter;
 
-import ma.glasnost.orika.Converter;
-
-abstract class AbstractConverter<S, D> implements Converter<S, D> {
-
-	private final Class<S> sourceClass;
-
-	private final Class<D> destinationClass;
-
-	public AbstractConverter(Class<S> sourceClass, Class<D> destinationClass) {
-		this.sourceClass = sourceClass;
-		this.destinationClass = destinationClass;
-	}
-
-	public Class<S> getSourceClass() {
-		return sourceClass;
-	}
-
-	public Class<D> getDestinationClass() {
-		return destinationClass;
-	}
-
+public class LongToStringConverter implements Converter<Long, String> {
+    
+    public boolean canConvert(Class<Long> sourceClass, Class<? extends String> destinationClass) {
+        return Long.class.equals(sourceClass) && String.class.equals(destinationClass);
+    }
+    
+    public String convert(Long source, Class<? extends String> destinationClass) {
+        if (source != null) {
+            return source.toString();
+        }
+        return null;
+    }
+    
 }

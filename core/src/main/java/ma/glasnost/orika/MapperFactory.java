@@ -20,6 +20,7 @@ package ma.glasnost.orika;
 
 import java.util.Set;
 
+import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.MapperKey;
 
@@ -39,14 +40,6 @@ public interface MapperFactory {
     
     <A, B> void registerClassMap(ClassMap<A, B> classMap);
     
-    <S, D> void registerConverter(Converter<S, D> converter, Class<? extends S> sourceClass, Class<? extends D> destinationClass);
-    
-    <S, D> void registerConverter(Converter<S, D> converter, String converterId);
-    
-    <S, D> Converter<S, D> lookupConverter(Class<S> source, Class<D> destination);
-    
-    <S, D> Converter<S, D> lookupConverter(String converterId);
-    
     <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass);
     
     <T> ObjectFactory<T> lookupObjectFactory(Class<T> targetClass);
@@ -55,13 +48,16 @@ public interface MapperFactory {
     
     void registerMappingHint(MappingHint... hint);
     
-    MapperFacade getMapperFacade();
-    
-    void build();
-    
     Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey);
     
     <A, B> ClassMap<A, B> getClassMap(MapperKey mapperKey);
     
     Set<Class<Object>> lookupMappedClasses(Class<Object> clazz);
+    
+    MapperFacade getMapperFacade();
+    
+    ConverterFactory getConverterFactory();
+    
+    void build();
+    
 }

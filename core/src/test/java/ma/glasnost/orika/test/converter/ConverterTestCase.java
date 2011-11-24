@@ -19,8 +19,6 @@
 package ma.glasnost.orika.test.converter;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.ConverterException;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -33,12 +31,7 @@ public class ConverterTestCase {
     public void testConvertLongString() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerConverter(new Converter<Long, String>() {
-            
-            public String convert(Long source) throws ConverterException {
-                return source.toString();
-            }
-        }, Long.class, String.class);
+        factory.getConverterFactory().registerConverter(new LongToStringConverter());
         
         factory.registerClassMap(ClassMapBuilder.map(A.class, B.class).field("id", "string").toClassMap());
         

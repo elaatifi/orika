@@ -29,7 +29,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -39,11 +38,12 @@ import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.constructor.SimpleConstructorResolverStrategy;
+import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.converter.DefaultConverterFactory;
 import ma.glasnost.orika.inheritance.DefaultSuperTypeResolverStrategy;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
-import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.unenhance.BaseUnenhancer;
 import ma.glasnost.orika.unenhance.HibernateUnenhanceStrategy;
@@ -67,25 +67,30 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private final Map<MapperKey, ClassMap<Object, Object>> classMapRegistry;
     private final Map<MapperKey, GeneratedMapperBase> mappersRegistry;
-    private final Map<Object, Converter<?, ?>> convertersRegistry;
     private final Map<Class<?>, ObjectFactory<?>> objectFactoryRegistry;
     private final Map<Class<?>, Set<Class<?>>> aToBRegistry;
     private final Map<Class<?>, Class<?>> mappedConverters;
     private final List<MappingHint> mappingHints;
     private final UnenhanceStrategy unenhanceStrategy;
+    private final ConverterFactory converterFactory;
     
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
-    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
-            SuperTypeResolverStrategy superTypeStrategy, ConstructorResolverStrategy constructorResolverStrategy) {
+    public DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
+            SuperTypeResolverStrategy superTypeStrategy, ConstructorResolverStrategy constructorResolverStrategy,
+            ConverterFactory converterFactory) {
         
         if (constructorResolverStrategy == null) {
             constructorResolverStrategy = new SimpleConstructorResolverStrategy();
         }
         
+        if (converterFactory == null) {
+            converterFactory = new DefaultConverterFactory();
+        }
+        this.converterFactory = converterFactory;
+        
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
-        this.convertersRegistry = new ConcurrentHashMap<Object, Converter<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
         this.mappedConverters = new ConcurrentHashMap<Class<?>, Class<?>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
@@ -109,7 +114,7 @@ public class DefaultMapperFactory implements MapperFactory {
      * UnenhanceStrategy
      */
     public DefaultMapperFactory() {
-        this(null, null, null, null);
+        this(null, null, null, null, null);
     }
     
     /**
@@ -121,7 +126,7 @@ public class DefaultMapperFactory implements MapperFactory {
      *            processing
      */
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy) {
-        this(null, unenhanceStrategy, null, null);
+        this(null, unenhanceStrategy, null, null, null);
     }
     
     /**
@@ -138,7 +143,7 @@ public class DefaultMapperFactory implements MapperFactory {
      *            situation)
      */
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
-        this(null, unenhanceStrategy, superTypeStrategy, null);
+        this(null, unenhanceStrategy, superTypeStrategy, null, null);
     }
     
     /**
@@ -160,7 +165,7 @@ public class DefaultMapperFactory implements MapperFactory {
      */
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy,
             ConstructorResolverStrategy constructorResolverStrategy) {
-        this(null, unenhanceStrategy, superTypeStrategy, constructorResolverStrategy);
+        this(null, unenhanceStrategy, superTypeStrategy, constructorResolverStrategy, null);
     }
     
     /**
@@ -246,26 +251,6 @@ public class DefaultMapperFactory implements MapperFactory {
             buildMapper(classMap);
         }
         return mappersRegistry.get(mapperKey);
-    }
-    
-    public <S, D> void registerConverter(final Converter<S, D> converter, Class<? extends S> sourceClass,
-            Class<? extends D> destinationClass) {
-        convertersRegistry.put(new ConverterKey(sourceClass, destinationClass), converter);
-        mappedConverters.put(sourceClass, destinationClass);
-    }
-    
-    public <S, D> void registerConverter(final Converter<S, D> converter, String converterId) {
-        convertersRegistry.put(new ConverterKey(converterId), converter);
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <S, D> Converter<S, D> lookupConverter(Class<S> source, Class<D> destination) {
-        return (Converter<S, D>) convertersRegistry.get(new ConverterKey(source, destination));
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <S, D> Converter<S, D> lookupConverter(String converterId) {
-        return (Converter<S, D>) convertersRegistry.get(new ConverterKey(converterId));
     }
     
     public MapperFacade getMapperFacade() {
@@ -438,5 +423,9 @@ public class DefaultMapperFactory implements MapperFactory {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public Set<Class<Object>> lookupMappedClasses(Class<Object> clazz) {
         return (Set) aToBRegistry.get(clazz);
+    }
+    
+    public ConverterFactory getConverterFactory() {
+        return converterFactory;
     }
 }

@@ -21,7 +21,6 @@ package ma.glasnost.orika.test.hint;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingHint;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.impl.GeneratedSourceCode;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -40,158 +39,146 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class DefaultMappingHintTestCase {
-
-	
-	@Before
-	public void setUp() {
-		System.setProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES,"true"); 
-	}
-	
-	private Author createAuthor(Class<? extends AuthorParent> type) throws InstantiationException, IllegalAccessException {
-		AuthorParent author = (AuthorParent) type.newInstance();
-		author.setName("Khalil Gebran");
-		
-		return author;
-	}
-	
-	private Book createBook(Class<? extends BookParent> type) throws InstantiationException, IllegalAccessException {
-		BookParent book = (BookParent)type.newInstance();
-		book.setTitle("The Prophet");
-		
-		return book;
-	}
-	
-	private Library createLibrary(Class<? extends LibraryParent> type) throws InstantiationException, IllegalAccessException {
-		LibraryParent lib = (LibraryParent)type.newInstance();
-		lib.setTitle("Test Library");
-		
-		return lib;
-	}
-	
-	@Test
-	public void testMappingByDefaultWithNoHint() throws Exception {
-		
-
-		MapperFactory factory = MappingUtil.getMapperFactory();
-		factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class)
-				.byDefault().toClassMap());
-		
-		factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class)
-				.byDefault().toClassMap());
-		
-		factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class)
-				.byDefault().toClassMap());
-		
-		factory.build();
-		MapperFacade mapper = factory.getMapperFacade();
-		
-		
-		Book book = createBook(BookParent.class);
-		book.setAuthor(createAuthor(AuthorParent.class));
-		Library lib = createLibrary(LibraryParent.class);
-		lib.getBooks().add(book);
-		
-		LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
-		
-		Assert.assertNotNull(mappedLib);
-		Assert.assertTrue(mappedLib.getMyBooks().isEmpty());
-	}
-	
-	/**
-	 * @throws Exception
-	 */
-	@Test
-	public void testMappingByDefaultWithHint() throws Exception {
-		
-		MappingHint myHint = 
-			/**
-			 * This sample hint converts "myProperty" to "property", and vis-versa.
-			 */
-			new MappingHint() {
-
-				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
-					if (fromProperty.startsWith("my")) {
-						return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
-					} else {
-						return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
-					}	
-				}
-				
-			};
-		
-		MapperFactory factory = MappingUtil.getMapperFactory();
-		factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class)
-				.byDefault(myHint).toClassMap());
-		
-		factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class)
-				.byDefault(myHint).toClassMap());
-		
-		factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class)
-				.byDefault(myHint).toClassMap());
-		
-		factory.build();
-		MapperFacade mapper = factory.getMapperFacade();
-		
-		
-		Book book = createBook(BookParent.class);
-		book.setAuthor(createAuthor(AuthorParent.class));
-		Library lib = createLibrary(LibraryParent.class);
-		lib.getBooks().add(book);
-		
-		LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
-		
-		Assert.assertEquals(lib.getTitle(),mappedLib.getMyTitle());
-		Assert.assertEquals(book.getTitle(),mappedLib.getMyBooks().get(0).getMyTitle());
-		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
-	}
-	
-
-	/**
-	 * @throws Exception
-	 */
-	@Test
-	public void testMappingWithRegisteredHintAndNoClassMap() throws Exception {
-		
-		MappingHint myHint = 
-		/**
-		 * This sample hint converts "myProperty" to "property", and vis-versa.
-		 */
-		new MappingHint() {
-
-			public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
-				if (fromProperty.startsWith("my")) {
-					return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
-				} else {
-					return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
-				}	
-			}
-			
-		};
-		
-		MapperFactory factory = MappingUtil.getMapperFactory();		
-		factory.registerMappingHint(myHint);
-		factory.build();
-
-		MapperFacade mapper = factory.getMapperFacade();
-		
-		
-		Book book = createBook(BookParent.class);
-		book.setAuthor(createAuthor(AuthorParent.class));
-		Library lib = createLibrary(LibraryParent.class);
-		lib.getBooks().add(book);
-		
-		LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
-		
-		Assert.assertEquals(lib.getTitle(),mappedLib.getMyTitle());
-		Assert.assertEquals(book.getTitle(),mappedLib.getMyBooks().get(0).getMyTitle());
-		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
-		
-		// Now, map it back to the original...
-		
-		Library lib2 = mapper.map(mappedLib, Library.class);
-		Assert.assertEquals(lib.getTitle(),lib2.getTitle());
-		Assert.assertEquals(book.getTitle(),lib2.getBooks().get(0).getTitle());
-		Assert.assertEquals(book.getAuthor().getName(),lib2.getBooks().get(0).getAuthor().getName());
-		
-	}
+    
+    @Before
+    public void setUp() {
+        System.setProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES, "true");
+    }
+    
+    private Author createAuthor(Class<? extends AuthorParent> type) throws InstantiationException, IllegalAccessException {
+        AuthorParent author = type.newInstance();
+        author.setName("Khalil Gebran");
+        
+        return author;
+    }
+    
+    private Book createBook(Class<? extends BookParent> type) throws InstantiationException, IllegalAccessException {
+        BookParent book = type.newInstance();
+        book.setTitle("The Prophet");
+        
+        return book;
+    }
+    
+    private Library createLibrary(Class<? extends LibraryParent> type) throws InstantiationException, IllegalAccessException {
+        LibraryParent lib = type.newInstance();
+        lib.setTitle("Test Library");
+        
+        return lib;
+    }
+    
+    @Test
+    public void testMappingByDefaultWithNoHint() throws Exception {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class).byDefault().toClassMap());
+        
+        factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class).byDefault().toClassMap());
+        
+        factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class).byDefault().toClassMap());
+        
+        factory.build();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Book book = createBook(BookParent.class);
+        book.setAuthor(createAuthor(AuthorParent.class));
+        Library lib = createLibrary(LibraryParent.class);
+        lib.getBooks().add(book);
+        
+        LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
+        
+        Assert.assertNotNull(mappedLib);
+        Assert.assertTrue(mappedLib.getMyBooks().isEmpty());
+    }
+    
+    /**
+     * @throws Exception
+     */
+    @Test
+    public void testMappingByDefaultWithHint() throws Exception {
+        
+        MappingHint myHint =
+        /**
+         * This sample hint converts "myProperty" to "property", and vis-versa.
+         */
+        new MappingHint() {
+            
+            public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+                if (fromProperty.startsWith("my")) {
+                    return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
+                } else {
+                    return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
+                }
+            }
+            
+        };
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class).byDefault(myHint).toClassMap());
+        
+        factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class).byDefault(myHint).toClassMap());
+        
+        factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class).byDefault(myHint).toClassMap());
+        
+        factory.build();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Book book = createBook(BookParent.class);
+        book.setAuthor(createAuthor(AuthorParent.class));
+        Library lib = createLibrary(LibraryParent.class);
+        lib.getBooks().add(book);
+        
+        LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
+        
+        Assert.assertEquals(lib.getTitle(), mappedLib.getMyTitle());
+        Assert.assertEquals(book.getTitle(), mappedLib.getMyBooks().get(0).getMyTitle());
+        Assert.assertEquals(book.getAuthor().getName(), mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
+    }
+    
+    /**
+     * @throws Exception
+     */
+    @Test
+    public void testMappingWithRegisteredHintAndNoClassMap() throws Exception {
+        
+        MappingHint myHint =
+        /**
+         * This sample hint converts "myProperty" to "property", and vis-versa.
+         */
+        new MappingHint() {
+            
+            public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+                if (fromProperty.startsWith("my")) {
+                    return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
+                } else {
+                    return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
+                }
+            }
+            
+        };
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.registerMappingHint(myHint);
+        factory.build();
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Book book = createBook(BookParent.class);
+        book.setAuthor(createAuthor(AuthorParent.class));
+        Library lib = createLibrary(LibraryParent.class);
+        lib.getBooks().add(book);
+        
+        LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
+        
+        Assert.assertEquals(lib.getTitle(), mappedLib.getMyTitle());
+        Assert.assertEquals(book.getTitle(), mappedLib.getMyBooks().get(0).getMyTitle());
+        Assert.assertEquals(book.getAuthor().getName(), mappedLib.getMyBooks().get(0).getMyAuthor().getMyName());
+        
+        // Now, map it back to the original...
+        
+        Library lib2 = mapper.map(mappedLib, Library.class);
+        Assert.assertEquals(lib.getTitle(), lib2.getTitle());
+        Assert.assertEquals(book.getTitle(), lib2.getBooks().get(0).getTitle());
+        Assert.assertEquals(book.getAuthor().getName(), lib2.getBooks().get(0).getAuthor().getName());
+        
+    }
 }

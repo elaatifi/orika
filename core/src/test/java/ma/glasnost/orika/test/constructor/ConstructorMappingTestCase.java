@@ -4,9 +4,8 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.ConverterException;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.converter.builtin.DateToStringConverter;
 import ma.glasnost.orika.impl.GeneratedSourceCode;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -15,24 +14,25 @@ import org.junit.Test;
 
 public class ConstructorMappingTestCase {
     
+    private static final String DATE_CONVERTER = "dateConverter";
+    private static final String DATE_PATTERN = "dd/MM/yyyy";
+    
     @Test
     public void testSimpleCase() throws Throwable {
         
-    	System.setProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES, "true");
-    	
-    	final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+        System.setProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES, "true");
+        
+        final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(ClassMapBuilder.map(PersonVO.class, Person.class)
                 .constructorA()
-                .field("dateOfBirth", "date")
+                .fieldMap("dateOfBirth", "date")
+                .converter(DATE_CONVERTER)
+                .add()
                 .byDefault()
                 .toClassMap());
-        factory.registerConverter(new Converter<Date, String>() {
-            public String convert(Date source) throws ConverterException {
-                return df.format(source);
-            }
-        }, Date.class, String.class);
+        factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
         factory.build();
         

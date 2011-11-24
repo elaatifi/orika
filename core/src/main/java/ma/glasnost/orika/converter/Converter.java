@@ -15,13 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.constructor;
+package ma.glasnost.orika.converter;
 
-import java.lang.reflect.Constructor;
-
-import ma.glasnost.orika.metadata.ClassMap;
-
-public interface ConstructorResolverStrategy {
+public interface Converter<S, D> {
     
-    <T, A, B> Constructor<T> resolve(ClassMap<A, B> classMap, Class<T> sourceClass);
+    boolean canConvert(Class<S> sourceClass, Class<? extends D> destinationClass);
+    
+    D convert(S source, Class<? extends D> destinationClass);
 }

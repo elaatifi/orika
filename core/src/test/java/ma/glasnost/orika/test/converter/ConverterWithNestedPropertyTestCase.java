@@ -19,9 +19,9 @@
 package ma.glasnost.orika.test.converter;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.ConverterException;
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.converter.TypeConverter;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 
@@ -33,13 +33,11 @@ public class ConverterWithNestedPropertyTestCase {
     public void testConverterWithNestedProperty() {
         MapperFactory mapperFactory = new DefaultMapperFactory();
         
-        mapperFactory.registerConverter(new Converter<Address, String>() {
-            
-            public String convert(Address source) throws ConverterException {
+        mapperFactory.getConverterFactory().registerConverter(new TypeConverter<Address, String>() {
+            public String convert(Address source, Class<? extends String> destinationClass) {
                 return source.getLine1() + " " + source.getLine2();
             }
-            
-        }, Address.class, String.class);
+        });
         
         ClassMapBuilder<Order, OrderDTO> classMapBuilder = ClassMapBuilder.map(Order.class, OrderDTO.class);
         classMapBuilder.fieldMap("customer.address", "shippingAddress").add();
@@ -60,7 +58,8 @@ public class ConverterWithNestedPropertyTestCase {
         order.setNumber("CPC6128");
         order.setCustomer(customer);
         
-        OrderDTO orderDto = mapperFactory.getMapperFacade().map(order, OrderDTO.class);
+        MapperFacade mapperFacade = mapperFactory.getMapperFacade();
+        OrderDTO orderDto = mapperFacade.map(order, OrderDTO.class);
         
         Assert.assertEquals(address.line1 + " " + address.line2, orderDto.getShippingAddress());
     }

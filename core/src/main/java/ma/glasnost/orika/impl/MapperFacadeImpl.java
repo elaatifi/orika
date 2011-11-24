@@ -25,13 +25,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.converter.Converter;
+import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
@@ -72,9 +73,9 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         
         // Check if we have a converter
-        final Converter<S, D> converter = mapperFactory.lookupConverter(sourceClass, destinationClass);
-        if (converter != null) {
-            return converter.convert(unenhancedSourceObject);
+        
+        if (canConvert(sourceClass, destinationClass)) {
+            // return converter.convert(unenhancedSourceObject);
         }
         
         Class<? extends D> concreteDestinationClass = mapperFactory.lookupConcreteDestinationClass(sourceClass, destinationClass, context);
@@ -234,13 +235,18 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> D convert(S source, Class<D> destinationClass, String converterId) {
         final Class<? extends Object> sourceClass = unenhanceStrategy.unenhanceClass(source);
         Converter<S, D> converter;
+        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (converterId == null) {
-            converter = (Converter<S, D>) mapperFactory.lookupConverter(sourceClass, destinationClass);
+            converter = (Converter<S, D>) converterFactory.getConverter((Class<Object>) sourceClass, (Class<Object>) destinationClass);
         } else {
-            converter = (Converter<S, D>) mapperFactory.lookupConverter(converterId);
+            converter = (Converter<S, D>) converterFactory.getConverter(converterId);
         }
         
-        return converter.convert(source);
+        return converter.convert(source, destinationClass);
     }
     
+    @SuppressWarnings({ "unchecked" })
+    private <S, D> boolean canConvert(Class<S> sourceClass, Class<D> destinationClass) {
+        return mapperFactory.getConverterFactory().canConvert((Class<Object>) sourceClass, (Class<Object>) destinationClass);
+    }
 }

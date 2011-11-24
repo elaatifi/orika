@@ -15,19 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ma.glasnost.orika.converter.builtin;
 
-package ma.glasnost.orika;
+import ma.glasnost.orika.converter.Converter;
 
-/**
- * Defines conversion between two Java types. This interface is intended to be
- * used by applications that needs custom converters. <br>
- * Implementor should usually be immutable and <strong>must</strong> be
- * threadsafe.
- * 
- * @author S.M. El Aaatifi
- */
-public interface Converter<S, D> {
+@SuppressWarnings("rawtypes")
+public class StringToEnumConverter implements Converter<String, Enum> {
     
-    D convert(S source) throws ConverterException;
+    @SuppressWarnings("unchecked")
+    public Enum convert(String source, Class<? extends Enum> destinationClass) {
+        return Enum.valueOf(destinationClass, source);
+    }
+    
+    public boolean canConvert(Class<String> sourceClass, Class<? extends Enum> destinationClass) {
+        return String.class.equals(sourceClass) && destinationClass != null && destinationClass.isEnum();
+    }
     
 }

@@ -35,10 +35,11 @@ import javassist.ClassClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtNewMethod;
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.converter.Converter;
+import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
@@ -232,15 +233,17 @@ final class MapperGenerator {
         }
     }
     
+    @SuppressWarnings("unchecked")
     private boolean generateConverterCode(final CodeSourceBuilder code, final FieldMap fieldMap) {
         final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
-        final Class<?> destinationClass = dp.getType();
+        final Class<Object> destinationClass = (Class<Object>) dp.getType();
         
-        Converter<?, ?> converter = null;
+        Converter<Object, Object> converter = null;
+        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (fieldMap.getConverterId() != null) {
-            converter = mapperFactory.lookupConverter(fieldMap.getConverterId());
+            converter = converterFactory.getConverter(fieldMap.getConverterId());
         } else {
-            converter = mapperFactory.lookupConverter(sp.getType(), destinationClass);
+            converter = converterFactory.getConverter((Class<Object>) sp.getType(), destinationClass);
         }
         
         if (converter != null) {

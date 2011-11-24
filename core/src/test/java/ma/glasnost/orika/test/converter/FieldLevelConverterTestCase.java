@@ -4,10 +4,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.ConverterException;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.converter.builtin.DateToStringConverter;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.converter.FieldLevelConverterClasses.A;
@@ -22,17 +22,9 @@ public class FieldLevelConverterTestCase {
     public void testDateToString() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerConverter(new Converter<Date, String>() {
-            public String convert(Date source) throws ConverterException {
-                return new SimpleDateFormat("dd/MM/yyyy").format(source);
-            }
-        }, "dateConverter1");
-        
-        factory.registerConverter(new Converter<Date, String>() {
-            public String convert(Date source) throws ConverterException {
-                return new SimpleDateFormat("dd-MM-yyyy").format(source);
-            }
-        }, "dateConverter2");
+        ConverterFactory converterFactory = factory.getConverterFactory();
+        converterFactory.registerConverter("dateConverter1", new DateToStringConverter("dd/MM/yyyy"));
+        converterFactory.registerConverter("dateConverter2", new DateToStringConverter("dd-MM-yyyy"));
         
         factory.registerClassMap(ClassMapBuilder.map(A.class, B.class).fieldMap("date").converter("dateConverter1").add().toClassMap());
         factory.registerClassMap(ClassMapBuilder.map(A.class, C.class).fieldMap("date").converter("dateConverter2").add().toClassMap());
