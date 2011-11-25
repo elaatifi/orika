@@ -32,9 +32,10 @@ public abstract class BidirectionConverter<S, D> extends TypeConverter<Object, O
         }
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public boolean canConvert(Class<Object> sourceClass, Class<? extends Object> destinationClass) {
-        return super.canConvert(sourceClass, destinationClass) || super.canConvert(this.destinationClass, sourceClass);
+        return super.canConvert(sourceClass, destinationClass) || super.canConvert((Class<Object>) destinationClass, sourceClass);
     }
     
 }
