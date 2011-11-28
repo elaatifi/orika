@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 
 public class CodeSourceBuilder {
@@ -262,7 +261,12 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder ifSourceNotNull(Property sp) {
-        
+        newLine();
+        append("if(source.%s != null)", sp.hasPath() ? getLongGetter(sp) : (sp.getGetter() + "()"));
+        return this;
+    }
+    
+    public CodeSourceBuilder avoidSourceNPE(Property sp) {
         newLine();
         if (sp.hasPath()) {
             final StringBuilder sb = new StringBuilder("source");
@@ -276,14 +280,8 @@ public class CodeSourceBuilder {
                 append("%s != null", sb.toString());
                 i++;
             }
-            if (!sp.isPrimitive() && sp instanceof NestedProperty) {
-                append(" && source.").append(getLongGetter((NestedProperty) sp)).append(" != null");
-            }
             append(")");
-        } else if (!sp.isPrimitive()) {
-            append("if(source.%s() != null)", sp.getGetter());
         }
-        
         return this;
     }
     
@@ -296,11 +294,6 @@ public class CodeSourceBuilder {
      * @return CodeSourceBuilder
      */
     public CodeSourceBuilder ifDestinationNull(Property property) {
-        
-        if (!property.hasPath()) {
-            return this;
-        }
-        
         final StringBuilder destinationBase = new StringBuilder("destination");
         
         for (final Property p : property.getPath()) {
@@ -324,7 +317,13 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    private String getLongGetter(NestedProperty property) {
+    public CodeSourceBuilder setDestinationNull(Property dp) {
+        if (dp.getSetter() != null)
+            append("destination.%s(null);", dp.hasPath() ? getLongSetter(dp) : (dp.getSetter()));
+        return this;
+    }
+    
+    private String getLongGetter(Property property) {
         final StringBuilder sb = new StringBuilder();
         for (final Property p : property.getPath()) {
             sb.append(".").append(p.getGetter()).append("()");
@@ -334,7 +333,7 @@ public class CodeSourceBuilder {
         
     }
     
-    private String getLongSetter(NestedProperty property) {
+    private String getLongSetter(Property property) {
         final StringBuilder sb = new StringBuilder();
         for (final Property p : property.getPath()) {
             sb.append(".").append(p.getGetter()).append("()");
@@ -344,11 +343,11 @@ public class CodeSourceBuilder {
     }
     
     private String getGetter(Property property) {
-        return property.hasPath() ? getLongGetter((NestedProperty) property) : property.getGetter() + "()";
+        return property.hasPath() ? getLongGetter(property) : property.getGetter() + "()";
     }
     
     private String getSetter(Property property) {
-        return property.hasPath() ? getLongSetter((NestedProperty) property) : property.getSetter();
+        return property.hasPath() ? getLongSetter(property) : property.getSetter();
     }
     
     private String getPrimitiveType(Class<?> clazz) {
@@ -441,4 +440,5 @@ public class CodeSourceBuilder {
         else
             return "0";
     }
+    
 }

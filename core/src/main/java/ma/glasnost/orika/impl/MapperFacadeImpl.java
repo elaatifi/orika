@@ -57,7 +57,8 @@ public class MapperFacadeImpl implements MapperFacade {
             throw new MappingException("Can not map to a null class.");
         }
         if (sourceObject == null) {
-            throw new MappingException("Can not map a null object.");
+            // throw new MappingException("Can not map a null object.");
+            return null;
         }
         
         if (context.isAlreadyMapped(sourceObject)) {

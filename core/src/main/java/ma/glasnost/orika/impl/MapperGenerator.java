@@ -209,20 +209,39 @@ final class MapperGenerator {
             return;
         }
         try {
+            
+            //
+            // Ensure that there we will not cause a NPE
+            //
+            if (sp.hasPath()) {
+                code.avoidSourceNPE(sp).then();
+            }
+            
+            if (dp.hasPath()) {
+                code.ifDestinationNull(dp);
+            }
+            
+            // Generate mapping code for every case
+            
             if (fieldMap.is(toAnEnumeration())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setToEnumeration(dp, sp).end();
+                code.setToEnumeration(dp, sp);
             } else if (fieldMap.is(immutable())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).set(dp, sp).end();
+                code.set(dp, sp);
             } else if (fieldMap.is(anArray())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setArray(dp, sp).end();
+                code.setArray(dp, sp);
             } else if (fieldMap.is(aCollection())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setCollection(dp, sp, fieldMap.getInverse(), destinationClass).end();
+                code.setCollection(dp, sp, fieldMap.getInverse(), destinationClass);
             } else if (fieldMap.is(aWrapperToPrimitive())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setPrimitive(dp, sp).end();
+                code.setPrimitive(dp, sp);
             } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setWrapper(dp, sp).end();
+                code.setWrapper(dp, sp);
             } else { /**/
-                code.ifSourceNotNull(sp).then().ifDestinationNull(dp).setObject(dp, sp, fieldMap.getInverse()).end();
+                code.setObject(dp, sp, fieldMap.getInverse());
+            }
+            
+            // Close up, and set null to destination
+            if (sp.hasPath()) {
+                code.end();
             }
             
         } catch (final Exception e) {
