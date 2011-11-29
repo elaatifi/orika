@@ -98,6 +98,8 @@ public class CodeSourceBuilder {
                     .append("destination.%s(%s);", destinationSetter, newStatement)
                     .end();
         }
+        // Start check if source property ! = null
+        ifSourceNotNull(sp).then();
         
         newLine().append("destination.%s.clear();", destinationGetter);
         newLine().append("destination.%s.addAll(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", destinationGetter,
@@ -133,6 +135,8 @@ public class CodeSourceBuilder {
                 end();
             }
         }
+        // End check if source property ! = null
+        elze().setDestinationNull(dp).end();
         
         return this;
     }
@@ -188,7 +192,6 @@ public class CodeSourceBuilder {
     public CodeSourceBuilder setWrapper(Property dp, Property sp) {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
-        
         newLine().append("destination.%s(%s.valueOf((%s) source.%s));", setter, dp.getType().getName(), getPrimitiveType(dp.getType()),
                 getter);
         return this;
@@ -198,7 +201,11 @@ public class CodeSourceBuilder {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
+        ifSourceNotNull(sp).then();
+        
         newLine().append("destination.%s(source.%s.%sValue());", setter, getter, getPrimitiveType(dp.getType()));
+        
+        end();
         return this;
     }
     
@@ -209,10 +216,13 @@ public class CodeSourceBuilder {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
+        ifSourceNotNull(sp).then();
+        
         newLine().append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode)
                 .append("mapperFacade.mapAsArray((Object[])%s, (%s)source.%s, %s.class, mappingContext);", dp.getName(), castSource,
                         getter, paramType)
                 .append("destination.%s(%s);", setter, dp.getName());
+        elze().setDestinationNull(dp).end();
         
         return this;
     }
@@ -221,8 +231,12 @@ public class CodeSourceBuilder {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
+        ifSourceNotNull(sp).then();
+        
         newLine().append("destination.%s((%s)Enum.valueOf(%s.class,\"\"+source.%s));", setter, dp.getType().getName(),
                 dp.getType().getName(), getter);
+        
+        elze().setDestinationNull(dp).end();
         return this;
     }
     
@@ -231,6 +245,9 @@ public class CodeSourceBuilder {
         
         final String destinationGetter = getGetter(dp);
         final String destinationSetter = getSetter(dp);
+        
+        ifSourceNotNull(sp).then();
+        
         newLine().append("if (destination.%s == null) ", destinationGetter);
         begin().append("destination.%s((%s)mapperFacade.map(source.%s, %s.class, mappingContext));", destinationSetter,
                 dp.getType().getName(), sourceGetter, dp.getType().getName());
@@ -256,6 +273,8 @@ public class CodeSourceBuilder {
                 append("destination.%s.%s(destination);", getGetter(dp), getSetter(ip));
             }
         }
+        
+        elze().setDestinationNull(dp).end();
         
         return this;
     }
