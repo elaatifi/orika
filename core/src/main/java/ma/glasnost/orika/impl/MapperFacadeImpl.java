@@ -145,6 +145,11 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+        
+        if (source == null) {
+            return null;
+        }
+        
         int i = 0;
         for (final S s : source) {
             destination[i++] = map(s, destinationClass);
@@ -153,6 +158,11 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context) {
+        
+        if (source == null) {
+            return null;
+        }
+        
         int i = 0;
         for (final S s : source) {
             destination[i++] = map(s, destinationClass);
@@ -226,6 +236,11 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     <S, D> Collection<D> mapAsCollection(Iterable<S> source, Class<D> destinationClass, Collection<D> destination, MappingContext context) {
+        
+        if (source == null) {
+            return null;
+        }
+        
         for (final S item : source) {
             destination.add(map(item, destinationClass, context));
         }
