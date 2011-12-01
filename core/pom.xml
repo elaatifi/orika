@@ -84,7 +84,7 @@
 		
 		<dependency>
 		  <groupId>ma.glasnost.orika</groupId>
-		  <artifactId>orika-eclipse-compiler</artifactId>
+		  <artifactId>orika-eclipse-tools</artifactId>
 		  <version>${project.version}</version>
 		  <optional>true</optional>
 		</dependency>
