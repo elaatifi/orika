@@ -75,249 +75,253 @@ public class DynamicSuite extends ParentRunner<Runner> {
      * The <code>TestCasePattern</code> annotation specifies the pattern from
      * which test case classes should be matched.
      */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
-    public @interface TestCasePattern {
-	public String value();
-    }
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.TYPE)
+	public @interface TestCasePattern {
+		public String value();
+	}
 
     /**
      * The <code>TestCasePattern</code> annotation specifies the pattern from
      * which test case classes should be matched.
      */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
-    public @interface Scenario {
-	public String value() default "";
-    }
-
-    private static Collection<ScenarioDescriptor> getScenarios(TestClass testClass) throws Exception {
-	
-	List<FrameworkMethod> methods = testClass.getAnnotatedMethods(Scenario.class);
-	Map<String,ScenarioDescriptor> scenarios = new HashMap<String,ScenarioDescriptor>(methods.size());
-	
-	for (FrameworkMethod method : methods) {
-	    int modifiers = method.getMethod().getModifiers();
-	    if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
-		throw new Exception(
-			"@Scenario can only be applied to public static method on class "
-				+ testClass.getName());
-	    } else {
-		Scenario annotation = method.getAnnotation(Scenario.class);
-		String name = annotation.value();
-		if (name.isEmpty()) {
-		    name = method.getName();
-		}
-		if (scenarios.containsKey(name)) {
-		    throw new Exception(
-				"@Scenario methods must have unique names/'name' attributes for class "
-					+ testClass.getName());
-		} else {
-		    scenarios.put(name,new ScenarioDescriptor(method,name));
-		}
-	    }
+	@Retention(RetentionPolicy.RUNTIME)
+	@Target(ElementType.METHOD)
+	public @interface Scenario {
+		public String value() default "";
 	}
-	return scenarios.values();
-    }
 
-    private static List<Class<?>> findAllTestCases(Class<?> klass) {
-	try {
-	    Pattern testCasePattern = getTestCasePattern(klass);
+	private static Collection<ScenarioDescriptor> getScenarios(TestClass testClass)
+	        throws Exception {
 
-	    ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-	    List<Class<?>> testCases = new ArrayList<Class<?>>();
+		List<FrameworkMethod> methods = testClass.getAnnotatedMethods(Scenario.class);
+		Map<String, ScenarioDescriptor> scenarios = new HashMap<String, ScenarioDescriptor>(
+		        methods.size());
 
-	    File classFolder = new File(
-		    TestAlternateCompilerStrategy.class
-			    .getResource("/").getFile());
-	    int classFolderPathLength = classFolder.getAbsolutePath().length();
-
-	    LinkedList<File> stack = new LinkedList<File>();
-	    stack.addAll(Arrays.asList(classFolder.listFiles()));
-	    File currentDirectory = classFolder;
-	    String currentPackage = "";
-	    while (!stack.isEmpty()) {
-
-		File file = stack.removeFirst();
-		if (file.isDirectory()) {
-		    // push
-		    stack.addAll(Arrays.asList(file.listFiles()));
-		} else if (testCasePattern.matcher(file.getName()).matches()) {
-		    if (!currentDirectory.equals(file.getParentFile())) {
-			currentDirectory = file.getParentFile();
-			currentPackage = currentDirectory.getAbsolutePath()
-				.substring(classFolderPathLength + 1);
-			currentPackage = currentPackage
-				.replaceAll("[\\/]", ".");
-		    }
-		    String className = currentPackage
-			    + "."
-			    + file.getName()
-				    .substring(
-					    0,
-					    file.getName().length()
-						    - ".class".length());
-		    testCases.add(Class.forName(className, false, tccl));
+		for (FrameworkMethod method : methods) {
+			int modifiers = method.getMethod().getModifiers();
+			if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
+				throw new Exception(
+				        "@Scenario can only be applied to public static method on class "
+				                + testClass.getName());
+			} else {
+				Scenario annotation = method.getAnnotation(Scenario.class);
+				String name = annotation.value();
+				if ("".equals(name.trim())) {
+					name = method.getName();
+				}
+				if (scenarios.containsKey(name)) {
+					throw new Exception(
+					        "@Scenario methods must have unique names/'name' attributes for class "
+					                + testClass.getName());
+				} else {
+					scenarios.put(name, new ScenarioDescriptor(method, name));
+				}
+			}
 		}
-	    }
-
-	    return testCases;
-	} catch (Exception e) {
-	    throw new RuntimeException(e);
+		return scenarios.values();
 	}
-    }
 
-    private static Pattern getTestCasePattern(Class<?> klass) {
+	private static List<Class<?>> findAllTestCases(Class<?> klass) {
+		try {
+			Pattern testCasePattern = getTestCasePattern(klass);
 
-	Pattern pattern = DEFAULT_TEST_CASE_PATTERN;
-	TestCasePattern annotation = klass.getAnnotation(TestCasePattern.class);
-	if (annotation != null) {
-	    pattern = Pattern.compile(annotation.value());
+			ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+			List<Class<?>> testCases = new ArrayList<Class<?>>();
+
+			File classFolder = new File(
+			        TestAlternateCompilerStrategy.class
+			                .getResource("/").getFile());
+			int classFolderPathLength = classFolder.getAbsolutePath().length();
+
+			LinkedList<File> stack = new LinkedList<File>();
+			stack.addAll(Arrays.asList(classFolder.listFiles()));
+			File currentDirectory = classFolder;
+			String currentPackage = "";
+			while (!stack.isEmpty()) {
+
+				File file = stack.removeFirst();
+				if (file.isDirectory()) {
+					// push
+					stack.addAll(Arrays.asList(file.listFiles()));
+				} else if (testCasePattern.matcher(file.getName()).matches()) {
+					if (!currentDirectory.equals(file.getParentFile())) {
+						currentDirectory = file.getParentFile();
+						currentPackage = currentDirectory.getAbsolutePath()
+						        .substring(classFolderPathLength + 1);
+						currentPackage = currentPackage
+						        .replaceAll("[\\/]", ".");
+					}
+					String className = currentPackage
+					        + "."
+					        + file.getName()
+					                .substring(
+					                        0,
+					                        file.getName().length()
+					                                - ".class".length());
+					testCases.add(Class.forName(className, false, tccl));
+				}
+			}
+
+			return testCases;
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
 	}
-	return pattern;
-    }
+
+	private static Pattern getTestCasePattern(Class<?> klass) {
+
+		Pattern pattern = DEFAULT_TEST_CASE_PATTERN;
+		TestCasePattern annotation = klass.getAnnotation(TestCasePattern.class);
+		if (annotation != null) {
+			pattern = Pattern.compile(annotation.value());
+		}
+		return pattern;
+	}
 
     
     // =============================================================================
     
     
-    private final List<Runner> fRunners;
+	private final List<Runner> fRunners;
 
-    public DynamicSuite(Class<?> klass, RunnerBuilder builder)
-	    throws InitializationError {
-	this(builder, klass, findAllTestCases(klass).toArray(new Class<?>[0]));
-    }
-
-    public DynamicSuite(RunnerBuilder builder, Class<?>[] classes)
-	    throws InitializationError {
-	this(null, builder.runners(null, classes));
-    }
-
-    protected DynamicSuite(Class<?> klass, Class<?>[] suiteClasses)
-	    throws InitializationError {
-	this(new AllDefaultPossibilitiesBuilder(true), klass, suiteClasses);
-    }
-
-    protected DynamicSuite(RunnerBuilder builder, Class<?> klass,
-	    Class<?>[] suiteClasses) throws InitializationError {
-	this(klass, builder.runners(klass, suiteClasses));
-    }
-
-    protected DynamicSuite(Class<?> klass, List<Runner> runners)
-	    throws InitializationError {
-	super(klass);
-	try {
-	    Collection<ScenarioDescriptor> scenarios = getScenarios(getTestClass());
-	    if (scenarios!=null && !scenarios.isEmpty()) {
-		
-		fRunners = new ArrayList<Runner>(scenarios.size());
-		
-		for(ScenarioDescriptor scenario: scenarios) {
-		    ArrayList<Runner> clonedRunners = new ArrayList<Runner>(runners.size());
-		    for (Runner runner: runners) {
-			clonedRunners.add(new TestScenarioClassRunner(runner.getDescription().getTestClass(),scenario.getName()));
-		    }
-		    fRunners.add(new TestScenarioRunner(klass,scenario,clonedRunners));
-		}
-		
-	    } else {
-	        fRunners = runners;
-	    }
-	} catch (Exception e) {
-	    throw new InitializationError(e);
+	public DynamicSuite(Class<?> klass, RunnerBuilder builder)
+	        throws InitializationError {
+		this(builder, klass, findAllTestCases(klass).toArray(new Class<?>[0]));
 	}
-	    
-    }
 
-    @Override
-    protected List<Runner> getChildren() {
-	return fRunners;
-    }
+	public DynamicSuite(RunnerBuilder builder, Class<?>[] classes)
+	        throws InitializationError {
+		this(null, builder.runners(null, classes));
+	}
 
-    @Override
-    protected Description describeChild(Runner child) {
-	return child.getDescription();
-    }
+	protected DynamicSuite(Class<?> klass, Class<?>[] suiteClasses)
+	        throws InitializationError {
+		this(new AllDefaultPossibilitiesBuilder(true), klass, suiteClasses);
+	}
 
-    @Override
-    protected void runChild(Runner runner, final RunNotifier notifier) {
-	runner.run(notifier);
-    }
+	protected DynamicSuite(RunnerBuilder builder, Class<?> klass,
+	        Class<?>[] suiteClasses) throws InitializationError {
+		this(klass, builder.runners(klass, suiteClasses));
+	}
+
+	protected DynamicSuite(Class<?> klass, List<Runner> runners)
+	        throws InitializationError {
+		super(klass);
+		try {
+			Collection<ScenarioDescriptor> scenarios = getScenarios(getTestClass());
+			if (scenarios != null && !scenarios.isEmpty()) {
+
+				fRunners = new ArrayList<Runner>(scenarios.size());
+
+				for (ScenarioDescriptor scenario : scenarios) {
+					ArrayList<Runner> clonedRunners = new ArrayList<Runner>(runners.size());
+					for (Runner runner : runners) {
+						clonedRunners.add(new TestScenarioClassRunner(runner
+						        .getDescription().getTestClass(), scenario.getName()));
+					}
+					fRunners.add(new TestScenarioRunner(klass, scenario, clonedRunners));
+				}
+
+			} else {
+				fRunners = runners;
+			}
+		} catch (Exception e) {
+			throw new InitializationError(e);
+		}
+
+	}
+
+	@Override
+	protected List<Runner> getChildren() {
+		return fRunners;
+	}
+
+	@Override
+	protected Description describeChild(Runner child) {
+		return child.getDescription();
+	}
+
+	@Override
+	protected void runChild(Runner runner, final RunNotifier notifier) {
+		runner.run(notifier);
+	}
 
     /**
      * 
      *
      */
-    private static class ScenarioDescriptor {
-	
-	private final FrameworkMethod method;
-	private final String name;
-	
-	ScenarioDescriptor(FrameworkMethod method,String name) {
-	    this.method = method;
-	    this.name = name;
+	private static class ScenarioDescriptor {
+
+		private final FrameworkMethod method;
+		private final String name;
+
+		ScenarioDescriptor(FrameworkMethod method, String name) {
+			this.method = method;
+			this.name = name;
+		}
+
+		public FrameworkMethod getMethod() {
+			return method;
+		}
+
+		public String getName() {
+			return name;
+		}
+
 	}
-	
-	public FrameworkMethod getMethod() {
-	    return method;
-	}
-	public String getName() {
-	    return name;
-	}
-	
-    } 
     
     /**
      * Runs a scenario by first executing the specified scenario method,
      * then running the associated tests
      *
      */
-    private static class TestScenarioRunner extends ParentRunner<Runner> {
+	private static class TestScenarioRunner extends ParentRunner<Runner> {
 
-	private final ScenarioDescriptor scenario;
-	private final List<Runner> children;
-	private final String name;
-	
-	public TestScenarioRunner(Class<?> klass, ScenarioDescriptor scenario, List<Runner> children) throws InitializationError {
-	    super(klass);
-	    this.scenario = scenario;
-	    this.children = children;
-	    this.name = "@Scenario( " + scenario.getName() + " )";
-	} 
+		private final ScenarioDescriptor scenario;
+		private final List<Runner> children;
+		private final String name;
 
-	@Override
-	protected String getName() {
-	    return name;
+		public TestScenarioRunner(Class<?> klass, ScenarioDescriptor scenario,
+		        List<Runner> children) throws InitializationError {
+			super(klass);
+			this.scenario = scenario;
+			this.children = children;
+			this.name = "@Scenario( " + scenario.getName() + " )";
+		}
+
+		@Override
+		protected String getName() {
+			return name;
+		}
+
+		@Override
+		protected Statement classBlock(RunNotifier notifier) {
+			try {
+				this.scenario.getMethod().invokeExplosively(null, new Object[0]);
+			} catch (Throwable e) {
+				throw new RuntimeException("problem invoking scenario "
+				        + scenario.getName(), e);
+			}
+			return childrenInvoker(notifier);
+		}
+
+		@Override
+		protected List<Runner> getChildren() {
+			return children;
+		}
+
+		@Override
+		protected Description describeChild(Runner child) {
+			return child.getDescription();
+		}
+
+		@Override
+		protected void runChild(Runner child, RunNotifier notifier) {
+			child.run(notifier);
+		}
+
 	}
-
-
-	@Override
-	protected Statement classBlock(RunNotifier notifier) {
-	    try {
-		this.scenario.getMethod().invokeExplosively(null, new Object[0]);
-	    } catch (Throwable e) {
-		throw new RuntimeException("problem invoking scenario "
-			+ scenario.getName(), e);
-	    }
-	    return childrenInvoker(notifier);
-	}
-
-	@Override
-	protected List<Runner> getChildren() {
-	    return children;
-	}
-	
-	@Override
-	protected Description describeChild(Runner child) {
-	    return child.getDescription();
-	}
-
-	@Override
-	protected void runChild(Runner child, RunNotifier notifier) {
-	    child.run(notifier);
-	}
-	
-    }
     
     /**
      * Provides a unique name for each test based on appending the scenario name.
@@ -325,20 +329,21 @@ public class DynamicSuite extends ParentRunner<Runner> {
      * @author matt.deboer@gmail.com
      *
      */
-    private static class TestScenarioClassRunner extends BlockJUnit4ClassRunner {
-	
-	private final String scenarioName;
-	
-	public TestScenarioClassRunner(Class<?> klass, String scenarioName) throws InitializationError {
-	    super(klass);
-	    this.scenarioName = scenarioName;
+	private static class TestScenarioClassRunner extends BlockJUnit4ClassRunner {
+
+		private final String scenarioName;
+
+		public TestScenarioClassRunner(Class<?> klass, String scenarioName)
+		        throws InitializationError {
+			super(klass);
+			this.scenarioName = scenarioName;
+		}
+
+		@Override
+		protected String testName(final FrameworkMethod method) {
+			return String.format("%s[%s]", method.getName(), scenarioName);
+		}
+
 	}
-	
-	@Override
-	protected String testName(final FrameworkMethod method) {
-		return String.format("%s[%s]", method.getName(), scenarioName);
-	}
-	
-    }
 
 }
