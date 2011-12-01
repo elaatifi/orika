@@ -21,7 +21,7 @@ package ma.glasnost.orika.test.hint;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingHint;
-import ma.glasnost.orika.impl.GeneratedSourceCode;
+import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
@@ -42,7 +42,7 @@ public class DefaultMappingHintTestCase {
     
     @Before
     public void setUp() {
-        System.setProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES, "true");
+        System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, "true");
     }
     
     private Author createAuthor(Class<? extends AuthorParent> type) throws InstantiationException, IllegalAccessException {

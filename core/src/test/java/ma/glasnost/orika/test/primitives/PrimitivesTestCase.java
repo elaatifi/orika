@@ -41,9 +41,9 @@ public class PrimitivesTestCase {
 
 		WrapperAttributes destination = mapper.map(source, WrapperAttributes.class);
 
-		Assert.assertEquals(source.getAge(), destination.getAge());
+		Assert.assertEquals(Integer.valueOf(source.getAge()), destination.getAge());
 		Assert.assertEquals(source.getName(), destination.getName());
-		Assert.assertEquals(source.getSex(), destination.getSex());
+		Assert.assertEquals(Character.valueOf(source.getSex()), destination.getSex());
 		Assert.assertEquals(source.getVip(), destination.getVip());
 
 	}
@@ -62,9 +62,9 @@ public class PrimitivesTestCase {
 
 		PrimitiveAttributes destination = mapper.map(source, PrimitiveAttributes.class);
 
-		Assert.assertEquals(source.getAge(), destination.getAge());
+		Assert.assertEquals(source.getAge(), Integer.valueOf(destination.getAge()));
 		Assert.assertEquals(source.getName(), destination.getName());
-		Assert.assertEquals(source.getSex(), destination.getSex());
+		Assert.assertEquals(source.getSex(), Character.valueOf(destination.getSex()));
 		Assert.assertEquals(source.getVip(), destination.getVip());
 
 	}

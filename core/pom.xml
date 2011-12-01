@@ -81,5 +81,15 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
 		</dependency>
+		
+		<dependency>
+		  <groupId>ma.glasnost.orika</groupId>
+		  <artifactId>orika-eclipse-compiler</artifactId>
+		  <version>${project.version}</version>
+		  <optional>true</optional>
+		</dependency>
+		
+		
 	</dependencies>
+
 </project>

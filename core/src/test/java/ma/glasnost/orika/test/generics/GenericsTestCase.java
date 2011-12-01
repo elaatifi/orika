@@ -38,7 +38,7 @@ public class GenericsTestCase {
 		new EntityGeneric<Integer>().setId(42);
 		EntityLong clone = mapperFacade.map(entity, EntityLong.class);
 
-		Assert.assertEquals(42L, clone.getId());
+		Assert.assertEquals(Long.valueOf(42L), clone.getId());
 	}
 
 	@Test
@@ -52,7 +52,7 @@ public class GenericsTestCase {
 		sourceObject.setId(42L);
 		EntityLong clone = mapperFacade.map(sourceObject, EntityLong.class);
 
-		Assert.assertEquals(42L, clone.getId());
+		Assert.assertEquals(Long.valueOf(42L), clone.getId());
 	}
 
 	public static interface Entity<T extends Serializable> {

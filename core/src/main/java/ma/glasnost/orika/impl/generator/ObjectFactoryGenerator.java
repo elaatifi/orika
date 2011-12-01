@@ -1,4 +1,4 @@
-package ma.glasnost.orika.impl;
+package ma.glasnost.orika.impl.generator;
 
 import static ma.glasnost.orika.impl.Specifications.aCollection;
 import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
@@ -12,13 +12,13 @@ import java.util.List;
 import java.util.Set;
 
 import javassist.CannotCompileException;
-import javassist.ClassClassPath;
-import javassist.ClassPool;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.converter.Converter;
 import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.impl.GeneratedObjectFactory;
+import ma.glasnost.orika.impl.generator.CompilerStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
@@ -39,26 +39,28 @@ public class ObjectFactoryGenerator {
     
     private final ConstructorResolverStrategy constructorResolverStrategy;
     private final MapperFactory mapperFactory;
-    private final ClassPool classPool;
     private final Paranamer paranamer;
+    private final CompilerStrategy compilerStrategy;
+    private final String nameSuffix;
     
-    public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy) {
+    public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
+    		CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
-        this.classPool = ClassPool.getDefault();
+        this.compilerStrategy = compilerStrategy;
+        this.nameSuffix = Integer.toHexString(System.identityHashCode(compilerStrategy));
         this.paranamer = new CachingParanamer(new AdaptiveParanamer(new BytecodeReadingParanamer(), new AnnotationParanamer()));
-        
-        classPool.insertClassPath(new ClassClassPath(this.getClass()));
-        
         this.constructorResolverStrategy = constructorResolverStrategy;
     }
     
     public GeneratedObjectFactory build(Class<Object> clazz) {
         
-        final String className = clazz.getSimpleName() + "ObjectFactory" + System.identityHashCode(clazz);
+        final String className = clazz.getSimpleName() + "ObjectFactory" + 
+        	System.identityHashCode(clazz) + nameSuffix;
         
         try {
-            final GeneratedSourceCode factoryCode = new GeneratedSourceCode(className, classPool, GeneratedObjectFactory.class);
-            
+            final GeneratedSourceCode factoryCode = 
+        			new GeneratedSourceCode(className,GeneratedObjectFactory.class,compilerStrategy);
+        	
             addCreateMethod(factoryCode, clazz);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
@@ -68,13 +70,13 @@ public class ObjectFactoryGenerator {
             
         } catch (final Exception e) {
             throw new MappingException(e);
-        }
+        } 
     }
     
     private void addCreateMethod(GeneratedSourceCode context, Class<Object> clazz) throws CannotCompileException {
         final CodeSourceBuilder out = new CodeSourceBuilder(1);
         out.append("public Object create(Object s) {");
-        out.append("if(s == null) throw new %s(\"[s] must be not null\");", IllegalArgumentException.class.getName());
+        out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
         Set<Class<Object>> sourceClasses = mapperFactory.lookupMappedClasses(clazz);
         
@@ -83,16 +85,11 @@ public class ObjectFactoryGenerator {
                 addSourceClassConstructor(out, clazz, sourceClass);
             }
         }
-        out.append("throw new %s(\"[s] is an unsupported source class : \"+s.getClass().getName());",
-                IllegalArgumentException.class.getName());
+        out.append("throw new %s(s.getClass().getCanonicalName() + \" is an unsupported source class : \"+s.getClass().getCanonicalName());",
+                IllegalArgumentException.class.getCanonicalName());
         out.append("\n}");
         
-        try {
-            context.addMethod(out.toString());
-        } catch (final CannotCompileException e) {
-            LOG.error("An exception occured while compiling: " + out.toString(), e);
-            throw e;
-        }
+        context.addMethod(out.toString());
     }
     
     private void addSourceClassConstructor(CodeSourceBuilder out, Class<Object> clazz, Class<Object> sourceClass) {
@@ -123,7 +120,7 @@ public class ObjectFactoryGenerator {
             }
             
             out.ifSourceInstanceOf(sourceClass).then();
-            out.append("%s source = (%s) s;", sourceClass.getName(), sourceClass.getName());
+            out.append("%s source = (%s) s;", sourceClass.getCanonicalName(), sourceClass.getCanonicalName());
             int argIndex = 0;
             for (FieldMap fieldMap : properties) {
                 
@@ -156,7 +153,7 @@ public class ObjectFactoryGenerator {
                 }
             }
             
-            out.append("return new %s", clazz.getName()).append("(");
+            out.append("return new %s", clazz.getCanonicalName()).append("(");
             for (int i = 0; i < properties.size(); i++) {
                 out.append("arg%d", i);
                 if (i < properties.size() - 1) {

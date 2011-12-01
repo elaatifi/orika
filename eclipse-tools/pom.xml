@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>orika-parent</artifactId>
+		<groupId>ma.glasnost.orika</groupId>
+		<version>1.0-SNAPSHOT</version>
+	</parent>
+	
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>orika-eclipse-tools</artifactId>
+	<name>Orika - eclipse-jdt Dependencies</name>
+
+	<description>Optional Eclipse JDT compiler dependencies for Orika Bean Mapper.
+	   Specify this dependency to use the EclipseJdtCompilerStrategy in your builds
+	   with Orika to enable step-debugging capability for generated mapping objects.</description>
+
+	<dependencies>
+
+		<!-- Test dependencies for optional eclipse jdt/formatter -->
+		
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.maven</groupId> -->
+<!-- 			<artifactId>maven-plugin-api</artifactId> -->
+<!-- 			<version>2.0</version> -->
+<!-- 		</dependency> -->
+		<dependency>
+			<groupId>org.sonatype.tycho</groupId>
+			<artifactId>org.eclipse.jdt.core</artifactId>
+			<version>3.5.2.v_981_R35x</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse</groupId>
+			<artifactId>text</artifactId>
+			<version>3.3.0-v20070606-0010</version>
+			<scope>compile</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.equinox</groupId>
+					<artifactId>common</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.core</groupId>
+			<artifactId>runtime</artifactId>
+			<version>3.3.100-v20070530</version>
+			<scope>runtime</scope>
+			<exclusions>
+				<exclusion>
+					<groupId>org.eclipse.equinox</groupId>
+					<artifactId>app</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		
+<!-- 		<dependency> -->
+<!--                    <groupId>org.codehaus.plexus</groupId> -->
+<!--                    <artifactId>plexus-compiler-eclipse</artifactId> -->
+<!--                    <version>1.8.1</version> -->
+<!--         </dependency> -->
+	
+	</dependencies>
+
+</project>

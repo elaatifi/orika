@@ -25,6 +25,6 @@ public abstract class MappingUtil {
     
     public static MapperFactory getMapperFactory() {
         
-        return new DefaultMapperFactory();
+        return new DefaultMapperFactory.Builder().build();
     }
 }

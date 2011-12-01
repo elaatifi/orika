@@ -36,8 +36,14 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.constructor.SimpleConstructorResolverStrategy;
+import ma.glasnost.orika.impl.generator.CompilerStrategy;
+import ma.glasnost.orika.impl.generator.JavassistCompilerStrategy;
+import ma.glasnost.orika.impl.generator.MapperGenerator;
+import ma.glasnost.orika.impl.generator.ObjectFactoryGenerator;
+import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.converter.DefaultConverterFactory;
 import ma.glasnost.orika.inheritance.DefaultSuperTypeResolverStrategy;
@@ -59,8 +65,6 @@ import ma.glasnost.orika.unenhance.UnenhanceStrategy;
  */
 public class DefaultMapperFactory implements MapperFactory {
     
-    public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.MapperGenerator.writeClassFiles";
-    
     private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
     private final ObjectFactoryGenerator objectFactoryGenerator;
@@ -73,22 +77,16 @@ public class DefaultMapperFactory implements MapperFactory {
     private final List<MappingHint> mappingHints;
     private final UnenhanceStrategy unenhanceStrategy;
     private final ConverterFactory converterFactory;
+    private final CompilerStrategy compilerStrategy;
     
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
-    public DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
+    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
             SuperTypeResolverStrategy superTypeStrategy, ConstructorResolverStrategy constructorResolverStrategy,
-            ConverterFactory converterFactory) {
+            ConverterFactory converterFactory, CompilerStrategy compilerStrategy) {
         
-        if (constructorResolverStrategy == null) {
-            constructorResolverStrategy = new SimpleConstructorResolverStrategy();
-        }
-        
-        if (converterFactory == null) {
-            converterFactory = new DefaultConverterFactory();
-        }
-        this.converterFactory = converterFactory;
-        
+	this.converterFactory = converterFactory;
+        this.compilerStrategy = compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.aToBRegistry = new ConcurrentHashMap<Class<?>, Set<Class<?>>>();
@@ -105,16 +103,24 @@ public class DefaultMapperFactory implements MapperFactory {
             }
         }
         
-        this.mapperGenerator = new MapperGenerator(this);
-        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, constructorResolverStrategy);
+        this.mapperGenerator = new MapperGenerator(this, compilerStrategy);
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, constructorResolverStrategy, compilerStrategy);
     }
     
     /**
      * Construct an instance of DefaultMapperFactory with a default
      * UnenhanceStrategy
+     * @deprecated use {@link DefaultMapperFactory.Builder} instead
      */
+    @Deprecated
     public DefaultMapperFactory() {
-        this(null, null, null, null, null);
+    	this(
+    		null, // classMaps 
+    		null, // unenhanceStrategy
+    		null, // superTypeStrategy
+    		getDefaultConstructorResolverStrategy(),
+    		getDefaultConverterFactory(),
+    		getDefaultCompilerStrategy());
     }
     
     /**
@@ -124,9 +130,17 @@ public class DefaultMapperFactory implements MapperFactory {
      * @param unenhanceStrategy
      *            used to provide custom unenhancement of mapped objects before
      *            processing
+     * @deprecated use {@link DefaultMapperFactory.Builder} instead
      */
+    @Deprecated
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy) {
-        this(null, unenhanceStrategy, null, null, null);
+        this(
+        	null, // classMaps
+        	unenhanceStrategy, 
+        	null, // superTypeStrategy
+        	getDefaultConstructorResolverStrategy(), 
+        	getDefaultConverterFactory(),
+    		getDefaultCompilerStrategy());
     }
     
     /**
@@ -141,9 +155,17 @@ public class DefaultMapperFactory implements MapperFactory {
      *            similar to the unenhance strategy, but used when a recommended
      *            type is not usable (in case it is inaccessible, or similar
      *            situation)
+     * @deprecated use {@link DefaultMapperFactory.Builder} instead
      */
+    @Deprecated
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy) {
-        this(null, unenhanceStrategy, superTypeStrategy, null, null);
+        this(	
+        	null, // classMaps
+        	unenhanceStrategy, 
+        	superTypeStrategy, 
+        	getDefaultConstructorResolverStrategy(), 
+        	getDefaultConverterFactory(),
+    		getDefaultCompilerStrategy());
     }
     
     /**
@@ -162,10 +184,173 @@ public class DefaultMapperFactory implements MapperFactory {
      * @param constructorResolverStrategy
      *            used to provide custom resolver strategy of mapped object
      *            constructor to generate an object factory
+     * @deprecated use {@link DefaultMapperFactory.Builder} instead
      */
+    @Deprecated
     public DefaultMapperFactory(UnenhanceStrategy unenhanceStrategy, SuperTypeResolverStrategy superTypeStrategy,
             ConstructorResolverStrategy constructorResolverStrategy) {
-        this(null, unenhanceStrategy, superTypeStrategy, constructorResolverStrategy, null);
+        this(
+        	null, 
+        	unenhanceStrategy, 
+        	superTypeStrategy, 
+        	constructorResolverStrategy, 
+        	getDefaultConverterFactory(),
+    		getDefaultCompilerStrategy());
+    }
+    
+    /**
+     * Use this builder to generate instances of DefaultMapperFactory
+     * with the desired customizations.<br><br>
+     * 
+     * For example, an instance with no customizations could be generated with the following code:
+     * <pre>
+     * {@code
+     * 		MapperFactory factory = new DefaultMapperFactory.Builder().build();
+     * }
+     * </pre>
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static final class Builder {
+    	private UnenhanceStrategy unenhanceStrategy;
+    	private SuperTypeResolverStrategy superTypeStrategy;
+    	private ConstructorResolverStrategy constructorResolverStrategy;
+    	private CompilerStrategy compilerStrategy;
+    	private Set<ClassMap<?, ?>> classMaps;
+    	private ConverterFactory converterFactory;
+    	
+    	public Builder classMaps(Set<ClassMap<?, ?>> classMaps) {
+    		this.classMaps = classMaps;
+    		return this;
+    	}
+    	
+    	public Builder unenhanceStrategy(UnenhanceStrategy unenhanceStrategy) {
+    		this.unenhanceStrategy = unenhanceStrategy;
+    		return this;
+    	}
+    	
+    	public Builder superTypeResolverStrategy(SuperTypeResolverStrategy superTypeStrategy) {
+    		this.superTypeStrategy = superTypeStrategy;
+    		return this;
+    	}
+    	
+    	public Builder constructorResolverStrategy(ConstructorResolverStrategy constructorResolverStrategy) {
+    		this.constructorResolverStrategy = constructorResolverStrategy;
+    		return this;
+    	}
+    	
+    	public Builder converterFactory(ConverterFactory converterFactory) {
+    	    this.converterFactory = converterFactory;
+    	    return this;
+    	}
+    	
+    	public Builder compilerStrategy(CompilerStrategy compilerStrategy) {
+    		this.compilerStrategy = compilerStrategy;
+    		return this;
+    	}
+    	
+    	public DefaultMapperFactory build() {
+    		if (constructorResolverStrategy == null) {
+    		    constructorResolverStrategy = getDefaultConstructorResolverStrategy(); 
+    		}
+    		if (converterFactory==null) {
+    		    converterFactory = new DefaultConverterFactory();
+    		}
+    		if (compilerStrategy==null) {
+		    compilerStrategy = getDefaultCompilerStrategy();
+    		}
+    		
+    		return new DefaultMapperFactory(
+    			classMaps,
+    			unenhanceStrategy,
+    			superTypeStrategy,
+    			constructorResolverStrategy,
+    			converterFactory,
+    			compilerStrategy);
+    	}
+    	
+    }
+    
+    /**
+     * Provides a default compiler strategy, favoring a type specified in 
+     * the appropriate system property if found.
+     * 
+     * @return 
+     */
+    private static CompilerStrategy getDefaultCompilerStrategy() {
+	CompilerStrategy compilerStrategy = null;
+	String strategy = System.getProperty(OrikaSystemProperties.COMPILER_STRATEGY);
+	if (strategy != null) {
+	    // User may specify the compiler strategy using a system property
+	    try {
+		@SuppressWarnings("unchecked")
+		Class<? extends CompilerStrategy> strategyType = (Class<? extends CompilerStrategy>) Class
+			.forName(strategy, true, Thread.currentThread()
+				.getContextClassLoader());
+		compilerStrategy = strategyType.newInstance();
+
+	    } catch (Exception e) {
+		throw new IllegalArgumentException("compiler strategy specified was invalid", e);
+	    }
+
+	} else {
+	    compilerStrategy = new JavassistCompilerStrategy();
+	}
+	return compilerStrategy;
+    }
+    
+    /**
+     * Provides a default constructor resolver strategy, favoring a type specified in 
+     * the appropriate system property if found.
+     * 
+     * @return
+     */
+    private static ConverterFactory getDefaultConverterFactory() {
+	ConverterFactory converterFactory = null;
+	String strategy = System.getProperty(OrikaSystemProperties.CONVERTER_FACTORY);
+	if (strategy != null) {
+	    
+	    try {
+		@SuppressWarnings("unchecked")
+		Class<? extends ConverterFactory> strategyType = (Class<? extends ConverterFactory>) Class
+			.forName(strategy, true, Thread.currentThread().getContextClassLoader());
+		converterFactory = strategyType.newInstance();
+
+	    } catch (Exception e) {
+		throw new IllegalArgumentException("converter factory specified was invalid", e);
+	    }
+
+	} else {
+	    converterFactory = new DefaultConverterFactory();
+	}
+	return converterFactory;
+    }
+    
+    /**
+     * Provides a default constructor resolver strategy, favoring a type specified in 
+     * the appropriate system property if found.
+     * 
+     * @return
+     */
+    private static ConstructorResolverStrategy getDefaultConstructorResolverStrategy() {
+	ConstructorResolverStrategy constructorResolverStrategy = null;
+	String strategy = System.getProperty(OrikaSystemProperties.CONSTRUCTOR_RESOLVER_STRATEGY);
+	if (strategy != null) {
+	    
+	    try {
+		@SuppressWarnings("unchecked")
+		Class<? extends ConstructorResolverStrategy> strategyType = (Class<? extends ConstructorResolverStrategy>) Class
+			.forName(strategy, true, Thread.currentThread().getContextClassLoader());
+		constructorResolverStrategy = strategyType.newInstance();
+
+	    } catch (Exception e) {
+		throw new IllegalArgumentException("constructor resolver strategy specified was invalid", e);
+	    }
+
+	} else {
+	    constructorResolverStrategy = new SimpleConstructorResolverStrategy();
+	}
+	return constructorResolverStrategy;
     }
     
     /**
@@ -198,9 +383,6 @@ public class DefaultMapperFactory implements MapperFactory {
             
         }
         
-        /*
-         * If the passed strategy wants complete control, they can have it
-         */
         if (superTypeStrategy != null) {
             unenhancer.addSuperTypeResolverStrategy(superTypeStrategy);
         } else {
@@ -221,21 +403,45 @@ public class DefaultMapperFactory implements MapperFactory {
             unenhancer.addSuperTypeResolverStrategy(registeredMappersStrategy);
         }
         
-        /*
-         * This strategy produces super-types whenever the proposed class type
-         * is not accessible to the (javassist) byte-code generator and/or the
-         * current thread context class laoder; it is added last as a fail-safe
-         * in case a suggested type cannot be used. It is automatically
-         * included, as there's no case when skipping it would be desired....
-         */
-        final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
-            
-            @Override
-            public boolean isAcceptable(Class<?> proposedClass) {
-                return mapperGenerator.isTypeAccessible(proposedClass) && !java.lang.reflect.Proxy.class.equals(proposedClass);
-            }
-            
-        };
+	/*
+	 * This strategy produces super-types whenever the proposed class type
+	 * is not accessible to the compilerStrategy and/or the current thread
+	 * context class-loader; it is added last as a fail-safe in case a
+	 * suggested type cannot be used. It is automatically included, as
+	 * there's no case when skipping it would be desired....
+	 */
+	final SuperTypeResolverStrategy inaccessibleTypeStrategy = new DefaultSuperTypeResolverStrategy() {
+
+	    /**
+	     * Tests whether the specified type is accessible to both the
+	     * current thread's class-loader, and also to the compilerStrategy.
+	     * 
+	     * @param type
+	     * @return
+	     */
+	    public boolean isTypeAccessible(Class<?> type) {
+
+		try {
+		    Class<?> loadedType = Thread.currentThread().getContextClassLoader().loadClass(type.getName());
+		    if (!type.equals(loadedType)) {
+			return false;
+		    }
+		    compilerStrategy.assureTypeIsAccessible(type);
+		    return true;
+		} catch (ClassNotFoundException e) {
+		    return false;
+		} catch (SourceCodeGenerationException e) {
+		    return false;
+		}
+	    }
+
+	    @Override
+	    public boolean isAcceptable(Class<?> proposedClass) {
+		return isTypeAccessible(proposedClass)
+			&& !java.lang.reflect.Proxy.class.equals(proposedClass);
+	    }
+
+	};
         
         unenhancer.addSuperTypeResolverStrategy(inaccessibleTypeStrategy);
         
@@ -381,7 +587,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private void collectUsedMappers(ClassMap<?, ?> classMap, List<Mapper<Object, Object>> parentMappers, MapperKey parentMapperKey) {
         Mapper<Object, Object> parentMapper = lookupMapper(parentMapperKey);
         if (parentMapper == null) {
-            throw new MappingException("Can not find used mappers for : " + classMap.getMapperClassName());
+            throw new MappingException("Cannot find used mappers for : " + classMap.getMapperClassName());
         }
         parentMappers.add(parentMapper);
         

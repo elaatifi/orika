@@ -6,7 +6,7 @@ import java.util.Date;
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.builtin.DateToStringConverter;
-import ma.glasnost.orika.impl.GeneratedSourceCode;
+import ma.glasnost.orika.impl.generator.GeneratedSourceCode;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
