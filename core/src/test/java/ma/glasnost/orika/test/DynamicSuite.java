@@ -29,8 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import ma.glasnost.orika.test.generator.TestAlternateCompilerStrategy;
-
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.internal.builders.AllDefaultPossibilitiesBuilder;
@@ -139,7 +137,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             List<Class<?>> testCases = new ArrayList<Class<?>>();
             
-            File classFolder = new File(TestAlternateCompilerStrategy.class.getResource("/").getFile());
+            File classFolder = new File(klass.getResource("/").getFile());
             int classFolderPathLength = classFolder.getAbsolutePath().length();
             
             LinkedList<File> stack = new LinkedList<File>();
