@@ -29,8 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.internal.builders.AllDefaultPossibilitiesBuilder;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
@@ -40,7 +38,6 @@ import org.junit.runners.ParentRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
-import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 
 /**
@@ -104,24 +101,19 @@ public class DynamicSuite extends ParentRunner<Runner> {
     /**
      * Resolves the <code>@Scenario</code> annotation if present; if found, the scenario will be
      * given a unique name suffix for all of the tests, otherwise, a default scenario is run with
-     * no name suffix.
-     * <br>
-     * Also resolves the <code>@BeforeClass</code> and <code>@AfterClass</code> methods to be run
-     * before and after the test cases resolved by the suite.
+     * no name suffix. 
      * 
      * @param testClass the class which defines the DynamicSuite
      * @return
      */
-    private static ScenarioDescriptor getScenario(TestClass testClass) {
+    private static String getScenarioName(TestClass testClass) {
         
         Scenario s = testClass.getJavaClass().getAnnotation(Scenario.class);
         String name = null;
         if (s!=null) {
         	name = "".equals(s.name().trim()) ? testClass.getJavaClass().getSimpleName() : s.name();
         }
-        List<FrameworkMethod> beforeClass = testClass.getAnnotatedMethods(BeforeClass.class);
-        List<FrameworkMethod> afterClass = testClass.getAnnotatedMethods(AfterClass.class);
-        return new ScenarioDescriptor(beforeClass,afterClass,name);
+        return name;
     }
     
     /**
@@ -189,7 +181,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
     
     private final List<Runner> fRunners;
     private final String name;
-    private final ScenarioDescriptor scenario;
+    private final String scenarioName;
     
     public DynamicSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
         this(builder, klass, findAllTestCases(klass).toArray(new Class<?>[0]));
@@ -210,16 +202,16 @@ public class DynamicSuite extends ParentRunner<Runner> {
     protected DynamicSuite(Class<?> klass, List<Runner> runners) throws InitializationError {
         super(klass);
         try {
-            this.scenario = getScenario(getTestClass());
+            this.scenarioName = getScenarioName(getTestClass());
             
-            if (scenario.getName() == null) {    
+            if (scenarioName == null) {    
             	this.fRunners = runners;
             	this.name = klass.getName();
             } else {
-            	this.name = klass.getName() + "[" + scenario.getName() + "]";
+            	this.name = klass.getName() + "[" + scenarioName + "]";
             	this.fRunners = new ArrayList<Runner>(runners.size());
                 for (Runner runner : runners) {
-                	fRunners.add(new TestScenarioClassRunner(runner.getDescription().getTestClass(), scenario.getName()));
+                	fRunners.add(new TestScenarioClassRunner(runner.getDescription().getTestClass(), scenarioName));
                 }
             }
         } catch (Exception e) {
@@ -232,36 +224,6 @@ public class DynamicSuite extends ParentRunner<Runner> {
     @Override
     protected String getName() {
         return name;
-    }
-    
-    @Override
-    protected Statement classBlock(RunNotifier notifier) {
-    	
-    	try {
-    		List<FrameworkMethod> beforeClass = scenario.getMethodsBeforeClass();
-            if (beforeClass!=null) {
-            	for(FrameworkMethod method: beforeClass) {
-            		method.invokeExplosively(null, new Object[0]);
-            	}
-            }
-        } catch (Throwable e) {
-            throw new RuntimeException("error invoking @BeforeClass method", e);
-        }
-    	
-    	Statement result = childrenInvoker(notifier);
-        
-    	try {
-    		List<FrameworkMethod> afterClass = scenario.getMethodsAfterClass();
-            if (afterClass!=null) {
-            	for(FrameworkMethod method: afterClass) {
-            		method.invokeExplosively(null, new Object[0]);
-            	}
-            }
-        } catch (Throwable e) {
-        	throw new RuntimeException("error invoking @AfterClass method", e);
-        }
-        
-    	return result;
     }
         
     @Override
@@ -278,38 +240,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
     protected void runChild(Runner runner, final RunNotifier notifier) {
         runner.run(notifier);
     }
-    
-    /**
-     * ScenarioDescriptor describes the scenario to be executed by this dynamic suite;
-     * particularly the name and <code>@BeforeClass</code> and <code>@AfterClass</code> methods.
-     *
-     */
-    private static class ScenarioDescriptor {
         
-        private final List<FrameworkMethod> beforeClass;
-        private final List<FrameworkMethod> afterClass;
-        private final String name;
-        
-        ScenarioDescriptor(List<FrameworkMethod> beforeClass, List<FrameworkMethod> afterClass, String name) {
-            this.beforeClass = beforeClass;
-            this.afterClass = afterClass;
-            this.name = name;
-        }
-        
-        public List<FrameworkMethod> getMethodsBeforeClass() {
-            return beforeClass;
-        }
-        
-        public List<FrameworkMethod> getMethodsAfterClass() {
-            return afterClass;
-        }
-        
-        public String getName() {
-            return name;
-        }
-        
-    }
-     
     /**
      * Provides a unique name for each test based on appending the scenario
      * name.

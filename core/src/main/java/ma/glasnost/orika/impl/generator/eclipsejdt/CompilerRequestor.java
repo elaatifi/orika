@@ -35,47 +35,47 @@ public class CompilerRequestor implements ICompilerRequestor {
     
     }
 
-    public Map<String, byte[]> getCompiledClassFiles() {
-	return compiledClassFiles;
-    }
-
-    public IProblem[] getProblems() {
-	return problems;
-    }
-
-    public void reset() {
-	this.problems = null;
-	this.compiledClassFiles = null;
-    }
-    
-    public void acceptResult(CompilationResult result) {
-	boolean hasErrors = false;
-
-	if (result.hasProblems()) {
-	    problems = result.getProblems();
+	public Map<String, byte[]> getCompiledClassFiles() {
+		return compiledClassFiles;
 	}
 
-	if (!hasErrors) {
+	public IProblem[] getProblems() {
+		return problems;
+	}
 
-	    ClassFile[] classFiles = result.getClassFiles();
-	    compiledClassFiles = new HashMap<String, byte[]>(classFiles.length);
+	public void reset() {
+		this.problems = null;
+		this.compiledClassFiles = null;
+	}
 
-	    for (int i = 0; i < classFiles.length; i++) {
-		ClassFile classFile = classFiles[i];
-		char[][] compoundName = classFile.getCompoundName();
-		String className = "";
-		String sep = "";
+	public void acceptResult(CompilationResult result) {
+		boolean hasErrors = false;
 
-		for (int j = 0; j < compoundName.length; j++) {
-		    className += sep;
-		    className += new String(compoundName[j]);
-		    sep = ".";
+		if (result.hasProblems()) {
+			problems = result.getProblems();
 		}
 
-		byte[] bytes = classFile.getBytes();
-		compiledClassFiles.put(className, bytes);
-	    }
+		if (!hasErrors) {
 
+			ClassFile[] classFiles = result.getClassFiles();
+			compiledClassFiles = new HashMap<String, byte[]>(classFiles.length);
+
+			for (int i = 0; i < classFiles.length; i++) {
+				ClassFile classFile = classFiles[i];
+				char[][] compoundName = classFile.getCompoundName();
+				String className = "";
+				String sep = "";
+
+				for (int j = 0; j < compoundName.length; j++) {
+					className += sep;
+					className += new String(compoundName[j]);
+					sep = ".";
+				}
+
+				byte[] bytes = classFile.getBytes();
+				compiledClassFiles.put(className, bytes);
+			}
+
+		}
 	}
-    }
 }

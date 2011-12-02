@@ -34,35 +34,35 @@ public class CompilationUnit implements ICompilationUnit {
      * @param simpleClassName this is the name of the class without the package, but including
      * the parent type if the class is a nested class.
      */
-    public CompilationUnit(String source, String packageName, String simpleClassName) {
-	this.packageName = packageName;
-	if (simpleClassName.contains(".")) {
-	    mainTypeName = simpleClassName.split("[.]")[0];
-	} else {
-	    mainTypeName = simpleClassName;
+	public CompilationUnit(String source, String packageName, String simpleClassName) {
+		this.packageName = packageName;
+		if (simpleClassName.contains(".")) {
+			mainTypeName = simpleClassName.split("[.]")[0];
+		} else {
+			mainTypeName = simpleClassName;
+		}
+		this.source = source;
 	}
-	this.source = source;
-    }
 
-    public char[] getFileName() {
-	return (mainTypeName + ".java").toCharArray();
-    }
-
-    public char[] getContents() {
-	return source.toCharArray();
-    }
-
-    public char[] getMainTypeName() {
-	return mainTypeName.toCharArray();
-    }
-
-    public char[][] getPackageName() {
-	StringTokenizer izer = new StringTokenizer(packageName, ".");
-	char[][] result = new char[izer.countTokens()][];
-	for (int i = 0; i < result.length; i++) {
-	    String tok = izer.nextToken();
-	    result[i] = tok.toCharArray();
+	public char[] getFileName() {
+		return (mainTypeName + ".java").toCharArray();
 	}
-	return result;
-    }
+
+	public char[] getContents() {
+		return source.toCharArray();
+	}
+
+	public char[] getMainTypeName() {
+		return mainTypeName.toCharArray();
+	}
+
+	public char[][] getPackageName() {
+		StringTokenizer izer = new StringTokenizer(packageName, ".");
+		char[][] result = new char[izer.countTokens()][];
+		for (int i = 0; i < result.length; i++) {
+			String tok = izer.nextToken();
+			result[i] = tok.toCharArray();
+		}
+		return result;
+	}
 }

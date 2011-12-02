@@ -17,17 +17,35 @@ public final class OrikaSystemProperties {
      * Specifies whether .java source files should be written for generated objects; 
      * valid choices are "true" or "false". <br>
      * Any non-null value will be evaluated to "false"; if this property is not specified,
-     * default behavior is determined by the compiler strategy.
+     * default behavior is determined by the compiler strategy.<br><br>
+     * Note that Orika makes no effort to delete such generated files.
      */
     public static final String WRITE_SOURCE_FILES = "ma.glasnost.orika.writeSourceFiles";
+    
+    /**
+     * Specifies the output location where source files should be written (if writing source files is enabled).
+     * This defaults to the value "classpath:/ma/glasnost/orika/generated/", which signals to write
+     * the files to the location "/ma/glasnost/orika/generated/" relative to the root of the class-path.<br>
+     * An absolute file location may also be specified, such as: "/Users/me/orikaGeneratedFiles/src/".
+     */
+    public static final String WRITE_SOURCE_FILES_TO_PATH = "ma.glasnost.orika.writeSourceFilesToPath";
     
     /**
      * Specifies whether class files should be written for generated objects; 
      * valid choices are "true" or "false". <br>
      * Any non-null value will be evaluated to "false"; if this property is not specified,
-     * default behavior is determined by the compiler strategy.
+     * default behavior is determined by the compiler strategy.<br><br>
+     * Note that Orika makes no effort to delete such generated files.
      */
     public static final String WRITE_CLASS_FILES = "ma.glasnost.orika.writeClassFiles";
+    
+    /**
+     * Specifies the output location where class files should be written (if writing class files is enabled).
+     * This defaults to the value "classpath:/ma/glasnost/orika/generated/", which signals to write
+     * the files to the location "/ma/glasnost/orika/generated/" relative to the root of the class-path.<br>
+     * An absolute file location may also be specified, such as: "/Users/me/orikaGeneratedFiles/bin/".
+     */
+    public static final String WRITE_CLASS_FILES_TO_PATH = "ma.glasnost.orika.writeClassFilesToPath";
     
     /**
      * Specifies the fully-qualified class name of the compiler strategy to use when creating generated objects;

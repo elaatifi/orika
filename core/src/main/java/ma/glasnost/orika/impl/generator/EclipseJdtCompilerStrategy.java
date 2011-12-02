@@ -171,14 +171,7 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
 	protected void writeSourceFile(String sourceText, String packageName,
 	        String className) throws IOException {
 
-		String path = getClass().getResource("/").getFile().toString()
-		        + packageName.replaceAll("\\.", "/") + "/";
-
-		File parentDir = new File(path);
-		if (!parentDir.exists() && !parentDir.mkdirs()) {
-			throw new IOException("Could not write source file for "
-			        + packageName + "." + className);
-		}
+		File parentDir = preparePackageOutputPath(this.pathToWriteSourceFiles, packageName);
 
 		File outputSourceFile = new File(parentDir, className + ".java");
 		if (!outputSourceFile.exists() && !outputSourceFile.createNewFile()) {
@@ -194,14 +187,8 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
     
 	protected void writeClassFile(String packageName, String simpleClassName,
 	        byte[] data) throws IOException {
-		String path = getClass().getResource("/").getFile().toString()
-		        + packageName.replaceAll("\\.", "/") + "/";
-
-		File parentDir = new File(path);
-		if (!parentDir.exists() && !parentDir.mkdirs()) {
-			throw new IOException("Could not write source file for "
-			        + packageName + "." + simpleClassName);
-		}
+		
+		File parentDir = preparePackageOutputPath(this.pathToWriteClassFiles, packageName);
 
 		File outputSourceFile = new File(parentDir, simpleClassName + ".class");
 		if (!outputSourceFile.exists() && !outputSourceFile.createNewFile()) {

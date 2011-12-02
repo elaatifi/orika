@@ -69,23 +69,19 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     protected void writeFiles(GeneratedSourceCode sourceCode, CtClass byteCodeClass) throws IOException {
         
         if (writeClassFiles || writeSourceFiles) {
-            
-            String path = getClass().getResource("/").getFile().toString() + sourceCode.getPackageName().replaceAll("\\.", "/") + "/";
-            File parentDir = new File(path);
-            if (!parentDir.exists() && !parentDir.mkdirs()) {
-                throw new IOException("Could not write source file for " + sourceCode.getClassName());
-            }
-            
+
             if (writeClassFiles) {
                 try {
-                    byteCodeClass.writeFile(getClass().getResource("/").getFile().toString());
+                	File parentDir = preparePackageOutputPath(this.pathToWriteClassFiles, "");
+                    byteCodeClass.writeFile(parentDir.getAbsolutePath());
                 } catch (CannotCompileException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
             
             if (writeSourceFiles) {
-                File sourceFile = new File(parentDir, sourceCode.getClassSimpleName() + ".java");
+            	File parentDir = preparePackageOutputPath(this.pathToWriteSourceFiles, sourceCode.getPackageName());
+            	File sourceFile = new File(parentDir, sourceCode.getClassSimpleName() + ".java");
                 if (!sourceFile.exists() && !sourceFile.createNewFile()) {
                     throw new IOException("Could not write source file for " + sourceCode.getClassName());
                 }
@@ -103,18 +99,6 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
      * assertClassLoaderAccessible(java.lang.Class)
      */
     public void assureTypeIsAccessible(Class<?> type) throws SourceCodeGenerationException {
-        // ClassLoader loader = type.getClassLoader();
-        // if (loader != null && !mappedLoaders.containsKey(loader)) {
-        // mappedLoaders.put(loader, Boolean.TRUE);
-        // classPool.insertClassPath(new ClassClassPath(type));
-        // }
-        // try {
-        // CtNewMethod.make("public void test(" + type.getCanonicalName() +
-        // " t) { }", methodTestClass);
-        // } catch (CannotCompileException e) {
-        // throw new SourceCodeGenerationException("Type " + type +
-        // " is not accessible",e);
-        // }
         
         if (!type.isPrimitive() && type.getClassLoader() != null) {
             
@@ -127,8 +111,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
             if (is == null) {
                 throw new SourceCodeGenerationException(type + " is not accessible");
             }
-        }
-        
+        }  
     }
     
     /*

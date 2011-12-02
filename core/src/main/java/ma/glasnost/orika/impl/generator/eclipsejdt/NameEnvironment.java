@@ -37,110 +37,110 @@ public class NameEnvironment implements INameEnvironment {
     private static final int END_OF_STREAM = -1;
     private static final int DEFAULT_BUFFER_SIZE = 4096;
     
-    private ClassLoader classLoader;
+	private ClassLoader classLoader;
 
-    public NameEnvironment(ClassLoader classLoader) {
-	this.classLoader = classLoader;
-    }
-
-    public NameEnvironmentAnswer findType(char[][] compoundTypeName) {
-	String result = "";
-
-	String sep = "";
-
-	for (int i = 0; i < compoundTypeName.length; i++) {
-	    result += sep;
-	    result += new String(compoundTypeName[i]);
-	    sep = ".";
+	public NameEnvironment(ClassLoader classLoader) {
+		this.classLoader = classLoader;
 	}
 
-	return findType(result);
-    }
+	public NameEnvironmentAnswer findType(char[][] compoundTypeName) {
+		String result = "";
 
-    public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName) {
-	String result = "";
+		String sep = "";
 
-	String sep = "";
-
-	for (int i = 0; i < packageName.length; i++) {
-	    result += sep;
-	    result += new String(packageName[i]);
-	    sep = ".";
-	}
-
-	result += sep;
-	result += new String(typeName);
-	return findType(result);
-    }
-
-    private NameEnvironmentAnswer findType(String className) {
-	try {
-	    String resourceName = className.replace('.', '/') + ".class";
-
-	    InputStream is = classLoader.getResourceAsStream(resourceName);
-
-	    if (is == null) {
-		return null;
-		
-	    } else {
-		try {
-		    final ByteArrayOutputStream output = new ByteArrayOutputStream();
-		    final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
-
-		    int n = 0;
-		    while ((n = is.read(buffer)) != END_OF_STREAM) {
-			output.write(buffer, 0, n);
-		    }
-
-		    byte[] classBytes = output.toByteArray();
-		    char[] fileName = className.toCharArray();
-
-		    ClassFileReader classFileReader = new ClassFileReader(
-			    classBytes, fileName, true);
-
-		    return new NameEnvironmentAnswer(classFileReader, null);
-		} finally {
-		    is.close();
+		for (int i = 0; i < compoundTypeName.length; i++) {
+			result += sep;
+			result += new String(compoundTypeName[i]);
+			sep = ".";
 		}
-	    }
-	} catch (IOException e) {
-	    return null;
-	} catch (ClassFormatException e) {
-	    return null;
+
+		return findType(result);
 	}
-    }
 
-    private boolean isPackage(String result) {
-	String resourceName = "/" + result.replace('.', '/') + ".class";
-	InputStream is = classLoader.getResourceAsStream(resourceName);
-	return is == null;
-    }
+	public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName) {
+		String result = "";
 
-    public boolean isPackage(char[][] parentPackageName, char[] packageName) {
-	String result = "";
+		String sep = "";
 
-	String sep = "";
+		for (int i = 0; i < packageName.length; i++) {
+			result += sep;
+			result += new String(packageName[i]);
+			sep = ".";
+		}
 
-	if (parentPackageName != null) {
-	    for (int i = 0; i < parentPackageName.length; i++) {
 		result += sep;
-		result += new String(parentPackageName[i]);
-		sep = ".";
-	    }
+		result += new String(typeName);
+		return findType(result);
 	}
 
-	if (Character.isUpperCase(packageName[0])) {
-	    return false;
+	private NameEnvironmentAnswer findType(String className) {
+		try {
+			String resourceName = className.replace('.', '/') + ".class";
+
+			InputStream is = classLoader.getResourceAsStream(resourceName);
+
+			if (is == null) {
+				return null;
+
+			} else {
+				try {
+					final ByteArrayOutputStream output = new ByteArrayOutputStream();
+					final byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
+
+					int n = 0;
+					while ((n = is.read(buffer)) != END_OF_STREAM) {
+						output.write(buffer, 0, n);
+					}
+
+					byte[] classBytes = output.toByteArray();
+					char[] fileName = className.toCharArray();
+
+					ClassFileReader classFileReader = new ClassFileReader(
+					        classBytes, fileName, true);
+
+					return new NameEnvironmentAnswer(classFileReader, null);
+				} finally {
+					is.close();
+				}
+			}
+		} catch (IOException e) {
+			return null;
+		} catch (ClassFormatException e) {
+			return null;
+		}
 	}
 
-	String str = new String(packageName);
-	result += sep;
-	result += str;
+	private boolean isPackage(String result) {
+		String resourceName = "/" + result.replace('.', '/') + ".class";
+		InputStream is = classLoader.getResourceAsStream(resourceName);
+		return is == null;
+	}
 
-	return isPackage(result);
-    }
+	public boolean isPackage(char[][] parentPackageName, char[] packageName) {
+		String result = "";
 
-    public void cleanup() {
-	// nothing to do
-    }
+		String sep = "";
+
+		if (parentPackageName != null) {
+			for (int i = 0; i < parentPackageName.length; i++) {
+				result += sep;
+				result += new String(parentPackageName[i]);
+				sep = ".";
+			}
+		}
+
+		if (Character.isUpperCase(packageName[0])) {
+			return false;
+		}
+
+		String str = new String(packageName);
+		result += sep;
+		result += str;
+
+		return isPackage(result);
+	}
+
+	public void cleanup() {
+		// nothing to do
+	}
 }
