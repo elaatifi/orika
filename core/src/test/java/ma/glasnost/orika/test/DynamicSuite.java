@@ -23,18 +23,16 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import ma.glasnost.orika.test.generator.TestAlternateCompilerStrategy;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.internal.builders.AllDefaultPossibilitiesBuilder;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
@@ -48,21 +46,24 @@ import org.junit.runners.model.Statement;
 import org.junit.runners.model.TestClass;
 
 /**
- * Resolves and runs a test suite dynamically containing all classes matched by
- * the specified pattern.<br>
- * <br>
+ * DynamicSuite resolves and runs a test suite dynamically containing all classes matched by
+ * a specified pattern.<br>
+ * Use the <code>@RunWith</code> annotation, specifying DyanimcSuite.class as the
+ * value in order to run a test class as a dynamic suite.
+ * <br><br>
  * 
- * The pattern may be customized by specifying an alternate value with the
- * <code>TestCasePattern</code> annotation.<br>
- * <br>
+ * The pattern may be customized by specifying an value with the <code>TestCasePattern</code> 
+ * annotation.<br><br>
  * 
- * The tests may also be run with different custom scenarios, such that a public
- * static method marked with <code>@Scenario</code> in the test suite class will
- * be executed once before each test in the suite, and each test method will be
- * marked with that scenario's name.<br>
- * Multiple such scenario methods may be defined this way, and a copy of all
- * resolved test classes will be executed for each (after applying the scenario
- * method).
+ * The tests may also be run as a "scenario" by marking the class with the 
+ * <code>@Scenario</code> annotation. Running tests as a scenario will cause
+ * all of the resolved test cases' methods to be suffixed with the scenario name.<br>
+ * This is necessary in case you want to run these tests again, under a new "scenario",
+ * since normally, JUnit attempts to avoid running the same test method more than once.
+ * <br><br>
+ * The JUnit 4+ <code>@BeforeClass</code> and <code>@AfterClass</code> annotations may used 
+ * to define setup and tear-down methods to be performed before and after the entire suite,
+ * respectively.
  * 
  * @author matt.deboer@gmail.com
  * 
@@ -82,40 +83,55 @@ public class DynamicSuite extends ParentRunner<Runner> {
     }
     
     /**
-     * The <code>TestCasePattern</code> annotation specifies the pattern from
-     * which test case classes should be matched.
+     * The <code>Scenario</code> annotation is used to mark the dynamic suite with a specific name
+     * that should be appended to each executed test name. This is useful in the case where you want to
+     * create multiple copies of a particular dynamic suite definition, but would like to run them
+     * with slightly different configuration for the entire suite (which could be achieved using
+     * the <code>@BeforeClass</code> and <code>@AfterClass</code> annotations for setup/tear-down of
+     * the entire suite).<br><br>
+     * If the 'name' parameter is not supplied, then the class simpleName is used as a default.<br>
+     * Without the unique scenario name, multiple copies of the tests resolved by the suite would 
+     * not be run as JUnit avoids running the same test more than once, where uniqueness based 
+     * on test name.
+     * 
+     * @see @@org.junit.BeforeClass, @org.junit.AfterClass
+     * 
      */
     @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.METHOD)
+    @Target(ElementType.TYPE)
     public @interface Scenario {
-        public String value() default "";
+        public String name() default "";
     }
     
-    private static Collection<ScenarioDescriptor> getScenarios(TestClass testClass) throws Exception {
+    /**
+     * Resolves the <code>@Scenario</code> annotation if present; if found, the scenario will be
+     * given a unique name suffix for all of the tests, otherwise, a default scenario is run with
+     * no name suffix.
+     * <br>
+     * Also resolves the <code>@BeforeClass</code> and <code>@AfterClass</code> methods to be run
+     * before and after the test cases resolved by the suite.
+     * 
+     * @param testClass the class which defines the DynamicSuite
+     * @return
+     */
+    private static ScenarioDescriptor getScenario(TestClass testClass) {
         
-        List<FrameworkMethod> methods = testClass.getAnnotatedMethods(Scenario.class);
-        Map<String, ScenarioDescriptor> scenarios = new HashMap<String, ScenarioDescriptor>(methods.size());
-        
-        for (FrameworkMethod method : methods) {
-            int modifiers = method.getMethod().getModifiers();
-            if (!Modifier.isStatic(modifiers) || !Modifier.isPublic(modifiers)) {
-                throw new Exception("@Scenario can only be applied to public static method on class " + testClass.getName());
-            } else {
-                Scenario annotation = method.getAnnotation(Scenario.class);
-                String name = annotation.value();
-                if ("".equals(name.trim())) {
-                    name = method.getName();
-                }
-                if (scenarios.containsKey(name)) {
-                    throw new Exception("@Scenario methods must have unique names/'name' attributes for class " + testClass.getName());
-                } else {
-                    scenarios.put(name, new ScenarioDescriptor(method, name));
-                }
-            }
+        Scenario s = testClass.getJavaClass().getAnnotation(Scenario.class);
+        String name = null;
+        if (s!=null) {
+        	name = "".equals(s.name().trim()) ? testClass.getJavaClass().getSimpleName() : s.name();
         }
-        return scenarios.values();
+        List<FrameworkMethod> beforeClass = testClass.getAnnotatedMethods(BeforeClass.class);
+        List<FrameworkMethod> afterClass = testClass.getAnnotatedMethods(AfterClass.class);
+        return new ScenarioDescriptor(beforeClass,afterClass,name);
     }
     
+    /**
+     * Resolves the test classes that are matched by the specified test pattern.
+     * 
+     * @param klass the root class which defines the DynamicSuite
+     * @return
+     */
     private static List<Class<?>> findAllTestCases(Class<?> klass) {
         try {
             Pattern testCasePattern = getTestCasePattern(klass);
@@ -154,6 +170,13 @@ public class DynamicSuite extends ParentRunner<Runner> {
         }
     }
     
+    /**
+     * Resolves a test class pattern (regular expression) which is used to resolve
+     * the names of classes that will be included in this test suite.
+     * 
+     * @param klass the class which defines the DynamicSuite
+     * @return the compiled Pattern
+     */
     private static Pattern getTestCasePattern(Class<?> klass) {
         
         Pattern pattern = DEFAULT_TEST_CASE_PATTERN;
@@ -167,6 +190,8 @@ public class DynamicSuite extends ParentRunner<Runner> {
     // =============================================================================
     
     private final List<Runner> fRunners;
+    private final String name;
+    private final ScenarioDescriptor scenario;
     
     public DynamicSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
         this(builder, klass, findAllTestCases(klass).toArray(new Class<?>[0]));
@@ -187,21 +212,17 @@ public class DynamicSuite extends ParentRunner<Runner> {
     protected DynamicSuite(Class<?> klass, List<Runner> runners) throws InitializationError {
         super(klass);
         try {
-            Collection<ScenarioDescriptor> scenarios = getScenarios(getTestClass());
-            if (scenarios != null && !scenarios.isEmpty()) {
-                
-                fRunners = new ArrayList<Runner>(scenarios.size());
-                
-                for (ScenarioDescriptor scenario : scenarios) {
-                    ArrayList<Runner> clonedRunners = new ArrayList<Runner>(runners.size());
-                    for (Runner runner : runners) {
-                        clonedRunners.add(new TestScenarioClassRunner(runner.getDescription().getTestClass(), scenario.getName()));
-                    }
-                    fRunners.add(new TestScenarioRunner(klass, scenario, clonedRunners));
-                }
-                
+            this.scenario = getScenario(getTestClass());
+            
+            if (scenario.getName() == null) {    
+            	this.fRunners = runners;
+            	this.name = klass.getName();
             } else {
-                fRunners = runners;
+            	this.name = klass.getName() + "[" + scenario.getName() + "]";
+            	this.fRunners = new ArrayList<Runner>(runners.size());
+                for (Runner runner : runners) {
+                	fRunners.add(new TestScenarioClassRunner(runner.getDescription().getTestClass(), scenario.getName()));
+                }
             }
         } catch (Exception e) {
             throw new InitializationError(e);
@@ -209,6 +230,42 @@ public class DynamicSuite extends ParentRunner<Runner> {
         
     }
     
+        
+    @Override
+    protected String getName() {
+        return name;
+    }
+    
+    @Override
+    protected Statement classBlock(RunNotifier notifier) {
+    	
+    	try {
+    		List<FrameworkMethod> beforeClass = scenario.getMethodsBeforeClass();
+            if (beforeClass!=null) {
+            	for(FrameworkMethod method: beforeClass) {
+            		method.invokeExplosively(null, new Object[0]);
+            	}
+            }
+        } catch (Throwable e) {
+            throw new RuntimeException("error invoking @BeforeClass method", e);
+        }
+    	
+    	Statement result = childrenInvoker(notifier);
+        
+    	try {
+    		List<FrameworkMethod> afterClass = scenario.getMethodsAfterClass();
+            if (afterClass!=null) {
+            	for(FrameworkMethod method: afterClass) {
+            		method.invokeExplosively(null, new Object[0]);
+            	}
+            }
+        } catch (Throwable e) {
+        	throw new RuntimeException("error invoking @AfterClass method", e);
+        }
+        
+    	return result;
+    }
+        
     @Override
     protected List<Runner> getChildren() {
         return fRunners;
@@ -225,21 +282,28 @@ public class DynamicSuite extends ParentRunner<Runner> {
     }
     
     /**
-     * 
+     * ScenarioDescriptor describes the scenario to be executed by this dynamic suite;
+     * particularly the name and <code>@BeforeClass</code> and <code>@AfterClass</code> methods.
      *
      */
     private static class ScenarioDescriptor {
         
-        private final FrameworkMethod method;
+        private final List<FrameworkMethod> beforeClass;
+        private final List<FrameworkMethod> afterClass;
         private final String name;
         
-        ScenarioDescriptor(FrameworkMethod method, String name) {
-            this.method = method;
+        ScenarioDescriptor(List<FrameworkMethod> beforeClass, List<FrameworkMethod> afterClass, String name) {
+            this.beforeClass = beforeClass;
+            this.afterClass = afterClass;
             this.name = name;
         }
         
-        public FrameworkMethod getMethod() {
-            return method;
+        public List<FrameworkMethod> getMethodsBeforeClass() {
+            return beforeClass;
+        }
+        
+        public List<FrameworkMethod> getMethodsAfterClass() {
+            return afterClass;
         }
         
         public String getName() {
@@ -247,57 +311,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
         }
         
     }
-    
-    /**
-     * Runs a scenario by first executing the specified scenario method, then
-     * running the associated tests
-     * 
-     */
-    private static class TestScenarioRunner extends ParentRunner<Runner> {
-        
-        private final ScenarioDescriptor scenario;
-        private final List<Runner> children;
-        private final String name;
-        
-        public TestScenarioRunner(Class<?> klass, ScenarioDescriptor scenario, List<Runner> children) throws InitializationError {
-            super(klass);
-            this.scenario = scenario;
-            this.children = children;
-            this.name = "@Scenario( " + scenario.getName() + " )";
-        }
-        
-        @Override
-        protected String getName() {
-            return name;
-        }
-        
-        @Override
-        protected Statement classBlock(RunNotifier notifier) {
-            try {
-                this.scenario.getMethod().invokeExplosively(null, new Object[0]);
-            } catch (Throwable e) {
-                throw new RuntimeException("problem invoking scenario " + scenario.getName(), e);
-            }
-            return childrenInvoker(notifier);
-        }
-        
-        @Override
-        protected List<Runner> getChildren() {
-            return children;
-        }
-        
-        @Override
-        protected Description describeChild(Runner child) {
-            return child.getDescription();
-        }
-        
-        @Override
-        protected void runChild(Runner child, RunNotifier notifier) {
-            child.run(notifier);
-        }
-        
-    }
-    
+     
     /**
      * Provides a unique name for each test based on appending the scenario
      * name.

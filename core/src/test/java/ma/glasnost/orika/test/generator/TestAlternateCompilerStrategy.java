@@ -25,6 +25,7 @@ import ma.glasnost.orika.test.DynamicSuite.Scenario;
 import ma.glasnost.orika.test.DynamicSuite.TestCasePattern;
 
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 
 /**
@@ -38,21 +39,18 @@ import org.junit.runner.RunWith;
  */ 
 @RunWith(DynamicSuite.class)
 @TestCasePattern(".*TestCase.class")
+@Scenario(name="eclipseJdt")
 public class TestAlternateCompilerStrategy {
     
-    /**
-     * This scenario method will be executed before all tests resolved by 
-     * the pattern supplied above
-     */
-    @Scenario
+    @BeforeClass
     public static void eclipseJdt() {
-	System.setProperty(OrikaSystemProperties.COMPILER_STRATEGY, 
-		EclipseJdtCompilerStrategy.class.getCanonicalName());
+    	System.setProperty(OrikaSystemProperties.COMPILER_STRATEGY, 
+    			EclipseJdtCompilerStrategy.class.getCanonicalName());
     }
    
     @AfterClass
     public static void tearDown() {
-	System.clearProperty(OrikaSystemProperties.COMPILER_STRATEGY);
+    	System.clearProperty(OrikaSystemProperties.COMPILER_STRATEGY);
     }
 
 }
