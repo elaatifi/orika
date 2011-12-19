@@ -49,8 +49,12 @@ public class CodeSourceBuilder {
         final String setter = getSetter(destination);
         final Class<?> destinationClass = destination.getType();
         converterId = getConverterId(converterId);
-        return newLine().append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class, %s));", setter, destinationClass.getCanonicalName(),
-                getter, destinationClass.getCanonicalName(), converterId).newLine();
+        return newLine().ifSourceNotNull(source)
+                .then()
+                .append("destination.%s((%s)mapperFacade.convert(source.%s, %s.class, %s));", setter, destinationClass.getCanonicalName(),
+                        getter, destinationClass.getCanonicalName(), converterId)
+                .newLine()
+                .end();
     }
     
     private String getConverterId(String converterId) {
@@ -192,8 +196,8 @@ public class CodeSourceBuilder {
     public CodeSourceBuilder setWrapper(Property dp, Property sp) {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
-        newLine().append("destination.%s(%s.valueOf((%s) source.%s));", setter, dp.getType().getCanonicalName(), getPrimitiveType(dp.getType()),
-                getter);
+        newLine().append("destination.%s(%s.valueOf((%s) source.%s));", setter, dp.getType().getCanonicalName(),
+                getPrimitiveType(dp.getType()), getter);
         return this;
     }
     
@@ -220,9 +224,10 @@ public class CodeSourceBuilder {
         ifSourceNotNull(sp).then();
         
         newLine().append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode)
-                .append("mapperFacade.mapAsArray((%s)%s, (%s)source.%s, %s.class, mappingContext);", 
-                	castDestination, dp.getName(), castSource, getter, paramType)
+                .append("mapperFacade.mapAsArray((%s)%s, (%s)source.%s, %s.class, mappingContext);", castDestination, dp.getName(),
+                        castSource, getter, paramType)
                 .append("destination.%s(%s);", setter, dp.getName());
+        
         elze().setDestinationNull(dp).end();
         
         return this;
@@ -270,6 +275,7 @@ public class CodeSourceBuilder {
                 append("destination.%s.%s.add(destination);", getGetter(dp), getGetter(ip));
             } else if (ip.isArray()) {
                 // TODO To implement
+                newLine().append("/* TODO Orika CodeSourceBuilder.setObject do not support Arrays */").newLine();
             } else {
                 append("destination.%s.%s(destination);", getGetter(dp), getSetter(ip));
             }
@@ -391,7 +397,8 @@ public class CodeSourceBuilder {
     }
     
     public CodeSourceBuilder assignObjectVar(String var, Property sp, Class<?> targetClass) {
-        append("%s = (%s) mapperFacade.map(source.%s, %s.class);", var, targetClass.getCanonicalName(), getGetter(sp), targetClass.getCanonicalName());
+        append("%s = (%s) mapperFacade.map(source.%s, %s.class);", var, targetClass.getCanonicalName(), getGetter(sp),
+                targetClass.getCanonicalName());
         return this;
     }
     
@@ -446,8 +453,8 @@ public class CodeSourceBuilder {
     public CodeSourceBuilder assignConvertedVar(String var, Property source, Class<?> targetClass, String converterId) {
         final String getter = getGetter(source);
         converterId = getConverterId(converterId);
-        append("%s = ((%s)mapperFacade.convert(source.%s, %s.class, %s)); \n", var, targetClass.getCanonicalName(), getter, targetClass.getCanonicalName(),
-                converterId);
+        append("%s = ((%s)mapperFacade.convert(source.%s, %s.class, %s)); \n", var, targetClass.getCanonicalName(), getter,
+                targetClass.getCanonicalName(), converterId);
         return this;
         
     }

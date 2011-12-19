@@ -43,8 +43,6 @@ import ma.glasnost.orika.metadata.Property;
 
 public final class MapperGenerator {
     
-    
-    
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
     
@@ -58,9 +56,9 @@ public final class MapperGenerator {
         try {
             compilerStrategy.assureTypeIsAccessible(classMap.getAType());
             compilerStrategy.assureTypeIsAccessible(classMap.getBType());
-        	
-            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(classMap.getMapperClassName(),
-                    GeneratedMapperBase.class,compilerStrategy);
+            
+            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(classMap.getMapperClassName(), GeneratedMapperBase.class,
+                    compilerStrategy);
             
             addGetTypeMethod(mapperCode, "getAType", classMap.getAType());
             addGetTypeMethod(mapperCode, "getBType", classMap.getBType());
@@ -92,7 +90,10 @@ public final class MapperGenerator {
         out.assertType("a", sourceClass);
         out.assertType("b", destinationClass);
         out.append("\n\t\tsuper.").append(mapMethod).append("(a,b, mappingContext);\n\n");
-        out.append("\t\t" + sourceClass.getCanonicalName()).append(" source = \n\t\t\t\t (").append(sourceClass.getCanonicalName()).append(") a; \n");
+        out.append("\t\t" + sourceClass.getCanonicalName())
+                .append(" source = \n\t\t\t\t (")
+                .append(sourceClass.getCanonicalName())
+                .append(") a; \n");
         out.append("\t\t" + destinationClass.getCanonicalName())
                 .append(" destination = \n\t\t\t\t (")
                 .append(destinationClass.getCanonicalName())
@@ -155,7 +156,7 @@ public final class MapperGenerator {
             return;
         }
         try {
-
+            
             //
             // Ensure that there we will not cause a NPE
             //
@@ -169,7 +170,10 @@ public final class MapperGenerator {
             
             // Generate mapping code for every case
             
-            if (fieldMap.is(toAnEnumeration())) {
+            Converter<Object, Object> converter = getConverter(fieldMap, destinationClass);
+            if (converter != null) {
+                code.convert(dp, sp, fieldMap.getConverterId());
+            } else if (fieldMap.is(toAnEnumeration())) {
                 code.setToEnumeration(dp, sp);
             } else if (fieldMap.is(immutable())) {
                 code.set(dp, sp);
@@ -199,6 +203,18 @@ public final class MapperGenerator {
     }
     
     @SuppressWarnings("unchecked")
+    private Converter<Object, Object> getConverter(FieldMap fieldMap, Class<?> destinationClass) {
+        Converter<Object, Object> converter = null;
+        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
+        if (fieldMap.getConverterId() != null) {
+            converter = converterFactory.getConverter(fieldMap.getConverterId());
+        } else {
+            converter = converterFactory.getConverter((Class<Object>) fieldMap.getSource().getType(), (Class<Object>) destinationClass);
+        }
+        return converter;
+    }
+    
+    @SuppressWarnings("unchecked")
     private boolean generateConverterCode(final CodeSourceBuilder code, final FieldMap fieldMap) {
         final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         final Class<Object> destinationClass = (Class<Object>) dp.getType();
@@ -220,7 +236,7 @@ public final class MapperGenerator {
     }
     
     private void addGetTypeMethod(GeneratedSourceCode mapperCode, String methodName, Class<?> value) throws SourceCodeGenerationException {
-    	compilerStrategy.assureTypeIsAccessible(value);
+        compilerStrategy.assureTypeIsAccessible(value);
         
         final StringBuilder output = new StringBuilder();
         output.append("\n")
