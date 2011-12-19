@@ -56,6 +56,7 @@ public class PrimitivesTestCase {
 		WrapperAttributes source = new WrapperAttributes();
 
 		source.setAge(27);
+		source.setShortAge((short)27);
 		source.setName("PPPPP");
 		source.setSex('H');
 		source.setVip(true);
@@ -68,9 +69,32 @@ public class PrimitivesTestCase {
 		Assert.assertEquals(source.getVip(), destination.getVip());
 
 	}
+	
+	@Test
+	public void testWrapperToWrapper() {
+		MapperFactory factory = MappingUtil.getMapperFactory();
+		MapperFacade mapper = factory.getMapperFacade();
+
+		WrapperAttributes source = new WrapperAttributes();
+
+		source.setAge(27);
+		source.setShortAge((short)27);
+		source.setName("PPPPP");
+		source.setSex('H');
+		source.setVip(true);
+
+		OtherWrapperAttributes destination = mapper.map(source, OtherWrapperAttributes.class);
+
+		Assert.assertEquals(source.getAge(), Integer.valueOf(destination.getAge()));
+		Assert.assertEquals(source.getName(), destination.getName());
+		Assert.assertEquals(source.getSex(), Character.valueOf(destination.getSex()));
+		Assert.assertEquals(source.getVip(), destination.getVip());
+
+	}
 
 	public static class PrimitiveAttributes {
 		private int age;
+		private short shortAge;
 		private String name;
 		private char sex;
 		private boolean vip;
@@ -107,10 +131,19 @@ public class PrimitivesTestCase {
 			this.vip = vip;
 		}
 
+		public short getShortAge() {
+			return shortAge;
+		}
+
+		public void setShortAge(short shortAge) {
+			this.shortAge = shortAge;
+		}
+
 	}
 
 	public static class WrapperAttributes {
 		private Integer age;
+		private Short shortAge;
 		private String name;
 		private Character sex;
 		private Boolean vip;
@@ -145,6 +178,63 @@ public class PrimitivesTestCase {
 
 		public void setVip(Boolean vip) {
 			this.vip = vip;
+		}
+
+		public Short getShortAge() {
+			return shortAge;
+		}
+
+		public void setShortAge(Short shortAge) {
+			this.shortAge = shortAge;
+		}
+
+	}
+	
+	public static class OtherWrapperAttributes {
+		private Integer age;
+		private Short shortAge;
+		private String name;
+		private Character sex;
+		private Boolean vip;
+
+		public Integer getAge() {
+			return age;
+		}
+
+		public void setAge(Integer age) {
+			this.age = age;
+		}
+
+		public String getName() {
+			return name;
+		}
+
+		public void setName(String nom) {
+			this.name = nom;
+		}
+
+		public Character getSex() {
+			return sex;
+		}
+
+		public void setSex(Character sex) {
+			this.sex = sex;
+		}
+
+		public Boolean getVip() {
+			return vip;
+		}
+
+		public void setVip(Boolean vip) {
+			this.vip = vip;
+		}
+
+		public Short getShortAge() {
+			return shortAge;
+		}
+
+		public void setShortAge(Short shortAge) {
+			this.shortAge = shortAge;
 		}
 
 	}
