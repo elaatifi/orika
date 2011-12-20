@@ -152,9 +152,6 @@ public final class MapperGenerator {
         compilerStrategy.assureTypeIsAccessible(sp.getType());
         compilerStrategy.assureTypeIsAccessible(dp.getType());
         
-        if (generateConverterCode(code, fieldMap)) {
-            return;
-        }
         try {
             
             //
@@ -170,7 +167,7 @@ public final class MapperGenerator {
             
             // Generate mapping code for every case
             
-            Converter<Object, Object> converter = getConverter(fieldMap, destinationClass);
+            Converter<Object, Object> converter = getConverter(fieldMap);
             if (converter != null) {
                 code.convert(dp, sp, fieldMap.getConverterId());
             } else if (fieldMap.is(toAnEnumeration())) {
@@ -203,36 +200,16 @@ public final class MapperGenerator {
     }
     
     @SuppressWarnings("unchecked")
-    private Converter<Object, Object> getConverter(FieldMap fieldMap, Class<?> destinationClass) {
+    private Converter<Object, Object> getConverter(FieldMap fieldMap) {
         Converter<Object, Object> converter = null;
         ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (fieldMap.getConverterId() != null) {
             converter = converterFactory.getConverter(fieldMap.getConverterId());
         } else {
-            converter = converterFactory.getConverter((Class<Object>) fieldMap.getSource().getType(), (Class<Object>) destinationClass);
+            converter = converterFactory.getConverter((Class<Object>) fieldMap.getSource().getType(), (Class<Object>) fieldMap
+                    .getDestination().getType());
         }
         return converter;
-    }
-    
-    @SuppressWarnings("unchecked")
-    private boolean generateConverterCode(final CodeSourceBuilder code, final FieldMap fieldMap) {
-        final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
-        final Class<Object> destinationClass = (Class<Object>) dp.getType();
-        
-        Converter<Object, Object> converter = null;
-        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-        if (fieldMap.getConverterId() != null) {
-            converter = converterFactory.getConverter(fieldMap.getConverterId());
-        } else {
-            converter = converterFactory.getConverter((Class<Object>) sp.getType(), destinationClass);
-        }
-        
-        if (converter != null) {
-            code.ifSourceNotNull(sp).then().ifDestinationNull(dp).convert(dp, sp, fieldMap.getConverterId()).end();
-            return true;
-        } else {
-            return false;
-        }
     }
     
     private void addGetTypeMethod(GeneratedSourceCode mapperCode, String methodName, Class<?> value) throws SourceCodeGenerationException {
