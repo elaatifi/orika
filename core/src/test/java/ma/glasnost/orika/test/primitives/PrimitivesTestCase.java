@@ -35,6 +35,10 @@ public class PrimitivesTestCase {
 		PrimitiveAttributes source = new PrimitiveAttributes();
 
 		source.setAge(27);
+		source.setShortValue((short)27);
+		source.setFloatValue(2.5f);
+		source.setDoubleValue(22.4567d);
+		source.setLongValue(System.currentTimeMillis());
 		source.setName("PPPPP");
 		source.setSex('H');
 		source.setVip(true);
@@ -45,6 +49,10 @@ public class PrimitivesTestCase {
 		Assert.assertEquals(source.getName(), destination.getName());
 		Assert.assertEquals(Character.valueOf(source.getSex()), destination.getSex());
 		Assert.assertEquals(source.getVip(), destination.getVip());
+		Assert.assertEquals(Short.valueOf(source.getShortValue()), destination.getShortValue());
+		Assert.assertEquals(Long.valueOf(source.getLongValue()), destination.getLongValue());
+		Assert.assertEquals(Float.valueOf(source.getFloatValue()), destination.getFloatValue());
+		Assert.assertEquals(Double.valueOf(source.getDoubleValue()), destination.getDoubleValue());
 
 	}
 
@@ -56,7 +64,10 @@ public class PrimitivesTestCase {
 		WrapperAttributes source = new WrapperAttributes();
 
 		source.setAge(27);
-		source.setShortAge((short)27);
+		source.setShortValue((short)27);
+		source.setFloatValue(2.5f);
+		source.setDoubleValue(22.4567d);
+		source.setLongValue(System.currentTimeMillis());
 		source.setName("PPPPP");
 		source.setSex('H');
 		source.setVip(true);
@@ -67,6 +78,10 @@ public class PrimitivesTestCase {
 		Assert.assertEquals(source.getName(), destination.getName());
 		Assert.assertEquals(source.getSex(), Character.valueOf(destination.getSex()));
 		Assert.assertEquals(source.getVip(), destination.getVip());
+		Assert.assertEquals(source.getShortValue(), Short.valueOf(destination.getShortValue()));
+		Assert.assertEquals(source.getLongValue(), Long.valueOf(destination.getLongValue()));
+		Assert.assertEquals(source.getFloatValue(), Float.valueOf(destination.getFloatValue()));
+		Assert.assertEquals(source.getDoubleValue(), Double.valueOf(destination.getDoubleValue()));
 
 	}
 	
@@ -78,7 +93,10 @@ public class PrimitivesTestCase {
 		WrapperAttributes source = new WrapperAttributes();
 
 		source.setAge(27);
-		source.setShortAge((short)27);
+		source.setShortValue((short)27);
+		source.setFloatValue(2.5f);
+		source.setDoubleValue(22.4567d);
+		source.setLongValue(System.currentTimeMillis());
 		source.setName("PPPPP");
 		source.setSex('H');
 		source.setVip(true);
@@ -89,15 +107,23 @@ public class PrimitivesTestCase {
 		Assert.assertEquals(source.getName(), destination.getName());
 		Assert.assertEquals(source.getSex(), Character.valueOf(destination.getSex()));
 		Assert.assertEquals(source.getVip(), destination.getVip());
+		Assert.assertEquals(source.getShortValue(), Short.valueOf(destination.getShortValue()));
+		Assert.assertEquals(source.getLongValue(), Long.valueOf(destination.getLongValue()));
+		Assert.assertEquals(source.getFloatValue(), Float.valueOf(destination.getFloatValue()));
+		Assert.assertEquals(source.getDoubleValue(), Double.valueOf(destination.getDoubleValue()));
 
 	}
 
 	public static class PrimitiveAttributes {
 		private int age;
-		private short shortAge;
+		private short shortValue;
+		private long longValue;
+		private float floatValue;
+		private double doubleValue;
 		private String name;
 		private char sex;
 		private boolean vip;
+		
 
 		public int getAge() {
 			return age;
@@ -131,19 +157,46 @@ public class PrimitivesTestCase {
 			this.vip = vip;
 		}
 
-		public short getShortAge() {
-			return shortAge;
+		public short getShortValue() {
+			return shortValue;
 		}
 
-		public void setShortAge(short shortAge) {
-			this.shortAge = shortAge;
+		public void setShortValue(short shortValue) {
+			this.shortValue = shortValue;
+		}
+
+		public long getLongValue() {
+			return longValue;
+		}
+
+		public void setLongValue(long longValue) {
+			this.longValue = longValue;
+		}
+
+		public float getFloatValue() {
+			return floatValue;
+		}
+
+		public void setFloatValue(float floatValue) {
+			this.floatValue = floatValue;
+		}
+
+		public double getDoubleValue() {
+			return doubleValue;
+		}
+
+		public void setDoubleValue(double doubleValue) {
+			this.doubleValue = doubleValue;
 		}
 
 	}
 
 	public static class WrapperAttributes {
 		private Integer age;
-		private Short shortAge;
+		private Short shortValue;
+		private Long longValue;
+		private Float floatValue;
+		private Double doubleValue;
 		private String name;
 		private Character sex;
 		private Boolean vip;
@@ -180,19 +233,46 @@ public class PrimitivesTestCase {
 			this.vip = vip;
 		}
 
-		public Short getShortAge() {
-			return shortAge;
+		public Short getShortValue() {
+			return shortValue;
 		}
 
-		public void setShortAge(Short shortAge) {
-			this.shortAge = shortAge;
+		public void setShortValue(Short shortValue) {
+			this.shortValue = shortValue;
+		}
+
+		public Long getLongValue() {
+			return longValue;
+		}
+
+		public void setLongValue(Long longValue) {
+			this.longValue = longValue;
+		}
+
+		public Float getFloatValue() {
+			return floatValue;
+		}
+
+		public void setFloatValue(Float floatValue) {
+			this.floatValue = floatValue;
+		}
+
+		public Double getDoubleValue() {
+			return doubleValue;
+		}
+
+		public void setDoubleValue(Double doubleValue) {
+			this.doubleValue = doubleValue;
 		}
 
 	}
 	
 	public static class OtherWrapperAttributes {
 		private Integer age;
-		private Short shortAge;
+		private Short shortValue;
+		private Long longValue;
+		private Float floatValue;
+		private Double doubleValue;
 		private String name;
 		private Character sex;
 		private Boolean vip;
@@ -229,13 +309,38 @@ public class PrimitivesTestCase {
 			this.vip = vip;
 		}
 
-		public Short getShortAge() {
-			return shortAge;
+		public Short getShortValue() {
+			return shortValue;
 		}
 
-		public void setShortAge(Short shortAge) {
-			this.shortAge = shortAge;
+		public void setShortValue(Short shortValue) {
+			this.shortValue = shortValue;
 		}
+
+		public Long getLongValue() {
+			return longValue;
+		}
+
+		public void setLongValue(Long longValue) {
+			this.longValue = longValue;
+		}
+
+		public Float getFloatValue() {
+			return floatValue;
+		}
+
+		public void setFloatValue(Float floatValue) {
+			this.floatValue = floatValue;
+		}
+
+		public Double getDoubleValue() {
+			return doubleValue;
+		}
+
+		public void setDoubleValue(Double doubleValue) {
+			this.doubleValue = doubleValue;
+		}
+
 
 	}
 }
