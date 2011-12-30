@@ -133,7 +133,7 @@ public class ClassLoaderLeakageTestCase {
 
 				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
 					if (fromProperty.startsWith("my")) {
-						return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
+						return fromProperty.substring(2, 3).toLowerCase() + fromProperty.substring(3);
 					} else {
 						return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
 					}	

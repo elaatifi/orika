@@ -20,6 +20,6 @@ package ma.glasnost.orika;
 
 public interface ObjectFactory<D> {
     
-    D create(Object source);
+    D create(Object source, MappingContext mappingContext);
     
 }

@@ -22,8 +22,8 @@ import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.TypeConverter;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
 
@@ -31,7 +31,7 @@ public class ConverterWithNestedPropertyTestCase {
     
     @Test
     public void testConverterWithNestedProperty() {
-        MapperFactory mapperFactory = new DefaultMapperFactory();
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
         
         mapperFactory.getConverterFactory().registerConverter(new TypeConverter<Address, String>() {
             public String convert(Address source, Class<? extends String> destinationClass) {

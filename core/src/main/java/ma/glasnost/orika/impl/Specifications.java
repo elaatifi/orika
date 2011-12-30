@@ -64,6 +64,20 @@ public final class Specifications {
         return WRAPPER_TO_PRIMITIVE;
     }
     
+    /**
+     * @return true if this field map specifies a mapping from a String type field
+     * to another field which has a static valueOf method which allows parsing the
+     * field from a string.
+     */
+    public static Specification aConversionFromString() {
+    	return CONVERSION_FROM_STRING;
+    }
+    
+    
+    public static Specification aConversionToString() {
+    	return CONVERSION_TO_STRING;
+    }
+    
     private static final Specification IS_IMMUTABLE = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
@@ -111,7 +125,7 @@ public final class Specifications {
     private static final Specification WRAPPER_TO_PRIMITIVE = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return fieldMap.getDestination().isPrimitive() && !fieldMap.getSource().isPrimitive();
+            return fieldMap.getDestination().isPrimitive() && ClassUtil.isPrimitiveWrapper(fieldMap.getSource().getType());
         }
         
     };
@@ -119,7 +133,23 @@ public final class Specifications {
     private static final Specification PRIMITIVE_TO_WRAPPER = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return !fieldMap.getDestination().isPrimitive() && fieldMap.getSource().isPrimitive();
+            return ClassUtil.isPrimitiveWrapper(fieldMap.getDestination().getType()) && fieldMap.getSource().isPrimitive();
+        }
+        
+    };
+    
+    private static final Specification CONVERSION_FROM_STRING = new Specification() {
+        
+        public boolean apply(FieldMap fieldMap) {
+            return String.class.equals(fieldMap.getSource().getType()) && ClassUtil.isConvertibleFromString(fieldMap.getDestination().getType());
+        }
+        
+    };
+    
+    private static final Specification CONVERSION_TO_STRING = new Specification() {
+        
+        public boolean apply(FieldMap fieldMap) {
+            return String.class.equals(fieldMap.getDestination().getType());
         }
         
     };

@@ -31,7 +31,8 @@ public final class ClassMapBuilder<A, B> {
     
     private final Map<String, Property> aProperties;
     private final Map<String, Property> bProperties;
-    private final Set<String> propertiesCache;
+    private final Set<String> propertiesCacheA;
+    private final Set<String> propertiesCacheB;
     final private Class<A> aType;
     final private Class<B> bType;
     final private Set<FieldMap> fieldsMapping;
@@ -52,7 +53,8 @@ public final class ClassMapBuilder<A, B> {
         
         aProperties = PropertyUtil.getProperties(aType);
         bProperties = PropertyUtil.getProperties(bType);
-        propertiesCache = new HashSet<String>();
+        propertiesCacheA = new HashSet<String>();
+        propertiesCacheB = new HashSet<String>();
         
         this.aType = aType;
         this.bType = bType;
@@ -105,15 +107,19 @@ public final class ClassMapBuilder<A, B> {
     public ClassMapBuilder<A, B> byDefault(MappingHint... mappingHints) {
         
         for (final String propertyName : aProperties.keySet()) {
-            if (!propertiesCache.contains(propertyName)) {
+            if (!propertiesCacheA.contains(propertyName)) {
                 if (bProperties.containsKey(propertyName)) {
-                    fieldMap(propertyName).add();
+                    if (!propertiesCacheB.contains(propertyName)) {
+                    	fieldMap(propertyName).add();
+                    }
                 } else {
                     Property prop = aProperties.get(propertyName);
                     for (MappingHint hint : mappingHints) {
                         String suggestion = hint.suggestMappedField(propertyName, prop.getType());
                         if (suggestion != null && bProperties.containsKey(suggestion)) {
-                            fieldMap(propertyName, suggestion).add();
+                            if (!propertiesCacheB.contains(suggestion)) {
+                            	fieldMap(propertyName, suggestion).add();
+                            }
                         }
                     }
                 }
@@ -175,7 +181,8 @@ public final class ClassMapBuilder<A, B> {
     
     void addFieldMap(FieldMap fieldMap) {
         this.fieldsMapping.add(fieldMap);
-        propertiesCache.add(fieldMap.getSource().getExpression());
+        propertiesCacheA.add(fieldMap.getSource().getExpression());
+        propertiesCacheB.add(fieldMap.getDestination().getExpression());
     }
     
     public ClassMapBuilder<A, B> constructorA(String... args) {

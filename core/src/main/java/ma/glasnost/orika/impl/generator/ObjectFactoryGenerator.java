@@ -1,10 +1,14 @@
 package ma.glasnost.orika.impl.generator;
 
+
 import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionFromString;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
 import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
 import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
 import static ma.glasnost.orika.impl.Specifications.anArray;
 import static ma.glasnost.orika.impl.Specifications.immutable;
+import static ma.glasnost.orika.impl.Specifications.aPrimitive;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -13,6 +17,7 @@ import java.util.Set;
 
 import javassist.CannotCompileException;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.converter.Converter;
@@ -69,13 +74,13 @@ public class ObjectFactoryGenerator {
             return objectFactory;
             
         } catch (final Exception e) {
-            throw new MappingException(e);
+            throw new MappingException("excpetion while creating object factory for " + clazz.getName(), e);
         } 
     }
     
     private void addCreateMethod(GeneratedSourceCode context, Class<Object> clazz) throws CannotCompileException {
         final CodeSourceBuilder out = new CodeSourceBuilder(1);
-        out.append("public Object create(Object s) {");
+        out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
         Set<Class<Object>> sourceClasses = mapperFactory.lookupMappedClasses(clazz);
@@ -94,7 +99,10 @@ public class ObjectFactoryGenerator {
     
     private void addSourceClassConstructor(CodeSourceBuilder out, Class<Object> clazz, Class<Object> sourceClass) {
         List<FieldMap> properties = new ArrayList<FieldMap>();
-        ClassMap<Object, Object> classMap = mapperFactory.getClassMap(new MapperKey(clazz, sourceClass));
+        ClassMap<Object, Object> classMap = mapperFactory.getClassMap(new MapperKey(clazz,sourceClass)); 
+        if (classMap==null) {
+        	classMap = mapperFactory.getClassMap(new MapperKey(sourceClass,clazz));
+        }
         boolean aToB = classMap.getBType().equals(clazz);
         
         try {
@@ -104,15 +112,21 @@ public class ObjectFactoryGenerator {
             Class<?>[] constructorArguments = constructor.getParameterTypes();
             
             // TODO need optimizations
+            int argIndex = 0;
             for (String param : parameters) {
                 for (FieldMap fieldMap : classMap.getFieldsMapping()) {
                     if (!aToB)
                         fieldMap = fieldMap.flip();
                     if (param.equals(fieldMap.getDestination().getName())) {
-                        properties.add(fieldMap);
+                    	// destination property should be compared against
+                    	// the constructor argument 
+                    	fieldMap = fieldMap.copy();
+                    	fieldMap.getDestination().setType(constructorArguments[argIndex]);
+                    	properties.add(fieldMap);
                         break;
                     }
                 }
+                ++argIndex;
             }
             
             if (parameters.length != properties.size()) {
@@ -121,10 +135,11 @@ public class ObjectFactoryGenerator {
             
             out.ifSourceInstanceOf(sourceClass).then();
             out.append("%s source = (%s) s;", sourceClass.getCanonicalName(), sourceClass.getCanonicalName());
-            int argIndex = 0;
+            argIndex = 0;
             for (FieldMap fieldMap : properties) {
-                
+            	
                 final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
+                
                 String var = "arg" + argIndex;
                 Class<?> targetClass = constructorArguments[argIndex];
                 out.declareVar(targetClass, var);
@@ -135,16 +150,22 @@ public class ObjectFactoryGenerator {
                 }
                 try {
                     
-                    if (fieldMap.is(immutable())) {
+                    if (fieldMap.is(aWrapperToPrimitive())) {
+                        out.ifSourceNotNull(sp).assignWrapperToPrimitiveVar(var, sp, targetClass);
+                    } else if (fieldMap.is(aPrimitiveToWrapper())) {
+                        out.assignPrimitiveToWrapperVar(var, sp, targetClass);
+                    } else if (fieldMap.is(aPrimitive())) {
+                        out.assignImmutableVar(var, sp);
+                    } else if (fieldMap.is(immutable())) {
                         out.ifSourceNotNull(sp).assignImmutableVar(var, sp);
                     } else if (fieldMap.is(anArray())) {
                         out.ifSourceNotNull(sp).assignArrayVar(var, sp, targetClass);
                     } else if (fieldMap.is(aCollection())) {
                         out.ifSourceNotNull(sp).assignCollectionVar(var, sp, dp);
-                    } else if (fieldMap.is(aWrapperToPrimitive())) {
-                        out.ifSourceNotNull(sp).assignWrapperToPrimitiveVar(var, sp, targetClass);
-                    } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                        out.ifSourceNotNull(sp).assignPrimtiveToWrapperVar(var, sp, targetClass);
+                    } else if (fieldMap.is(aConversionFromString())) { 
+                    	out.assignVarConvertedFromString(var, sp, dp);
+                    } else if (fieldMap.is(aConversionToString())) {
+                    	out.ifSourceNotNull(sp).assignStringConvertedVar(var, sp);
                     } else { /**/
                         out.ifSourceNotNull(sp).then().assignObjectVar(var, sp, targetClass).end();
                     }

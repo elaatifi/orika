@@ -59,7 +59,9 @@ public class GeneratedSourceCode {
     /**
      * @param baseClassName
      *            The base name of the class to generated; the final name chosen
-     *            may include an extra suffix for uniqueness
+     *            may include an extra suffix for uniqueness. Callers should not 
+     *            rely on the final class being generated to use the specified base
+     *            name.
      * @param superClass
      *            The type of the base class to be extended by the generated
      *            class

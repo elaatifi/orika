@@ -19,6 +19,8 @@
 package ma.glasnost.orika.impl.generator;
 
 import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionFromString;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
 import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
 import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
 import static ma.glasnost.orika.impl.Specifications.anArray;
@@ -182,7 +184,12 @@ public final class MapperGenerator {
                 code.setPrimitive(dp, sp);
             } else if (fieldMap.is(aPrimitiveToWrapper())) {
                 code.setWrapper(dp, sp);
-            } else { /**/
+            } else if (fieldMap.is(aConversionFromString())) { 
+            	code.setFromStringConversion(dp, sp);
+            } else if (fieldMap.is(aConversionToString())) {
+            	code.setToStringConversion(dp, sp);
+            } else {
+            	/**/
                 code.setObject(dp, sp, fieldMap.getInverse());
             }
             

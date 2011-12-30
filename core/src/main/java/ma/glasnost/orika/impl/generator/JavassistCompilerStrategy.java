@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Random;
+import java.util.WeakHashMap;
 
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -29,6 +31,7 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtField;
 import javassist.CtNewMethod;
+import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
 import org.slf4j.Logger;
@@ -53,6 +56,12 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     private ClassPool classPool;
     
     /**
+     * Keep a set of class-loaders that have already been added to the javassist class-pool
+     * Use a WeakHashMap to avoid retaining references to child class-loaders
+     */
+    private WeakHashMap<ClassLoader,Boolean> referencedLoaders = new WeakHashMap<ClassLoader,Boolean>(8);
+    
+    /**
      */
     public JavassistCompilerStrategy() {
         super(WRITE_SOURCE_FILES_BY_DEFAULT, WRITE_CLASS_FILES_BY_DEFAULT);
@@ -61,35 +70,63 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     }
     
     /**
-     * Produces the requested source and/or class files for debugging purposes.
+     * Produces the requested class files for debugging purposes.
      * 
      * @throws CannotCompileException
      * @throws IOException
      */
-    protected void writeFiles(GeneratedSourceCode sourceCode, CtClass byteCodeClass) throws IOException {
-        
-        if (writeClassFiles || writeSourceFiles) {
-
-            if (writeClassFiles) {
-                try {
-                	File parentDir = preparePackageOutputPath(this.pathToWriteClassFiles, "");
-                    byteCodeClass.writeFile(parentDir.getAbsolutePath());
-                } catch (CannotCompileException e) {
-                    throw new IllegalArgumentException(e);
-                }
-            }
-            
-            if (writeSourceFiles) {
-            	File parentDir = preparePackageOutputPath(this.pathToWriteSourceFiles, sourceCode.getPackageName());
-            	File sourceFile = new File(parentDir, sourceCode.getClassSimpleName() + ".java");
-                if (!sourceFile.exists() && !sourceFile.createNewFile()) {
-                    throw new IOException("Could not write source file for " + sourceCode.getClassName());
-                }
-                FileWriter fw = new FileWriter(sourceFile);
-                fw.append(sourceCode.toSourceFile());
-                fw.close();
+    protected void writeClassFile(GeneratedSourceCode sourceCode, CtClass byteCodeClass) throws IOException {
+    	if (writeClassFiles) {
+            try {
+            	File parentDir = preparePackageOutputPath(this.pathToWriteClassFiles, "");
+                byteCodeClass.writeFile(parentDir.getAbsolutePath());
+            } catch (CannotCompileException e) {
+                throw new IllegalArgumentException(e);
             }
         }
+    }
+    
+    /**
+     * Produces the requested source file for debugging purposes.
+     * 
+     * @throws IOException
+     */
+    protected void writeSourceFile(GeneratedSourceCode sourceCode) throws IOException {
+    	if (writeSourceFiles) {
+        	File parentDir = preparePackageOutputPath(this.pathToWriteSourceFiles, sourceCode.getPackageName());
+        	File sourceFile = new File(parentDir, sourceCode.getClassSimpleName() + ".java");
+            if (!sourceFile.exists() && !sourceFile.createNewFile()) {
+                throw new IOException("Could not write source file for " + sourceCode.getClassName());
+            }
+            FileWriter fw = new FileWriter(sourceFile);
+            fw.append(sourceCode.toSourceFile());
+            fw.close();
+        }
+    }
+    
+    
+    
+    /**
+     * Attempts to register a class-loader in the maintained list of referenced
+     * class-loaders. Returns true if the class-loader was registered as a 
+     * result of the call; false is returned if the class-loader was already
+     * registered.
+     * 
+     * @param cl
+     * @return true if the class-loader was registered as a result of this call; false
+     * if the class-loader was already registered
+     */
+    private boolean registerClassLoader(ClassLoader cl) {
+    	Boolean found = referencedLoaders.get(cl);
+    	if (found==null) {
+    		synchronized(cl) {
+    			found = referencedLoaders.get(cl);
+    			if (found==null) {
+    				referencedLoaders.put(cl,Boolean.TRUE);
+    			}
+    		}
+    	}
+    	return found==null || !found;
     }
     
     /*
@@ -124,17 +161,35 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     public Class<?> compileClass(GeneratedSourceCode sourceCode) throws SourceCodeGenerationException {
         
         String className = sourceCode.getClassName();
-        
-        CtClass byteCodeClass = classPool.makeClass(className);
+        CtClass byteCodeClass = null;
+        int attempts = 0;
+        Random rand = new Random();
+        while (byteCodeClass==null) {
+	        try {
+	        	byteCodeClass = classPool.makeClass(className);
+			} catch (RuntimeException e) {
+				if (attempts < 5) {
+					className = className + Integer.toHexString(rand.nextInt());
+				} else {
+					// No longer likely to be accidental name collision; propagate the error
+					throw e;
+				}
+			}
+    	}
         
         CtClass abstractMapperClass;
         Class<?> compiledClass;
         
         try {
+        	writeSourceFile(sourceCode);
+        	
             assureTypeIsAccessible(this.getClass());
             
             if (classPool.find(sourceCode.getSuperClass().getCanonicalName()) == null) {
                 classPool.insertClassPath(new ClassClassPath(sourceCode.getSuperClass()));
+            }
+            if (registerClassLoader(Thread.currentThread().getContextClassLoader())) {
+            	classPool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
             }
             
             abstractMapperClass = classPool.getCtClass(sourceCode.getSuperClass().getCanonicalName());
@@ -153,14 +208,16 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
                 try {
                     byteCodeClass.addMethod(CtNewMethod.make(methodDef, byteCodeClass));
                 } catch (CannotCompileException e) {
-                    LOG.error("An exception occured while compiling: " + methodDef + " for " + sourceCode.getClassName(), e);
-                    throw e;
+                    throw new SourceCodeGenerationException(
+                    		"An exception occured while compiling the following method:\n\n " + methodDef + 
+                    		"\n\n for " + sourceCode.getClassName() + "\n", e);
+                    
                 }
                 
             }
             compiledClass = byteCodeClass.toClass();
             
-            writeFiles(sourceCode, byteCodeClass);
+            writeClassFile(sourceCode, byteCodeClass);
             
         } catch (NotFoundException e) {
             throw new SourceCodeGenerationException(e);

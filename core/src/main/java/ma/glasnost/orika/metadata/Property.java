@@ -33,6 +33,19 @@ public class Property {
     private Class<?> parameterizedType;
     private boolean declared;
     
+    
+    public Property copy() {
+    	Property copy = new Property();
+        copy.declared = this.declared;
+        copy.expression = this.expression;
+        copy.name = this.name;
+        copy.getter = this.getter;
+        copy.setter = this.setter;
+        copy.type = this.type;
+        copy.parameterizedType = this.parameterizedType;
+        return copy;
+    }
+    
     public String getExpression() {
         return expression;
     }

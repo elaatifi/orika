@@ -23,6 +23,13 @@
 
 	<dependencies>
 		<dependency>
+		  <groupId>ma.glasnost.orika</groupId>
+		  <artifactId>orika-eclipse-tools</artifactId>
+		  <version>${project.version}</version>
+		  <optional>true</optional>
+		</dependency>
+		
+		<dependency>
 			<groupId>javassist</groupId>
 			<artifactId>javassist</artifactId>
 		</dependency>
@@ -83,13 +90,10 @@
 		</dependency>
 		
 		<dependency>
-		  <groupId>ma.glasnost.orika</groupId>
-		  <artifactId>orika-eclipse-tools</artifactId>
-		  <version>${project.version}</version>
-		  <optional>true</optional>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
 		</dependency>
-		
-		
+
 	</dependencies>
 
 </project>

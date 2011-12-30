@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.Property;
 
 public class CodeSourceBuilder {
@@ -193,6 +194,44 @@ public class CodeSourceBuilder {
         return out.toString();
     }
     
+    public CodeSourceBuilder setFromStringConversion(Property dp, Property sp) {
+    	final String getter = getGetter(sp);
+        final String setter = getSetter(dp);
+        
+        newLine();
+        if (dp.getType().isPrimitive()) {
+        	final String wrapperTypeName = ClassUtil.getWrapperType(dp.getType()).getCanonicalName(); 
+        	append("destination.%s(%s.valueOf(source.%s).%sValue() );", setter, wrapperTypeName, getter,
+                    getPrimitiveType(dp.getType()));
+        } else {
+        	final String wrapperTypeName = dp.getType().getCanonicalName(); 
+        	ifSourceNotNull(sp).then();
+        	append("destination.%s(%s.valueOf(source.%s));", setter, wrapperTypeName, getter);
+        	end();
+        }
+        
+        return this;
+        
+    }
+    
+    public CodeSourceBuilder setToStringConversion(Property dp, Property sp) {
+    	final String getter = getGetter(sp);
+        final String setter = getSetter(dp);
+        
+        newLine();
+        
+        if (!sp.getType().isPrimitive()) {
+        	ifSourceNotNull(sp).then();
+        	append("destination.%s(source.%s.toString());", setter, getter);
+        	end();
+        } else {
+        	append("destination.%s(\"\"+source.%s);", setter, getter);
+        }
+        
+        return this;
+        
+    }
+    
     public CodeSourceBuilder setWrapper(Property dp, Property sp) {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
@@ -205,11 +244,16 @@ public class CodeSourceBuilder {
         final String getter = getGetter(sp);
         final String setter = getSetter(dp);
         
-        ifSourceNotNull(sp).then();
+        if (!sp.getType().isPrimitive()) {
+        	ifSourceNotNull(sp).then();
+        }
         
         newLine().append("destination.%s(source.%s.%sValue());", setter, getter, getPrimitiveType(dp.getType()));
         
-        end();
+        if (!sp.getType().isPrimitive()) {
+        	end();
+        }
+        
         return this;
     }
     
@@ -331,7 +375,7 @@ public class CodeSourceBuilder {
             append("if(").append(destinationBase.toString()).append(".").append(p.getGetter()).append("() == null) ");
             newLine();
             append(destinationBase.toString()).append(".").append(p.getSetter()).append("((").append(p.getType().getCanonicalName());
-            append(")mapperFacade.newObject(").append("source, ").append(p.getType().getCanonicalName()).append(".class));");
+            append(")mapperFacade.newObject(").append("source, ").append(p.getType().getCanonicalName()).append(".class, mappingContext));");
             
             destinationBase.append(".").append(p.getGetter()).append("()");
         }
@@ -396,6 +440,33 @@ public class CodeSourceBuilder {
         return this;
     }
     
+    public CodeSourceBuilder assignStringConvertedVar(String var, Property sp) {
+        append("%s = \"\" + source.%s;", var, getGetter(sp));
+        return this;
+    }
+    
+    public CodeSourceBuilder assignVarConvertedFromString(String var, Property sp, Property dp) {
+        append("%s = \"\" + source.%s;", var, getGetter(sp));
+        
+        final String getter = getGetter(sp);
+        
+        newLine();
+        if (dp.getType().isPrimitive()) {
+        	final String wrapperTypeName = ClassUtil.getWrapperType(dp.getType()).getCanonicalName(); 
+        	append("%s = %s.valueOf(source.%s).%sValue();", var, wrapperTypeName, getter,
+                    getPrimitiveType(dp.getType()));
+        } else {
+        	final String wrapperTypeName = dp.getType().getCanonicalName(); 
+        	ifSourceNotNull(sp).then();
+        	append("%s = %s.valueOf(source.%s);", var, wrapperTypeName, getter);
+        	end();
+        }
+        
+        return this;
+    }
+    
+    //
+    
     public CodeSourceBuilder assignObjectVar(String var, Property sp, Class<?> targetClass) {
         append("%s = (%s) mapperFacade.map(source.%s, %s.class);", var, targetClass.getCanonicalName(), getGetter(sp),
                 targetClass.getCanonicalName());
@@ -415,14 +486,10 @@ public class CodeSourceBuilder {
         }
         
         final String sourceGetter = getGetter(sp);
-        final String destinationGetter = getGetter(dp);
-        final String destinationSetter = getSetter(dp);
+        //final String destinationGetter = getGetter(dp);
+        //final String destinationSetter = getSetter(dp);
         
-        append("if (destination.%s == null) {\n", destinationGetter);
-        append("destination.%s(%s);\n", destinationSetter, newStatement);
-        append("}\n");
-        append("destination.%s.clear();\n", destinationGetter);
-        append("destination.%s.addAll(mapperFacade.mapAs%s(source.%s, %s.class, mappingContext));", destinationGetter,
+        append("%s = mapperFacade.mapAs%s(source.%s, %s.class, mappingContext);", var, 
                 destinationCollection, sourceGetter, destinationElementClass.getCanonicalName());
         return this;
     }
@@ -437,10 +504,10 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder assignPrimtiveToWrapperVar(String var, Property sp, Class<?> targetClass) {
+    public CodeSourceBuilder assignPrimitiveToWrapperVar(String var, Property sp, Class<?> targetClass) {
         final String getter = getGetter(sp);
         
-        append("%s = %s.valueOf((%s) source.%s));\n", var, targetClass.getCanonicalName(), getPrimitiveType(targetClass), getter);
+        append("%s = %s.valueOf((%s) source.%s);\n", var, targetClass.getCanonicalName(), getPrimitiveType(targetClass), getter);
         return this;
     }
     
@@ -463,7 +530,7 @@ public class CodeSourceBuilder {
         if (Boolean.TYPE.equals(clazz))
             return "false";
         else if (Character.TYPE.equals(clazz))
-            return "'\0'";
+        	return "'\\u0000'";
         else
             return "0";
     }

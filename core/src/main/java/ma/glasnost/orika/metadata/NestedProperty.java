@@ -33,6 +33,17 @@ public class NestedProperty extends Property {
     }
     
     @Override
+    public NestedProperty copy() {
+    	
+    	Property[] copyPath = new Property[path.length];
+    	for (int i=0, count = path.length; i < count; ++i) {
+    		copyPath[i] = path[i].copy();
+    	}
+    	NestedProperty copy = new NestedProperty(this.getExpression(), super.copy(), copyPath);
+        return copy;
+    }
+    
+    @Override
     public Property[] getPath() {
         return path;
     }

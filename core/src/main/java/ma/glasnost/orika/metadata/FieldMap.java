@@ -41,6 +41,22 @@ public class FieldMap {
         this.converterId = converterId;
     }
     
+    public FieldMap copy() {
+    	
+    	return new FieldMap(
+    			copy(source),
+    			copy(destination),
+    			copy(aInverse),
+    			copy(bInverse),
+    			mappingDirection,
+    			configured,
+    			converterId);	
+    }
+    
+    private Property copy(Property property) {
+    	return property != null ? property.copy() : null;
+    }
+    
     public Property getSource() {
         return source;
     }
@@ -91,7 +107,7 @@ public class FieldMap {
     
     @Override
     public String toString() {
-        return "FieldMap [destination=" + getDestinationName() + ", source=" + getSourceName() + "]";
+        return "FieldMap [destination=" + getDestination().toString() + ", source=" + getSource().toString() + "]";
     }
     
     @Override

@@ -81,18 +81,20 @@ public class MapperFacadeImpl implements MapperFacade {
         
         Class<? extends D> concreteDestinationClass = mapperFactory.lookupConcreteDestinationClass(sourceClass, destinationClass, context);
         if (concreteDestinationClass == null) {
-            if (Modifier.isAbstract(destinationClass.getModifiers())) {
+            if (!ClassUtil.isConcrete(destinationClass)) {
                 throw new MappingException("No concrete class mapping defined for source class " + sourceClass.getName());
             } else {
                 concreteDestinationClass = destinationClass;
             }
         }
+       
+        final Mapper<Object, Object> mapper = prepareMapper(sourceClass,concreteDestinationClass);
         
-        final D destinationObject = newObject(unenhancedSourceObject, concreteDestinationClass);
+        final D destinationObject = newObject(unenhancedSourceObject, concreteDestinationClass, context);
         
         context.cacheMappedObject(sourceObject, destinationObject);
         
-        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, concreteDestinationClass, context);
+        mapDeclaredProperties(unenhancedSourceObject, destinationObject, sourceClass, concreteDestinationClass, context, mapper);
         
         return destinationObject;
     }
@@ -113,7 +115,8 @@ public class MapperFacadeImpl implements MapperFacade {
         @SuppressWarnings("unchecked")
         final Class<D> destinationClass = (Class<D>) unenhancedDestinationObject.getClass();
         
-        mapDeclaredProperties(unenhancedSourceObject, unenhancedDestinationObject, sourceClass, destinationClass, context);
+        final Mapper<Object, Object> mapper = prepareMapper(sourceClass,destinationClass);
+        mapDeclaredProperties(unenhancedSourceObject, unenhancedDestinationObject, sourceClass, destinationClass, context, mapper);
     }
     
     public <S, D> void map(S sourceObject, D destinationObject) {
@@ -194,15 +197,19 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
+    Mapper<Object,Object> prepareMapper(Class<?> sourceClass, Class<?> destinationClass) {
+    	 final MapperKey mapperKey = new MapperKey(sourceClass, destinationClass);
+         final Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
+         
+         if (mapper == null) {
+             throw new IllegalStateException(String.format("Can not create a mapper for classes : %s, %s", destinationClass,
+            		 sourceClass));
+         }
+         return mapper;
+    }
+    
     void mapDeclaredProperties(Object sourceObject, Object destinationObject, Class<?> sourceClass, Class<?> destinationClass,
-            MappingContext context) {
-        final MapperKey mapperKey = new MapperKey(sourceClass, destinationClass);
-        final Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
-        
-        if (mapper == null) {
-            throw new IllegalStateException(String.format("Can not create a mapper for classes : %s, %s", destinationClass,
-                    sourceObject.getClass()));
-        }
+            MappingContext context, Mapper<Object, Object> mapper ) {
         
         if (mapper.getAType().equals(sourceClass)) {
             mapper.mapAtoB(sourceObject, destinationObject, context);
@@ -219,12 +226,12 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> D newObject(S sourceObject, Class<? extends D> destinationClass) {
+    public <S, D> D newObject(S sourceObject, Class<? extends D> destinationClass, MappingContext context) {
         
         try {
             final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationClass);
             if (objectFactory != null) {
-                return objectFactory.create(sourceObject);
+                return objectFactory.create(sourceObject, context);
             } else {
                 return destinationClass.newInstance();
             }

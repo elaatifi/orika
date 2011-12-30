@@ -96,6 +96,6 @@ public interface MapperFacade {
      * @return new instance of <code>destinationClass</code>
      */
     // TODO Utilité d'avoir cette méthode publique?
-    <S, D> D newObject(S source, Class<? extends D> destinationClass);
+    <S, D> D newObject(S source, Class<? extends D> destinationClass, MappingContext context);
     
 }
