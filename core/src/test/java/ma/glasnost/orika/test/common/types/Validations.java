@@ -21,7 +21,7 @@ import ma.glasnost.orika.test.common.types.TestCaseClasses.PrimitiveWrapperHolde
 
 import org.apache.commons.collections.list.TreeList;
 
-public class TestCaseValidations {
+public class Validations {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Common mapping validations
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
