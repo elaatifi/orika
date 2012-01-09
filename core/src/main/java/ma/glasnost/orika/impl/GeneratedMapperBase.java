@@ -22,25 +22,29 @@ import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperBase;
 import ma.glasnost.orika.MappingContext;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
-    
+
     protected Mapper<Object, Object> customMapper;
-    
+
     private Mapper<Object, Object>[] usedMappers;
-    
+
     public void setCustomMapper(Mapper<Object, Object> customMapper) {
         this.customMapper = customMapper;
         this.customMapper.setMapperFacade(mapperFacade);
     }
-    
+
     protected Mapper<Object, Object>[] getUsedMappers() {
         return usedMappers;
     }
-    
+
     public void setUsedMappers(Mapper<Object, Object>[] usedMappers) {
         this.usedMappers = usedMappers;
     }
-    
+
     @Override
     public void mapAtoB(Object a, Object b, MappingContext context) {
         if (usedMappers == null) {
@@ -50,7 +54,7 @@ public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
             mapper.mapAtoB(a, b, context);
         }
     }
-    
+
     @Override
     public void mapBtoA(Object b, Object a, MappingContext context) {
         if (usedMappers == null) {
@@ -60,5 +64,176 @@ public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
             mapper.mapBtoA(a, b, context);
         }
     }
+
+
+    protected static <T> List<T> asList(Iterable<T> iterable) {
+        ArrayList<T> ts = new ArrayList<T>();
+        for (T i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List asList(Object[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+    
+    protected static List<Object> asList(byte[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(int[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(char[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(long[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(float[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(double[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(boolean[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected static List<Object> asList(short[] iterable) {
+        ArrayList<Object> ts = new ArrayList<Object>();
+        for (Object i : iterable) {
+            ts.add(i);
+        }
+        return ts;
+    }
+
+    protected void mapArray(byte[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Byte) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(boolean[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Boolean) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(char[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Character) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(short[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Short) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(int[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Integer) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(long[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Long) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(float[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Float) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    protected void mapArray(double[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
+        if (source == null) {
+            return;
+        }
+
+        int i = 0;
+        for (final Object s : source) {
+            destination[i++] = (Double) mapperFacade.map(s, clazz, mappingContext);
+        }
+
+    }
+    
     
 }

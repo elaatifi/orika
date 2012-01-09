@@ -69,7 +69,7 @@ public class MapperFacadeImpl implements MapperFacade {
         final Class<S> sourceClass = unenhanceStrategy.unenhanceClass(unenhancedSourceObject);
         
         // XXX when it's immutable it's ok to copy by ref
-        if (ClassUtil.isImmutable(sourceClass) && sourceClass.equals(destinationClass)) {
+        if (ClassUtil.isImmutable(sourceClass) && (sourceClass.equals(destinationClass) || sourceClass.equals(ClassUtil.getWrapperType(destinationClass)))) {
             return (D) unenhancedSourceObject;
         }
         

@@ -19,6 +19,7 @@
 package ma.glasnost.orika.impl.generator;
 
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -267,10 +268,25 @@ public class CodeSourceBuilder {
         
         ifSourceNotNull(sp).then();
         
-        newLine().append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode)
-                .append("mapperFacade.mapAsArray((%s)%s, (%s)source.%s, %s.class, mappingContext);", castDestination, dp.getName(),
-                        castSource, getter, paramType)
-                .append("destination.%s(%s);", setter, dp.getName());
+        newLine().append("%s[] %s = new %s[source.%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode);
+        /*newLine().append("for(int %s_i=0; %s_i< source.%s.%s; %s_i++) %s[%s_i] = (%s)(",
+                dp.getName(), dp.getName(), getter, getSizeCode, dp.getName(), dp.getName(), dp.getName(), paramType);
+                if(dp.getType().getComponentType().isPrimitive() && sp.getType().getComponentType().equals(dp.getType().getComponentType())) {
+                    append("source.%s[%s_i]", getter, dp.getName() );            
+                } else {
+                    if (!sp.getType().getComponentType().isPrimitive())
+                    append("mapperFacade.map(").append("source.%s[%s_i], %s.class, mappingContext)", getter, dp.getName(), paramType );
+                }
+        append(");"); */
+        newLine();
+        String convertArrayToList = "asList";
+        if(dp.getType().getComponentType().isPrimitive())
+        append("mapArray(%s,%s((%s)source.%s), %s.class, mappingContext);", dp.getName(), convertArrayToList,
+                        castSource, getter, paramType);
+        else
+            append("mapperFacade.mapAsArray((%s)%s, %s((%s)source.%s), %s.class, mappingContext);", castDestination, dp.getName(),
+                    convertArrayToList, castSource, getter, paramType);
+        newLine().append("destination.%s(%s);", setter, dp.getName());
         
         elze().setDestinationNull(dp).end();
         
