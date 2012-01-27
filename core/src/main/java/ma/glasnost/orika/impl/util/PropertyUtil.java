@@ -35,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 
+import org.apache.commons.lang.StringUtils;
+
 public final class PropertyUtil {
     
     private static final Map<Class<?>, Map<String, Property>> PROPERTIES_CACHE = new ConcurrentHashMap<Class<?>, Map<String, Property>>();
@@ -59,16 +61,28 @@ public final class PropertyUtil {
                     if (pd.getReadMethod() != null) {
                         property.setGetter(pd.getReadMethod().getName());
                     }
+                    
                     if (pd.getWriteMethod() != null) {
+                        
                         property.setSetter(pd.getWriteMethod().getName());
+                    } else {
+                        for (Method method : clazz.getDeclaredMethods()) {
+                            if (method.getName().equals("set" + StringUtils.capitalize(pd.getName()))
+                                    && method.getParameterTypes().length == 1 && method.getReturnType() != Void.class) {
+                                property.setSetter(method.getName());
+                                break;
+                            }
+                        }
                     }
                     
-                    if (pd.getReadMethod()==null && pd.getWriteMethod()==null) {
-                    	continue;
+                    if (pd.getReadMethod() == null && pd.getWriteMethod() == null) {
+                        continue;
                     }
                     
                     try {
-                        property.setType(pd.getReadMethod().getDeclaringClass().getDeclaredMethod(property.getGetter(), new Class[0])
+                        property.setType(pd.getReadMethod()
+                                .getDeclaringClass()
+                                .getDeclaredMethod(property.getGetter(), new Class[0])
                                 .getReturnType());
                     } catch (final Exception e) {
                         property.setType(pd.getPropertyType());
@@ -79,19 +93,17 @@ public final class PropertyUtil {
                         final Method method = pd.getReadMethod();
                         if (property.getType() != null && Collection.class.isAssignableFrom(property.getType())) {
                             if (method.getGenericReturnType() instanceof ParameterizedType) {
-	                        	property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType())
-	                                    .getActualTypeArguments()[0]);
-                            } 
+                                property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0]);
+                            }
                         }
                     } else if (pd.getWriteMethod() != null) {
                         final Method method = pd.getWriteMethod();
                         
                         if (Collection.class.isAssignableFrom(property.getType()) && method.getGenericParameterTypes().length > 0) {
-                            property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[0])
-                                    .getActualTypeArguments()[0]);
+                            property.setParameterizedType((Class<?>) ((ParameterizedType) method.getGenericParameterTypes()[0]).getActualTypeArguments()[0]);
                         }
                     } else {
-                    	
+                        
                     }
                 } catch (final Throwable e) {
                     e.printStackTrace();
@@ -99,7 +111,7 @@ public final class PropertyUtil {
             }
         } catch (final IntrospectionException e) {
             e.printStackTrace();
-        	/* Ignore */
+            /* Ignore */
         }
         
         PROPERTIES_CACHE.put(clazz, Collections.unmodifiableMap(properties));
