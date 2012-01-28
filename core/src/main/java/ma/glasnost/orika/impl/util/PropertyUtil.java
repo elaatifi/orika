@@ -35,9 +35,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 
-import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class PropertyUtil {
+    
+    private static Logger LOG = LoggerFactory.getLogger(PropertyUtil.class);
     
     private static final Map<Class<?>, Map<String, Property>> PROPERTIES_CACHE = new ConcurrentHashMap<Class<?>, Map<String, Property>>();
     
@@ -67,7 +70,7 @@ public final class PropertyUtil {
                         property.setSetter(pd.getWriteMethod().getName());
                     } else {
                         for (Method method : clazz.getDeclaredMethods()) {
-                            if (method.getName().equals("set" + StringUtils.capitalize(pd.getName()))
+                            if (method.getName().equals("set" + capitalize(pd.getName()))
                                     && method.getParameterTypes().length == 1 && method.getReturnType() != Void.class) {
                                 property.setSetter(method.getName());
                                 break;
@@ -110,12 +113,16 @@ public final class PropertyUtil {
                 }
             }
         } catch (final IntrospectionException e) {
-            e.printStackTrace();
+            LOG.warn("Can not introspect {}", clazz, e);
             /* Ignore */
         }
         
         PROPERTIES_CACHE.put(clazz, Collections.unmodifiableMap(properties));
         return properties;
+    }
+    
+    private static String capitalize(String name) {
+        return name.charAt(0) + name.substring(1);
     }
     
     public static NestedProperty getNestedProperty(Class<?> clazz, String p) {

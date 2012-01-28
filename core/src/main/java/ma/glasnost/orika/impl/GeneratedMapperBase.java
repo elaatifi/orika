@@ -18,13 +18,12 @@
 
 package ma.glasnost.orika.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperBase;
 import ma.glasnost.orika.MappingContext;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
 
@@ -41,6 +40,7 @@ public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
         return usedMappers;
     }
 
+    @Override
     public void setUsedMappers(Mapper<Object, Object>[] usedMappers) {
         this.usedMappers = usedMappers;
     }

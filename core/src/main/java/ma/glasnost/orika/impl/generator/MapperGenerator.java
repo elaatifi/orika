@@ -43,7 +43,12 @@ import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class MapperGenerator {
+    
+    private static Logger LOG = LoggerFactory.getLogger(MapperGenerator.class);
     
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
@@ -184,13 +189,19 @@ public final class MapperGenerator {
                 code.setPrimitive(dp, sp);
             } else if (fieldMap.is(aPrimitiveToWrapper())) {
                 code.setWrapper(dp, sp);
-            } else if (fieldMap.is(aConversionFromString())) { 
-            	code.setFromStringConversion(dp, sp);
+            } else if (fieldMap.is(aConversionFromString())) {
+                code.setFromStringConversion(dp, sp);
             } else if (fieldMap.is(aConversionToString())) {
-            	code.setToStringConversion(dp, sp);
+                code.setToStringConversion(dp, sp);
             } else {
-            	/**/
-                code.setObject(dp, sp, fieldMap.getInverse());
+                /**/
+                
+                if (sp.isPrimitive() || dp.isPrimitive())
+                code.newLine().append("/* Ignore field map : %s:%s -> %s:%s */", sp.getExpression(), sp.getType().getSimpleName(), dp.getExpression(), dp.getType().getSimpleName());
+                
+                else {
+                    code.setObject(dp, sp, fieldMap.getInverse());
+                }
             }
             
             // Close up, and set null to destination
@@ -213,8 +224,8 @@ public final class MapperGenerator {
         if (fieldMap.getConverterId() != null) {
             converter = converterFactory.getConverter(fieldMap.getConverterId());
         } else {
-            converter = converterFactory.getConverter((Class<Object>) fieldMap.getSource().getType(), (Class<Object>) fieldMap
-                    .getDestination().getType());
+            converter = converterFactory.getConverter((Class<Object>) fieldMap.getSource().getType(),
+                    (Class<Object>) fieldMap.getDestination().getType());
         }
         return converter;
     }

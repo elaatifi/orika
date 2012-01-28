@@ -90,7 +90,7 @@ public final class Specifications {
         
         public boolean apply(FieldMap fieldMap) {
             return fieldMap.getDestination().getType().isEnum()
-                    && !fieldMap.getSource().getType().equals(fieldMap.getDestination().getType());
+                    && (fieldMap.getSource().getType().equals(String.class) || fieldMap.getSource().getType().isEnum());
         }
     };
     
