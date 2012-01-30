@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.impl;
 
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -61,8 +60,8 @@ public class MapperFacadeImpl implements MapperFacade {
             return null;
         }
         
-        if (context.isAlreadyMapped(sourceObject)) {
-            return (D) context.getMappedObject(sourceObject);
+        if (context.isAlreadyMapped(sourceObject, destinationClass)) {
+            return (D) context.getMappedObject(sourceObject, destinationClass);
         }
         
         final S unenhancedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject);

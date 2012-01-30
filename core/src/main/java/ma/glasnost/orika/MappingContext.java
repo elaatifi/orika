@@ -46,14 +46,18 @@ public class MappingContext {
     }
     
     public <S, D> void cacheMappedObject(S source, D destination) {
-        cache.put(source, destination);
+        cache.put(hashMappedObject(source, destination.getClass()), destination);
     }
     
-    public <S> boolean isAlreadyMapped(S source) {
-        return cache.containsKey(source);
+    public <S, D> boolean isAlreadyMapped(S source, Class<D> destinationClass) {
+        return cache.containsKey(hashMappedObject(source, destinationClass));
     }
     
-    public Object getMappedObject(Object source) {
-        return cache.get(source);
+    public Object getMappedObject(Object source, Class<?> destinationClass) {
+        return cache.get(hashMappedObject(source, destinationClass));
+    }
+    
+    private static Integer hashMappedObject(Object source, Class<?> destinationClass) {
+        return System.identityHashCode(source) * 31 + System.identityHashCode(destinationClass);
     }
 }
