@@ -333,8 +333,14 @@ public class CodeSourceBuilder {
         
         ifSourceNotNull(sp).then();
         
-        newLine().append("destination.%s((%s)Enum.valueOf(%s.class,\"\"+source.%s));", setter, dp.getType().getCanonicalName(),
+        
+        if(sp.isEnum()) {
+            newLine().append("destination.%s((%s)Enum.valueOf(%s.class,source.%s.name()));", setter, dp.getType().getCanonicalName(),
+                    dp.getType().getCanonicalName(), getter);
+        } else {
+            newLine().append("destination.%s((%s)Enum.valueOf(%s.class,\"\"+source.%s));", setter, dp.getType().getCanonicalName(),
                 dp.getType().getCanonicalName(), getter);
+        }
         
         elze().setDestinationNull(dp).end();
         return this;

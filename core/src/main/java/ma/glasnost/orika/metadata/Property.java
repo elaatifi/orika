@@ -170,4 +170,8 @@ public class Property {
     public String toString() {
         return expression + "(" + type.getName() + ")";
     }
+
+    public boolean isEnum() {
+        return type.isEnum();
+    }
 }

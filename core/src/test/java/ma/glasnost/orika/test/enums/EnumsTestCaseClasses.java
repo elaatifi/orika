@@ -27,6 +27,11 @@ public interface EnumsTestCaseClasses {
 	
 	public enum PublicationFormatDTO {
 		HARDBACK, SOFTBACK, EBOOK;
+		
+		@Override
+        public String toString() {
+		    return name()+ordinal();
+		}
 	}
 	
 	public enum PublicationFormatDTOAltCase {

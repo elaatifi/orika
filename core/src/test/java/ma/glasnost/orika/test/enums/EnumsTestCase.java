@@ -65,7 +65,7 @@ public class EnumsTestCase {
         BookDTOWithParallelEnum mappedBook = mapper.map(book, BookDTOWithParallelEnum.class);
         
         Assert.assertEquals(book.getTitle(), mappedBook.getTitle());
-        Assert.assertEquals(book.getFormat().toString(), mappedBook.getFormat().toString());
+        Assert.assertEquals(book.getFormat().name(), mappedBook.getFormat().name());
     }
     
     @Test
