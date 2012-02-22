@@ -109,7 +109,7 @@ public final class PropertyUtil {
                         
                     }
                 } catch (final Throwable e) {
-                    e.printStackTrace();
+                    LOG.warn("Error by parsing the property '{}' of class '{}'. This property should be mapped manually!",pd.getName(), clazz.getName());
                 }
             }
         } catch (final IntrospectionException e) {
