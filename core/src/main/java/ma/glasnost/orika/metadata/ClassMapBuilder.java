@@ -91,11 +91,11 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> use(Class<?> aParentClass, Class<?> bParentClass) {
-        if (aType.isAssignableFrom(aParentClass)) {
+        if (!aParentClass.isAssignableFrom(aType)) {
             throw new MappingException(aType.getSimpleName() + " is not a subclass of " + aParentClass.getSimpleName());
         }
         
-        if (bType.isAssignableFrom(bParentClass)) {
+        if (!bParentClass.isAssignableFrom(bType)) {
             throw new MappingException(bType.getSimpleName() + " is not a subclass of " + bParentClass.getSimpleName());
         }
         
@@ -110,7 +110,7 @@ public final class ClassMapBuilder<A, B> {
             if (!propertiesCacheA.contains(propertyName)) {
                 if (bProperties.containsKey(propertyName)) {
                     if (!propertiesCacheB.contains(propertyName)) {
-                    	fieldMap(propertyName).add();
+                        fieldMap(propertyName).add();
                     }
                 } else {
                     Property prop = aProperties.get(propertyName);
@@ -118,7 +118,7 @@ public final class ClassMapBuilder<A, B> {
                         String suggestion = hint.suggestMappedField(propertyName, prop.getType());
                         if (suggestion != null && bProperties.containsKey(suggestion)) {
                             if (!propertiesCacheB.contains(suggestion)) {
-                            	fieldMap(propertyName, suggestion).add();
+                                fieldMap(propertyName, suggestion).add();
                             }
                         }
                     }
