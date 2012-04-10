@@ -32,7 +32,7 @@ public class CompilerRequestor implements ICompilerRequestor {
     private IProblem[] problems;
 
     public CompilerRequestor() {
-    
+    	reset();
     }
 
 	public Map<String, byte[]> getCompiledClassFiles() {
@@ -46,6 +46,7 @@ public class CompilerRequestor implements ICompilerRequestor {
 	public void reset() {
 		this.problems = null;
 		this.compiledClassFiles = null;
+		this.compiledClassFiles = new HashMap<String, byte[]>();
 	}
 
 	public void acceptResult(CompilationResult result) {
@@ -58,7 +59,6 @@ public class CompilerRequestor implements ICompilerRequestor {
 		if (!hasErrors) {
 
 			ClassFile[] classFiles = result.getClassFiles();
-			compiledClassFiles = new HashMap<String, byte[]>(classFiles.length);
 
 			for (int i = 0; i < classFiles.length; i++) {
 				ClassFile classFile = classFiles[i];

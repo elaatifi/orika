@@ -17,6 +17,9 @@
  */
 package ma.glasnost.orika.converter;
 
+import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.metadata.Type;
+
 public interface ConverterFactory {
     
     /**
@@ -27,7 +30,7 @@ public interface ConverterFactory {
      * @param destinationClass
      * @return converter
      */
-    Converter<Object, Object> getConverter(Class<Object> sourceClass, Class<Object> destinationClass);
+    Converter<Object, Object> getConverter(Type<?> sourceClass, Type<?> destinationClass);
     
     /**
      * Lookup a converter by id
@@ -49,8 +52,29 @@ public interface ConverterFactory {
      * 
      * @param converterId
      * @param converter
+     * @deprecated use {@link #registerConverter(Converter)} instead
+     */
+    @Deprecated
+    <S, D> void registerConverter(ma.glasnost.orika.converter.Converter<S, D> converter);
+    
+    /**
+     * Register an identified converter
+     * 
+     * @param converterId
+     * @param converter
+     * 
      */
     <S, D> void registerConverter(String converterId, Converter<S, D> converter);
+    
+    /**
+     * Register an identified converter
+     * 
+     * @param converterId
+     * @param converter
+     * @deprecated use {@link #registerConverter(String, Converter)} instead
+     */
+    @Deprecated
+    <S, D> void registerConverter(String converterId, ma.glasnost.orika.converter.Converter<S, D> converter);
     
     /**
      * Check if an identified converter exists
@@ -68,6 +92,6 @@ public interface ConverterFactory {
      * @param destinationClass
      * @return true / false
      */
-    boolean canConvert(Class<Object> sourceClass, Class<Object> destinationClass);
+    boolean canConvert(Type<?> sourceClass, Type<?> destinationClass);
     
 }

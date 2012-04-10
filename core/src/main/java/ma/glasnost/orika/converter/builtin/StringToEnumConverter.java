@@ -19,6 +19,7 @@ package ma.glasnost.orika.converter.builtin;
 
 import ma.glasnost.orika.converter.Converter;
 
+
 @SuppressWarnings("rawtypes")
 public class StringToEnumConverter implements Converter<String, Enum> {
     

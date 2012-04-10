@@ -18,6 +18,8 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.lang.reflect.Type;
+
 public class FieldMapBuilder<A, B> {
     
     private final ClassMapBuilder<A, B> classMapBuilder;
@@ -33,6 +35,7 @@ public class FieldMapBuilder<A, B> {
     private String converterId;
     
     private MappingDirection mappingDirection = MappingDirection.BIDIRECTIONAL;
+    private boolean excluded;
     
     FieldMapBuilder(ClassMapBuilder<A, B> classMapBuilder, String a, String b) {
         this.classMapBuilder = classMapBuilder;
@@ -42,7 +45,7 @@ public class FieldMapBuilder<A, B> {
     }
     
     public ClassMapBuilder<A, B> add() {
-        final FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true,
+        final FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true, excluded,
                 converterId);
         classMapBuilder.addFieldMap(fieldMap);
         
@@ -50,14 +53,14 @@ public class FieldMapBuilder<A, B> {
     }
     
     public FieldMapBuilder<A, B> aInverse(String aInverse) {
-        final Class<?> type = aProperty.isCollection() ? aProperty.getParameterizedType() : aProperty.getType();
+        final Type type = aProperty.isCollection() ? aProperty.getElementType() : aProperty.getType();
         aInverseProperty = classMapBuilder.resolveProperty(type, aInverse);
         
         return this;
     }
     
     public FieldMapBuilder<A, B> bInverse(String bInverse) {
-        final Class<?> type = bProperty.isCollection() ? bProperty.getParameterizedType() : bProperty.getType();
+        final Type type = bProperty.isCollection() ? bProperty.getElementType() : bProperty.getType();
         bInverseProperty = classMapBuilder.resolveProperty(type, bInverse);
         
         return this;
@@ -80,4 +83,11 @@ public class FieldMapBuilder<A, B> {
         return this;
     }
     
+    /**
+     * Exclude property from mapping
+     */
+    public FieldMapBuilder<A, B> exclude() {
+        excluded = true;
+        return this;
+    }
 }

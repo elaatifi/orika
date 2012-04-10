@@ -3,7 +3,7 @@
 	<groupId>ma.glasnost.orika</groupId>
 	<artifactId>orika-parent</artifactId>
 	<name>Orika - parent</name>
-	<version>1.1-SNAPSHOT</version>
+	<version>1.1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<description>Orika parent project</description>
 	<url>http://code.google.com/p/orika</url>
@@ -117,7 +117,6 @@
 				<version>${slf4j.version}</version>
                 <scope>compile</scope>
 			</dependency>
-			
 
             <!-- Dependencies for optional eclipse jdt/formatter -->
             <dependency>
@@ -156,6 +155,20 @@
                 <version>3.2.100-v20070319</version>
             </dependency>
             <!-- END Eclipse Test dependencies -->
+
+            <dependency>
+                <groupId>net.sf.dozer</groupId>
+                <artifactId>dozer</artifactId>
+                <version>5.3.2</version>
+                <scope>test</scope>
+            </dependency>
+            
+            <dependency>
+                <groupId>com.google.caliper</groupId>
+                <artifactId>caliper</artifactId>
+                <version>0.5-rc1</version>
+                <scope>test</scope>
+            </dependency>
 
 		</dependencies>
 	</dependencyManagement>

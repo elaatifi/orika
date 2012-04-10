@@ -21,43 +21,53 @@ package ma.glasnost.orika;
 import java.util.HashMap;
 import java.util.Map;
 
+import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
+
 public class MappingContext {
     
-    private final Map<Class<?>, Class<?>> mapping;
+    private final Map<Type<?>, Type<?>> mapping;
     private final Map<Object, Object> cache;
     
     public MappingContext() {
-        mapping = new HashMap<Class<?>, Class<?>>();
+        mapping = new HashMap<Type<?>, Type<?>>();
         cache = new HashMap<Object, Object>();
     }
     
     @SuppressWarnings("unchecked")
-    public <S, D> Class<? extends D> getConcreteClass(Class<S> sourceClass, Class<D> destinationClass) {
+    public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType, Type<D> destinationType) {
         
-        final Class<?> clazz = mapping.get(sourceClass);
-        if (clazz != null && destinationClass.isAssignableFrom(clazz)) {
-            return (Class<? extends D>) clazz;
+        final Type<?> type = mapping.get(sourceType);
+        if (type != null && destinationType.isAssignableFrom(type)) {
+            return (Type<? extends D>) type;
         }
         return null;
     }
     
-    public void registerConcreteClass(Class<?> subjectClass, Class<?> concreteClass) {
+    public void registerConcreteClass(Type<?> subjectClass, Type<?> concreteClass) {
         mapping.put(subjectClass, concreteClass);
     }
     
+    @Deprecated
     public <S, D> void cacheMappedObject(S source, D destination) {
-        cache.put(hashMappedObject(source, destination.getClass()), destination);
+        cache.put(hashMappedObject(source, TypeFactory.typeOf(destination)), destination);
     }
     
-    public <S, D> boolean isAlreadyMapped(S source, Class<D> destinationClass) {
+    public <S, D> void cacheMappedObject(S source, Type<D> destinationType, D destination) {
+        cache.put(hashMappedObject(source, destinationType), destination);
+    }
+    
+    public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationClass) {
         return cache.containsKey(hashMappedObject(source, destinationClass));
     }
     
-    public Object getMappedObject(Object source, Class<?> destinationClass) {
-        return cache.get(hashMappedObject(source, destinationClass));
+    @SuppressWarnings("unchecked")
+    public <D> D getMappedObject(Object source, Type<D> destinationType) {
+        
+        return (D) cache.get(hashMappedObject(source, destinationType));
     }
     
-    private static Integer hashMappedObject(Object source, Class<?> destinationClass) {
-        return System.identityHashCode(source) * 31 + System.identityHashCode(destinationClass);
+    private static Integer hashMappedObject(Object source, Type<?> destinationType) {
+        return System.identityHashCode(source) * 31 + System.identityHashCode(destinationType);
     }
 }

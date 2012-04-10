@@ -18,16 +18,18 @@
 
 package ma.glasnost.orika.inheritance;
 
+import ma.glasnost.orika.metadata.Type;
+
 public abstract class DefaultSuperTypeResolverStrategy implements SuperTypeResolverStrategy {
 
-	public abstract boolean isAcceptable(Class<?> proposedClass);
+	public abstract boolean isAcceptable(Type<?> type);
 	
-	public boolean accept(Class<?> proposedClass) {
-		return isAcceptable(proposedClass);
+	public boolean accept(Type<?> type) {
+		return isAcceptable(type);
 	}
 
-	public boolean shouldLookupSuperType(Class<?> proposedClass) {
-		return !isAcceptable(proposedClass);
+	public boolean shouldLookupSuperType(Type<?> type) {
+		return !isAcceptable(type);
 	}
 
 	public boolean shouldPreferClassOverInterface() {

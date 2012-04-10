@@ -3,7 +3,7 @@
 	<parent>
 		<artifactId>orika-parent</artifactId>
 		<groupId>ma.glasnost.orika</groupId>
-		<version>1.1-SNAPSHOT</version>
+		<version>1.1.0-SNAPSHOT</version>
 	</parent>
 	
 	<modelVersion>4.0.0</modelVersion>
@@ -16,19 +16,18 @@
 
 	<dependencies>
 
-		<!-- Test dependencies for optional eclipse jdt/formatter -->
-		
-<!-- 		<dependency> -->
-<!-- 			<groupId>org.apache.maven</groupId> -->
-<!-- 			<artifactId>maven-plugin-api</artifactId> -->
-<!-- 			<version>2.0</version> -->
-<!-- 		</dependency> -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+        </dependency>
+    
 		<dependency>
 			<groupId>org.sonatype.tycho</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
 			<version>3.5.2.v_981_R35x</version>
 			<scope>compile</scope>
 		</dependency>
+        
 		<dependency>
 			<groupId>org.eclipse</groupId>
 			<artifactId>text</artifactId>
@@ -41,6 +40,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+        
 		<dependency>
 			<groupId>org.eclipse.core</groupId>
 			<artifactId>runtime</artifactId>
@@ -53,12 +53,6 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-		
-<!-- 		<dependency> -->
-<!--                    <groupId>org.codehaus.plexus</groupId> -->
-<!--                    <artifactId>plexus-compiler-eclipse</artifactId> -->
-<!--                    <version>1.8.1</version> -->
-<!--         </dependency> -->
 	
 	</dependencies>
 

@@ -21,7 +21,7 @@ package ma.glasnost.orika.impl.generator;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URL;
 import java.util.Random;
 import java.util.WeakHashMap;
 
@@ -144,8 +144,8 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
                 // Strip off the "[L" prefix from the internal name
                 resourceName = resourceName.substring(2);
             }
-            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resourceName);
-            if (is == null) {
+            URL resource = Thread.currentThread().getContextClassLoader().getResource(resourceName);
+            if (resource == null) {
                 throw new SourceCodeGenerationException(type + " is not accessible");
             }
         }  

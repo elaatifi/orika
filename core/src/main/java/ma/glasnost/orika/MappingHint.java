@@ -18,13 +18,18 @@
 
 package ma.glasnost.orika;
 
+import ma.glasnost.orika.metadata.Type;
+
+
 /**
  * Provides a generic mapping suggestion mechanism to provide 
  * help with guessing default mappings of fields when a straight
  * equivalent name match is not found
  * 
+ * @deprecated use ma.glasnost.orika.FieldSuggester instead
  * @author matt.deboer@gmail.com
  */
+@Deprecated
 public interface MappingHint {
 	
 	/**
@@ -33,5 +38,25 @@ public interface MappingHint {
 	 * or <code>null</code> if no suggestion for the given property
 	 */
 	public String suggestMappedField(String fromProperty, Class<?> fromPropertyType);
+	
+	
+	/**
+	 * DefaultFieldMappingConverter provided back-compatibility support for
+	 * MappingHint
+	 * 
+	 * @author matt.deboer@gmail.com
+	 */
+	public static class DefaultFieldMappingConverter implements DefaultFieldMapper {
+
+		private MappingHint delegate;
+		public DefaultFieldMappingConverter(MappingHint delegate) {
+			this.delegate = delegate;
+		}
+		
+		public String suggestMappedField(String fromProperty,
+				Type<?> fromPropertyType) {
+			return this.delegate.suggestMappedField(fromProperty, fromPropertyType.getRawType());
+		}
+	}
 	
 }

@@ -18,37 +18,30 @@
 
 package ma.glasnost.orika.unenhance;
 
+import ma.glasnost.orika.metadata.Type;
+
 /**
- * Defines a strategy to unenhance an object specifically a proxy one like those of
- * Hibernate.<br>
- * Unenhanement can be used in cases where a class needs to be "unwrapped" from a
- * proxy, or when a super-type or interface should be used for an object instead 
- * of the object's own class.
+ * Defines a strategy to unenhance an object specifically a proxy one like those
+ * of Hibernate.<br>
+ * Unenhanement can be used in cases where a class needs to be "unwrapped" from
+ * a proxy, or when a super-type or interface should be used for an object
+ * instead of the object's own class.
  * 
  * 
  * @author S.M. El Aatifi
  * 
  */
 public interface UnenhanceStrategy {
-
-	/**
-	 * If the object itself needs to be un-enhanced (unwrapped from a proxy, for instance), 
-	 * this method should return the un-enhanced version of the object; 
-	 * otherwise, the object should be returned as-is.
-	 * 
-	 * @param <T>
-	 * @param object
-	 * @return
-	 */
-	public <T> T unenhanceObject(T object);
-
-	/**
-	 * Should return the un-enhanced class to be used when determining attribute mapping information
-	 * for the class.
-	 * 
-	 * @param <T>
-	 * @param object
-	 * @return
-	 */
-	public <T> Class<T> unenhanceClass(T object);
+    
+    /**
+     * Should return the unenhanced type to be used when determining attribute
+     * mapping information for the type.
+     * 
+     * @param <T>
+     * @param type
+     * @return
+     */
+    public <T> Type<T> unenhanceType(T object, Type<T> type);
+    
+    public <T> T unenhanceObject(T object, Type<T> type);
 }

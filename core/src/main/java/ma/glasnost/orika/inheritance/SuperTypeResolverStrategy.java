@@ -18,6 +18,8 @@
 
 package ma.glasnost.orika.inheritance;
 
+import ma.glasnost.orika.metadata.Type;
+
 /**
  * This strategy is used by the super-type resolver to 
  * determine when and how to lookup a super-type, and and
@@ -29,18 +31,18 @@ package ma.glasnost.orika.inheritance;
 public interface SuperTypeResolverStrategy {
 	
     /**
-     * @param proposedClass
+     * @param type
      * @return true if the proposed super-type is acceptable
      */
-    public boolean accept(Class<?> proposedClass);
+    public boolean accept(Type<?> type);
     
     /**
      * 
-     * @param proposedClass
-     * @return true if a super-type should be looked up for the proposed class; 
+     * @param type
+     * @return true if a super-type should be looked up for the proposed type; 
      * false signifies that the class should be returned as-is.
      */
-    public boolean shouldLookupSuperType(Class<?> proposedClass);
+    public boolean shouldLookupSuperType(Type<?> type);
     
     /**
      * @return true if a super class(es) should be looked-up first before

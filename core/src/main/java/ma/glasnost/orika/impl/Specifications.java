@@ -90,7 +90,7 @@ public final class Specifications {
         
         public boolean apply(FieldMap fieldMap) {
             return fieldMap.getDestination().getType().isEnum()
-                    && (fieldMap.getSource().getType().equals(String.class) || fieldMap.getSource().getType().isEnum());
+                    && (fieldMap.getSource().getType().getRawType().equals(String.class) || fieldMap.getSource().getType().isEnum());
         }
     };
     
@@ -125,7 +125,7 @@ public final class Specifications {
     private static final Specification WRAPPER_TO_PRIMITIVE = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return fieldMap.getDestination().isPrimitive() && ClassUtil.isPrimitiveWrapper(fieldMap.getSource().getType());
+            return fieldMap.getDestination().isPrimitive() && fieldMap.getSource().getType().isPrimitiveWrapper();
         }
         
     };
@@ -133,7 +133,7 @@ public final class Specifications {
     private static final Specification PRIMITIVE_TO_WRAPPER = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return ClassUtil.isPrimitiveWrapper(fieldMap.getDestination().getType()) && fieldMap.getSource().isPrimitive();
+            return fieldMap.getDestination().getType().isPrimitiveWrapper() && fieldMap.getSource().isPrimitive();
         }
         
     };
@@ -141,7 +141,7 @@ public final class Specifications {
     private static final Specification CONVERSION_FROM_STRING = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return String.class.equals(fieldMap.getSource().getType()) && ClassUtil.isConvertibleFromString(fieldMap.getDestination().getType());
+            return String.class.equals(fieldMap.getSource().getType().getRawType()) && fieldMap.getDestination().getType().isConvertibleFromString();
         }
         
     };
@@ -149,7 +149,7 @@ public final class Specifications {
     private static final Specification CONVERSION_TO_STRING = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return String.class.equals(fieldMap.getDestination().getType());
+            return String.class.equals(fieldMap.getDestination().getType().getRawType());
         }
         
     };

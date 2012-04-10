@@ -28,10 +28,11 @@ public class FieldMap {
     private final Property bInverse;
     private final MappingDirection mappingDirection;
     private boolean configured;
+    private final boolean excluded;
     private final String converterId;
     
     public FieldMap(Property a, Property b, Property aInverse, Property bInverse, MappingDirection mappingDirection, boolean configured,
-            String converterId) {
+            boolean excluded, String converterId) {
         this.source = a;
         this.destination = b;
         this.aInverse = aInverse;
@@ -39,22 +40,17 @@ public class FieldMap {
         this.mappingDirection = mappingDirection;
         this.configured = configured;
         this.converterId = converterId;
+        this.excluded = excluded;
     }
     
     public FieldMap copy() {
-    	
-    	return new FieldMap(
-    			copy(source),
-    			copy(destination),
-    			copy(aInverse),
-    			copy(bInverse),
-    			mappingDirection,
-    			configured,
-    			converterId);	
+        
+        return new FieldMap(copy(source), copy(destination), copy(aInverse), copy(bInverse), mappingDirection, configured, excluded,
+                converterId);
     }
     
     private Property copy(Property property) {
-    	return property != null ? property.copy() : null;
+        return property != null ? property.copy() : null;
     }
     
     public Property getSource() {
@@ -90,7 +86,7 @@ public class FieldMap {
     }
     
     public FieldMap flip() {
-        return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), configured, converterId);
+        return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), configured, excluded, converterId);
     }
     
     public boolean is(Specification specification) {
@@ -103,6 +99,10 @@ public class FieldMap {
     
     public String getConverterId() {
         return converterId;
+    }
+    
+    public boolean isExcluded() {
+        return excluded;
     }
     
     @Override

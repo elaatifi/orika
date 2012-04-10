@@ -25,6 +25,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
+import ma.glasnost.orika.metadata.Type;
+
 public final class ClassUtil {
     
     private static final String CGLIB_ID = "$$EnhancerByCGLIB$$";
@@ -53,6 +55,9 @@ public final class ClassUtil {
         return IMMUTABLES_TYPES.contains(clazz) || clazz.isEnum();
     }
     
+    public static boolean isImmutable(Type<?> type) {
+        return isImmutable(type.getRawType());
+    }
     /**
      * Verifies whether a given type is non-abstract and not an interface.
      * 
@@ -61,6 +66,16 @@ public final class ClassUtil {
      */
     public static boolean isConcrete(Class<?> type) {
     	return !type.isInterface() && !Modifier.isAbstract(type.getModifiers());
+    }
+    
+    /**
+     * Verifies whether a given type is non-abstract and not an interface.
+     * 
+     * @param type
+     * @return true if the passed type is not abstract and not an interface; false otherwise.
+     */
+    public static boolean isConcrete(Type<?> type) {
+    	return isConcrete(type.getRawType());
     }
     
     /**

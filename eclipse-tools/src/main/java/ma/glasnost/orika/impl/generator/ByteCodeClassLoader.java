@@ -22,37 +22,42 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A simple class-loader that can load classes from bytes that
- * have been pre-cached for the given class name.
+ * A simple class-loader that can load classes from bytes that have been
+ * pre-cached for the given class name.
  * 
  * @author matt.deboer@gmail.com
- *
+ * 
  */
 public class ByteCodeClassLoader extends ClassLoader {
 
-    private Map<String, byte[]> classData;
+	private Map<String, byte[]> classData;
 
-    public ByteCodeClassLoader(ClassLoader parent) {
-	super(parent);
-	classData = new ConcurrentHashMap<String, byte[]>();
-    }
-
-    /**
-     * Cache the bytes for a given class by name; will be used upon
-     * a subsequent load request.
-     * 
-     * @param name
-     * @param data
-     */
-    void putClassData(String name, byte[] data) {
-	classData.put(name, data);
-    }
-
-    protected Class<?> findClass(String name) throws ClassNotFoundException {
-	byte[] b = classData.get(name);
-	if (b == null) {
-	    throw new ClassNotFoundException(name);
+	public ByteCodeClassLoader(ClassLoader parent) {
+		super(parent);
+		classData = new ConcurrentHashMap<String, byte[]>();
 	}
-	return defineClass(name, b, 0, b.length);
-    }
+
+	/**
+	 * Cache the bytes for a given class by name; will be used upon a subsequent
+	 * load request.
+	 * 
+	 * @param name
+	 * @param data
+	 */
+	void putClassData(String name, byte[] data) {
+		classData.put(name, data);
+	}
+
+	byte[] getBytes(String name) {
+		byte[] data = classData.get(name);
+		return data != null ? data.clone() : null;
+	}
+	
+	protected Class<?> findClass(String name) throws ClassNotFoundException {
+		byte[] b = classData.get(name);
+		if (b == null) {
+			throw new ClassNotFoundException(name);
+		}
+		return defineClass(name, b, 0, b.length);
+	}
 }

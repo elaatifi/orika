@@ -17,9 +17,42 @@
  */
 package ma.glasnost.orika.converter;
 
+import ma.glasnost.orika.metadata.Type;
+
+@Deprecated
 public interface Converter<S, D> {
     
     boolean canConvert(Class<S> sourceClass, Class<? extends D> destinationClass);
     
     D convert(S source, Class<? extends D> destinationClass);
+    
+    /**
+     * LegacyConverter provides back-compatible support for the older version
+     * of converter.
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     * @param <S>
+     * @param <D>
+     */
+    public static class LegacyConverter<S, D> implements ma.glasnost.orika.Converter<S, D> {
+        
+        private ma.glasnost.orika.converter.Converter<S, D> delegate;
+        
+        public LegacyConverter(ma.glasnost.orika.converter.Converter<S, D> delegate) {
+            this.delegate = delegate;
+        }
+        
+        @SuppressWarnings("unchecked")
+        public boolean canConvert(Type<?> sourceClass, Type<?> destinationType) {
+            
+            return delegate.canConvert((Class<S>) sourceClass.getRawType(), (Class<D>) destinationType.getRawType());
+        }
+        
+        public D convert(S source, Type<? extends D> destinationType) {
+            
+            return delegate.convert(source, destinationType.getRawType());
+        }
+        
+    }
 }

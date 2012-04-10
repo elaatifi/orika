@@ -23,6 +23,7 @@ import java.util.Set;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.metadata.Type;
 
 /**
  * MapperFactory
@@ -40,19 +41,25 @@ public interface MapperFactory {
     
     <A, B> void registerClassMap(ClassMap<A, B> classMap);
     
+    @Deprecated
     <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass);
     
-    <T> ObjectFactory<T> lookupObjectFactory(Class<T> targetClass);
+    <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Type<T> targetType);
     
-    <S, D> Class<? extends D> lookupConcreteDestinationClass(Class<S> sourceClass, Class<D> destinationClass, MappingContext context);
+    <T> ObjectFactory<T> lookupObjectFactory(Type<T> targetType);
     
-    void registerMappingHint(MappingHint... hint);
+    <S, D> Type<? extends D> lookupConcreteDestinationType(Type<S> sourceType, Type<D> destinationType, MappingContext context);
+    
+    @Deprecated
+    void registerMappingHint(MappingHint... hints);
+    
+    void registerDefaultFieldMapper(DefaultFieldMapper... fieldDefaults);
     
     Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey);
     
     <A, B> ClassMap<A, B> getClassMap(MapperKey mapperKey);
     
-    Set<Class<Object>> lookupMappedClasses(Class<Object> clazz);
+    Set<Type<? extends Object>> lookupMappedClasses(Type<?> type);
     
     MapperFacade getMapperFacade();
     

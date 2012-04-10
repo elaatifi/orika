@@ -18,31 +18,33 @@
 
 package ma.glasnost.orika.inheritance;
 
+import ma.glasnost.orika.metadata.Type;
+
 
 public final class SuperTypeResolver {
 	
 	
 	@SuppressWarnings("unchecked")
-    public static <T> Class<T> getSuperType(final Class<?> enhancedClass, final SuperTypeResolverStrategy strategy) {
+    public static <T> Type<T> getSuperType(final Type<?> enhancedClass, final SuperTypeResolverStrategy strategy) {
     	
-		Class<T> mappedClass = (Class<T>) enhancedClass;
-    	if (strategy.shouldLookupSuperType(mappedClass)) {
+		Type<T> mappedType = (Type<T>) enhancedClass;
+    	if (strategy.shouldLookupSuperType(mappedType)) {
     		
-    		Class<T> mappedSuper = (Class<T>) tryFirstLookupOption(mappedClass,strategy);
+    		Type<T> mappedSuper = (Type<T>)tryFirstLookupOption(mappedType,strategy);
     		if (mappedSuper!=null) {
-    			mappedClass = mappedSuper;
+    			mappedType = mappedSuper;
     		} else {
-    			mappedSuper = (Class<T>) trySecondLookupOption(mappedClass,strategy);
+    			mappedSuper = (Type<T>) trySecondLookupOption(mappedType,strategy);
     			if (mappedSuper!=null) {
-        			mappedClass = mappedSuper;
+        			mappedType = mappedSuper;
         		}
     		}
     		
     	}
-    	return mappedClass;
+    	return mappedType;
     }
 	
-	private static Class<?> tryFirstLookupOption(final Class<?> theClass, final SuperTypeResolverStrategy strategy) {
+	private static Type<?> tryFirstLookupOption(final Type<?> theClass, final SuperTypeResolverStrategy strategy) {
 		if (strategy.shouldPreferClassOverInterface()) {
 			return lookupMappedSuperType(theClass,strategy);
 		} else {
@@ -50,7 +52,7 @@ public final class SuperTypeResolver {
 		}
 	}
 	
-	private static Class<?> trySecondLookupOption(final Class<?> theClass, final SuperTypeResolverStrategy strategy) {
+	private static Type<?> trySecondLookupOption(final Type<?> theClass, final SuperTypeResolverStrategy strategy) {
 		if (strategy.shouldPreferClassOverInterface()) {
 			return lookupMappedInterface(theClass,strategy);
 		} else {
@@ -58,41 +60,40 @@ public final class SuperTypeResolver {
 		}
 	}
 	
-	private static Class<?> lookupMappedSuperType(final Class<?> theClass, final SuperTypeResolverStrategy strategy) { 
+	private static Type<?> lookupMappedSuperType(final Type<?> type, final SuperTypeResolverStrategy strategy) { 
     	
-		Class<?> targetClass = theClass.getSuperclass();
-		Class<?> mappedClass = null;
+		Type<?> targetType = type.getSuperType();
+		Type<?> mappedType = null;
     	
-    	while (mappedClass==null && targetClass!=null && !targetClass.equals(Object.class)) {
+    	while (mappedType==null && targetType!=null && !targetType.getRawType().equals(Object.class)) {
     		
-    		if(strategy.accept(targetClass)) {
-    			mappedClass = targetClass;
+    		if(strategy.accept(targetType)) {
+    			mappedType = targetType;
     			break;
     		} 
-    		targetClass = targetClass.getSuperclass();
+    		targetType = targetType.getSuperType();
     	}
     	
-    	return mappedClass;
+    	return mappedType;
     }
     
-    private static Class<?> lookupMappedInterface(final Class<?> theClass, final SuperTypeResolverStrategy strategy) {
+    private static Type<?> lookupMappedInterface(final Type<?> type, final SuperTypeResolverStrategy strategy) {
     	
-    	Class<?> targetClass = theClass;
-		Class<?> mappedClass = null;
+    	Type<?> targetType = type;
+		Type<?> mappedType = null;
     	
-		while (mappedClass==null && targetClass!=null && !targetClass.equals(Object.class)) {
+		while (mappedType==null && targetType!=null && !targetType.getRawType().equals(Object.class)) {
 	    	
-    		for (Class<?> theInterface: targetClass.getInterfaces()) {
+    		for (Type<?> theInterface: targetType.getInterfaces()) {
 	    		if(strategy.accept(theInterface)) {
-	    			mappedClass = theInterface;
+	    			mappedType = theInterface;
 	    			break;
 	    		} 
     		}
-    		targetClass = targetClass.getSuperclass();
+    		targetType = targetType.getSuperType();
 		}
     	
-    	return mappedClass;
-
+    	return mappedType;
     }
     
 }

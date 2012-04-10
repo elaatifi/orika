@@ -22,15 +22,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ma.glasnost.orika.Mapper;
-import ma.glasnost.orika.MapperBase;
+import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.metadata.Type;
 
-public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
+public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
 
     protected Mapper<Object, Object> customMapper;
-
+    protected Type<Object>[] usedTypes;
     private Mapper<Object, Object>[] usedMappers;
-
+    private Type<Object> aType;
+    private Type<Object> bType;
+    
+    public Type<Object> getAType() {
+    	return aType;
+    }
+    
+    public Type<Object> getBType() {
+    	return bType;
+    }
+    
+    @SuppressWarnings("unchecked")
+	public void setAType(Type<?> aType) {
+    	this.aType = (Type<Object>)aType;
+    }
+    
+    @SuppressWarnings("unchecked")
+	public void setBType(Type<?> bType) {
+    	this.bType = (Type<Object>)bType;
+    }
+    
     public void setCustomMapper(Mapper<Object, Object> customMapper) {
         this.customMapper = customMapper;
         this.customMapper.setMapperFacade(mapperFacade);
@@ -45,6 +66,10 @@ public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
         this.usedMappers = usedMappers;
     }
 
+    public void setUsedTypes(Type<Object>[] types) {
+        this.usedTypes = types;
+    }
+    
     @Override
     public void mapAtoB(Object a, Object b, MappingContext context) {
         if (usedMappers == null) {
@@ -74,7 +99,7 @@ public abstract class GeneratedMapperBase extends MapperBase<Object, Object> {
         return ts;
     }
 
-    protected static List asList(Object[] iterable) {
+    protected static List<Object> asList(Object[] iterable) {
         ArrayList<Object> ts = new ArrayList<Object>();
         for (Object i : iterable) {
             ts.add(i);

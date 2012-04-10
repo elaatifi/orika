@@ -18,6 +18,8 @@
 
 package ma.glasnost.orika;
 
+import ma.glasnost.orika.metadata.Type;
+
 /**
  * Defines a contract bewteen internal parts of Orikas such as
  * <code>MapperFacade</code>, <code>MapperGenerator</code>,
@@ -37,8 +39,8 @@ public interface Mapper<A, B> {
     
     void setUsedMappers(Mapper<Object, Object>[] mapper);
     
-    Class<A> getAType();
+    Type<A> getAType();
     
-    Class<B> getBType();
+    Type<B> getBType();
     
 }

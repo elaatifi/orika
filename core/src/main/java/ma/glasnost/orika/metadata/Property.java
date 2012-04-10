@@ -29,20 +29,20 @@ public class Property {
     private String name;
     private String getter;
     private String setter;
-    private Class<?> type;
-    private Class<?> parameterizedType;
+    private Type<?> type;
+    private Type<?> elementType;
     private boolean declared;
     
     
     public Property copy() {
-    	Property copy = new Property();
+        Property copy = new Property();
         copy.declared = this.declared;
         copy.expression = this.expression;
         copy.name = this.name;
         copy.getter = this.getter;
         copy.setter = this.setter;
         copy.type = this.type;
-        copy.parameterizedType = this.parameterizedType;
+        copy.elementType = this.elementType;
         return copy;
     }
     
@@ -62,12 +62,13 @@ public class Property {
         this.name = name;
     }
     
-    public Class<?> getType() {
+    public Type<?> getType() {
         return type;
     }
     
-    public void setType(Class<?> type) {
+    public void setType(Type<?> type) {
         this.type = type;
+        this.elementType = null;
     }
     
     public String getGetter() {
@@ -86,12 +87,19 @@ public class Property {
         this.setter = setter;
     }
     
-    public Class<?> getParameterizedType() {
-        return parameterizedType;
+    public Type<?> getElementType() {
+        if (elementType==null && type.getActualTypeArguments().length>0) {
+            elementType = (Type<?>)type.getActualTypeArguments()[0];
+        }
+        return elementType;
     }
     
-    public void setParameterizedType(Class<?> parameterizedType) {
-        this.parameterizedType = parameterizedType;
+//    public void setParameterizedType(Type<?> parameterizedType) {
+//        this.parameterizedType = parameterizedType;
+//    }
+    
+    public Class<?> getRawType() {
+    	return getType().getRawType();
     }
     
     @Override
@@ -118,11 +126,11 @@ public class Property {
     }
     
     public boolean isPrimitive() {
-        return type.isPrimitive();
+        return type.getRawType().isPrimitive();
     }
     
     public boolean isArray() {
-        return type.isArray();
+        return type.getRawType().isArray();
     }
     
     public boolean isAssignableFrom(Property p) {
@@ -130,15 +138,15 @@ public class Property {
     }
     
     public boolean isCollection() {
-        return Collection.class.isAssignableFrom(type);
+        return Collection.class.isAssignableFrom(type.getRawType());
     }
     
     public boolean isSet() {
-        return Set.class.isAssignableFrom(type);
+        return Set.class.isAssignableFrom(type.getRawType());
     }
     
     public boolean isList() {
-        return List.class.isAssignableFrom(type);
+        return List.class.isAssignableFrom(type.getRawType());
     }
     
     public boolean hasPath() {
@@ -168,10 +176,10 @@ public class Property {
     
     @Override
     public String toString() {
-        return expression + "(" + type.getName() + ")";
+        return expression + "(" + type + ")";
     }
 
     public boolean isEnum() {
-        return type.isEnum();
+        return type.getRawType().isEnum();
     }
 }

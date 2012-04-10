@@ -18,13 +18,15 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.lang.reflect.Type;
+
 public class ConverterKey {
     
-    private final Class<?> sourceClass;
-    private final Class<?> destinationClass;
+    private final Type sourceClass;
+    private final Type destinationClass;
     private final String id;
     
-    public ConverterKey(Class<?> sourceClass, Class<?> destinationClass) {
+    public ConverterKey(Type sourceClass, Type destinationClass) {
         
         assert sourceClass != null;
         assert destinationClass != null;
@@ -43,11 +45,11 @@ public class ConverterKey {
         this.destinationClass = null;
     }
     
-    public Class<?> getSourceClass() {
+    public Type getSourceClass() {
         return sourceClass;
     }
     
-    public Class<?> getDestinationClass() {
+    public Type getDestinationClass() {
         return destinationClass;
     }
     

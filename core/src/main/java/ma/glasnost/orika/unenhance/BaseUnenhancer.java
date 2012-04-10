@@ -24,77 +24,75 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import ma.glasnost.orika.inheritance.SuperTypeResolver;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
+import ma.glasnost.orika.metadata.Type;
 
 /**
  * Provides a delegating unenhance strategy which also post-processes the
  * unenhancement results using the associated super-type strategies.<br>
  * 
- * See also: {@link #SuperTypeResolverStrategy}  
+ * See also: {@link #SuperTypeResolverStrategy}
  * 
  * @author matt.deboer@gmail.com
  */
 public class BaseUnenhancer implements UnenhanceStrategy {
     
-	private final ConcurrentHashMap<Class<?>,Class<?>> mappedSuperTypes;
-	private final Queue<UnenhanceStrategy> unenhanceStrategyChain = new LinkedBlockingQueue<UnenhanceStrategy>();
-	private final Queue<SuperTypeResolverStrategy> supertypeStrategyChain = new LinkedBlockingQueue<SuperTypeResolverStrategy>();
-	
-	public BaseUnenhancer() {
-		this.mappedSuperTypes = new ConcurrentHashMap<Class<?>,Class<?>>();
-	}
-
-	public void addUnenhanceStrategy(final UnenhanceStrategy strategy) {
-		unenhanceStrategyChain.add(strategy);
-	}
-	
-	public void addSuperTypeResolverStrategy(final SuperTypeResolverStrategy strategy) {
-		supertypeStrategyChain.add(strategy);
-	}
-	
-    public <T> T unenhanceObject(T object) {
-        
-    	T unenhancedObject = object;
-    	for(UnenhanceStrategy strategy: unenhanceStrategyChain) {
-    		T delegateUnenhanced = (T) strategy.unenhanceObject(object);
-    		// Accept the first delegate strategy result which produces 
-    		// something different than the object itself
-    		if (delegateUnenhanced != null && delegateUnenhanced != object) {
-    			unenhancedObject = delegateUnenhanced;
-    			break;
-    		}
-    	}
-    	
-    	return unenhancedObject;
+    private final ConcurrentHashMap<Type<?>, Type<?>> mappedSuperTypes;
+    private final Queue<UnenhanceStrategy> unenhanceStrategyChain = new LinkedBlockingQueue<UnenhanceStrategy>();
+    private final Queue<SuperTypeResolverStrategy> supertypeStrategyChain = new LinkedBlockingQueue<SuperTypeResolverStrategy>();
+    
+    public BaseUnenhancer() {
+        this.mappedSuperTypes = new ConcurrentHashMap<Type<?>, Type<?>>();
+    }
+    
+    public void addUnenhanceStrategy(final UnenhanceStrategy strategy) {
+        unenhanceStrategyChain.add(strategy);
+    }
+    
+    public void addSuperTypeResolverStrategy(final SuperTypeResolverStrategy strategy) {
+        supertypeStrategyChain.add(strategy);
     }
     
     @SuppressWarnings("unchecked")
-    public <T> Class<T> unenhanceClass(T object) {
+    public <T> Type<T> unenhanceType(T object, Type<T> type) {
         
-    	Class<T> unenhancedClass = (Class<T>) object.getClass();
-    	for(UnenhanceStrategy strategy: unenhanceStrategyChain) {
-    		Class<T> delegateUnenhanced = (Class<T>) strategy.unenhanceClass(object);
-    		// Accept the first delegate strategy result which produces 
-    		// something different than the object's getClass method
-    		if (delegateUnenhanced!=null && !unenhancedClass.equals(delegateUnenhanced)) {
-    			unenhancedClass = delegateUnenhanced;
-    			break;
-    		}
-    	}
-    	
-    	for(SuperTypeResolverStrategy strategy: supertypeStrategyChain) {
-    		Class<?> superType = SuperTypeResolver.getSuperType(unenhancedClass,strategy);
-        	if (superType!=null && !unenhancedClass.equals(superType)) {
-        		Class<?> superTypePutResult = mappedSuperTypes.putIfAbsent(unenhancedClass, superType);
-        		// Accept the first delegate strategy result which produces 
-        		// a super-type different than the object's getClass method
-        		if (superTypePutResult!=null) {
-        			superType = superTypePutResult;
-        		}
-        		unenhancedClass = (Class<T>)superType;
-        		break;
-        	}
-    	}
-    	
-    	return unenhancedClass;	
+        Type<T> unenhancedClass = type;
+        for (UnenhanceStrategy strategy : unenhanceStrategyChain) {
+            Type<T> delegateUnenhanced = strategy.unenhanceType(object, type);
+            // Accept the first delegate strategy result which produces
+            // something different than the object's getClass method
+            if (delegateUnenhanced != null && !unenhancedClass.equals(delegateUnenhanced)) {
+                unenhancedClass = delegateUnenhanced;
+                break;
+            }
+        }
+        
+        for (SuperTypeResolverStrategy strategy : supertypeStrategyChain) {
+            Type<?> superType = SuperTypeResolver.getSuperType(unenhancedClass, strategy);
+            if (superType != null && !unenhancedClass.equals(superType)) {
+                Type<?> superTypePutResult = mappedSuperTypes.putIfAbsent(unenhancedClass, superType);
+                // Accept the first delegate strategy result which produces
+                // a super-type different than the object's getClass method
+                if (superTypePutResult != null) {
+                    superType = superTypePutResult;
+                }
+                unenhancedClass = (Type<T>) superType;
+                break;
+            }
+        }
+        
+        return unenhancedClass;
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <T> T unenhanceObject(T object, Type<T> type) {
+        for (UnenhanceStrategy strategy : unenhanceStrategyChain) {
+            Object delegateUnenhanced = strategy.unenhanceObject(object, type);
+            // Accept the first delegate strategy result which produces
+            // something different than the object's getClass method
+            if (delegateUnenhanced != null && delegateUnenhanced != object) {
+                return (T)delegateUnenhanced;
+            }
+        }
+        return object;
     }
 }

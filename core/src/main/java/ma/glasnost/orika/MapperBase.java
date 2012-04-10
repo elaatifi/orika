@@ -23,15 +23,12 @@ package ma.glasnost.orika;
  * 
  * @see ma.glasnost.orika.metadata.ClassMapBuilder
  * @author S.M. El Aatifi
- * 
+ * @deprecated use {@link ma.glasnost.orika.CustomMapper} instead
  */
-public abstract class MapperBase<A, B> implements Mapper<A, B> {
+@Deprecated
+public abstract class MapperBase<A, B> {
     
     protected MapperFacade mapperFacade;
-    
-    public MapperBase() {
-        
-    }
     
     public void mapAtoB(A a, B b, MappingContext context) {
         /* */
@@ -60,4 +57,34 @@ public abstract class MapperBase<A, B> implements Mapper<A, B> {
     private IllegalStateException throwShouldNotCalledCustomMapper() {
         return new IllegalStateException("Should not be called for a user custom mapper.");
     }
+    
+    /**
+     * Provides backward-compatibility for custom mappers that extend
+     * the deprecated MapperBase.
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     * @param <A>
+     * @param <B>
+     */
+    public static class MapperBaseAdapter<A, B> extends CustomMapper<A, B> {
+        private MapperBase<A, B> delegate;
+        
+        public MapperBaseAdapter(MapperBase<A, B> delegate) {
+            this.delegate = delegate;
+        }
+        
+        public void mapAtoB(A a, B b, MappingContext context) {
+            delegate.mapAtoB(a, b, context);
+        }
+        
+        public void mapBtoA(B b, A a, MappingContext context) {
+            delegate.mapBtoA(b, a, context);
+        }
+        
+        public void setMapperFacade(MapperFacade mapper) {
+            delegate.setMapperFacade(mapper);
+        }
+    }
+
 }

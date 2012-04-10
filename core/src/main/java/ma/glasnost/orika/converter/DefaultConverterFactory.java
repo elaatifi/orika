@@ -22,7 +22,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ConverterKey;
+import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.util.Cache;
 import ma.glasnost.orika.util.CacheLRULinkedHashMap;
 
@@ -52,8 +56,36 @@ public class DefaultConverterFactory implements ConverterFactory {
      * ma.glasnost.orika.converter.ConverterFactory#canConvert(java.lang.Class,
      * java.lang.Class)
      */
+    public boolean canConvert(Type<?> sourceClass, Type<?> destinationClass) {
+        boolean canConvert = _canConverter(sourceClass, destinationClass);
+        if (canConvert)
+            return true;
+        
+        // Maybe the converter is registred with wrapper type and meant to be
+        // used
+        // for primitive one (source or destination)
+        // source
+        if (sourceClass.isPrimitive()) {
+            sourceClass = TypeFactory.valueOf(ClassUtil.getWrapperType(sourceClass.getRawType()));
+            canConvert = _canConverter(sourceClass, destinationClass);
+        }
+        if (canConvert)
+            return true;
+        
+        // Destination
+        if (destinationClass.isPrimitive()) {
+            destinationClass = TypeFactory.valueOf(ClassUtil.getWrapperType(destinationClass.getRawType()));
+            canConvert = _canConverter(sourceClass, destinationClass);
+        }
+        if (canConvert)
+            return true;
+        
+        return false;
+    }
+    
     @SuppressWarnings("unchecked")
-    public boolean canConvert(Class<Object> sourceClass, Class<Object> destinationClass) {
+    private boolean _canConverter(Type<?> sourceClass, Type<?> destinationClass) {
+        boolean canConvert = false;
         ConverterKey key = new ConverterKey(sourceClass, destinationClass);
         if (converterCache.containsKey(key)) {
             return true;
@@ -62,10 +94,10 @@ public class DefaultConverterFactory implements ConverterFactory {
         Converter converter : converters) {
             if (converter.canConvert(sourceClass, destinationClass)) {
                 converterCache.cache(key, converter);
-                return true;
+                canConvert = true;
             }
         }
-        return false;
+        return canConvert;
     }
     
     /*
@@ -86,7 +118,37 @@ public class DefaultConverterFactory implements ConverterFactory {
      * ma.glasnost.orika.converter.ConverterFactory#getConverter(java.lang.Class
      * , java.lang.Class)
      */
-    public Converter<Object, Object> getConverter(Class<Object> sourceClass, Class<Object> destinationClass) {
+    public Converter<Object, Object> getConverter(Type<?> sourceClass, Type<?> destinationClass) {
+        
+        // Step verify if converter exists for sourceClass and destination
+        Converter<Object, Object> converter = _converter(sourceClass, destinationClass);
+        
+        if (converter != null)
+            return converter;
+        
+        // Maybe the converter is registred with wrapper type and meant to be
+        // used
+        // for primitive one (source or destination)
+        // source
+        if (sourceClass.isPrimitive()) {
+            sourceClass = TypeFactory.valueOf(ClassUtil.getWrapperType(sourceClass.getRawType()));
+            converter = _converter(sourceClass, destinationClass);
+        }
+        if (converter != null)
+            return converter;
+        
+        // Destination
+        if (destinationClass.isPrimitive()) {
+            destinationClass = TypeFactory.valueOf(ClassUtil.getWrapperType(destinationClass.getRawType()));
+            converter = _converter(sourceClass, destinationClass);
+        }
+        if (converter != null)
+            return converter;
+        
+        return null;
+    }
+    
+    private Converter<Object, Object> _converter(Type<?> sourceClass, Type<?> destinationClass) {
         ConverterKey key = new ConverterKey(sourceClass, destinationClass);
         if (converterCache.containsKey(key)) {
             return converterCache.get(key);
@@ -135,5 +197,31 @@ public class DefaultConverterFactory implements ConverterFactory {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public <S, D> void registerConverter(String converterId, Converter<S, D> converter) {
         convertersMap.put(converterId, (Converter) converter);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.converter.ConverterFactory#registerConverter(ma.glasnost
+     * .orika.Converter)
+     */
+    @Deprecated
+    public <S, D> void registerConverter(ma.glasnost.orika.converter.Converter<S, D> converter) {
+        
+        registerConverter(new ma.glasnost.orika.converter.Converter.LegacyConverter<S, D>(converter));
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.converter.ConverterFactory#registerConverter(java.lang
+     * .String, ma.glasnost.orika.Converter)
+     */
+    @Deprecated
+    public <S, D> void registerConverter(String converterId, ma.glasnost.orika.converter.Converter<S, D> converter) {
+        
+        registerConverter(converterId, new ma.glasnost.orika.converter.Converter.LegacyConverter<S, D>(converter));
     }
 }

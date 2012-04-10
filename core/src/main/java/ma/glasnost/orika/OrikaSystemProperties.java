@@ -55,21 +55,28 @@ public final class OrikaSystemProperties {
     
     /**
      * Specifies the fully-qualified class name of the un-enhancement strategy to use when performing type lookup 
-     * in order to map objects; 
+     * in order to map objects;  <br>
      * default value is determined by the MapperFactory implementation.
      */
     public static final String UNENHANCE_STRATEGY = "ma.glasnost.orika.unenhanceStrategy";
     
     /**
      * Specifies the fully-qualified class name of the constructor-resolver strategy to use when resolving 
-     * constructors for instantiation of target types; 
+     * constructors for instantiation of target types;  <br><br>
      * default value is determined by the MapperFactory implementation.
      */
     public static final String CONSTRUCTOR_RESOLVER_STRATEGY = "ma.glasnost.orika.constructorResolverStrategy";
     
     /**
+     * Specifies the fully-qualified class name of the property-resolver strategy to use when resolving 
+     * mappable properties of target types; <br><br>
+     * default value is {@link ma.glasnost.orika.property.IntrospectorPropertyResolver}
+     */
+    public static final String PROPERTY_RESOLVER_STRATEGY = "ma.glasnost.orika.propertyResolverStrategy";
+    
+    /**
      * Specifies the fully-qualified class name of the converter factory to use when generating converters
-     * for target types;  
+     * for target types;<br><br>
      * default value is determined by the MapperFactory implementation.
      */
     public static final String CONVERTER_FACTORY = "ma.glasnost.orika.converterFactory";
