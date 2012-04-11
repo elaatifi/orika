@@ -83,6 +83,14 @@ public class Property {
         return setter;
     }
     
+    public String getSetterName() {
+        return setter.split("[\\( \\=]")[0];
+    }
+    
+    public String getGetterName() {
+        return getter.split("[\\( \\=]")[0];
+    }
+    
     public void setSetter(String setter) {
         this.setter = setter;
     }

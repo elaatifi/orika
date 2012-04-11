@@ -22,6 +22,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
@@ -80,10 +81,10 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         property.setExpression(pd.getName());
                         property.setName(pd.getName());
                         if (pd.getReadMethod() != null) {
-                            property.setGetter(pd.getReadMethod().getName());
+                            property.setGetter(pd.getReadMethod().getName() + "()");
                         }
                         if (pd.getWriteMethod() != null) {
-                            property.setSetter(pd.getWriteMethod().getName());
+                            property.setSetter(pd.getWriteMethod().getName() + "(%s)");
                         }
                         
                         if (pd.getReadMethod()==null && pd.getWriteMethod()==null) {
@@ -92,7 +93,10 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         
                         Class<?> rawType = pd.getPropertyType();
                         Class<?> returnType = null;
-                        java.lang.reflect.Type genericType = pd.getReadMethod().getGenericReturnType();
+                        java.lang.reflect.Type genericType = null;
+                        if (pd.getReadMethod() != null) {
+                            genericType = pd.getReadMethod().getGenericReturnType();
+                        }
                         try {
                             returnType = pd.getReadMethod().getDeclaringClass()
                                     .getDeclaredMethod(property.getGetter(), new Class[0])
@@ -108,7 +112,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                             } else {
                                 property.setType(TypeFactory.TYPE_OF_OBJECT);
                             }
-                        } else if (rawType!=returnType && rawType.isAssignableFrom(returnType)) {
+                        } else if (returnType != null && !rawType.equals(returnType) && rawType.isAssignableFrom(returnType)) {
                             property.setType(TypeFactory.valueOf(returnType));
                         } else if (genericType instanceof ParameterizedType) {
                             if (typeHolder.isParameterized()) { 
@@ -146,6 +150,42 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         e.printStackTrace();
                     }
                 }
+                for (Field f: type.getFields()) {
+                    
+                    final Property property = new Property();
+                    property.setExpression(f.getName());
+                    property.setName(f.getName());
+                    
+                    java.lang.reflect.Type genericType = f.getGenericType();
+                    Class<?> rawType = f.getType();
+                    
+                    if (genericType instanceof TypeVariable && typeHolder.isParameterized()) {
+                        java.lang.reflect.Type t = typeHolder.getTypeByVariable((TypeVariable<?>) genericType);
+                        if (t != null) {
+                            property.setType(TypeFactory.valueOf(t));
+                        } else {
+                            property.setType(TypeFactory.TYPE_OF_OBJECT);
+                        }
+                    } else if (genericType instanceof ParameterizedType) {
+                        if (typeHolder.isParameterized()) { 
+                            property.setType(TypeFactory.resolveValueOf((ParameterizedType)genericType, typeHolder));
+                        } else {
+                            property.setType(TypeFactory.valueOf((ParameterizedType)genericType));
+                        }
+                    } else {
+                         property.setType(TypeFactory.valueOf(rawType));
+                    } 
+                    
+                    Property existing = properties.get(property.getName());
+                    if (existing==null) {
+                        property.setGetter(property.getName());
+                        property.setSetter(property.getName() + " = %s");
+                        properties.put(property.getName(), property);
+                    }
+                    
+                }
+                
+                
                 if (type.getSuperclass()!=null && !Object.class.equals(type.getSuperclass())) {
                     types.add(type.getSuperclass());
                 }
