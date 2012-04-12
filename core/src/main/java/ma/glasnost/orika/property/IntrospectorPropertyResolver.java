@@ -24,6 +24,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
@@ -150,50 +151,57 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         e.printStackTrace();
                     }
                 }
-                for (Field f: type.getFields()) {
-                    
-                    final Property property = new Property();
-                    property.setExpression(f.getName());
-                    property.setName(f.getName());
-                    
-                    java.lang.reflect.Type genericType = f.getGenericType();
-                    Class<?> rawType = f.getType();
-                    
-                    if (genericType instanceof TypeVariable && typeHolder.isParameterized()) {
-                        java.lang.reflect.Type t = typeHolder.getTypeByVariable((TypeVariable<?>) genericType);
-                        if (t != null) {
-                            property.setType(TypeFactory.valueOf(t));
-                        } else {
-                            property.setType(TypeFactory.TYPE_OF_OBJECT);
-                        }
-                    } else if (genericType instanceof ParameterizedType) {
-                        if (typeHolder.isParameterized()) { 
-                            property.setType(TypeFactory.resolveValueOf((ParameterizedType)genericType, typeHolder));
-                        } else {
-                            property.setType(TypeFactory.valueOf((ParameterizedType)genericType));
-                        }
-                    } else {
-                         property.setType(TypeFactory.valueOf(rawType));
-                    } 
-                    
-                    Property existing = properties.get(property.getName());
-                    if (existing==null) {
-                        property.setGetter(property.getName());
-                        property.setSetter(property.getName() + " = %s");
-                        properties.put(property.getName(), property);
-                    }
-                    
-                }
-                
                 
                 if (type.getSuperclass()!=null && !Object.class.equals(type.getSuperclass())) {
                     types.add(type.getSuperclass());
                 }
-                types.addAll(Arrays.<Class<? extends Object>>asList(type.getInterfaces()));
+                @SuppressWarnings("unchecked")
+                List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>>asList(type.getInterfaces());
+                types.addAll(interfaces);
             }
         } catch (final IntrospectionException e) {
             e.printStackTrace();
             /* Ignore */
+        }
+        
+        /*
+         * Add public non-static fields as properties; we call this
+         * outside of the loop because the fields returned are already
+         * inclusive of ancestors.
+         */
+        for (Field f: typeHolder.getRawType().getFields()) {
+            if (!Modifier.isStatic(f.getModifiers())) {
+                final Property property = new Property();
+                property.setExpression(f.getName());
+                property.setName(f.getName());
+                
+                java.lang.reflect.Type genericType = f.getGenericType();
+                Class<?> rawType = f.getType();
+                
+                if (genericType instanceof TypeVariable && typeHolder.isParameterized()) {
+                    java.lang.reflect.Type t = typeHolder.getTypeByVariable((TypeVariable<?>) genericType);
+                    if (t != null) {
+                        property.setType(TypeFactory.valueOf(t));
+                    } else {
+                        property.setType(TypeFactory.TYPE_OF_OBJECT);
+                    }
+                } else if (genericType instanceof ParameterizedType) {
+                    if (typeHolder.isParameterized()) { 
+                        property.setType(TypeFactory.resolveValueOf((ParameterizedType)genericType, typeHolder));
+                    } else {
+                        property.setType(TypeFactory.valueOf((ParameterizedType)genericType));
+                    }
+                } else {
+                     property.setType(TypeFactory.valueOf(rawType));
+                } 
+                
+                Property existing = properties.get(property.getName());
+                if (existing==null) {
+                    property.setGetter(property.getName());
+                    property.setSetter(property.getName() + " = %s");
+                    properties.put(property.getName(), property);
+                }
+            }
         }
         
         propertiesCache.put(theType, Collections.unmodifiableMap(properties));
