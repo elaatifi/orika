@@ -104,7 +104,9 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                              */
                             Type<?> resolvedGenericType = null;
                             if (readMethod != null) {
-                                resolvedGenericType = resolveGenericType(readMethod.getGenericReturnType(), typeHolder);
+                                resolvedGenericType = resolveGenericType(readMethod.getDeclaringClass()
+                                        .getDeclaredMethod(readMethod.getName(), new Class[0])
+                                        .getGenericReturnType(), typeHolder);
                             }
                             
                             if (resolvedGenericType != null && !resolvedGenericType.isAssignableFrom(rawType)) {
