@@ -63,7 +63,6 @@ public class PublicFieldMappingTestCase {
 //    }
     
     @Test
-    @Ignore
     public void testMappingInterfaceImplementationNoExistingMapping() throws Exception {
         
         MappingUtil.useEclipseJdt();
