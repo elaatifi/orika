@@ -45,11 +45,11 @@ import ma.glasnost.orika.metadata.TypeFactory;
  * IntrospectionPropertyResolver leverages JavaBeans introspector to resolve
  * properties for provided types.<br>
  * 
- * @author 
- *
+ * @author
+ * 
  */
 public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
-
+    
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     
     public Map<String, Property> getProperties(java.lang.reflect.Type theType) {
@@ -61,17 +61,17 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
         final Map<String, Property> properties = new HashMap<String, Property>();
         Type<?> typeHolder;
         if (theType instanceof Type) {
-            typeHolder = (Type<?>)theType;
+            typeHolder = (Type<?>) theType;
         } else if (theType instanceof Class) {
-            typeHolder = TypeFactory.valueOf((Class<?>)theType);
+            typeHolder = TypeFactory.valueOf((Class<?>) theType);
         } else {
             throw new IllegalArgumentException("type " + theType + " not supported.");
         }
         BeanInfo beanInfo;
         try {
             LinkedList<Class<? extends Object>> types = new LinkedList<Class<? extends Object>>();
-            types.addFirst((Class<? extends Object>)typeHolder.getRawType());
-            while(!types.isEmpty()) {
+            types.addFirst((Class<? extends Object>) typeHolder.getRawType());
+            while (!types.isEmpty()) {
                 Class<? extends Object> type = types.removeFirst();
                 beanInfo = Introspector.getBeanInfo(type);
                 PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
@@ -79,84 +79,64 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                     try {
                         
                         final Property property = new Property();
+                        
+                        final Method readMethod = pd.getReadMethod();
+                        final Method writeMethod = pd.getWriteMethod();
+                        
                         property.setExpression(pd.getName());
                         property.setName(pd.getName());
-                        if (pd.getReadMethod() != null) {
-                            property.setGetter(pd.getReadMethod().getName() + "()");
+                        if (readMethod != null) {
+                            property.setGetter(readMethod.getName() + "()");
                         }
-                        if (pd.getWriteMethod() != null) {
-                            property.setSetter(pd.getWriteMethod().getName() + "(%s)");
+                        if (writeMethod != null) {
+                            property.setSetter(writeMethod.getName() + "(%s)");
                         }
                         
-                        if (pd.getReadMethod()==null && pd.getWriteMethod()==null) {
+                        if (readMethod == null && writeMethod == null) {
                             continue;
                         }
                         
                         Class<?> rawType = pd.getPropertyType();
-                        Class<?> returnType = null;
-                        java.lang.reflect.Type genericType = null;
-                        if (pd.getReadMethod() != null) {
-                            genericType = pd.getReadMethod().getGenericReturnType();
-                        }
-                        try {
-                            returnType = pd.getReadMethod().getDeclaringClass()
-                                    .getDeclaredMethod(property.getGetter(), new Class[0])
-                                    .getReturnType();  
-                        } catch (final Exception e) {
-                            
-                        }
                         
-                        if (genericType instanceof TypeVariable && typeHolder.isParameterized()) {
-                            java.lang.reflect.Type t = typeHolder.getTypeByVariable((TypeVariable<?>) genericType);
-                            if (t != null) {
-                                property.setType(TypeFactory.valueOf(t));
-                            } else {
-                                property.setType(TypeFactory.TYPE_OF_OBJECT);
+                        if (typeHolder.isParameterized() || rawType.getTypeParameters().length > 0) {
+                            /*
+                             * Make attempts to determine the parameters
+                             */
+                            Type<?> resolvedGenericType = null;
+                            if (readMethod != null) {
+                                resolvedGenericType = resolveGenericType(readMethod.getGenericReturnType(), typeHolder);
                             }
-                        } else if (returnType != null && !rawType.equals(returnType) && rawType.isAssignableFrom(returnType)) {
-                            property.setType(TypeFactory.valueOf(returnType));
-                        } else if (genericType instanceof ParameterizedType) {
-                            if (typeHolder.isParameterized()) { 
-                                property.setType(TypeFactory.resolveValueOf((ParameterizedType)genericType, typeHolder));
+                            
+                            if (resolvedGenericType != null && !resolvedGenericType.isAssignableFrom(rawType)) {
+                                property.setType(resolvedGenericType);
                             } else {
-                                property.setType(TypeFactory.valueOf((ParameterizedType)genericType));
+                                property.setType(TypeFactory.valueOf(rawType));
                             }
+                            
                         } else {
-                             property.setType(TypeFactory.valueOf(rawType));
+                            /*
+                             * Neither the type nor it's parameter is generic; use the raw type
+                             */
+                            property.setType(TypeFactory.valueOf(rawType));
                         }
-                       
                         
                         Property existing = properties.get(pd.getName());
-                        if (existing==null || existing.getType().isAssignableFrom(rawType)) {
+                        if (existing == null || existing.getType().isAssignableFrom(rawType)) {
                             properties.put(pd.getName(), property);
-                            if (pd.getReadMethod() != null) {
-                                final Method method = pd.getReadMethod();
-                                if (property.getType() != null && property.isCollection()) {
-                                    if (method.getGenericReturnType() instanceof ParameterizedType) {
-                                        java.lang.reflect.Type t = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                                        resolvePropertyFromType(property, t);
-                                    } 
-                                }
-                            } else if (pd.getWriteMethod() != null) {
-                                final Method method = pd.getWriteMethod();
-                                if (property.isCollection() && method.getGenericParameterTypes().length > 0) {
-                                    java.lang.reflect.Type t = ((ParameterizedType) method.getGenericParameterTypes()[0]).getActualTypeArguments()[0];
-                                    resolvePropertyFromType(property, t);
-                                }
-                            } else {
-                                
-                            }
                         }
+                        
                     } catch (final Throwable e) {
+                        // TODO: should we really do this? 
+                        // 
                         e.printStackTrace();
                     }
                 }
                 
-                if (type.getSuperclass()!=null && !Object.class.equals(type.getSuperclass())) {
+                if (type.getSuperclass() != null && !Object.class.equals(type.getSuperclass())) {
                     types.add(type.getSuperclass());
                 }
                 @SuppressWarnings("unchecked")
-                List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>>asList(type.getInterfaces());
+                List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                 types.addAll(interfaces);
             }
         } catch (final IntrospectionException e) {
@@ -165,50 +145,62 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
         }
         
         /*
-         * Add public non-static fields as properties; we call this
-         * outside of the loop because the fields returned are already
-         * inclusive of ancestors.
+         * Add public non-static fields as properties; we call this outside of
+         * the loop because the fields returned are already inclusive of
+         * ancestors.
          */
-        /*
-        for (Field f: typeHolder.getRawType().getFields()) {
+        for (Field f : typeHolder.getRawType().getFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
                 final Property property = new Property();
                 property.setExpression(f.getName());
                 property.setName(f.getName());
                 
-                java.lang.reflect.Type genericType = f.getGenericType();
                 Class<?> rawType = f.getType();
-                
-                if (genericType instanceof TypeVariable && typeHolder.isParameterized()) {
-                    java.lang.reflect.Type t = typeHolder.getTypeByVariable((TypeVariable<?>) genericType);
-                    if (t != null) {
-                        property.setType(TypeFactory.valueOf(t));
-                    } else {
-                        property.setType(TypeFactory.TYPE_OF_OBJECT);
-                    }
-                } else if (genericType instanceof ParameterizedType) {
-                    if (typeHolder.isParameterized()) { 
-                        property.setType(TypeFactory.resolveValueOf((ParameterizedType)genericType, typeHolder));
-                    } else {
-                        property.setType(TypeFactory.valueOf((ParameterizedType)genericType));
-                    }
+                Type<?> genericType = resolveGenericType(f.getGenericType(), typeHolder);
+                if (genericType != null && !genericType.isAssignableFrom(rawType)) {
+                    property.setType(genericType);
                 } else {
-                     property.setType(TypeFactory.valueOf(rawType));
-                } 
+                    property.setType(TypeFactory.valueOf(rawType));
+                }
                 
                 Property existing = properties.get(property.getName());
-                if (existing==null) {
+                if (existing == null) {
                     property.setGetter(property.getName());
                     property.setSetter(property.getName() + " = %s");
                     properties.put(property.getName(), property);
                 }
             }
-        }*/
+        }
         
         propertiesCache.put(theType, Collections.unmodifiableMap(properties));
-        return properties; 
+        return properties;
     }
-
+    
+    /**
+     * Attempt to resolve the generic type, using refereceType to resolve  
+     * TypeVariables
+     * 
+     * @param genericType the type to resolve
+     * @param referenceType the reference type to use for lookup of type variables
+     * @return
+     */
+    private Type<?> resolveGenericType(java.lang.reflect.Type genericType, Type<?> referenceType) {
+        Type<?> resolvedType = null;
+        if (genericType instanceof TypeVariable && referenceType.isParameterized()) {
+            java.lang.reflect.Type t = referenceType.getTypeByVariable((TypeVariable<?>) genericType);
+            if (t != null) {
+                resolvedType = TypeFactory.valueOf(t);
+            }
+        } else if (genericType instanceof ParameterizedType) {
+            if (referenceType.isParameterized()) {
+                resolvedType = TypeFactory.resolveValueOf((ParameterizedType) genericType, referenceType);
+            } else {
+                resolvedType = TypeFactory.valueOf((ParameterizedType) genericType);
+            }
+        }
+        return resolvedType;
+    }
+    
     public NestedProperty getNestedProperty(java.lang.reflect.Type type, String p) {
         
         String typeName = type.toString();
@@ -220,8 +212,8 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
             int i = 0;
             while (i < ps.length) {
                 if (!properties.containsKey(ps[i])) {
-                    throw new RuntimeException("could not resolve nested property [" + p + "] on " + type + 
-                            ", because " + property.getType() + " does not contain property [" + ps[i] + "]");
+                    throw new RuntimeException("could not resolve nested property [" + p + "] on " + type + ", because "
+                            + property.getType() + " does not contain property [" + ps[i] + "]");
                 }
                 property = properties.get(ps[i]);
                 properties = getProperties(property.getType());
@@ -237,15 +229,5 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
         }
         
         return new NestedProperty(p, property, path.toArray(new Property[path.size()]));
-    }
-    
-    private void resolvePropertyFromType(Property property, java.lang.reflect.Type t) {
-        
-        Type<?> elementType = TypeFactory.valueOf(t);
-        Type<?> newPropertyType = TypeFactory.valueOf(property.getRawType(), new java.lang.reflect.Type[]{elementType});
-        
-        if (!property.getType().equals(newPropertyType) && property.getType().isAssignableFrom(newPropertyType)) {
-            property.setType(newPropertyType);
-        }
     }
 }
