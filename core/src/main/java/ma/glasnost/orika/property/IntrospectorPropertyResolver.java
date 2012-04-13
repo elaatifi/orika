@@ -169,6 +169,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
          * outside of the loop because the fields returned are already
          * inclusive of ancestors.
          */
+        /*
         for (Field f: typeHolder.getRawType().getFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
                 final Property property = new Property();
@@ -202,7 +203,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                     properties.put(property.getName(), property);
                 }
             }
-        }
+        }*/
         
         propertiesCache.put(theType, Collections.unmodifiableMap(properties));
         return properties; 
