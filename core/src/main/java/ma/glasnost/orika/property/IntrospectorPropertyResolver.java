@@ -96,7 +96,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                             continue;
                         }
                         
-                        Class<?> rawType = pd.getPropertyType();
+                        Class<?> rawType = resolveRawPropertyType(pd);
                         
                         if (typeHolder.isParameterized() || rawType.getTypeParameters().length > 0) {
                             /*
@@ -201,6 +201,27 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
             }
         }
         return resolvedType;
+    }
+    
+    /**
+     * Resolves the raw property type from a property descriptor;
+     * if a read method is available, use it to refine the type.
+     * The results of pd.getPropertyType() are sometimes inconsistent across
+     * platforms.
+     * 
+     * @param pd
+     * @return
+     */
+    private Class<?> resolveRawPropertyType(PropertyDescriptor pd) {
+    	Class<?> rawType = pd.getPropertyType();
+    	try {
+	        return ( pd.getReadMethod() == null ? rawType :
+	        pd.getReadMethod().getDeclaringClass()
+	        .getDeclaredMethod(pd.getReadMethod().getName(), new Class[0])
+	        .getReturnType());
+        } catch (Exception e) {
+	        return rawType;
+        } 
     }
     
     public NestedProperty getNestedProperty(java.lang.reflect.Type type, String p) {
