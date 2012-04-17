@@ -375,7 +375,6 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public void build() {
         
-        isBuilt = true;
         
         buildClassMapRegistry();
         
@@ -388,6 +387,7 @@ public class DefaultMapperFactory implements MapperFactory {
             initializeUsedMappers(classMap);
         }
         
+        isBuilt = true;
     }
     
     public Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey) {
