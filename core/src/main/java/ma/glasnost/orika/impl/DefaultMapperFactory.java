@@ -373,8 +373,9 @@ public class DefaultMapperFactory implements MapperFactory {
         classMapRegistry.put(new MapperKey(classMap.getAType(), classMap.getBType()), (ClassMap<Object, Object>) classMap);
     }
     
-    public void build() {
+    public synchronized void build() {
         
+    	isBuilt = true;
         
         buildClassMapRegistry();
         
@@ -387,7 +388,6 @@ public class DefaultMapperFactory implements MapperFactory {
             initializeUsedMappers(classMap);
         }
         
-        isBuilt = true;
     }
     
     public Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey) {
