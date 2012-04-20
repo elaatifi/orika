@@ -209,13 +209,7 @@
 		</dependencies>
 	</dependencyManagement>
 
-	<distributionManagement>
-		<repository>
-			<uniqueVersion>false</uniqueVersion>
-			<id>googlecode</id>
-			<url>svn:https://orika.googlecode.com/svn/repo</url>
-		</repository>
-	</distributionManagement>
+	
 
 	<repositories>
 		<repository>
@@ -230,13 +224,6 @@
 	</repositories>
 
 	<build>
-		<!-- <extensions> -->
-		<!-- <extension> -->
-		<!-- <groupId>org.jvnet.wagon-svn</groupId> -->
-		<!-- <artifactId>wagon-svn</artifactId> -->
-		<!-- <version>${wagon-svn.version}</version> -->
-		<!-- </extension> -->
-		<!-- </extensions> -->
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
