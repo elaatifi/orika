@@ -30,7 +30,6 @@ import ma.glasnost.orika.test.property.TestCaseClasses.BookChild;
 import ma.glasnost.orika.test.property.TestCaseClasses.BookMyDTO;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
