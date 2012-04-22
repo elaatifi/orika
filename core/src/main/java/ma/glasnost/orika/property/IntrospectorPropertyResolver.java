@@ -80,11 +80,25 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         
                         final Property property = new Property();
                         
-                        final Method readMethod = pd.getReadMethod();
+                        Method readMethod;
+                        if (pd.getReadMethod() == null && Boolean.class.equals(pd.getPropertyType())) {
+                        	/*
+                             * Special handling for Boolean "is" read method; not compliant with JavaBeans spec, but still very common
+                             */
+                        	try {
+                        		readMethod = type.getMethod("is" + pd.getName().substring(0,1).toUpperCase() + pd.getName().substring(1));
+                        	} catch (NoSuchMethodException e) {
+                        		readMethod = null;
+                        	}
+                        } else {
+                        	readMethod = pd.getReadMethod();
+                        }
                         final Method writeMethod = pd.getWriteMethod();
                         
                         property.setExpression(pd.getName());
                         property.setName(pd.getName());
+                        
+                        
                         if (readMethod != null) {
                             property.setGetter(readMethod.getName() + "()");
                         }
@@ -137,7 +151,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                 if (type.getSuperclass() != null && !Object.class.equals(type.getSuperclass())) {
                     types.add(type.getSuperclass());
                 }
-                @SuppressWarnings("unchecked")
+                
                 List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                 types.addAll(interfaces);
             }

@@ -18,10 +18,14 @@
 
 package ma.glasnost.orika.test.property;
 
+import java.math.BigDecimal;
+
 import junit.framework.Assert;
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
+import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
 
@@ -38,6 +42,20 @@ public class IntrospectorResolverTestCase {
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
 	}
 
+	@Test
+	public void testBooleanMapping() {
+		SpecialCase sc = new SpecialCase();
+		sc.setChecked(true);
+		sc.totalCost = new BigDecimal("42.50");
+		
+		MapperFacade mapper = MappingUtil.getMapperFactory().getMapperFacade();
+		SpecialCaseDto dto = mapper.map(sc, SpecialCaseDto.class);
+		
+		Assert.assertEquals(sc.isChecked(), Boolean.valueOf(dto.isChecked()));
+		//Assert.assertEquals(sc.totalCost.doubleValue(), dto.getTotalCost(), 0.01d);
+	}
+	
+	
 	public static class Point {
 		private int x, y;
 
@@ -114,6 +132,43 @@ public class IntrospectorResolverTestCase {
 			this.y1 = y1;
 		}
 
+	}
+	
+	public static class SpecialCase {
+		
+		private Boolean checked;
+		public BigDecimal totalCost;
+		
+		
+		public Boolean isChecked() {
+        	return checked;
+        }
+
+		public void setChecked(Boolean checked) {
+        	this.checked = checked;
+        }
+	}
+	
+	public static class SpecialCaseDto {
+		
+		private boolean checked;
+		private double totalCost;
+		
+		public boolean isChecked() {
+        	return checked;
+        }
+		public void setChecked(boolean checked) {
+        	this.checked = checked;
+        }
+		public double getTotalCost() {
+        	return totalCost;
+        }
+		public void setTotalCost(double totalCost) {
+        	this.totalCost = totalCost;
+        }
+		
+	
+		
 	}
 
 }
