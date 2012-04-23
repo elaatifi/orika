@@ -25,7 +25,6 @@ public class ArrayTestCase {
     }
 
     @Test
-    @Ignore
     public void testSimplePrimitiveToWrapperArray() {
         ArrayTestCaseClasses.A source =  new ArrayTestCaseClasses.A();
         byte[] buffer = new byte[]{1,2,3,4};
@@ -36,5 +35,20 @@ public class ArrayTestCase {
         ArrayTestCaseClasses.C destination = mapperFacade.map(source, ArrayTestCaseClasses.C.class);
 
         Assert.assertArrayEquals(new Byte[]{1,2,3,4}, destination.getBuffer());
+    }
+    
+    @Test
+    public void testArrayToList() {
+    	MapperFacade mapperFacade = MappingUtil.getMapperFactory().getMapperFacade();
+    	
+    	ArrayTestCaseClasses.A source =  new ArrayTestCaseClasses.A();
+        byte[] buffer = new byte[]{1,2,3,4};
+        source.setBuffer(buffer);
+
+
+        ArrayTestCaseClasses.D destination = mapperFacade.map(source, ArrayTestCaseClasses.D.class);
+
+        Assert.assertEquals(Arrays.asList((byte)1,(byte)2,(byte)3,(byte)4), destination.getBuffer());
+    	
     }
 }
