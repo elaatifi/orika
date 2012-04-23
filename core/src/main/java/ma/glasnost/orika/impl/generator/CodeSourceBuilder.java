@@ -180,12 +180,14 @@ public class CodeSourceBuilder {
         // Start check if source property ! = null
         ifSourceNotNull(sp).then();
         if(sp.isArray()) {
-        	if(sp.getType().getComponentType().isPrimitive())newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
-        	else newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class);", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        	if(sp.getType().getComponentType().isPrimitive())
+        		newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        	else 
+        		newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class);", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
         } else {
-        newLine().append("%s.clear();", destinationGetter);
-        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
-                sourceGetter, sourceType, destinationElementType);
+	        newLine().append("%s.clear();", destinationGetter);
+	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
+	                sourceGetter, sourceType, destinationElementType);
         }
         if (ip != null) {
             final String ipGetter = getGetter(ip, "orikaCollectionItem");
