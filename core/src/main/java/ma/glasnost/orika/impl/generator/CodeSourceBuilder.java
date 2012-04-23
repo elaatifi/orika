@@ -95,7 +95,7 @@ public class CodeSourceBuilder {
     }
     
     private String getUsedElementType(Property prop) {
-        return getUsedType(prop.getElementType());
+        return getUsedType(prop.isArray() ? prop.getType().getComponentType() :prop.getElementType());
     }
     
     public CodeSourceBuilder assertType(String var, Class<?> clazz) {
@@ -179,10 +179,14 @@ public class CodeSourceBuilder {
         }
         // Start check if source property ! = null
         ifSourceNotNull(sp).then();
-        
+        if(sp.isArray()) {
+        	if(sp.getType().getComponentType().isPrimitive())newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        	else newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class);", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        } else {
         newLine().append("%s.clear();", destinationGetter);
         newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
                 sourceGetter, sourceType, destinationElementType);
+        }
         if (ip != null) {
             final String ipGetter = getGetter(ip, "orikaCollectionItem");
             final String ipSetter = getSetter(ip, "orikaCollectionItem");
@@ -206,7 +210,7 @@ public class CodeSourceBuilder {
                 append("%s.add(destination);", ipGetter);
                 end();
             } else if (ip.isArray()) {
-                // TODO To implement
+                append(" // TODO support array");
             } else {
                 newLine().append("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();)", destinationGetter);
                 begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getElementType().getCanonicalName(),
