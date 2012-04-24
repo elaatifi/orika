@@ -183,7 +183,7 @@ public class CodeSourceBuilder {
         	if(sp.getType().getComponentType().isPrimitive())
         		newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
         	else 
-        		newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class);", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        		newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
         } else {
 	        newLine().append("%s.clear();", destinationGetter);
 	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
