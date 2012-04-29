@@ -3,7 +3,7 @@
 	<groupId>ma.glasnost.orika</groupId>
 	<artifactId>orika-parent</artifactId>
 	<name>Orika - parent</name>
-	<version>1.1.1</version>
+	<version>1.1.2-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<description>Orika parent project</description>
 	<url>http://code.google.com/p/orika</url>
@@ -46,9 +46,9 @@
 		</developer>
 	</developers>
 	<scm>
-		<url>https://orika.googlecode.com/svn/tags/orika-parent-1.1.1</url>
-		<connection>scm:svn:https://orika.googlecode.com/svn/tags/orika-parent-1.1.1</connection>
-		<developerConnection>scm:svn:https://orika.googlecode.com/svn/tags/orika-parent-1.1.1</developerConnection>
+		<url>https://orika.googlecode.com/svn/trunk</url>
+		<connection>scm:svn:https://orika.googlecode.com/svn/trunk</connection>
+		<developerConnection>scm:svn:https://orika.googlecode.com/svn/trunk</developerConnection>
 	</scm>
 
 	<properties>

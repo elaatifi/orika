@@ -3,7 +3,7 @@
     <parent>
         <artifactId>orika-parent</artifactId>
         <groupId>ma.glasnost.orika</groupId>
-        <version>1.1.1</version>
+        <version>1.1.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>orika-core</artifactId>
@@ -13,9 +13,9 @@
     <description>Fast Java bean mapper</description>
     <url>http://code.google.com/p/orika</url>
     <scm>
-        <url>https://orika.googlecode.com/svn/tags/orika-parent-1.1.1/trunk</url>
-        <developerConnection>scm:svn:https://orika.googlecode.com/svn/tags/orika-parent-1.1.1/orika-core</developerConnection>
-      <connection>scm:svn:https://orika.googlecode.com/svn/tags/orika-parent-1.1.1/orika-core</connection>
+        <url>https://orika.googlecode.com/svn/trunk</url>
+        <developerConnection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</developerConnection>
+      <connection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</connection>
   </scm>
     <organization>
         <name>Glasnost</name>
