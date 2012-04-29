@@ -109,12 +109,19 @@ public class CodeSourceBuilder {
     
     public CodeSourceBuilder convert(Property destination, Property source, String converterId) {
         
-        final String typeCastGetter = getGetter(source, "source");
+        String typeCastGetter = getGetter(source, "source");
         final String typeCastSetter = getSetter(destination, "destination");
         final String sourceType = getUsedType(source);
         final String targetType = getUsedType(destination);
         final Class<?> destinationClass = destination.getRawType();
         converterId = getConverterId(converterId);
+        
+        
+        if(source.isPrimitive()) {
+        	String sourceWrapperClassName = ClassUtil.getWrapperType(source.getRawType()).getCanonicalName();
+        	typeCastGetter = String.format("(%s) %s.valueOf(%s)", sourceWrapperClassName, sourceWrapperClassName, typeCastGetter);
+        }
+        
         
         String exprValue = String.format("mapperFacade.convert(%s, %s, %s, %s)", typeCastGetter, sourceType, targetType, converterId);
         
@@ -125,7 +132,16 @@ public class CodeSourceBuilder {
         
         String value = String.format("(%s) %s", destinationClass.getCanonicalName(), exprValue);
         
-        return newLine().ifSourceNotNull(source).then().append(String.format(typeCastSetter + ";", value)).newLine().end();
+        
+        
+        newLine();
+        if(!source.isPrimitive())
+        	ifSourceNotNull(source).then();
+        append(String.format(typeCastSetter + ";", value));
+        if(!source.isPrimitive())
+        	end();
+        
+        return this;
     }
     
     private String getConverterId(String converterId) {
