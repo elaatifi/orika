@@ -31,16 +31,48 @@ import ma.glasnost.orika.metadata.Type;
  */
 public interface Mapper<A, B> {
     
+    /**
+     * Maps the properties of an instance of type A to the properties
+     * of an instance of type B.
+     * 
+     * @param a the object from which to read the properties
+     * @param b the object onto which the properties should be mapped
+     * @param context
+     */
     void mapAtoB(A a, B b, MappingContext context);
     
+    /**
+     * Maps the properties of an instance of type B to the properties
+     * of an instance of type A.
+     * 
+     * @param b the object from which to read the properties
+     * @param a the object onto which the properties should be mapped
+     * @param context
+     */
     void mapBtoA(B b, A a, MappingContext context);
     
+    /**
+     * Store an instance of the current MapperFacade which may be used 
+     * in mapping of nested types.
+     * 
+     * @param mapper
+     */
     void setMapperFacade(MapperFacade mapper);
     
+    /**
+     * Store the set of custom mappers used by this mapper.
+     * @param mapper
+     */
     void setUsedMappers(Mapper<Object, Object>[] mapper);
     
+    /**
+     * @return the 'A' type for this mapper
+     */
     Type<A> getAType();
     
+    /**
+     * @return the 'B' type for this mapper
+     */
     Type<B> getBType();
     
 }
