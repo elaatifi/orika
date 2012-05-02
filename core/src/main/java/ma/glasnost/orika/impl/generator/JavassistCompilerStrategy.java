@@ -22,8 +22,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URL;
+import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.CannotCompileException;
 import javassist.ClassClassPath;
@@ -52,6 +54,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     private static final String WRITE_CLASS_FILES_BY_DEFAULT = "false";
     
     private final static Logger LOG = LoggerFactory.getLogger(JavassistCompilerStrategy.class);
+    private final static Map<Class<?>, Boolean> superClasses = new ConcurrentHashMap<Class<?>,Boolean>(3);
     
     private ClassPool classPool;
     
@@ -184,11 +187,14 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
         try {
         	writeSourceFile(sourceCode);
         	
+        	// TODO: do we really need this check here?
             assureTypeIsAccessible(this.getClass());
             
-            if (classPool.find(sourceCode.getSuperClass().getCanonicalName()) == null) {
+            Boolean existing = superClasses.put(sourceCode.getSuperClass(), true);
+            if (existing==null || !existing) {
                 classPool.insertClassPath(new ClassClassPath(sourceCode.getSuperClass()));
             }
+            
             if (registerClassLoader(Thread.currentThread().getContextClassLoader())) {
             	classPool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
             }

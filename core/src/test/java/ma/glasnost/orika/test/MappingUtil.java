@@ -19,7 +19,6 @@
 package ma.glasnost.orika.test;
 
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
 
@@ -33,10 +32,16 @@ public abstract class MappingUtil {
     }
     
     /**
-     * Utility method specifying that EclipseJdtCompilerStrategy (with written source and class files) should
-     * be used for mapping
+     * @return a new default instance of MapperFactory, with the specified debug
+     * mode configuration.
+     * @param debugMode if true, EclipseJdt will be used for the compiler
+     * strategy (for step-debugging in IDEs), and class and source files will be written to disk.
      */
-    public static void useEclipseJdt() {
-        System.setProperty(OrikaSystemProperties.COMPILER_STRATEGY, EclipseJdtCompilerStrategy.class.getCanonicalName());
+    public static MapperFactory getMapperFactory(boolean debugMode) {
+        if (debugMode) {
+            return new DefaultMapperFactory.Builder().compilerStrategy(new EclipseJdtCompilerStrategy()).build();
+        } else {
+            return getMapperFactory();
+        }
     }
 }

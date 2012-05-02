@@ -54,19 +54,10 @@ public class PublicFieldMappingTestCase {
         return book;
     }
     
-//    private Library createLibrary(Class<? extends Library> type) throws InstantiationException, IllegalAccessException {
-//        Library lib = type.newInstance();
-//        lib.setTitle("Test Library");
-//        
-//        return lib;
-//    }
-    
     @Test
     public void testMappingInterfaceImplementationNoExistingMapping() throws Exception {
         
-        MappingUtil.useEclipseJdt();
-        
-        
+      
         DefaultFieldMapper myHint =
                 /**
                  * This sample hint converts "myProperty" to "property", and vis-versa.

@@ -5,9 +5,10 @@ import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 
+import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.MappingHint;
+import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
@@ -125,13 +126,13 @@ public class ClassLoaderLeakageTestCase {
 		SoftReference<ClassLoader> childLoaderRef = null;
 		
 		MapperFactory factory = MappingUtil.getMapperFactory();
-		MappingHint myHint = 
+		DefaultFieldMapper fieldDefault = 
 			/**
 			 * This sample hint converts "myProperty" to "property", and vis-versa.
 			 */
-			new MappingHint() {
+			new DefaultFieldMapper() {
 
-				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+				public String suggestMappedField(String fromProperty, Type<?> fromPropertyType) {
 					if (fromProperty.startsWith("my")) {
 						return fromProperty.substring(2, 3).toLowerCase() + fromProperty.substring(3);
 					} else {
@@ -140,8 +141,7 @@ public class ClassLoaderLeakageTestCase {
 				}
 				
 			};
-		factory.registerMappingHint(myHint);
-		factory.build();
+		factory.registerDefaultFieldMapper(fieldDefault);
 		
 		MapperFacade mapper = factory.getMapperFacade();
 		LibraryMyDTO mappedLib;

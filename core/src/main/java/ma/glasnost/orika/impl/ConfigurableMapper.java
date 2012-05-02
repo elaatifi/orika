@@ -1,0 +1,292 @@
+package ma.glasnost.orika.impl;
+
+import java.util.List;
+import java.util.Set;
+
+import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.metadata.Type;
+
+/**
+ * ConfigurableMapper is a convenience type which provides a 
+ * simplification for reuse of a particular Orika mapping configuration in 
+ * a given context.<br><br>
+ * 
+ * It can be especially useful in a Spring context where you'd like initialize
+ * Orika with particular configuration(s) at startup and reuse the MapperFacade.<br>
+ * Simply wire your own extension of ConfigurableMapper containing your own 
+ * configurations and use it as you would the MapperFacade you'd normally 
+ * retrieve from MapperFactory.
+ * <br><br>
+ * 
+ * ConfigurableMapper should be extended, overriding the {@link #configure(MapperFactory)}
+ * method to provide the necessary initializations and customizations desired.<br><br>
+ * 
+ * Additionally, if customizations are needed to the DefaultMapperFactory builder (used by
+ * ConfigurableMapper), the {@link #configureFactoryBuilder(ma.glasnost.orika.impl.DefaultMapperFactory.Builder)}
+ * method may be overridden to apply custom parameters to the builder used to obtain the MapperFactory.<br><br>
+ * For example:
+ * <pre>
+ * public class MyCustomMapper extends ConfigurableMapper {
+ * 
+ *    protected void configure(MapperFactory factory) {
+ *       
+ *       factory.registerClassMapping(...);
+ *       
+ *       factory.getConverterFactory().registerConverter(...);
+ *       
+ *       factory.registerDefaultMappingHint(...);
+ *     
+ *    }
+ * }
+ * 
+ * ...
+ * 
+ * public class SomeOtherClass {
+ * 
+ *    private MapperFacade mapper = new MyCustomMapper();
+ * 
+ *    void someMethod() {
+ *       
+ *       mapper.map(blah, Blah.class);
+ *       ...
+ *    }
+ *    ...
+ * }
+ * </pre>
+ * 
+ * 
+ * @author matt.deboer@gmail.com
+ *
+ */
+public class ConfigurableMapper implements MapperFacade {
+    
+    private final MapperFacade facade;
+    
+    protected ConfigurableMapper() {
+        
+        DefaultMapperFactory.Builder factoryBuilder = new DefaultMapperFactory.Builder();
+        /*
+         * Apply optional user customizations to the factory builder
+         */
+        configureFactoryBuilder(factoryBuilder);
+        
+        MapperFactory factory = factoryBuilder.build();
+        
+        /*
+         * Apply customizations/configurations
+         */
+        configure(factory);
+        
+        facade = factory.getMapperFacade();
+    }
+   
+    /**
+     * Implement this method to provide your own configurations to
+     * the Orika MapperFactory used by this mapper.
+     * 
+     * @param factory the MapperFactory instance which may be used to
+     * register various configurations, mappings, etc.
+     */
+    protected void configure(MapperFactory factory) {
+        /*
+         * No-Op; customize as needed
+         */
+    }
+
+    
+    /**
+     * Override this method only if you need to customize any of the parameters
+     * passed to the factory builder, in the case that you've provided your
+     * own custom implementation of one of the core components of Orika.
+     * 
+     * @param factoryBuilder the builder which will be used to obtain a MapperFactory instance
+     */
+    protected void configureFactoryBuilder(DefaultMapperFactory.Builder factoryBuilder) {
+        /*
+         * No-Op; customize as needed
+         */
+    }
+
+    /**
+     * Delegate methods for MapperFacade;
+     */
+    
+    public <S, D> D map(S sourceObject, Class<D> destinationClass) {
+        return facade.map(sourceObject, destinationClass);
+    }
+
+
+    public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
+        return facade.map(sourceObject, destinationClass, context);
+    }
+
+
+    public <S, D> void map(S sourceObject, D destinationObject) {
+        facade.map(sourceObject, destinationObject);
+    }
+
+
+    public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
+        facade.map(sourceObject, destinationObject, context);
+    }
+
+
+    public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType) {
+        facade.map(sourceObject, destinationObject, sourceType, destinationType);
+    }
+
+
+    public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        facade.map(sourceObject, destinationObject, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass) {
+        return facade.mapAsSet(source, destinationClass);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+        return facade.mapAsSet(source, destinationClass, context);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass) {
+        return facade.mapAsSet(source, destinationClass);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass, MappingContext context) {
+        return facade.mapAsSet(source, destinationClass, context);
+    }
+
+
+    public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass) {
+        return facade.mapAsList(source, destinationClass);
+    }
+
+
+    public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+        return facade.mapAsList(source, destinationClass, context);
+    }
+
+
+    public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass) {
+        return facade.mapAsList(source, destinationClass);
+    }
+
+
+    public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context) {
+        return facade.mapAsList(source, destinationClass, context);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass) {
+        return facade.mapAsArray(destination, source, destinationClass);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass) {
+        return facade.mapAsArray(destination, source, destinationClass);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+        return facade.mapAsArray(destination, source, destinationClass, context);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context) {
+        return facade.mapAsArray(destination, source, destinationClass, context);
+    }
+
+
+    public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType) {
+        return facade.map(sourceObject, sourceType, destinationType);
+    }
+
+
+    public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.map(sourceObject, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
+        return facade.mapAsSet(source, sourceType, destinationType);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.mapAsSet(source, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType) {
+        return facade.mapAsSet(source, sourceType, destinationType);
+    }
+
+
+    public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.mapAsSet(source, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
+        return facade.mapAsList(source, sourceType, destinationType);
+    }
+
+
+    public <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.mapAsList(source, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType) {
+        return facade.mapAsList(source, sourceType, destinationType);
+    }
+
+
+    public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.mapAsList(source, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
+        return facade.mapAsArray(destination, source, sourceType, destinationType);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType) {
+        return facade.mapAsArray(destination, source, sourceType, destinationType);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.mapAsArray(destination, source, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        return facade.mapAsArray(destination, source, sourceType, destinationType, context);
+    }
+
+
+    public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
+        return facade.convert(source, sourceType, destinationType, converterId);
+    }
+
+
+    public <S, D> D convert(S source, Class<D> destinationClass, String converterId) {
+        return facade.convert(source, destinationClass, converterId);
+    }
+
+
+    public <S, D> D newObject(S source, Type<? extends D> destinationClass, MappingContext context) {
+        return facade.newObject(source, destinationClass, context);
+    }
+     
+    
+    
+}

@@ -25,9 +25,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /**
  * Uses Eclipse JDT to format and compile the source for the specified
  * GeneratedSourceCode objects.<br><br>
@@ -38,8 +35,6 @@ import org.slf4j.LoggerFactory;
  * @author matt.deboer@gmail.com
  */
 public class EclipseJdtCompilerStrategy extends CompilerStrategy {
-
-    private final static Logger LOG = LoggerFactory.getLogger(EclipseJdtCompilerStrategy.class);
 
     private static final String WRITE_SOURCE_FILES_BY_DEFAULT = "true";
     private static final String WRITE_CLASS_FILES_BY_DEFAULT = "false";
@@ -135,11 +130,11 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
         try {
             return (byte[])compile.invoke(compiler, source, packageName, classSimpleName);
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw classCompilationException(e, packageName, classSimpleName, source); 
         } catch (IllegalArgumentException e) {
-            throw new RuntimeException(e);
+            throw classCompilationException(e, packageName, classSimpleName, source); 
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e.getTargetException()); 
+            throw classCompilationException(e.getTargetException(), packageName, classSimpleName, source); 
         }
     }
     
@@ -157,6 +152,11 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
                 throw new RuntimeException(e.getTargetException());
             }
         }
+    }
+    
+    private RuntimeException classCompilationException(Throwable cause, String packageName, String classSimpleName, String source) {
+        
+        return new RuntimeException("Error compiling " + packageName + "." + classSimpleName + ":\n\n" + source + "\n", cause);
     }
     
     /**
