@@ -11,7 +11,6 @@ import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingHint;
-import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.converter.builtin.DateToStringConverter;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -41,19 +40,12 @@ import ma.glasnost.orika.test.constructor.TestCaseClasses.PrimitiveNumberHolder;
 import ma.glasnost.orika.test.constructor.TestCaseClasses.WrapperHolder;
 
 import org.apache.commons.collections.list.TreeList;
-import org.junit.Before;
 import org.junit.Test;
 
 public class ConstructorMappingTestCase {
     
     private static final String DATE_CONVERTER = "dateConverter";
     private static final String DATE_PATTERN = "dd/MM/yyyy";
-    
-    @Before
-    public void setUp() {
-    	System.setProperty(OrikaSystemProperties.WRITE_CLASS_FILES, "true");
-    	System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, "true");
-    }
     
     @Test
     public void testSimpleCase() throws Throwable {

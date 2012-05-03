@@ -40,11 +40,6 @@ import org.junit.Test;
 
 public class DefaultMappingHintTestCase {
     
-    @Before
-    public void setUp() {
-        System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, "true");
-    }
-    
     private Author createAuthor(Class<? extends AuthorParent> type) throws InstantiationException, IllegalAccessException {
         AuthorParent author = type.newInstance();
         author.setName("Khalil Gebran");
