@@ -24,13 +24,13 @@ public interface ConverterFactory {
     
     /**
      * Lookup for an anonymous converter that can handle the conversion between
-     * this two types
+     * these two types
      * 
-     * @param sourceClass
-     * @param destinationClass
+     * @param sourceType
+     * @param destinationType
      * @return converter
      */
-    Converter<Object, Object> getConverter(Type<?> sourceClass, Type<?> destinationClass);
+    Converter<Object, Object> getConverter(Type<?> sourceType, Type<?> destinationType);
     
     /**
      * Lookup a converter by id
@@ -85,13 +85,13 @@ public interface ConverterFactory {
     boolean hasConverter(String converterId);
     
     /**
-     * Verify if there is an anonymous converter can handle the conversion
+     * Verify if there is an anonymous converter that can handle the conversion
      * between two types
      * 
-     * @param sourceClass
-     * @param destinationClass
+     * @param sourceType
+     * @param destinationType
      * @return true / false
      */
-    boolean canConvert(Type<?> sourceClass, Type<?> destinationClass);
+    boolean canConvert(Type<?> sourceType, Type<?> destinationType);
     
 }

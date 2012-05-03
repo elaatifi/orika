@@ -49,7 +49,7 @@ public abstract class CustomConverter<S, D> implements ma.glasnost.orika.Convert
         }
     }
     
-    public boolean canConvert(Type<?> sourceClass, Type<?> destinationClass) {
-        return this.sourceType.equals(sourceClass) && this.destinationType.equals(destinationClass);
+    public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
+        return this.sourceType.isAssignableFrom(sourceType) && this.destinationType.equals(destinationType);
     }
 }

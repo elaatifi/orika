@@ -22,17 +22,17 @@ import java.lang.reflect.Type;
 
 public class ConverterKey {
     
-    private final Type sourceClass;
-    private final Type destinationClass;
+    private final Type sourceType;
+    private final Type destinationType;
     private final String id;
     
-    public ConverterKey(Type sourceClass, Type destinationClass) {
+    public ConverterKey(Type sourceType, Type destinationType) {
         
-        assert sourceClass != null;
-        assert destinationClass != null;
+        assert sourceType != null;
+        assert destinationType != null;
         
-        this.sourceClass = sourceClass;
-        this.destinationClass = destinationClass;
+        this.sourceType = sourceType;
+        this.destinationType = destinationType;
         this.id = null;
     }
     
@@ -41,16 +41,16 @@ public class ConverterKey {
         
         this.id = id;
         
-        this.sourceClass = null;
-        this.destinationClass = null;
+        this.sourceType = null;
+        this.destinationType = null;
     }
     
     public Type getSourceClass() {
-        return sourceClass;
+        return sourceType;
     }
     
     public Type getDestinationClass() {
-        return destinationClass;
+        return destinationType;
     }
     
     @Override
@@ -59,8 +59,8 @@ public class ConverterKey {
         int result = 1;
         
         if (id == null) {
-            result = prime * result + destinationClass.hashCode();
-            result = prime * result + sourceClass.hashCode();
+            result = prime * result + destinationType.hashCode();
+            result = prime * result + sourceType.hashCode();
         } else {
             result = prime * result + id.hashCode();
         }
@@ -80,7 +80,7 @@ public class ConverterKey {
         if (id != null) {
             return id.equals(other.id);
         } else {
-            return destinationClass.equals(other.destinationClass) && sourceClass.equals(other.sourceClass);
+            return destinationType.equals(other.destinationType) && sourceType.equals(other.sourceType);
         }
     }
     

@@ -56,26 +56,26 @@ public class DefaultConverterFactory implements ConverterFactory {
      * ma.glasnost.orika.converter.ConverterFactory#canConvert(java.lang.Class,
      * java.lang.Class)
      */
-    public boolean canConvert(Type<?> sourceClass, Type<?> destinationClass) {
-        boolean canConvert = _canConverter(sourceClass, destinationClass);
+    public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
+        boolean canConvert = _canConvert(sourceType, destinationType);
         if (canConvert)
             return true;
         
-        // Maybe the converter is registred with wrapper type and meant to be
+        // Maybe the converter is registered with wrapper type and meant to be
         // used
         // for primitive one (source or destination)
         // source
-        if (sourceClass.isPrimitive()) {
-            sourceClass = TypeFactory.valueOf(ClassUtil.getWrapperType(sourceClass.getRawType()));
-            canConvert = _canConverter(sourceClass, destinationClass);
+        if (sourceType.isPrimitive()) {
+            sourceType = TypeFactory.valueOf(ClassUtil.getWrapperType(sourceType.getRawType()));
+            canConvert = _canConvert(sourceType, destinationType);
         }
         if (canConvert)
             return true;
         
         // Destination
-        if (destinationClass.isPrimitive()) {
-            destinationClass = TypeFactory.valueOf(ClassUtil.getWrapperType(destinationClass.getRawType()));
-            canConvert = _canConverter(sourceClass, destinationClass);
+        if (destinationType.isPrimitive()) {
+            destinationType = TypeFactory.valueOf(ClassUtil.getWrapperType(destinationType.getRawType()));
+            canConvert = _canConvert(sourceType, destinationType);
         }
         if (canConvert)
             return true;
@@ -84,17 +84,18 @@ public class DefaultConverterFactory implements ConverterFactory {
     }
     
     @SuppressWarnings("unchecked")
-    private boolean _canConverter(Type<?> sourceClass, Type<?> destinationClass) {
+    private boolean _canConvert(Type<?> sourceType, Type<?> destinationType) {
         boolean canConvert = false;
-        ConverterKey key = new ConverterKey(sourceClass, destinationClass);
+        ConverterKey key = new ConverterKey(sourceType, destinationType);
         if (converterCache.containsKey(key)) {
             return true;
         }
         for (@SuppressWarnings("rawtypes")
         Converter converter : converters) {
-            if (converter.canConvert(sourceClass, destinationClass)) {
+            if (converter.canConvert(sourceType, destinationType)) {
                 converterCache.cache(key, converter);
                 canConvert = true;
+                // TODO: can't we break here?
             }
         }
         return canConvert;

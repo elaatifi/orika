@@ -62,6 +62,8 @@ public final class Type<T> implements ParameterizedType {
 			resolvedType = TypeFactory.resolveValueOf((ParameterizedType)ancestor, this);
 		} else if (ancestor instanceof Class) {
 			resolvedType = TypeFactory.valueOf((Class<?>)ancestor);
+		} else if (ancestor == null){
+		    resolvedType = TypeFactory.TYPE_OF_OBJECT;
 		} else {
 			throw new IllegalStateException("super-type of " + this.toString() + 
 					" is neither Class, nor ParameterizedType, but " + ancestor);

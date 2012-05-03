@@ -51,7 +51,7 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    private <S> Type<S> normalizeSourceType(S sourceObject, Type<S> sourceType) {
+    private <S, D> Type<S> normalizeSourceType(S sourceObject, Type<S> sourceType, Type<D> destinationType) {
         
         /*
          * Use the raw type in cases where the sourceType is null or not
@@ -66,14 +66,28 @@ public class MapperFacadeImpl implements MapperFacade {
         if (resolvedType == null) {
             Type<?> newlyResolvedType;
             if (sourceType != null) {
-                if (sourceType.isAssignableFrom(sourceObject.getClass())) {
-                    sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
-                }
-                if (ClassUtil.isConcrete(sourceType)) {
-                    newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
+                if (destinationType != null &&
+                        (canCopyByReference(destinationType, sourceType)
+                        || canConvert(sourceType, destinationType))) {
+                    /*
+                     * We shouldn't bother further resolving the source type
+                     * if we already have a converter or copy-by-reference
+                     * for the originally specified type -- since these operations
+                     * override the use of a custom mapper which needs the resolution.
+                     */
+                    newlyResolvedType = sourceType;
                 } else {
-                    newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.resolveTypeOf(sourceObject, sourceType));
+                
+                    if (sourceType.isAssignableFrom(sourceObject.getClass())) {
+                        sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
+                    }
+                    if (ClassUtil.isConcrete(sourceType)) {
+                        newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
+                    } else {
+                        newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.resolveTypeOf(sourceObject, sourceType));
+                    }
                 }
+                
                 resolvedType = resolvedTypes.putIfAbsent(typeKey, newlyResolvedType);
                 if (resolvedType == null) {
                     resolvedType = newlyResolvedType;
@@ -104,7 +118,7 @@ public class MapperFacadeImpl implements MapperFacade {
             return result;
         }
         
-        final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType);
+        final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
         sourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
         
         // We can copy by reference when source and destination types are the
@@ -155,7 +169,7 @@ public class MapperFacadeImpl implements MapperFacade {
             throw new MappingException("[sourceObject] can not be null.");
         }
         
-        final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject));
+        final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), null);
         final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);
         
         final Mapper<Object, Object> mapper = prepareMapper(theSourceType, theDestinationType);
@@ -307,7 +321,7 @@ public class MapperFacadeImpl implements MapperFacade {
     
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
-        final Type<? extends Object> sourceClass = unenhanceStrategy.unenhanceType(source, sourceType);
+        final Type<? extends Object> sourceClass = normalizeSourceType(source, sourceType, destinationType);
         Converter<S, D> converter;
         ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (converterId == null) {

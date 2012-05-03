@@ -101,6 +101,9 @@ public class DefaultMapperFactory implements MapperFactory {
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.aToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
+        // TODO: note that this map is now always empty because the ConverterFactory
+        // now contains all mapped converters; thus it should be removed -- but that
+        // also means that super-type resolution is ignoring converters (which is a problem)
         this.mappedConverters = new ConcurrentHashMap<Type<?>, Type<?>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
