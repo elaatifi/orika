@@ -81,4 +81,10 @@ public final class OrikaSystemProperties {
      */
     public static final String CONVERTER_FACTORY = "ma.glasnost.orika.converterFactory";
     
+    /**
+     * Specifies that the new mapping strategy cache should be used to cache mapping strategies;<br><br>
+     * default value is <code>false</code>
+     */
+    public static final String USE_STRATEGY_CACHE = "ma.glasnost.orika.useStrategyCache";
+    
 }

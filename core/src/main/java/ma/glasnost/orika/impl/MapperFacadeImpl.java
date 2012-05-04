@@ -33,6 +33,7 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategyKey;
@@ -50,10 +51,12 @@ public class MapperFacadeImpl implements MapperFacade {
     private final UnenhanceStrategy unenhanceStrategy;
     private final ConcurrentHashMap<java.lang.reflect.Type, Type<?>> resolvedTypes = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
     private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(500);
+    private final boolean useStrategyCache;
     
     public MapperFacadeImpl(MapperFactory mapperFactory, UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
         this.unenhanceStrategy = unenhanceStrategy;
+        this.useStrategyCache = Boolean.valueOf(System.getProperty(OrikaSystemProperties.USE_STRATEGY_CACHE, "false"));
     }
     
     @SuppressWarnings("unchecked")
@@ -134,74 +137,94 @@ public class MapperFacadeImpl implements MapperFacade {
          * a new key every time we perform a lookup; this approach relies on the assumption
          * that resolving the thread local is faster than instantiating a new strategy key
          */
-        MappingStrategyKey key = MappingStrategyKey.getCurrent();
-        key.initialize(sourceObject.getClass(), sourceType, destinationType);
+        MappingStrategyKey key = null;
+        if (useStrategyCache) {
+            key = MappingStrategyKey.getCurrent();
+            key.initialize(sourceObject.getClass(), sourceType, destinationType);
+            
+            MappingStrategy strategy = strategyCache.get(key);
+            if (strategy != null) {
+                @SuppressWarnings("unchecked")
+                D result = (D)strategy.map(sourceObject, null, context);
+                return result;
+            } 
+        }
         
-        MappingStrategy strategy = strategyCache.get(key);
-        if (strategy != null) {
-            @SuppressWarnings("unchecked")
-            D result = (D)strategy.map(sourceObject, null, context);
-            return result;
-        } else {
+        MappingStrategyRecorder strategyRecorder = null;
+        final Object originalSourceObject = sourceObject;
+        if (useStrategyCache) {
             /*
              * Convert the current key to an immutable copy (and clear it) so that other 
              * lookups on the same thread can use it
              */
             key = key.toImmutableCopy();
-            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(unenhanceStrategy);
-            final Object originalSourceObject = sourceObject;
-            
-            final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
-            sourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
-            
+            strategyRecorder = new MappingStrategyRecorder(unenhanceStrategy);
+        }
+        
+        final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
+        sourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
+        
+        if (useStrategyCache) {
             strategyRecorder.setResolvedSourceType(resolvedSourceType);
             strategyRecorder.setResolvedDestinationType(destinationType);
             if (originalSourceObject != sourceObject) {
                 strategyRecorder.setUnenhance(true);
             }
-            
-            // We can copy by reference when source and destination types are the
-            // same and immutable.
-            if (canCopyByReference(destinationType, resolvedSourceType)) {
+        }
+        
+        // We can copy by reference when source and destination types are the
+        // same and immutable.
+        if (canCopyByReference(destinationType, resolvedSourceType)) {
+            if (useStrategyCache) {
                 strategyRecorder.setCopyByReference(true);
                 strategyCache.put(key, strategyRecorder.playback());
-                @SuppressWarnings("unchecked")
-                D result = (D) sourceObject;
-                return result;
             }
-            
-            // Check if we have a converter
-            if (canConvert(resolvedSourceType, destinationType)) {
+            @SuppressWarnings("unchecked")
+            D result = (D) sourceObject;
+            return result;
+        }
+        
+        // Check if we have a converter
+        if (canConvert(resolvedSourceType, destinationType)) {
+            if (useStrategyCache) {
                 strategyRecorder.setResolvedConverter(mapperFactory.getConverterFactory().getConverter(resolvedSourceType, destinationType));
                 strategyCache.put(key, strategyRecorder.playback());
-                return convert(sourceObject, sourceType, destinationType, null);
             }
-            
-            Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
-                    context);
-            if (resolvedDestinationType == null) {
-                if (!ClassUtil.isConcrete(destinationType)) {
-                    throw new MappingException("No concrete class mapping defined for source class " + resolvedSourceType.getName());
-                } else {
-                    resolvedDestinationType = destinationType;
-                }
-            }
-            strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
-            
-            final Mapper<Object, Object> mapper = prepareMapper(resolvedSourceType, resolvedDestinationType);
-            
-            strategyRecorder.setResolvedMapper(mapper);
-            
-            final D destinationObject = newObject(sourceObject, resolvedDestinationType, context, strategyRecorder);
-            
-            context.cacheMappedObject(sourceObject, destinationType, destinationObject);
-            
-            mapDeclaredProperties(sourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper, strategyRecorder);
-            
-            strategyCache.put(key, strategyRecorder.playback());
-            
-            return destinationObject;
+            return convert(sourceObject, sourceType, destinationType, null);
         }
+        
+        Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
+                context);
+        if (resolvedDestinationType == null) {
+            if (!ClassUtil.isConcrete(destinationType)) {
+                throw new MappingException("No concrete class mapping defined for source class " + resolvedSourceType.getName());
+            } else {
+                resolvedDestinationType = destinationType;
+            }
+        }
+        
+        if (useStrategyCache) {
+            strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
+        }
+        
+        final Mapper<Object, Object> mapper = prepareMapper(resolvedSourceType, resolvedDestinationType);
+        
+        if (useStrategyCache) {
+            strategyRecorder.setResolvedMapper(mapper);
+        }
+        
+        final D destinationObject = newObject(sourceObject, resolvedDestinationType, context, strategyRecorder);
+        
+        context.cacheMappedObject(sourceObject, destinationType, destinationObject);
+        
+        mapDeclaredProperties(sourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper, strategyRecorder);
+        
+        if (useStrategyCache) {
+            strategyCache.put(key, strategyRecorder.playback());
+        }
+        
+        return destinationObject;
+        
     }
     
     private <D, S> boolean canCopyByReference(Type<D> destinationType, final Type<S> resolvedSourceType) {
@@ -346,12 +369,14 @@ public class MapperFacadeImpl implements MapperFacade {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().equals(destinationType)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
-            strategyBuilder.setMapReverse(true);
+            if (strategyBuilder != null)
+                strategyBuilder.setMapReverse(true);
         } else if (mapper.getAType().isAssignableFrom(sourceClass)) {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().isAssignableFrom(destinationType)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
-            strategyBuilder.setMapReverse(true);
+            if (strategyBuilder != null)
+                strategyBuilder.setMapReverse(true);
         } else {
             throw new IllegalStateException(String.format("Source object type's must be one of '%s' or '%s'.", mapper.getAType(),
                     mapper.getBType()));
