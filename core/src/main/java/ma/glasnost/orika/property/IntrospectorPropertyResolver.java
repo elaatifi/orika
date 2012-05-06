@@ -137,8 +137,13 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         }
                         
                         Property existing = properties.get(pd.getName());
-                        if (existing == null || existing.getType().isAssignableFrom(rawType)) {
+                        if (existing == null) {
                             properties.put(pd.getName(), property);
+                        } else if (existing.getType().isAssignableFrom(property.getType()) && !existing.getType().equals(property.getType())) {
+                            /*
+                             * The type has been refined by the generic information in a super-type
+                             */
+                            existing.setType(property.getType());
                         }
                         
                     } catch (final Throwable e) {
@@ -152,6 +157,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                     types.add(type.getSuperclass());
                 }
                 
+                @SuppressWarnings("unchecked")
                 List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                 types.addAll(interfaces);
             }

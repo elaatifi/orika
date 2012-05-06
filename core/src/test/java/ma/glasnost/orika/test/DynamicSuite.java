@@ -65,7 +65,7 @@ import org.junit.runners.model.TestClass;
  */
 public class DynamicSuite extends ParentRunner<Runner> {
     
-    private static final Pattern DEFAULT_TEST_CASE_PATTERN = Pattern.compile(".*TestCase.class");
+    private static final String DEFAULT_TEST_CASE_PATTERN = ".*TestCase.class";
     
     /**
      * The <code>TestCasePattern</code> annotation specifies the pattern from
@@ -119,17 +119,34 @@ public class DynamicSuite extends ParentRunner<Runner> {
     /**
      * Resolves the test classes that are matched by the specified test pattern.
      * 
-     * @param klass the root class which defines the DynamicSuite
+     * @param theClass the root class which defines the DynamicSuite; the <code>@TestCasePattern</code> annotation
+     * will be used to determine the pattern of test cases to include, and the root folder will be determined
+     * based on the root folder for the class-loader of <code>theClass</code>.
+     * @param 
      * @return
      */
-    private static List<Class<?>> findAllTestCases(Class<?> klass) {
+    public static List<Class<?>> findTestCases(Class<?> theClass) {
+        File classFolder = new File(theClass.getResource("/").getFile());
+        String testCaseRegex = getTestCasePattern(theClass);
+        
+        return findTestCases(classFolder, testCaseRegex);
+    }
+    
+    /**
+     * Resolves the test classes that are matched by the specified test pattern.
+     * 
+     * @param classFolder the root folder under which to search for test cases
+     * @param testCaseRegex the pattern to use when looking for test cases to include;
+     * send null to use the value annotated on the class designated by the class parameter.
+     * @return
+     */
+    public static List<Class<?>> findTestCases(File classFolder, String testCaseRegex) {
         try {
-            Pattern testCasePattern = getTestCasePattern(klass);
+            Pattern testCasePattern = Pattern.compile(testCaseRegex);
             
             ClassLoader tccl = Thread.currentThread().getContextClassLoader();
             List<Class<?>> testCases = new ArrayList<Class<?>>();
             
-            File classFolder = new File(klass.getResource("/").getFile());
             int classFolderPathLength = classFolder.getAbsolutePath().length();
             
             LinkedList<File> stack = new LinkedList<File>();
@@ -167,12 +184,12 @@ public class DynamicSuite extends ParentRunner<Runner> {
      * @param klass the class which defines the DynamicSuite
      * @return the compiled Pattern
      */
-    private static Pattern getTestCasePattern(Class<?> klass) {
+    private static String getTestCasePattern(Class<?> klass) {
         
-        Pattern pattern = DEFAULT_TEST_CASE_PATTERN;
+        String pattern = DEFAULT_TEST_CASE_PATTERN;
         TestCasePattern annotation = klass.getAnnotation(TestCasePattern.class);
         if (annotation != null) {
-            pattern = Pattern.compile(annotation.value());
+            pattern = annotation.value();
         }
         return pattern;
     }
@@ -184,7 +201,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
     private final String scenarioName;
     
     public DynamicSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
-        this(builder, klass, findAllTestCases(klass).toArray(new Class<?>[0]));
+        this(builder, klass, findTestCases(klass).toArray(new Class<?>[0]));
     }
     
     public DynamicSuite(RunnerBuilder builder, Class<?>[] classes) throws InitializationError {

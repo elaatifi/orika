@@ -19,10 +19,12 @@
 package ma.glasnost.orika.test.property;
 
 import java.math.BigDecimal;
+import java.util.Map;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.NestedProperty;
+import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 import ma.glasnost.orika.test.MappingUtil;
@@ -55,6 +57,14 @@ public class IntrospectorResolverTestCase {
 		//Assert.assertEquals(sc.totalCost.doubleValue(), dto.getTotalCost(), 0.01d);
 	}
 	
+	@Test
+	public void testOverridePropertyDefinition() {
+	    
+	    Map<String, Property> properties = propertyResolver.getProperties(PostalAddress.class);
+	    Property city = properties.get("city");
+	    
+	    Assert.assertNotNull(city.getSetter());
+	}
 	
 	public static class Point {
 		private int x, y;
@@ -166,9 +176,54 @@ public class IntrospectorResolverTestCase {
 		public void setTotalCost(double totalCost) {
         	this.totalCost = totalCost;
         }
-		
-	
-		
 	}
+	
+	public static interface Address {
+        public String getStreet();
+        public String getCity();
+        public String getSubnational();
+        public String getPostalCode();
+        public String getCountry();
+    }
+	
+	public static class PostalAddress implements Address {
+	    
+	    private String street;
+	    private String city;
+	    private String subnational;
+	    private String postalCode;
+	    private String country;
+        public String getStreet() {
+            return street;
+        }
+        public void setStreet(String street) {
+            this.street = street;
+        }
+        public String getCity() {
+            return city;
+        }
+        public void setCity(String city) {
+            this.city = city;
+        }
+        public String getSubnational() {
+            return subnational;
+        }
+        public void setSubnational(String subnational) {
+            this.subnational = subnational;
+        }
+        public String getPostalCode() {
+            return postalCode;
+        }
+        public void setPostalCode(String postalCode) {
+            this.postalCode = postalCode;
+        }
+        public String getCountry() {
+            return country;
+        }
+        public void setCountry(String country) {
+            this.country = country;
+        }
+	}
+	
 
 }
