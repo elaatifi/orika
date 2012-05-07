@@ -56,7 +56,7 @@ public class MapperFacadeImpl implements MapperFacade {
     public MapperFacadeImpl(MapperFactory mapperFactory, UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
         this.unenhanceStrategy = unenhanceStrategy;
-        this.useStrategyCache = Boolean.valueOf(System.getProperty(OrikaSystemProperties.USE_STRATEGY_CACHE, "false"));
+        this.useStrategyCache = Boolean.valueOf(System.getProperty(OrikaSystemProperties.USE_STRATEGY_CACHE, "true"));
     }
     
     @SuppressWarnings("unchecked")
