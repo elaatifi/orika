@@ -571,11 +571,6 @@ public class MapperFacadeImpl implements MapperFacade {
         List<D> destination = new ArrayList<D>(source.size());
         
         Type<MapEntry<Sk,Sv>> entryType = MapEntry.entryType(sourceType);
-//        if (sourceType != null) {
-//            entryType = sourceType.getNestedType(0);
-//        } else {
-//            entryType = TypeFactory.resolveValueOf(Set.class, sourceType).getNestedType(0);
-//        }
         
         return (List<D>) mapAsCollection(MapEntry.entrySet(source), entryType, destinationType, destination, context);
     }
@@ -600,9 +595,10 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
+       
+        Type<MapEntry<Sk,Sv>> entryType = MapEntry.entryType(sourceType);
         
-        Type<Entry<Sk,Sv>> entryType = TypeFactory.resolveTypeOf(source.entrySet(), sourceType).getNestedType(0);
-        return mapAsArray(destination, source.entrySet(), entryType, destinationType, context);
+        return mapAsArray(destination, MapEntry.entrySet(source), entryType, destinationType, context);
     }
     
 }

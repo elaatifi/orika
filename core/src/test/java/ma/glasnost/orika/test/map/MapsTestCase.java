@@ -226,5 +226,29 @@ public class MapsTestCase {
      * 
      * we iterate over the entry set, and map each entry to an array element
      */
+    @Test
+    public void testMapToArray_Simple() {
+        
+        Map<String, Integer> source = new HashMap<String, Integer>();
+        source.put("A", 1);
+        source.put("B", 2);
+        source.put("C", 3);
+        
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        factory.registerClassMap(ClassMapBuilder.map(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
+                .field("name", "key")
+                .field("rank", "value")
+                .byDefault().toClassMap());
+                
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Ranking[] result = mapper.mapAsArray(new Ranking[source.size()], source, new TypeBuilder<Map<String, Integer>>(){}.build(), TypeFactory.valueOf(Ranking.class));
+        
+        Assert.assertNotNull(result);
+        
+        for (Ranking ranking: result) {
+            Assert.assertTrue(source.get(ranking.getName()).equals(ranking.getRank()));
+        }
+    }
     
 }
