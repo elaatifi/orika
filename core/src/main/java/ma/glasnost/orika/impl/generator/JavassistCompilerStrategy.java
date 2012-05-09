@@ -36,6 +36,7 @@ import javassist.CtNewMethod;
 import javassist.LoaderClassPath;
 import javassist.NotFoundException;
 
+import org.eclipse.jdt.core.dom.Modifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,6 +142,22 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     public void assureTypeIsAccessible(Class<?> type) throws SourceCodeGenerationException {
         
         if (!type.isPrimitive() && type.getClassLoader() != null) {
+            
+            if (!Modifier.isPublic(type.getModifiers())) {
+                throw new SourceCodeGenerationException(type + " is not accessible");
+            } else if (type.isMemberClass()) {
+                /*
+                 * The type needs to be publicly accessible (including it's
+                 * enclosing classes if any)
+                 */
+                Class<?> currentType = type;
+                while (currentType != null) {
+                    if (!Modifier.isPublic(type.getModifiers())) {
+                        throw new SourceCodeGenerationException(type + " is not accessible");
+                    }
+                    currentType = currentType.getEnclosingClass();
+                }
+            }
             
             String resourceName = type.getName();
             if (type.isArray()) {
