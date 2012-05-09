@@ -20,13 +20,16 @@ package ma.glasnost.orika.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -41,6 +44,7 @@ import ma.glasnost.orika.impl.mapping.strategy.MappingStrategyRecorder;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 import ma.glasnost.orika.util.CacheLRULinkedHashMap;
@@ -496,6 +500,109 @@ public class MapperFacadeImpl implements MapperFacade {
     
     public <S, D> D convert(S source, Class<D> destinationClass, String converterId) {
         return convert(source, TypeFactory.typeOf(source), TypeFactory.valueOf(destinationClass), converterId);
+    }
+    
+    /*
+     * New mapping type: Map to Map
+     */
+    public <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType) {
+        return mapAsMap(source, sourceType, destinationType, new MappingContext());
+    }
+    
+    public <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType, MappingContext context) {
+        Map<Dk,Dv> destination = new HashMap<Dk,Dv>(source.size());
+        for (Entry<Sk,Sv> entry: source.entrySet()) {
+            Dk key = map(entry.getKey(), sourceType.<Sk>getNestedType(0), destinationType.<Dk>getNestedType(0), context);
+            Dv value = map(entry.getValue(), sourceType.<Sv>getNestedType(1), destinationType.<Dv>getNestedType(1), context);
+            destination.put(key, value);
+        }
+        return destination;
+    }
+    
+    
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
+        return mapAsMap(source, sourceType, destinationType, new MappingContext());
+    }
+    
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+        
+        Map<Dk,Dv> destination = new HashMap<Dk,Dv>();
+        
+        for (S element: source) {
+            Type<?> entryType = TypeFactory.valueOf(Map.Entry.class, destinationType.getNestedType(0), destinationType.getNestedType(1));
+            @SuppressWarnings("unchecked")
+            Map.Entry<Dk, Dv> entry = (Map.Entry<Dk, Dv>) map(element, sourceType, entryType, context);
+            destination.put(entry.getKey(), entry.getValue());
+        }
+        
+        return destination;
+    }
+    
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
+        return mapAsMap(source, sourceType, destinationType, new MappingContext());
+    }
+    
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+        
+        Map<Dk,Dv> destination = new HashMap<Dk,Dv>();
+        
+        for (S element: source) {
+            Type<MapEntry<Dk, Dv>> entryType = MapEntry.entryType(destinationType);
+            MapEntry<Dk, Dv> entry = (MapEntry<Dk, Dv>) map(element, sourceType, entryType, context);
+            destination.put(entry.getKey(), entry.getValue());
+        }
+        
+        return destination;
+    }
+    
+    
+    /*
+     * New mapping type: Map to List, Set or Array
+     */
+    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+        return mapAsList(source, sourceType, destinationType, new MappingContext());
+    }
+    
+    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
+        /*
+         * Use map as collection to map the entry set to a list;
+         * requires an existing mapping for Map.Entry to to type D.
+         */
+        List<D> destination = new ArrayList<D>(source.size());
+        
+        Type<MapEntry<Sk,Sv>> entryType = MapEntry.entryType(sourceType);
+//        if (sourceType != null) {
+//            entryType = sourceType.getNestedType(0);
+//        } else {
+//            entryType = TypeFactory.resolveValueOf(Set.class, sourceType).getNestedType(0);
+//        }
+        
+        return (List<D>) mapAsCollection(MapEntry.entrySet(source), entryType, destinationType, destination, context);
+    }
+    
+    
+    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+        return mapAsSet(source, sourceType, destinationType, new MappingContext());
+    }
+    
+    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
+        /*
+         * Use map as collection to map the entry set to a list;
+         * requires an existing mapping for Map.Entry to to type D.
+         */
+        Set<D> destination = new HashSet<D>(source.size());
+        Type<Entry<Sk,Sv>> entryType = TypeFactory.resolveTypeOf(source.entrySet(), sourceType).getNestedType(0);
+        return (Set<D>) mapAsCollection(source.entrySet(), entryType, destinationType, destination, context);
+    }
+    
+    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+        return mapAsArray(destination, source, sourceType, destinationType, new MappingContext());
+    }
+    
+    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
+        
+        Type<Entry<Sk,Sv>> entryType = TypeFactory.resolveTypeOf(source.entrySet(), sourceType).getNestedType(0);
+        return mapAsArray(destination, source.entrySet(), entryType, destinationType, context);
     }
     
 }

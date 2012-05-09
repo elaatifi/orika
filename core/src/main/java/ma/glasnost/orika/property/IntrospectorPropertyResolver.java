@@ -79,21 +79,21 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                     try {
                         
                         final Property property = new Property();
-                        
+                        final String capitalName = pd.getName().substring(0,1).toUpperCase() + pd.getName().substring(1);
                         Method readMethod;
                         if (pd.getReadMethod() == null && Boolean.class.equals(pd.getPropertyType())) {
                         	/*
                              * Special handling for Boolean "is" read method; not compliant with JavaBeans spec, but still very common
                              */
                         	try {
-                        		readMethod = type.getMethod("is" + pd.getName().substring(0,1).toUpperCase() + pd.getName().substring(1));
+                        		readMethod = type.getMethod("is" + capitalName);
                         	} catch (NoSuchMethodException e) {
                         		readMethod = null;
                         	}
                         } else {
                         	readMethod = pd.getReadMethod();
                         }
-                        final Method writeMethod = pd.getWriteMethod();
+                        Method writeMethod = pd.getWriteMethod();
                         
                         property.setExpression(pd.getName());
                         property.setName(pd.getName());
@@ -104,7 +104,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         }
                         if (writeMethod != null) {
                             property.setSetter(writeMethod.getName() + "(%s)");
-                        }
+                        } 
                         
                         if (readMethod == null && writeMethod == null) {
                             continue;
@@ -135,6 +135,19 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                              */
                             property.setType(TypeFactory.valueOf(rawType));
                         }
+                        
+                        if (writeMethod == null) {
+                            /*
+                             * Special handling for fluid APIs where setters return a value
+                             */
+                            try {
+                                writeMethod = type.getMethod("set" + capitalName, property.getType().getRawType());
+                                property.setSetter(writeMethod.getName() + "(%s)");
+                            } catch (NoSuchMethodException e) {
+                                writeMethod = null;
+                            }
+                        }
+
                         
                         Property existing = properties.get(pd.getName());
                         if (existing == null) {
@@ -190,6 +203,8 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                     property.setGetter(property.getName());
                     property.setSetter(property.getName() + " = %s");
                     properties.put(property.getName(), property);
+                } else if (existing.getSetter() == null) {
+                    existing.setSetter(property.getName() + " = %s");
                 }
             }
         }

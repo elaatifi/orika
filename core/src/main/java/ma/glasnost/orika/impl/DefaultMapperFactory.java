@@ -78,6 +78,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final UnenhanceStrategy unenhanceStrategy;
     private final ConverterFactory converterFactory;
     private final CompilerStrategy compilerStrategy;
+    private final Map<java.lang.reflect.Type, Type<?>> concreteTypeRegistry;
     private volatile boolean isBuilt = false;
     
     /**
@@ -110,7 +111,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
         this.unenhanceStrategy = buildUnenhanceStrategy(delegateStrategy, superTypeStrategy);
         this.mapperFacade = new MapperFacadeImpl(this, unenhanceStrategy);
-        
+        this.concreteTypeRegistry = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
         if (classMaps != null) {
             for (final ClassMap<?, ?> classMap : classMaps) {
                 registerClassMap(classMap);
@@ -321,6 +322,14 @@ public class DefaultMapperFactory implements MapperFactory {
         this.defaultFieldMappers.addAll(Arrays.asList(mappers));
     }
     
+    public void registerConcreteType(Type<?> abstractType, Type<?> concreteType) {
+        this.concreteTypeRegistry.put(abstractType, concreteType);
+    }
+    
+    public void registerConcreteType(Class<?> abstractType, Class<?> concreteType) {
+        this.concreteTypeRegistry.put(abstractType, TypeFactory.valueOf(concreteType));
+    }
+    
     @SuppressWarnings("unchecked")
     public <T> ObjectFactory<T> lookupObjectFactory(Type<T> targetType) {
         if (targetType == null) {
@@ -351,7 +360,7 @@ public class DefaultMapperFactory implements MapperFactory {
     
     @SuppressWarnings("unchecked")
     public <S, D> Type<? extends D> lookupConcreteDestinationType(Type<S> sourceType, Type<D> destinationType, MappingContext context) {
-        final Type<? extends D> concreteType = context.getConcreteClass(sourceType, destinationType);
+        Type<? extends D> concreteType = context.getConcreteClass(sourceType, destinationType);
         
         if (concreteType != null) {
             return concreteType;
@@ -365,6 +374,15 @@ public class DefaultMapperFactory implements MapperFactory {
         for (final Type<?> type : destinationSet) {
             if (destinationType.isAssignableFrom(type) && ClassUtil.isConcrete(type)) {
                 return (Type<? extends D>) type;
+            }
+        }
+        if (concreteType == null) {
+            concreteType = (Type<? extends D>) this.concreteTypeRegistry.get(destinationType);
+            if (concreteType == null) {
+                concreteType = (Type<? extends D>) this.concreteTypeRegistry.get(destinationType.getRawType());
+                if (concreteType != null) {
+                    concreteType = TypeFactory.resolveValueOf(concreteType.getRawType(), destinationType);
+                }
             }
         }
         

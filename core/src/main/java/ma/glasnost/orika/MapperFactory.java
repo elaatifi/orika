@@ -55,6 +55,10 @@ public interface MapperFactory {
     
     void registerDefaultFieldMapper(DefaultFieldMapper... fieldDefaults);
     
+    void registerConcreteType(Type<?> abstractType, Type<?> concreteType);
+    
+    void registerConcreteType(Class<?> abstractType, Class<?> concreteType);
+    
     Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey);
     
     <A, B> ClassMap<A, B> getClassMap(MapperKey mapperKey);

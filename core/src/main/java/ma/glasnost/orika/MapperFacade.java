@@ -19,6 +19,7 @@
 package ma.glasnost.orika;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.metadata.Type;
@@ -251,8 +252,44 @@ public interface MapperFacade {
     <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
     <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId);
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // New method signatures to support java.util.Map types
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    /*
+     * New mapping type: Map to Map
+     */
+    <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType);
     
+    <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType, MappingContext context);
+    
+    /*
+     * New mapping type: Iterable or Array to Map
+     */
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType);
+    
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context);
+    
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType);
+    
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context);
+    
+    /*
+     * New mapping type: Map to List, Set or Array
+     */
+    <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
+    
+    <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
+    
+    <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
+    
+    <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
+    
+    <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
+    
+    <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
+     
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     <S, D> D convert(S source, Class<D> destinationClass, String converterId);
     

@@ -19,6 +19,7 @@
 package ma.glasnost.orika.impl;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.MapperFacade;
@@ -79,7 +80,7 @@ import ma.glasnost.orika.metadata.Type;
  *
  */
 public class ConfigurableMapper implements MapperFacade {
-    
+
     private final MapperFacade facade;
     
     protected ConfigurableMapper() {
@@ -305,6 +306,59 @@ public class ConfigurableMapper implements MapperFacade {
         return facade.newObject(source, destinationClass, context);
     }
      
-    
+    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
+            Type<? extends Map<Dk, Dv>> destinationType) {
+        return facade.mapAsMap(source, sourceType, destinationType);
+    }
+
+    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
+            Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+        return facade.mapAsMap(source, sourceType, destinationType, context);
+    }
+
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
+        return facade.mapAsMap(source, sourceType, destinationType);
+    }
+
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
+            MappingContext context) {
+        return facade.mapAsMap(source, sourceType, destinationType, context);
+    }
+
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
+        return facade.mapAsMap(source, sourceType, destinationType);
+    }
+
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
+            MappingContext context) {
+        return facade.mapAsMap(source, sourceType, destinationType, context);
+    }
+
+    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+        return facade.mapAsList(source, sourceType, destinationType);
+    }
+
+    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
+            MappingContext context) {
+        return facade.mapAsList(source, sourceType, destinationType, context);
+    }
+
+    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+        return facade.mapAsSet(source, sourceType, destinationType);
+    }
+
+    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
+            MappingContext context) {
+        return facade.mapAsSet(source, sourceType, destinationType, context);
+    }
+
+    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+        return facade.mapAsArray(destination, source, sourceType, destinationType);
+    }
+
+    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
+            MappingContext context) {
+        return facade.mapAsArray(destination, source, sourceType, destinationType, context);
+    }
     
 }
