@@ -24,9 +24,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
@@ -44,7 +47,6 @@ import ma.glasnost.orika.impl.mapping.strategy.MappingStrategyRecorder;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
-import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 import ma.glasnost.orika.util.CacheLRULinkedHashMap;
@@ -56,6 +58,8 @@ public class MapperFacadeImpl implements MapperFacade {
     private final ConcurrentHashMap<java.lang.reflect.Type, Type<?>> resolvedTypes = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
     private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(500);
     private final boolean useStrategyCache;
+    
+    private final Logger log = LoggerFactory.getLogger(getClass());
     
     public MapperFacadeImpl(MapperFactory mapperFactory, UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
@@ -162,7 +166,7 @@ public class MapperFacadeImpl implements MapperFacade {
              * lookups on the same thread can use it
              */
             key = key.toImmutableCopy();
-            strategyRecorder = new MappingStrategyRecorder(unenhanceStrategy);
+            strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         }
         
         final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
@@ -182,6 +186,9 @@ public class MapperFacadeImpl implements MapperFacade {
             if (useStrategyCache) {
                 strategyRecorder.setCopyByReference(true);
                 strategyCache.put(key, strategyRecorder.playback());
+                if (log.isDebugEnabled()) {
+                    log.debug(strategyRecorder.describeDetails());
+                }
             }
             @SuppressWarnings("unchecked")
             D result = (D) sourceObject;
@@ -193,6 +200,9 @@ public class MapperFacadeImpl implements MapperFacade {
             if (useStrategyCache) {
                 strategyRecorder.setResolvedConverter(mapperFactory.getConverterFactory().getConverter(resolvedSourceType, destinationType));
                 strategyCache.put(key, strategyRecorder.playback());
+                if (log.isDebugEnabled()) {
+                    log.debug(strategyRecorder.describeDetails());
+                }
             }
             return convert(sourceObject, sourceType, destinationType, null);
         }
@@ -225,6 +235,9 @@ public class MapperFacadeImpl implements MapperFacade {
         
         if (useStrategyCache) {
             strategyCache.put(key, strategyRecorder.playback());
+            if (log.isDebugEnabled()) {
+                log.debug(strategyRecorder.describeDetails());
+            }
         }
         
         return destinationObject;
@@ -253,7 +266,7 @@ public class MapperFacadeImpl implements MapperFacade {
             strategy.map(sourceObject, destinationObject, context);
         } else {
             key = key.toImmutableCopy();
-            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(unenhanceStrategy);
+            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         
             final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), null);
             final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);

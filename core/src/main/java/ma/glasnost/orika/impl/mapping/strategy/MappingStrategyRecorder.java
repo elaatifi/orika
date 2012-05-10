@@ -36,7 +36,7 @@ import ma.glasnost.orika.unenhance.UnenhanceStrategy;
  *
  */
 public class MappingStrategyRecorder {
-    
+     
     private boolean copyByReference;
     private boolean mapReverse;
     private boolean unenhance;
@@ -46,11 +46,14 @@ public class MappingStrategyRecorder {
     private Converter<Object, Object> resolvedConverter;
     private Type<Object> resolvedSourceType;
     private Type<Object> resolvedDestinationType;
+    private MappingStrategy resolvedStrategy;
     
-    private UnenhanceStrategy unenhanceStrategy;
+    private final UnenhanceStrategy unenhanceStrategy;
+    private final MappingStrategyKey key;
     
-    public MappingStrategyRecorder(UnenhanceStrategy unenhanceStrategy) {
+    public MappingStrategyRecorder(MappingStrategyKey key, UnenhanceStrategy unenhanceStrategy) {
         this.unenhanceStrategy = unenhanceStrategy;
+        this.key = key;
     }
     
     public boolean isUnenhance() {
@@ -122,6 +125,7 @@ public class MappingStrategyRecorder {
     }
 
     public MappingStrategy playback() {
+       
         
         UnenhanceStrategy unenhanceStrategy; 
         if (unenhance) {
@@ -131,22 +135,54 @@ public class MappingStrategyRecorder {
         }
         
         if (copyByReference) {
-            return CopyByReferenceStrategy.getInstance();
+            resolvedStrategy = CopyByReferenceStrategy.getInstance();
         } else if (resolvedConverter != null) {
-            return new UseConverterStrategy(resolvedSourceType, resolvedDestinationType, resolvedConverter, unenhanceStrategy);
+            resolvedStrategy = new UseConverterStrategy(resolvedSourceType, resolvedDestinationType, resolvedConverter, unenhanceStrategy);
         } else if (resolvedObjectFactory != null) {
             if (mapReverse) {
-                return new InstantiateAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
+                resolvedStrategy = new InstantiateAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
             } else {
-                return new InstantiateAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
+                resolvedStrategy = new InstantiateAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
             }
         } else {
             if (mapReverse) {
-                return new InstantiateByDefaultAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
+                resolvedStrategy = new InstantiateByDefaultAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
             } else {
-                return new InstantiateByDefaultAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
+                resolvedStrategy = new InstantiateByDefaultAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
             }
         }
+        return resolvedStrategy;
+    }
+    
+    /**
+     * Describes the details of the strategy chosen for this particular set of inputs
+     * @param key
+     * @return
+     */
+    public String describeDetails() {
+        StringBuilder details = new StringBuilder();
+        details
+            .append("For inputs:")
+            .append("\nsourceObject: " + key.getRawSourceType().getCanonicalName())
+            .append("\nsourceType: " + key.getSourceType())
+            .append("\ndestinationType: " + key.getDestinationType())
+            .append("\nResolved strategy: " + resolvedStrategy.getClass().getSimpleName())
+            .append("\nresolvedSourceType: " + getResolvedSourceType())
+            .append("\nresolvedDestinationType: " + getResolvedDestinationType());
+        if (isCopyByReference()) {
+            details.append("\ncopyByReference?: true");
+        }
+        
+        if (getResolvedConverter() != null) {
+            details.append("\nresolvedConverter: " + getResolvedConverter());
+        }
+        
+        if (getResolvedMapper() != null) {
+            details.append("\nresolvedMapper: " + getResolvedMapper());
+            details.append("\nmapInverse?: " + mapReverse);
+        }
+        
+        return details.toString();
     }
     
     static class DefaultUnenhancer implements UnenhanceStrategy {
