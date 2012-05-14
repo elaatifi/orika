@@ -66,7 +66,8 @@ public final class MapperGenerator {
             compilerStrategy.assureTypeIsAccessible(classMap.getAType().getRawType());
             compilerStrategy.assureTypeIsAccessible(classMap.getBType().getRawType());
             
-            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(classMap.getMapperClassName(), GeneratedMapperBase.class,
+            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(
+                    classMap.getMapperClassName(), GeneratedMapperBase.class,
                     compilerStrategy);
             
             addMapMethod(mapperCode, true, classMap);

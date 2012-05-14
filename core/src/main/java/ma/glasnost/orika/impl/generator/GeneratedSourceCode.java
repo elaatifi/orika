@@ -75,7 +75,7 @@ public class GeneratedSourceCode {
 
 		this.compilerStrategy = compilerStrategy;
 		this.sourceBuilder = new StringBuilder();
-		this.classSimpleName = baseClassName;
+		this.classSimpleName = baseClassName + System.identityHashCode(this);
 		this.superClass = superClass;
 
 		int namePos = baseClassName.lastIndexOf(".");
