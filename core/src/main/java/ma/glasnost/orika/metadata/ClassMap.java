@@ -90,7 +90,7 @@ public class ClassMap<A, B> {
         // TODO This should be a strategy defined at the MapperGenerator level,
         // something like mapperClassNameStrategy.getMapperClassName(ClassMap
         // classMap)
-        return "Orika" + bType.getSimpleName() + getATypeName() + "Mapper" + System.identityHashCode(this);
+        return "Orika" + bType.getSimpleName() + getATypeName() + "Mapper";
     }
     
     public String[] getConstructorA() {

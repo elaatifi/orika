@@ -394,6 +394,10 @@ public class DefaultMapperFactory implements MapperFactory {
         classMapRegistry.put(new MapperKey(classMap.getAType(), classMap.getBType()), (ClassMap<Object, Object>) classMap);
     }
     
+    public <A, B> void registerClassMap(ClassMapBuilder<A, B> builder) {
+        registerClassMap(builder.toClassMap());
+    }
+    
     public synchronized void build() {
         
     	isBuilt = true;
@@ -567,7 +571,7 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass) {
-        registerObjectFactory(objectFactory, TypeFactory.valueOf(targetClass));
+        registerObjectFactory(objectFactory, TypeFactory.<T>valueOf(targetClass));
     }
     
 }

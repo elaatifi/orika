@@ -32,7 +32,9 @@ import ma.glasnost.orika.metadata.TypeFactory;
  *
  * @param <S> the source type
  * @param <D> the destination type
+ * @deprecated use {@link ma.glasnost.orika.CustomConverter} instead
  */
+@Deprecated
 public abstract class CustomConverterBase<S, D> implements ma.glasnost.orika.Converter<S, D> {
     
     protected final Type<S> sourceType;

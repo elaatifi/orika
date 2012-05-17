@@ -25,7 +25,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import org.eclipse.jdt.core.dom.Modifier;
+import java.lang.reflect.Modifier;
 
 /**
  * Uses Eclipse JDT to format and compile the source for the specified

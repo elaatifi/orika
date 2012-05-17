@@ -19,6 +19,7 @@ package ma.glasnost.orika.impl.generator;
 
 
 import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.metadata.TypeFactory.valueOf;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ import ma.glasnost.orika.impl.GeneratedObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
@@ -73,7 +73,7 @@ public class ObjectFactoryGenerator {
     public GeneratedObjectFactory build(Type<?> type) {
         
         final String className = type.getSimpleName() + "ObjectFactory" + 
-        	System.identityHashCode(type) + nameSuffix;
+        	/*System.identityHashCode(type) +*/ nameSuffix;
         
         try {
             final GeneratedSourceCode factoryCode = 
@@ -151,41 +151,40 @@ public class ObjectFactoryGenerator {
                 throw new MappingException("Can not find all constructor's parameters");
             }
             
-            out.ifSourceInstanceOf(sourceClass).then();
+            out.ifInstanceOf("s", sourceClass).then();
             out.append("%s source = (%s) s;", sourceClass.getCanonicalName(), sourceClass.getCanonicalName());
             argIndex = 0;
             for (FieldMap fieldMap : properties) {
             	
-                final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
-                
-                String var = "arg" + argIndex;
                 Class<?> targetClass = constructorArguments[argIndex];
-                out.declareVar(targetClass, var);
-                argIndex++;
+                VariableRef v = new VariableRef(valueOf(targetClass), "arg" + argIndex++);
+                VariableRef s = new VariableRef(fieldMap.getSource(), "source");
+               
+                out.statement(v.declare());
                 
-                if (generateConverterCode(out, var, fieldMap)) {
+                if (generateConverterCode(out, v, fieldMap)) {
                     continue;
                 }
                 try {
                     
                     if (fieldMap.is(aWrapperToPrimitive())) {
-                        out.ifSourceNotNull(sp).assignWrapperToPrimitiveVar(var, sp, targetClass);
+                        out.ifNotNull(s).setPrimitive(v, s);
                     } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                        out.assignPrimitiveToWrapperVar(var, sp, targetClass);
+                        out.setWrapper(v, s);
                     } else if (fieldMap.is(aPrimitive())) {
-                        out.assignImmutableVar(var, sp);
+                        out.set(v, s);
                     } else if (fieldMap.is(immutable())) {
-                        out.ifSourceNotNull(sp).assignImmutableVar(var, sp);
+                        out.ifNotNull(s).set(v, s);
                     } else if (fieldMap.is(anArray())) {
-                        out.ifSourceNotNull(sp).assignArrayVar(var, sp, targetClass);
+                        out.setArray(v, s);
                     } else if (fieldMap.is(aCollection())) {
-                        out.ifSourceNotNull(sp).assignCollectionVar(var, sp, dp);
+                        out.setCollection(v, s, fieldMap.getDestination(), fieldMap.getDestination().getType());
                     } else if (fieldMap.is(aConversionFromString())) { 
-                    	out.assignVarConvertedFromString(var, sp, dp);
+                        out.setFromStringConversion(v, s);
                     } else if (fieldMap.is(aConversionToString())) {
-                    	out.ifSourceNotNull(sp).assignStringConvertedVar(var, sp);
+                        out.setToStringConversion(v, s);
                     } else { /**/
-                        out.ifSourceNotNull(sp).then().assignObjectVar(var, sp, targetClass).end();
+                        out.setObject(v, s, null);
                     }
                     
                 } catch (final Exception e) {
@@ -208,20 +207,21 @@ public class ObjectFactoryGenerator {
         }
     }
     
-    private boolean generateConverterCode(final CodeSourceBuilder code, String var, FieldMap fieldMap) {
-        Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
-        final Type<?> destinationClass = dp.getType();
+    private boolean generateConverterCode(final CodeSourceBuilder code, VariableRef v, FieldMap fieldMap) {
+        
+        VariableRef s = new VariableRef(fieldMap.getSource(), "source");
+        final Type<?> destinationType = fieldMap.getDestination().getType();
         
         Converter<Object, Object> converter = null;
         ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (fieldMap.getConverterId() != null) {
             converter = converterFactory.getConverter(fieldMap.getConverterId());
         } else {
-            converter = converterFactory.getConverter(sp.getType(), destinationClass);
+            converter = converterFactory.getConverter(s.type(), destinationType);
         }
         
         if (converter != null) {
-            code.ifSourceNotNull(sp).then().assignConvertedVar(var, sp, destinationClass.getRawType(), fieldMap.getConverterId()).end();
+            code.ifNotNull(s).then().convert(v, s, fieldMap.getConverterId()).end();
             return true;
         } else {
             return false;

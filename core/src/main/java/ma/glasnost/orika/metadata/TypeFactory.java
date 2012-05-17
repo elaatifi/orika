@@ -102,7 +102,7 @@ public abstract class TypeFactory {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <E> Type<E> valueOf(final Class<? extends E> rawType) {
+    public static <E> Type<E> valueOf(final Class<?> rawType) {
         if (rawType == null) {
             return null;
         } else if (rawType.isAnonymousClass() && rawType.getGenericSuperclass() instanceof ParameterizedType) {
@@ -119,7 +119,7 @@ public abstract class TypeFactory {
      * @return
      */
     @SuppressWarnings("unchecked")
-    public static <E> Type<E> valueOf(final Class<? extends E> rawType, final java.lang.reflect.Type... actualTypeArguments) {
+    public static <E> Type<E> valueOf(final Class<?> rawType, final java.lang.reflect.Type... actualTypeArguments) {
         if (rawType == null) {
             return null;
         } else {
@@ -295,7 +295,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> typeOf(final T object) {
-        return valueOf((Class<T>) object.getClass());
+        return (Type<T>) (object == null ? null : valueOf((Class<T>) object.getClass()));
     }
     
     /**
@@ -308,7 +308,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> resolveTypeOf(final T object, Type<?> referenceType) {
-        return resolveValueOf((Class<T>) object.getClass(), referenceType);
+        return object == null ? null : resolveValueOf((Class<T>) object.getClass(), referenceType);
     }
     
     /**
@@ -319,7 +319,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> componentTypeOf(final T[] object) {
-        return valueOf((Class<T>) object.getClass().getComponentType());
+        return (Type<T>) (object == null ? null : valueOf((Class<T>) object.getClass().getComponentType()));
     }
     
     /**

@@ -52,7 +52,7 @@ public final class ClassUtil {
     }
     
     public static boolean isImmutable(Class<?> clazz) {
-        return IMMUTABLES_TYPES.contains(clazz) || clazz.isEnum();
+        return clazz.isPrimitive() || IMMUTABLES_TYPES.contains(clazz) || clazz.isEnum();
     }
     
     public static boolean isImmutable(Type<?> type) {
@@ -65,7 +65,7 @@ public final class ClassUtil {
      * @return true if the passed type is not abstract and not an interface; false otherwise.
      */
     public static boolean isConcrete(Class<?> type) {
-    	return !type.isInterface() && !Modifier.isAbstract(type.getModifiers());
+    	return !type.isInterface() && (type.isPrimitive() || !Modifier.isAbstract(type.getModifiers()));
     }
     
     /**

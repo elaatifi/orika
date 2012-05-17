@@ -125,15 +125,19 @@ public class MapsTestCase {
          * from the element type in the collection to the special type MapEntry which
          * represents map entries.
          */
+        Type<Map<String, Integer>> mapType = new TypeBuilder<Map<String, Integer>>(){}.build();
+        Type<MapEntry<String, Integer>> entryType = MapEntry.entryType(mapType);
+        Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
+        
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
+        factory.registerClassMap(ClassMapBuilder.map(rankingType, entryType )
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());
                 
         factory.registerConcreteType(Map.Entry.class, MapEntry.class);
         MapperFacade mapper = factory.getMapperFacade();
-        Map<String, Integer> result = mapper.mapAsMap(source, TypeFactory.valueOf(Ranking.class), new TypeBuilder<Map<String, Integer>>(){}.build());
+        Map<String, Integer> result = mapper.mapAsMap(source, rankingType, mapType);
         
         Assert.assertNotNull(result);
         Assert.assertEquals(source.size(), result.size());
@@ -205,15 +209,19 @@ public class MapsTestCase {
         source.put("B", 2);
         source.put("C", 3);
         
+        Type<Map<String, Integer>> mapType = new TypeBuilder<Map<String, Integer>>(){}.build();
+        Type<MapEntry<String, Integer>> entryType = MapEntry.entryType(mapType);
+        Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
+        
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
+        factory.registerClassMap(ClassMapBuilder.map(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());
                 
         MapperFacade mapper = factory.getMapperFacade();
         
-        List<Ranking> result = mapper.mapAsList(source, new TypeBuilder<Map<String, Integer>>(){}.build(), TypeFactory.valueOf(Ranking.class));
+        List<Ranking> result = mapper.mapAsList(source, mapType, rankingType);
         
         Assert.assertNotNull(result);
         
@@ -234,15 +242,20 @@ public class MapsTestCase {
         source.put("B", 2);
         source.put("C", 3);
         
+        Type<Map<String, Integer>> mapType = new TypeBuilder<Map<String, Integer>>(){}.build();
+        Type<MapEntry<String, Integer>> entryType = MapEntry.entryType(mapType);
+        Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
+        
+        
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
+        factory.registerClassMap(ClassMapBuilder.map(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());
                 
         MapperFacade mapper = factory.getMapperFacade();
         
-        Ranking[] result = mapper.mapAsArray(new Ranking[source.size()], source, new TypeBuilder<Map<String, Integer>>(){}.build(), TypeFactory.valueOf(Ranking.class));
+        Ranking[] result = mapper.mapAsArray(new Ranking[source.size()], source, mapType, rankingType);
         
         Assert.assertNotNull(result);
         

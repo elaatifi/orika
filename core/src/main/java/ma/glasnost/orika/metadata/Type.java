@@ -250,6 +250,21 @@ public final class Type<T> implements ParameterizedType {
     	return stringValue.toString();
     }
     
+    public String toFullyQualifiedString() {
+        StringBuilder stringValue = new StringBuilder();
+        stringValue.append(rawType.getCanonicalName());
+        if (actualTypeArguments.length > 0) {
+            stringValue.append("<");
+            for (java.lang.reflect.Type arg: actualTypeArguments) {
+                stringValue.append(""+arg + ", ");
+            }
+            stringValue.setLength(stringValue.length()-2);
+            stringValue.append(">");
+        }
+        
+        return stringValue.toString();
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;

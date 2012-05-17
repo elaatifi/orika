@@ -124,6 +124,10 @@ public class MappingStrategyRecorder {
         this.resolvedObjectFactory = (ObjectFactory<Object>) resolvedObjectFactory;
     }
 
+    /**
+     * @return a new instance of the MappingStrategy which can "playback" the 
+     * route taken to map a given set of inputs.
+     */
     public MappingStrategy playback() {
        
         
@@ -131,7 +135,7 @@ public class MappingStrategyRecorder {
         if (unenhance) {
             unenhanceStrategy = this.unenhanceStrategy;
         } else {
-            unenhanceStrategy = DefaultUnenhancer.getInstance();
+            unenhanceStrategy = NoOpUnenhancer.getInstance();
         }
         
         if (copyByReference) {
@@ -156,7 +160,7 @@ public class MappingStrategyRecorder {
     
     /**
      * Describes the details of the strategy chosen for this particular set of inputs
-     * @param key
+     * 
      * @return
      */
     public String describeDetails() {
@@ -185,9 +189,9 @@ public class MappingStrategyRecorder {
         return details.toString();
     }
     
-    static class DefaultUnenhancer implements UnenhanceStrategy {
+    static class NoOpUnenhancer implements UnenhanceStrategy {
 
-        private static final DefaultUnenhancer INSTANCE = new DefaultUnenhancer(); 
+        private static final NoOpUnenhancer INSTANCE = new NoOpUnenhancer(); 
         
         public static UnenhanceStrategy getInstance() {
             return INSTANCE;

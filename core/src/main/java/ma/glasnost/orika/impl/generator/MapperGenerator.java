@@ -18,16 +18,8 @@
 
 package ma.glasnost.orika.impl.generator;
 
-import static ma.glasnost.orika.impl.Specifications.aCollection;
-import static ma.glasnost.orika.impl.Specifications.aConversionFromString;
-import static ma.glasnost.orika.impl.Specifications.aConversionToString;
-import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
-import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
-import static ma.glasnost.orika.impl.Specifications.anArray;
-import static ma.glasnost.orika.impl.Specifications.immutable;
-import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
+import static ma.glasnost.orika.impl.Specifications.*;
 
-import java.util.Collection;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -40,7 +32,6 @@ import ma.glasnost.orika.impl.GeneratedMapperBase;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 
 import org.slf4j.Logger;
@@ -93,27 +84,21 @@ public final class MapperGenerator {
                 .append(mapMethod)
                 .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {\n\n", MappingContext.class.getCanonicalName());
         
-        Class<?> sourceClass;
-        Type<?> destinationType;
-        if (aToB) {
-            sourceClass = classMap.getAType().getRawType();
-            destinationType = classMap.getBType();
-        } else {
-            sourceClass = classMap.getBType().getRawType();
-            destinationType = classMap.getAType();
-        }
-        
         // out.assertType("a", sourceClass);
         // out.assertType("b", destinationClass);
-        out.append("\n\t\tsuper.").append(mapMethod).append("(a,b, mappingContext);\n\n");
-        out.append("\t\t" + sourceClass.getCanonicalName())
-                .append(" source = \n\t\t\t\t (")
-                .append(sourceClass.getCanonicalName())
-                .append(") a; \n");
-        out.append("\t\t" + destinationType.getCanonicalName())
-                .append(" destination = \n\t\t\t\t (")
-                .append(destinationType.getCanonicalName())
-                .append(") b; \n\n");
+        VariableRef source;
+        VariableRef destination;
+        if (aToB) {
+            source = new VariableRef(classMap.getAType(), "source");
+            destination = new VariableRef(classMap.getBType(), "destination"); 
+        } else {
+            source = new VariableRef(classMap.getBType(), "source");
+            destination = new VariableRef(classMap.getAType(), "destination");
+        }
+         
+        out.statement("super.%s(a, b, mappingContext);", mapMethod);
+        out.statement(source.declare("a"));
+        out.statement(destination.declare("b"));
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
             
@@ -130,7 +115,7 @@ public final class MapperGenerator {
             }
             if (!fieldMap.isIgnored()) {
                 try {
-                    generateFieldMapCode(out, fieldMap, destinationType);
+                    generateFieldMapCode(out, fieldMap, destination.type());
                 } catch (final Exception e) {
                     throw new MappingException(e);
                 }
@@ -162,66 +147,65 @@ public final class MapperGenerator {
     }
     
     private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType) throws Exception {
-        final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
         
-        if (sp.getGetter() == null || ((dp.getSetter() == null) && !Collection.class.isAssignableFrom(dp.getRawType()))) {
+        final VariableRef sourceProperty = new VariableRef(fieldMap.getSource(), "source");
+        final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
+        
+        if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection())) {
             return;
         }
         
         // Make sure the source and destination types are accessible to the
         // builder
         
-        compilerStrategy.assureTypeIsAccessible(sp.getRawType());
-        compilerStrategy.assureTypeIsAccessible(dp.getRawType());
+        compilerStrategy.assureTypeIsAccessible(sourceProperty.rawType());
+        compilerStrategy.assureTypeIsAccessible(destinationProperty.rawType());
         
         try {
-            
             //
             // Ensure that there we will not cause a NPE
             //
-            if (sp.hasPath()) {
-                code.avoidSourceNPE(sp).then();
+            if (sourceProperty.isNestedProperty()) {
+                code.ifPathNotNull(sourceProperty).then();
             }
             
-            if (dp.hasPath()) {
-                code.ifDestinationNull(dp);
+            if (destinationProperty.isNestedProperty()) {
+                code.assureInstanceExists(destinationProperty);
             }
             
-            // Generate mapping code for every case
-            
+            // Generate mapping code for every case     
             Converter<Object, Object> converter = getConverter(fieldMap);
             if (converter != null) {
-                code.convert(dp, sp, fieldMap.getConverterId());
+                code.convert(destinationProperty, sourceProperty, fieldMap.getConverterId());
             } else if (fieldMap.is(toAnEnumeration())) {
-                code.setToEnumeration(dp, sp);
+                code.setToEnumeration(destinationProperty, sourceProperty);
             } else if (fieldMap.is(immutable())) {
-                code.set(dp, sp);
+                code.set(destinationProperty, sourceProperty);
             } else if (fieldMap.is(anArray())) {
-                code.setArray(dp, sp);
+                code.setArray(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aCollection())) {
-                code.setCollection(dp, sp, fieldMap.getInverse(), destinationType);
+                code.setCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
             } else if (fieldMap.is(aWrapperToPrimitive())) {
-                code.setPrimitive(dp, sp);
+                code.setPrimitive(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                code.setWrapper(dp, sp);
+                code.setWrapper(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aConversionFromString())) {
-                code.setFromStringConversion(dp, sp);
+                code.setFromStringConversion(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aConversionToString())) {
-                code.setToStringConversion(dp, sp);
+                code.setToStringConversion(destinationProperty, sourceProperty);
             } else {
                 /**/
                 
-                if (sp.isPrimitive() || dp.isPrimitive())
-                    code.newLine().append("/* Ignore field map : %s:%s -> %s:%s */", sp.getExpression(), sp.getType().getSimpleName(),
-                            dp.getExpression(), dp.getType().getSimpleName());
+                if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive())
+                    code.newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
                 
                 else {
-                    code.setObject(dp, sp, fieldMap.getInverse());
+                    code.setObject(destinationProperty, sourceProperty, fieldMap.getInverse());
                 }
             }
             
             // Close up, and set null to destination
-            if (sp.hasPath()) {
+            if (sourceProperty.isNestedProperty()) {
                 code.end();
             }
             
