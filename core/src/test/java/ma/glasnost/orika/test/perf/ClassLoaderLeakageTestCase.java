@@ -36,6 +36,16 @@ import org.junit.Test;
  */
 public class ClassLoaderLeakageTestCase {
 
+	private File findMavenProjectRoot() {
+		File classFile = new File(getClass().getClassLoader().getResource(getClass().getName().replace(".","/") + ".class").getFile());
+		File classFolder = classFile;
+		String[] path = getClass().getName().split("\\.");
+		for (int i=0; i < path.length; ++i)
+			classFolder = classFolder.getParentFile();
+		
+		return classFolder.getParentFile().getParentFile();
+			
+	}
 	
 	/**
 	 * This initial test is to verify our own sanity
@@ -45,8 +55,7 @@ public class ClassLoaderLeakageTestCase {
 	@Test
 	public void testControl() throws Throwable {
 		
-		File testClassPathRoot = new File(getClass().getResource("/").getFile());
-		File projectRoot = testClassPathRoot.getParentFile().getParentFile();
+		File projectRoot = findMavenProjectRoot();
 		
 		ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 		
@@ -146,8 +155,7 @@ public class ClassLoaderLeakageTestCase {
 		MapperFacade mapper = factory.getMapperFacade();
 		LibraryMyDTO mappedLib;
 		{
-			File testClassPathRoot = new File(getClass().getResource("/").getFile());
-			File projectRoot = testClassPathRoot.getParentFile().getParentFile();
+			File projectRoot = findMavenProjectRoot();
 			
 			ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 			
