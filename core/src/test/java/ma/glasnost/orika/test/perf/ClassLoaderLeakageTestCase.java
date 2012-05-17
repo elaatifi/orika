@@ -11,6 +11,7 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompiler;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
+import ma.glasnost.orika.test.MavenProjectUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Library;
@@ -34,17 +35,6 @@ import org.junit.Test;
  *
  */
 public class ClassLoaderLeakageTestCase {
-
-	private File findMavenProjectRoot() {
-		File classFile = new File(getClass().getClassLoader().getResource(getClass().getName().replace(".","/") + ".class").getFile());
-		File classFolder = classFile;
-		String[] path = getClass().getName().split("\\.");
-		for (int i=0; i < path.length; ++i)
-			classFolder = classFolder.getParentFile();
-		
-		return classFolder.getParentFile().getParentFile();
-			
-	}
 	
 	/**
 	 * This initial test is to verify our own sanity
@@ -54,7 +44,7 @@ public class ClassLoaderLeakageTestCase {
 	@Test
 	public void testControl() throws Throwable {
 		
-		File projectRoot = findMavenProjectRoot();
+		File projectRoot = MavenProjectUtil.findProjectRoot();
 		
 		ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 		
@@ -151,7 +141,7 @@ public class ClassLoaderLeakageTestCase {
 		MapperFacade mapper = factory.getMapperFacade();
 		LibraryMyDTO mappedLib;
 		{
-			File projectRoot = findMavenProjectRoot();
+			File projectRoot = MavenProjectUtil.findProjectRoot();
 			
 			ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 			

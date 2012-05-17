@@ -34,6 +34,7 @@ import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompiler;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
+import ma.glasnost.orika.test.MavenProjectUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorChild;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorMyDTO;
@@ -267,17 +268,6 @@ public class SuperTypeMappingTestCase {
         
     }
     
-	private File findMavenProjectRoot() {
-		File classFile = new File(getClass().getClassLoader().getResource(getClass().getName().replace(".","/") + ".class").getFile());
-		File classFolder = classFile;
-		String[] path = getClass().getName().split("\\.");
-		for (int i=0; i < path.length; ++i)
-			classFolder = classFolder.getParentFile();
-		
-		return classFolder.getParentFile().getParentFile();
-			
-	}
-    
     /**
      * This test is a bit complicated: it verifies that super-type lookup occurs
      * properly if presented with a class that is not accessible from the
@@ -314,7 +304,7 @@ public class SuperTypeMappingTestCase {
         MapperFacade mapper = factory.getMapperFacade();
         
         // -----------------------------------------------------------------------------
-        File projectRoot = findMavenProjectRoot();
+        File projectRoot = MavenProjectUtil.findProjectRoot();
         
         ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
         
