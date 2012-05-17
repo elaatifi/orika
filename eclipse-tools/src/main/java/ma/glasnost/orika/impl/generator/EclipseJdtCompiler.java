@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -243,18 +244,24 @@ public class EclipseJdtCompiler {
 	private Map<String, byte[]> compileClasses(File sourceDir) throws IOException {
 		Collection<File> javaSources = FilePathUtility.getJavaSourceFiles(sourceDir);
 
-		List<ICompilationUnit> compilationUnits = new ArrayList<ICompilationUnit>();
-		for (File javaSource : javaSources) {
-			compilationUnits.add( 
-					new CompilationUnit(
-							FilePathUtility.readFileAsString(javaSource), 
-							FilePathUtility.getJavaPackage(javaSource, sourceDir),
-							FilePathUtility.getJavaClassName(javaSource))
-					);
+		if (javaSources == null || javaSources.isEmpty()) {
+			LOG.warn("No sources detected at " + sourceDir);
+			return Collections.emptyMap();
+		} else {
+    		
+    		List<ICompilationUnit> compilationUnits = new ArrayList<ICompilationUnit>();
+    		for (File javaSource : javaSources) {
+    			compilationUnits.add( 
+    					new CompilationUnit(
+    							FilePathUtility.readFileAsString(javaSource), 
+    							FilePathUtility.getJavaPackage(javaSource, sourceDir),
+    							FilePathUtility.getJavaClassName(javaSource))
+    					);
+    		}
+    		
+    		Map<String, byte[]> compiledClasses = compile(compilationUnits.toArray(new ICompilationUnit[0]));
+    		return compiledClasses;
 		}
-		
-		Map<String, byte[]> compiledClasses = compile(compilationUnits.toArray(new ICompilationUnit[0]));
-		return compiledClasses;
 	}
 	
 	/**
