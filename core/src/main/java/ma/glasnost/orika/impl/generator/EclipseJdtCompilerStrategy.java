@@ -45,7 +45,7 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
     private final Object compiler;
     private final Method formatSource;
     private final Method compile;
-    private final Method assertTypeAccessible;
+    private final Method assertTypeAccessible; 
     private final Method load;
     
     public EclipseJdtCompilerStrategy() {

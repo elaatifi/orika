@@ -3,7 +3,7 @@
     <parent>
         <artifactId>orika-parent</artifactId>
         <groupId>ma.glasnost.orika</groupId>
-        <version>1.1.3-SNAPSHOT</version>
+        <version>1.2.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>orika-core</artifactId>
@@ -48,11 +48,6 @@
         <dependency>
             <groupId>org.easymock</groupId>
             <artifactId>easymock</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>janino</groupId>
-            <artifactId>janino</artifactId>
         </dependency>
 
         <dependency>
