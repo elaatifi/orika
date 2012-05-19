@@ -39,11 +39,6 @@ public final class Specifications {
         return IS_TO_ENUMERATION;
     }
     
-    @Deprecated
-    public static Specification compatibleTypes() {
-        return HAVE_COMPATIBLE_TYPES;
-    }
-    
     public static Specification anArray() {
         return IS_ARRAY;
     }
@@ -62,6 +57,18 @@ public final class Specifications {
     
     public static Specification aWrapperToPrimitive() {
         return WRAPPER_TO_PRIMITIVE;
+    }
+    
+    public static Specification aMapToMap() {
+    	return MAP_TO_MAP;
+    }
+    
+    public static Specification aMapToArrayOrCollection() {
+    	return MAP_TO_ARRAY_OR_COLLECTION;
+    }
+    
+    public static Specification anArrayOrCollectionToMap() {
+    	return ARRAY_OR_COLLECTION_TO_MAP;
     }
     
     /**
@@ -91,13 +98,6 @@ public final class Specifications {
         public boolean apply(FieldMap fieldMap) {
             return fieldMap.getDestination().getType().isEnum()
                     && (fieldMap.getSource().getType().getRawType().equals(String.class) || fieldMap.getSource().getType().isEnum());
-        }
-    };
-    
-    private static final Specification HAVE_COMPATIBLE_TYPES = new Specification() {
-        
-        public boolean apply(FieldMap fieldMap) {
-            return fieldMap.getDestination().isAssignableFrom(fieldMap.getSource());
         }
     };
     
@@ -152,5 +152,28 @@ public final class Specifications {
             return String.class.equals(fieldMap.getDestination().getType().getRawType());
         }
         
+    };
+    
+    private static final Specification MAP_TO_MAP = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return fieldMap.getSource().isMap() && fieldMap.getDestination().isMap();
+    	}
+    };
+    
+    private static final Specification MAP_TO_ARRAY_OR_COLLECTION = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return fieldMap.getSource().isMap() && 
+    				(fieldMap.getDestination().isCollection() || fieldMap.getDestination().isArray());
+    	}
+    };
+    
+    private static final Specification ARRAY_OR_COLLECTION_TO_MAP = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return fieldMap.getDestination().isMap() && 
+    				(fieldMap.getSource().isCollection() || fieldMap.getSource().isArray());
+    	}
     };
 }
