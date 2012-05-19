@@ -171,12 +171,14 @@ public class EclipseJdtCompiler {
 	public void assertTypeAccessible(Class<?> type)  throws IllegalStateException {
 	
 		if (!type.isPrimitive() && type.getClassLoader() != null) {
-
-			String resourceName = type.getName().replace('.', '/') + ".class";
+			String resourceName;
 			if (type.isArray()) {
-				// Strip off the "[L" prefix from the internal name
-				resourceName = resourceName.substring(2, resourceName.length()-1);
+				resourceName = type.getComponentType().getName();
+			} else {
+				resourceName = type.getName();
 			}
+			resourceName = resourceName.replace('.', '/') + ".class";
+			
 			URL url = byteCodeClassLoader.getResource(resourceName);
 			if (url == null) {
 				throw new IllegalStateException(type + " is not accessible");
