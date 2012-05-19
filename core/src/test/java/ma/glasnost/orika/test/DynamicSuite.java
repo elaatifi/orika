@@ -19,10 +19,12 @@
 package ma.glasnost.orika.test;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -126,7 +128,15 @@ public class DynamicSuite extends ParentRunner<Runner> {
      * @return
      */
     public static List<Class<?>> findTestCases(Class<?> theClass) {
-        File classFolder = new File(theClass.getResource("/").getFile());
+        File classFolder;
+		try {
+			classFolder = new File(URLDecoder.decode(theClass.getResource("/").getFile(), "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			/*
+			 * UTF-8 should be supported
+			 */
+			throw new RuntimeException(e);
+		}
         String testCaseRegex = getTestCasePattern(theClass);
         
         return findTestCases(classFolder, testCaseRegex);
