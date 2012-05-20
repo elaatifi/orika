@@ -21,6 +21,7 @@ package ma.glasnost.orika.metadata;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.Map;
 
 // XXX must be immutable
 public class Property {
@@ -102,10 +103,6 @@ public class Property {
         return elementType;
     }
     
-//    public void setParameterizedType(Type<?> parameterizedType) {
-//        this.parameterizedType = parameterizedType;
-//    }
-    
     public Class<?> getRawType() {
     	return getType().getRawType();
     }
@@ -155,6 +152,10 @@ public class Property {
     
     public boolean isList() {
         return List.class.isAssignableFrom(type.getRawType());
+    }
+    
+    public boolean isMap() {
+    	return Map.class.isAssignableFrom(type.getRawType());
     }
     
     public boolean hasPath() {
