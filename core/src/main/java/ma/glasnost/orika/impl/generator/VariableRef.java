@@ -22,6 +22,7 @@ import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.NestedProperty;
@@ -105,6 +106,10 @@ public class VariableRef {
         return property != null ? property.isCollection() : Collection.class.isAssignableFrom(rawType());
     }
     
+    public boolean isMap() {
+    	return property != null ? property.isMap() : Map.class.isAssignableFrom(rawType());
+    }
+    
     public boolean isWrapper() {
         return type.isPrimitiveWrapper();
     }
@@ -128,6 +133,20 @@ public class VariableRef {
         } else {
             return property != null ? property.getElementType() : ((Type<?>)type.getActualTypeArguments()[0]); 
         }
+    }
+    
+    public Type<?> mapKeyType() {
+    	if (isMap()) {
+    		return type().getNestedType(0);
+    	}
+    	return null;
+    }
+    
+    public Type<?> mapValueType() {
+    	if (isMap()) {
+    		return type().getNestedType(1);
+    	}
+    	return null;
     }
     
     public String typeName() {
@@ -309,6 +328,8 @@ public class VariableRef {
             collection ="List";
         } else if (property.isSet()) {
             collection = "Set";
+        } else if (property.isCollection()){
+        	collection = "Collection";
         } else {
             throw new IllegalStateException(property.getType() + " is not a collection type");
         }
@@ -316,11 +337,23 @@ public class VariableRef {
     }
     
     public String newCollection() {
-        if ("List".equals(collectionType())) {
-            return "new java.util.ArrayList()";
+        return newCollection("");
+    }
+    
+    public String newCollection(String sizeExpr) {
+    	if ("Set".equals(collectionType())) {
+            return "new java.util.HashSet(" + sizeExpr + ")";
         } else {
-            return "new java.util.HashSet()";
+            return "new java.util.ArrayList(" + sizeExpr + ")";
         }
+    }
+    
+    public String newMap(String sizeExpr) {
+    	return "new java.util.LinkedHashMap(" + sizeExpr + ")";
+    }
+    
+    public String newMap() {
+    	return newMap("");
     }
     
     /**
@@ -381,6 +414,10 @@ public class VariableRef {
                 name + "] is not an instance of " + typeName() + " \");";
     }
     
+    /**
+     * Generates java code for a reference to the "size" of this VariableRef
+     * @return
+     */
     public String size() {
         return getter() + "." + (rawType().isArray() ? "length" : "size()");
     }
