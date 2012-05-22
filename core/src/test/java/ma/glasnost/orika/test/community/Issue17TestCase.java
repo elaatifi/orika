@@ -11,7 +11,7 @@ import ma.glasnost.orika.metadata.ClassMapBuilder;
 
 import org.junit.Test;
 
-public class EmptyCollectionToArrayTestCase {
+public class Issue17TestCase {
 
 	public static class A {
 	       private Collection<String>      list;
