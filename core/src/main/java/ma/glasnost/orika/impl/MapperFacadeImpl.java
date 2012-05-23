@@ -178,6 +178,7 @@ public class MapperFacadeImpl implements MapperFacade {
             if (originalSourceObject != sourceObject) {
                 strategyRecorder.setUnenhance(true);
             }
+            strategyRecorder.setInstantiate(true);
         }
         
         // We can copy by reference when source and destination types are the

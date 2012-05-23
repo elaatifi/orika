@@ -41,7 +41,7 @@ public class InstantiateByDefaultAndMapReverseStrategy implements MappingStrateg
         
         Object newInstance;
         try {
-            newInstance = destinationType.getRawType().newInstance();
+        	newInstance = destinationObject != null ? destinationObject : destinationType.getRawType().newInstance();
             
             sourceObject = unenhancer.unenhanceObject(sourceObject, sourceType);
             

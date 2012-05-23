@@ -21,6 +21,9 @@ package ma.glasnost.orika.impl.mapping.strategy;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.DirectionalCustomMapperReference;
+import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.ForwardMapperReference;
+import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.ReverseMapperReference;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
@@ -40,6 +43,7 @@ public class MappingStrategyRecorder {
     private boolean copyByReference;
     private boolean mapReverse;
     private boolean unenhance;
+    private boolean instantiate;
     
     private Mapper<Object, Object> resolvedMapper;
     private ObjectFactory<Object> resolvedObjectFactory;
@@ -60,7 +64,15 @@ public class MappingStrategyRecorder {
         return unenhance;
     }
 
-    public void setUnenhance(boolean unenhance) {
+    public boolean isInstantiate() {
+		return instantiate;
+	}
+
+	public void setInstantiate(boolean instantiate) {
+		this.instantiate = instantiate;
+	}
+
+	public void setUnenhance(boolean unenhance) {
         this.unenhance = unenhance;
     }
     
@@ -142,18 +154,17 @@ public class MappingStrategyRecorder {
             resolvedStrategy = CopyByReferenceStrategy.getInstance();
         } else if (resolvedConverter != null) {
             resolvedStrategy = new UseConverterStrategy(resolvedSourceType, resolvedDestinationType, resolvedConverter, unenhanceStrategy);
-        } else if (resolvedObjectFactory != null) {
-            if (mapReverse) {
-                resolvedStrategy = new InstantiateAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
-            } else {
-                resolvedStrategy = new InstantiateAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
-            }
         } else {
-            if (mapReverse) {
-                resolvedStrategy = new InstantiateByDefaultAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
-            } else {
-                resolvedStrategy = new InstantiateByDefaultAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
-            }
+        	
+        	DirectionalCustomMapperReference directionalMapper = (mapReverse ? new ReverseMapperReference(resolvedMapper) : new ForwardMapperReference(resolvedMapper));
+        	if (resolvedObjectFactory != null) {
+        		resolvedStrategy = new InstantiateAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, resolvedObjectFactory, unenhanceStrategy);
+        	} else if (instantiate) {
+        		resolvedStrategy = new InstantiateByDefaultAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
+        	} else {
+        		resolvedStrategy = new MapExistingAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
+        	}
+        
         }
         return resolvedStrategy;
     }
