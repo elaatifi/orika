@@ -330,7 +330,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> elementTypeOf(final Iterable<T> object) {
-        return valueOf((Class<T>) object.iterator().next().getClass());
+        return valueOf((Class<T>) (object == null || !object.iterator().hasNext() ? null : object.iterator().next().getClass()));
     }
     
 }
