@@ -295,7 +295,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> typeOf(final T object) {
-        return valueOf((Class<T>) object.getClass());
+        return (Type<T>) (object == null ? null : valueOf((Class<T>) object.getClass()));
     }
     
     /**
@@ -308,7 +308,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> resolveTypeOf(final T object, Type<?> referenceType) {
-        return resolveValueOf((Class<T>) object.getClass(), referenceType);
+        return object == null ? null : resolveValueOf((Class<T>) object.getClass(), referenceType);
     }
     
     /**
@@ -319,7 +319,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> componentTypeOf(final T[] object) {
-        return valueOf((Class<T>) object.getClass().getComponentType());
+        return (Type<T>) (object == null ? null : valueOf((Class<T>) object.getClass().getComponentType()));
     }
     
     /**
@@ -330,7 +330,7 @@ public abstract class TypeFactory {
      */
     @SuppressWarnings("unchecked")
     public static <T> Type<T> elementTypeOf(final Iterable<T> object) {
-        return valueOf((Class<T>) object.iterator().next().getClass());
+        return valueOf((Class<T>) (object == null || !object.iterator().hasNext() ? null : object.iterator().next().getClass()));
     }
     
 }

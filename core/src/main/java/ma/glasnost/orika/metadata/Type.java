@@ -142,7 +142,11 @@ public final class Type<T> implements ParameterizedType {
     
     public Type<?> getComponentType() {
         if (componentType == null) {
-            componentType = rawType.isArray() ? TypeFactory.valueOf(rawType.getComponentType()) : TypeFactory.valueOf(rawType);
+            if (rawType.isArray()) {
+            	componentType = TypeFactory.valueOf(rawType.getComponentType());
+            } else if (isParameterized){
+            	componentType = this.getNestedType(0);
+            }
         }
         return componentType;
     }

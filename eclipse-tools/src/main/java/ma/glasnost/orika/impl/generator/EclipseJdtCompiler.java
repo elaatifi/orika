@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.impl.generator;
 
-import java.io.InputStream;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -147,18 +147,19 @@ public class EclipseJdtCompiler {
 		return formattedCode;
 	}
 
-
-    public void assertTypeAccessible(Class<?> type)  throws IllegalStateException {
+	public void assertTypeAccessible(Class<?> type)  throws IllegalStateException {
 	
 		if (!type.isPrimitive() && type.getClassLoader() != null) {
-
-			String resourceName = type.getName().replace('.', '/') + ".class";
+			String resourceName;
 			if (type.isArray()) {
-				// Strip off the "[L" prefix from the internal name
-				resourceName = resourceName.substring(2);
+				resourceName = type.getComponentType().getName();
+			} else {
+				resourceName = type.getName();
 			}
-			InputStream is = byteCodeClassLoader.getResourceAsStream(resourceName);
-			if (is == null) {
+			resourceName = resourceName.replace('.', '/') + ".class";
+			
+			URL url = byteCodeClassLoader.getResource(resourceName);
+			if (url == null) {
 				throw new IllegalStateException(type + " is not accessible");
 			}
 		}

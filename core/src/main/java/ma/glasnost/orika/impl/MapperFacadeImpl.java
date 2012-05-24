@@ -158,7 +158,7 @@ public class MapperFacadeImpl implements MapperFacade {
              * lookups on the same thread can use it
              */
             key = key.toImmutableCopy();
-            strategyRecorder = new MappingStrategyRecorder(unenhanceStrategy);
+            strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         }
         
         final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
@@ -170,6 +170,7 @@ public class MapperFacadeImpl implements MapperFacade {
             if (originalSourceObject != sourceObject) {
                 strategyRecorder.setUnenhance(true);
             }
+            strategyRecorder.setInstantiate(true);
         }
         
         // We can copy by reference when source and destination types are the
@@ -228,9 +229,18 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     private <D, S> boolean canCopyByReference(Type<D> destinationType, final Type<S> resolvedSourceType) {
-        return ClassUtil.isImmutable(resolvedSourceType)
-                && (resolvedSourceType.equals(destinationType) || resolvedSourceType.getRawType().equals(
-                        ClassUtil.getWrapperType(destinationType.getRawType())));
+        if ( ClassUtil.isImmutable(resolvedSourceType) 
+        		&& (resolvedSourceType.equals(destinationType))) {
+        	return true;
+        } else if (resolvedSourceType.isPrimitiveWrapper() 
+        		&& resolvedSourceType.getRawType().equals(ClassUtil.getWrapperType(destinationType.getRawType()))) {
+        	return true;
+        } else if (resolvedSourceType.isPrimitive() 
+        		&& destinationType.getRawType().equals(ClassUtil.getWrapperType(resolvedSourceType.getRawType()))) {
+        	return true;
+        } else {
+        	return false;
+        }
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
@@ -249,7 +259,7 @@ public class MapperFacadeImpl implements MapperFacade {
             strategy.map(sourceObject, destinationObject, context);
         } else {
             key = key.toImmutableCopy();
-            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(unenhanceStrategy);
+            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         
             final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), null);
             final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);

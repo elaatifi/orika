@@ -21,6 +21,9 @@ package ma.glasnost.orika.impl.mapping.strategy;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.ObjectFactory;
+import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.DirectionalCustomMapperReference;
+import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.ForwardMapperReference;
+import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.ReverseMapperReference;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
@@ -36,28 +39,40 @@ import ma.glasnost.orika.unenhance.UnenhanceStrategy;
  *
  */
 public class MappingStrategyRecorder {
-    
+     
     private boolean copyByReference;
     private boolean mapReverse;
     private boolean unenhance;
+    private boolean instantiate;
     
     private Mapper<Object, Object> resolvedMapper;
     private ObjectFactory<Object> resolvedObjectFactory;
     private Converter<Object, Object> resolvedConverter;
     private Type<Object> resolvedSourceType;
     private Type<Object> resolvedDestinationType;
+    private MappingStrategy resolvedStrategy;
     
-    private UnenhanceStrategy unenhanceStrategy;
+    private final UnenhanceStrategy unenhanceStrategy;
+    private final MappingStrategyKey key;
     
-    public MappingStrategyRecorder(UnenhanceStrategy unenhanceStrategy) {
+    public MappingStrategyRecorder(MappingStrategyKey key, UnenhanceStrategy unenhanceStrategy) {
         this.unenhanceStrategy = unenhanceStrategy;
+        this.key = key;
     }
     
     public boolean isUnenhance() {
         return unenhance;
     }
 
-    public void setUnenhance(boolean unenhance) {
+    public boolean isInstantiate() {
+		return instantiate;
+	}
+
+	public void setInstantiate(boolean instantiate) {
+		this.instantiate = instantiate;
+	}
+
+	public void setUnenhance(boolean unenhance) {
         this.unenhance = unenhance;
     }
     
@@ -121,37 +136,73 @@ public class MappingStrategyRecorder {
         this.resolvedObjectFactory = (ObjectFactory<Object>) resolvedObjectFactory;
     }
 
+    /**
+     * @return a new instance of the MappingStrategy which can "playback" the 
+     * route taken to map a given set of inputs.
+     */
     public MappingStrategy playback() {
+       
         
         UnenhanceStrategy unenhanceStrategy; 
         if (unenhance) {
             unenhanceStrategy = this.unenhanceStrategy;
         } else {
-            unenhanceStrategy = DefaultUnenhancer.getInstance();
+            unenhanceStrategy = NoOpUnenhancer.getInstance();
         }
         
         if (copyByReference) {
-            return CopyByReferenceStrategy.getInstance();
+            resolvedStrategy = CopyByReferenceStrategy.getInstance();
         } else if (resolvedConverter != null) {
-            return new UseConverterStrategy(resolvedSourceType, resolvedDestinationType, resolvedConverter, unenhanceStrategy);
-        } else if (resolvedObjectFactory != null) {
-            if (mapReverse) {
-                return new InstantiateAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
-            } else {
-                return new InstantiateAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
-            }
+            resolvedStrategy = new UseConverterStrategy(resolvedSourceType, resolvedDestinationType, resolvedConverter, unenhanceStrategy);
         } else {
-            if (mapReverse) {
-                return new InstantiateByDefaultAndMapReverseStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
-            } else {
-                return new InstantiateByDefaultAndMapForwardStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
-            }
+        	
+        	DirectionalCustomMapperReference directionalMapper = (mapReverse ? new ReverseMapperReference(resolvedMapper) : new ForwardMapperReference(resolvedMapper));
+        	if (resolvedObjectFactory != null) {
+        		resolvedStrategy = new InstantiateAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, resolvedObjectFactory, unenhanceStrategy);
+        	} else if (instantiate) {
+        		resolvedStrategy = new InstantiateByDefaultAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
+        	} else {
+        		resolvedStrategy = new MapExistingAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
+        	}
+        
         }
+        return resolvedStrategy;
     }
     
-    static class DefaultUnenhancer implements UnenhanceStrategy {
+    /**
+     * Describes the details of the strategy chosen for this particular set of inputs
+     * 
+     * @return
+     */
+    public String describeDetails() {
+        StringBuilder details = new StringBuilder();
+        details
+            .append("For inputs:")
+            .append("\nsourceObject: " + key.getRawSourceType().getCanonicalName())
+            .append("\nsourceType: " + key.getSourceType())
+            .append("\ndestinationType: " + key.getDestinationType())
+            .append("\nResolved strategy: " + resolvedStrategy.getClass().getSimpleName())
+            .append("\nresolvedSourceType: " + getResolvedSourceType())
+            .append("\nresolvedDestinationType: " + getResolvedDestinationType());
+        if (isCopyByReference()) {
+            details.append("\ncopyByReference?: true");
+        }
+        
+        if (getResolvedConverter() != null) {
+            details.append("\nresolvedConverter: " + getResolvedConverter());
+        }
+        
+        if (getResolvedMapper() != null) {
+            details.append("\nresolvedMapper: " + getResolvedMapper());
+            details.append("\nmapInverse?: " + mapReverse);
+        }
+        
+        return details.toString();
+    }
+    
+    static class NoOpUnenhancer implements UnenhanceStrategy {
 
-        private static final DefaultUnenhancer INSTANCE = new DefaultUnenhancer(); 
+        private static final NoOpUnenhancer INSTANCE = new NoOpUnenhancer(); 
         
         public static UnenhanceStrategy getInstance() {
             return INSTANCE;
