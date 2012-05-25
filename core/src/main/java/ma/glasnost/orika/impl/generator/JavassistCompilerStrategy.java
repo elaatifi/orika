@@ -70,7 +70,8 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     public JavassistCompilerStrategy() {
         super(WRITE_SOURCE_FILES_BY_DEFAULT, WRITE_CLASS_FILES_BY_DEFAULT);
         
-        this.classPool = ClassPool.getDefault();
+        this.classPool = new ClassPool();
+        this.classPool.appendSystemPath();
     }
     
     /**
