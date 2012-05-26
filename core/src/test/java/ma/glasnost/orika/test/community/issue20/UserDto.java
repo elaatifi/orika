@@ -15,42 +15,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ma.glasnost.orika.test.community.issue20;
 
-package ma.glasnost.orika.test.unenhance;
+/**
+ * @author Dmitriy Khomyakov
+ * @author matt.deboer@gmail.com
+ */
+public class UserDto extends BaseDto {
 
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-
-@Entity
-public class Author {
-
-	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
-	private Long id;
-
-	@Column
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String name;
+	// private String password;
+	private UserGroupDto group;
 
-	@OneToMany
-	private Set<Book> books;
-
-	public Author() {
-		this.books = new HashSet<Book>();
-	}
-	
-	public Set<Book> getBooks() {
-		return books;
+	public UserDto() {
 	}
 
-	public void setBooks(Set<Book> books) {
-		this.books = books;
+	public UserDto(String name, UserGroupDto group) {
+		this.name = name;
+		this.group = group;
 	}
 
 	public String getName() {
@@ -61,11 +47,18 @@ public class Author {
 		this.name = name;
 	}
 
-	public Long getId() {
-		return id;
+	public UserGroupDto getGroup() {
+		return group;
 	}
 
-	public void setId(Long id) {
-		this.id = id;
+	public void setGroup(UserGroupDto group) {
+		this.group = group;
+	}
+
+	@Override
+	public String toString() {
+		return "UserDto{" + "name='" + name + '\'' +
+		// ", password='" + password + '\'' +
+				"} " + super.toString();
 	}
 }

@@ -18,47 +18,28 @@
 
 package ma.glasnost.orika.test.unenhance;
 
-import java.util.HashSet;
-import java.util.Set;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
 
-@Entity
-public class Author {
+public class BookDTO {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
 	private Long id;
+	private String title;
+	private AuthorDTO author;
 
-	@Column
-	private String name;
-
-	@OneToMany
-	private Set<Book> books;
-
-	public Author() {
-		this.books = new HashSet<Book>();
-	}
-	
-	public Set<Book> getBooks() {
-		return books;
+	public String getTitle() {
+		return title;
 	}
 
-	public void setBooks(Set<Book> books) {
-		this.books = books;
+	public void setTitle(String title) {
+		this.title = title;
 	}
 
-	public String getName() {
-		return name;
+	public AuthorDTO getAuthor() {
+		return author;
 	}
 
-	public void setName(String name) {
-		this.name = name;
+	public void setAuthor(AuthorDTO author) {
+		this.author = author;
 	}
 
 	public Long getId() {
@@ -68,4 +49,5 @@ public class Author {
 	public void setId(Long id) {
 		this.id = id;
 	}
+
 }

@@ -114,6 +114,10 @@ public class MappingStrategyKey {
         return true;
     }
     
+    public String toString() {
+    	return "[" + getRawSourceType().getSimpleName() + ", " + getSourceType() + ", " + getDestinationType() +"]";
+    }
+    
     public static class ImmutableMappingStrategyKey extends MappingStrategyKey {
         
         protected final Class<?> immutableRawSourceType;

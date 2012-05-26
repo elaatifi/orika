@@ -37,15 +37,15 @@ public abstract class UseCustomMapperStrategy implements MappingStrategy {
         this.unenhancer = unenhancer;
     }
 
-    public Object map(Object sourceObject, Object destinationObject, MappingContext context) {
+    public Object map(final Object sourceObject, final Object destinationObject, final MappingContext context) {
         
-        sourceObject = unenhancer.unenhanceObject(sourceObject, sourceType);
+    	Object resolvedSourceObject = unenhancer.unenhanceObject(sourceObject, sourceType);
         
-        Object newInstance = getInstance(sourceObject, destinationObject, context);
-        
-        customMapper.map(sourceObject, newInstance, context);
+        Object newInstance = getInstance(resolvedSourceObject, destinationObject, context);
         
         context.cacheMappedObject(sourceObject, destinationType, newInstance);
+        
+        customMapper.map(resolvedSourceObject, newInstance, context);
         
         return newInstance;
     }

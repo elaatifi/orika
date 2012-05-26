@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.unenhance;
 
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -37,18 +38,18 @@ import ma.glasnost.orika.metadata.Type;
 public class BaseUnenhancer implements UnenhanceStrategy {
     
     private final ConcurrentHashMap<Type<?>, Type<?>> mappedSuperTypes;
-    private final Queue<UnenhanceStrategy> unenhanceStrategyChain = new LinkedBlockingQueue<UnenhanceStrategy>();
-    private final Queue<SuperTypeResolverStrategy> supertypeStrategyChain = new LinkedBlockingQueue<SuperTypeResolverStrategy>();
+    private final LinkedList<UnenhanceStrategy> unenhanceStrategyChain = new LinkedList<UnenhanceStrategy>();
+    private final LinkedList<SuperTypeResolverStrategy> supertypeStrategyChain = new LinkedList<SuperTypeResolverStrategy>();
     
     public BaseUnenhancer() {
         this.mappedSuperTypes = new ConcurrentHashMap<Type<?>, Type<?>>();
     }
     
-    public void addUnenhanceStrategy(final UnenhanceStrategy strategy) {
+    public synchronized void addUnenhanceStrategy(final UnenhanceStrategy strategy) {
         unenhanceStrategyChain.add(strategy);
     }
     
-    public void addSuperTypeResolverStrategy(final SuperTypeResolverStrategy strategy) {
+    public synchronized void addSuperTypeResolverStrategy(final SuperTypeResolverStrategy strategy) {
         supertypeStrategyChain.add(strategy);
     }
     

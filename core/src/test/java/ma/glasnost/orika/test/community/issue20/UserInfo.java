@@ -15,30 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ma.glasnost.orika.test.community.issue20;
 
-package ma.glasnost.orika.test;
+/**
+ * @author Dmitriy Khomyakov
+ * @author matt.deboer@gmail.com
+ */
+public class UserInfo extends BaseDto {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private String name;
 
-import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
-
-public final class HibernateUtil {
-
-	private HibernateUtil() {
-
+	public void setName(String name) {
+		this.name = name;
 	}
 
-	public static final SessionFactory sessionFactory;
-
-	static {
-		try {
-			sessionFactory = new Configuration().configure().buildSessionFactory();
-		} catch (Throwable ex) {
-			System.err.println("Initial SessionFactory creation failed." + ex);
-			throw new ExceptionInInitializerError(ex);
-		}
+	public String getName() {
+		return name;
 	}
 
-	public static SessionFactory getSessionFactory() {
-		return sessionFactory;
+	@Override
+	public String toString() {
+		return "UserInfo{" + "name='" + name + '\'' + "} " + super.toString();
 	}
 }

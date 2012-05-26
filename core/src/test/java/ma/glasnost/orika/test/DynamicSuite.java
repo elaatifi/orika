@@ -19,23 +19,30 @@
 package ma.glasnost.orika.test;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import javassist.util.proxy.MethodFilter;
+import javassist.util.proxy.MethodHandler;
+import javassist.util.proxy.ProxyFactory;
+import javassist.util.proxy.ProxyObject;
+
 import org.junit.internal.builders.AllDefaultPossibilitiesBuilder;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
 import org.junit.runner.notification.RunNotifier;
-import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.ParentRunner;
-import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.RunnerBuilder;
 import org.junit.runners.model.TestClass;
@@ -126,7 +133,12 @@ public class DynamicSuite extends ParentRunner<Runner> {
      * @return
      */
     public static List<Class<?>> findTestCases(Class<?> theClass) {
-        File classFolder = new File(theClass.getResource("/").getFile());
+        File classFolder;
+		try {
+			classFolder = new File(URLDecoder.decode(theClass.getResource("/").getFile(), "UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		}
         String testCaseRegex = getTestCasePattern(theClass);
         
         return findTestCases(classFolder, testCaseRegex);
@@ -228,7 +240,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
             	this.name = klass.getName() + "[" + scenarioName + "]";
             	this.fRunners = new ArrayList<Runner>(runners.size());
                 for (Runner runner : runners) {
-                	fRunners.add(new TestScenarioClassRunner(runner.getDescription().getTestClass(), scenarioName));
+                	fRunners.add(TestScenarioProxy.forTestScenario(runner, scenarioName));
                 }
             }
         } catch (Exception e) {
@@ -260,25 +272,74 @@ public class DynamicSuite extends ParentRunner<Runner> {
         
     /**
      * Provides a unique name for each test based on appending the scenario
-     * name.
+     * name; this is accomplished by wrapping the existing runner in a javassist
+     * proxy which overrides the test name.
      * 
      * @author matt.deboer@gmail.com
      * 
      */
-    private static class TestScenarioClassRunner extends BlockJUnit4ClassRunner {
-        
-        private final String scenarioName;
-        
-        public TestScenarioClassRunner(Class<?> klass, String scenarioName) throws InitializationError {
-            super(klass);
-            this.scenarioName = scenarioName;
-        }
-        
-        @Override
-        protected String testName(final FrameworkMethod method) {
-            return String.format("%s[%s]", method.getName(), scenarioName);
-        }
-        
+    private static class TestScenarioProxy {
+    	
+    	public static Runner forTestScenario(Runner delegate, String scenarioName) {
+    		
+    		ProxyFactory f = new ProxyFactory();
+			f.setSuperclass(delegate.getClass());
+			f.setFilter(new MethodFilter() {
+				public boolean isHandled(Method m) {
+					return !m.getName().equals("finalize");
+				}
+			});
+			Class<?> c = f.createClass();
+			MethodHandler mi = new Handler(delegate, scenarioName);
+			Runner proxy;
+			try {
+				proxy = (Runner) c.getConstructor(Class.class).newInstance(delegate.getDescription().getTestClass());
+				((ProxyObject) proxy).setHandler(mi);
+				return proxy;
+			} catch (IllegalAccessException e) {
+				throw proxyFailed(e);
+			} catch (InstantiationException e) {
+				throw proxyFailed(e);
+			} catch (IllegalArgumentException e) {
+				throw proxyFailed(e);
+			} catch (SecurityException e) {
+				throw proxyFailed(e);
+			} catch (InvocationTargetException e) {
+				throw proxyFailed(e);
+			} catch (NoSuchMethodException e) {
+				throw proxyFailed(e);
+			}
+    		
+    	}
+    	
+    	private static RuntimeException proxyFailed(Throwable e) {
+    		return new RuntimeException("Proxy creation failed", e);
+    	}
+    	
+    	private static class Handler implements MethodHandler {
+
+    		private Runner delegate;
+    		private String scenarioName;
+    		
+    		public Handler(Runner delegate, String scenarioName) {
+    			this.delegate = delegate;
+    			this.scenarioName = scenarioName;
+    		}
+    		
+			public Object invoke(Object self, Method thisMethod,
+					Method proceed, Object[] args) throws Throwable {
+				if ("testName".equals(proceed.getName())) {
+					return String.format("%s[%s]", proceed.getName(), scenarioName);
+				} else {
+					try {
+						return thisMethod.invoke(delegate, args);
+					} catch (InvocationTargetException e) {
+						throw e.getTargetException();
+					}
+				}
+			}
+    		
+    	}
     }
     
 }
