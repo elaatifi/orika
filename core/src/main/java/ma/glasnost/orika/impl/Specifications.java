@@ -67,6 +67,14 @@ public final class Specifications {
     	return MAP_TO_ARRAY_OR_COLLECTION;
     }
     
+    public static Specification aMapToArray() {
+    	return MAP_TO_ARRAY;
+    }
+    
+    public static Specification aMapToCollection() {
+    	return MAP_TO_COLLECTION;
+    }
+    
     public static Specification anArrayOrCollectionToMap() {
     	return ARRAY_OR_COLLECTION_TO_MAP;
     }
@@ -166,6 +174,20 @@ public final class Specifications {
     	public boolean apply(FieldMap fieldMap) {
     		return fieldMap.getSource().isMap() && 
     				(fieldMap.getDestination().isCollection() || fieldMap.getDestination().isArray());
+    	}
+    };
+    
+    private static final Specification MAP_TO_ARRAY = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return fieldMap.getSource().isMap() && fieldMap.getDestination().isArray();
+    	}
+    };
+    
+    private static final Specification MAP_TO_COLLECTION = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return fieldMap.getSource().isMap() && fieldMap.getDestination().isCollection();
     	}
     };
     

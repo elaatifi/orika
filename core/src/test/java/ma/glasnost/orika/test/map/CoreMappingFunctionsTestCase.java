@@ -20,7 +20,7 @@ import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
 
-public class MapsTestCase {
+public class CoreMappingFunctionsTestCase {
     
     /*
      * Case 1: from a map to another map
@@ -126,7 +126,7 @@ public class MapsTestCase {
          * represents map entries.
          */
         Type<Map<String, Integer>> mapType = new TypeBuilder<Map<String, Integer>>(){}.build();
-        Type<MapEntry<String, Integer>> entryType = MapEntry.entryType(mapType);
+        Type<MapEntry<String, Integer>> entryType = MapEntry.concreteEntryType(mapType);
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
         MapperFactory factory = MappingUtil.getMapperFactory(true);
@@ -210,7 +210,7 @@ public class MapsTestCase {
         source.put("C", 3);
         
         Type<Map<String, Integer>> mapType = new TypeBuilder<Map<String, Integer>>(){}.build();
-        Type<MapEntry<String, Integer>> entryType = MapEntry.entryType(mapType);
+        Type<MapEntry<String, Integer>> entryType = MapEntry.concreteEntryType(mapType);
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
         MapperFactory factory = MappingUtil.getMapperFactory(true);
@@ -243,7 +243,7 @@ public class MapsTestCase {
         source.put("C", 3);
         
         Type<Map<String, Integer>> mapType = new TypeBuilder<Map<String, Integer>>(){}.build();
-        Type<MapEntry<String, Integer>> entryType = MapEntry.entryType(mapType);
+        Type<MapEntry<String, Integer>> entryType = MapEntry.concreteEntryType(mapType);
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
         

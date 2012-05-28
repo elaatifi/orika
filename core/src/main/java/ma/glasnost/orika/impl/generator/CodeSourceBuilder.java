@@ -19,73 +19,39 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
+import static ma.glasnost.orika.impl.Specifications.*;
+
+import java.util.Map;
+import java.util.Set;
+
+import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.MapEntry;
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.util.ClassUtil;
+import ma.glasnost.orika.metadata.FieldMap;
+import ma.glasnost.orika.metadata.FieldMapBuilder;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
 
 public class CodeSourceBuilder {
     
     private final StringBuilder out = new StringBuilder();
-//    private int currentIndent = 1;
     private final UsedTypesContext usedTypes;
+    private final MapperFactory mapperFactory;
     
-    public CodeSourceBuilder(int indent, UsedTypesContext usedTypes) {
-//        this.currentIndent = indent;
+    public CodeSourceBuilder(UsedTypesContext usedTypes, MapperFactory mapperFactory) {
         this.usedTypes = usedTypes;
+        this.mapperFactory = mapperFactory;
     }
-    
-//    /**
-//     * Returns a fully type-cast getter for the property which has no reliance
-//     * on java generics.
-//     * 
-//     * @param property
-//     *            the Property for which to return the getter
-//     * @param variableExpression
-//     *            the String value to use for the variable on which the getter
-//     *            is called
-//     * @return
-//     */
-//    private String getGetter(final Property property, String variableExpression) {
-//        String var = variableExpression;
-//        if (property.hasPath()) {
-//            for (final Property p : property.getPath()) {
-//                var = getGetter(p, var);
-//            }
-//        }
-//        return "((" + property.getType().getCanonicalName() + ")" + var + "." + property.getGetter() + ")";
-//    }
-    
-//    /**
-//     * Returns a fully type-cast setter for the property which has no reliance
-//     * on java generics.
-//     * 
-//     * @param property
-//     *            the Property for which to return the getter
-//     * @param variableExpression
-//     *            the String value to use for the variable on which the getter
-//     *            is called
-//     * @return
-//     */
-//    private String getSetter(final Property property, final String variableExpression) {
-//        String var = variableExpression;
-//        if (property.hasPath()) {
-//            for (final Property p : property.getPath()) {
-//                var = getGetter(p, var);
-//            }
-//        }
-//        return var + "." + property.getSetter();
-//        
-//    }
     
     private String usedType(Type<?> type) {
         int index = usedTypes.getUsedTypeIndex(type);
-        return "usedTypes[" + index + "]";
+        return "(("+Type.class.getCanonicalName()+")usedTypes[" + index + "])";
     }
-    
-//    private String usedType(Property prop) {
-//        return usedType(prop.getType());
-//    }
     
     private String usedType(VariableRef r) {
         return usedType(r.type());
@@ -109,11 +75,11 @@ public class CodeSourceBuilder {
         return converterId;
     }
     
-    public CodeSourceBuilder set(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder copyByReference(VariableRef d, VariableRef s) {
         return statement(d.assign(s));
     }
     
-    public CodeSourceBuilder setCollection(VariableRef d, VariableRef s, Property ip, Type<?> destinationType) {
+    public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef d, VariableRef s, Property ip, Type<?> destinationType) {
         
         final Class<?> dc = destinationType.getRawType();
         final Class<?> destinationElementClass = d.elementType().getRawType();
@@ -221,7 +187,7 @@ public class CodeSourceBuilder {
         return out.toString();
     }
     
-    public CodeSourceBuilder setFromStringConversion(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromStringToStringConvertable(VariableRef d, VariableRef s) {
 
         if (d.isPrimitive()) {
             statement(d.assign("%s.valueOf(%s)", d.wrapperTypeName(), s));
@@ -233,7 +199,7 @@ public class CodeSourceBuilder {
         
     }
     
-    public CodeSourceBuilder setToStringConversion(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromAnyTypeToString(VariableRef d, VariableRef s) {
 
         if (s.isPrimitive()) {
             statement(d.assign("\"\"+ %s", s));
@@ -245,7 +211,7 @@ public class CodeSourceBuilder {
         
     }
     
-    public CodeSourceBuilder setWrapper(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromPrimitiveToWrapper(VariableRef d, VariableRef s) {
  
         statement(d.assign("%s.valueOf(%s)", d.typeName(), s));
         
@@ -263,7 +229,14 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder setArray(VariableRef d, VariableRef s) {
+    /**
+     * Generates code to convert from an array or collection to an array
+     * 
+     * @param d
+     * @param s
+     * @return
+     */
+    public CodeSourceBuilder fromArrayOrCollectionToArray(VariableRef d, VariableRef s) {
     
         final VariableRef arrayVar = d.elementRef(d.name());
         String newArray = format("%s[] %s = new %s[%s]", d.elementTypeName(), d.name(), d.elementTypeName(), s.size());
@@ -279,7 +252,7 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder setToEnumeration(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromStringOrEnumToEnum(VariableRef d, VariableRef s) {
         
         String assignEnum = d.assign("Enum.valueOf(%s.class, \"\"+%s)", /*d.typeName(),*/ d.typeName(), s);
         statement( "%s { %s; } else { %s; }", s.ifNotNull(), assignEnum, d.assign("null"));
@@ -287,7 +260,7 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    public CodeSourceBuilder setObject(VariableRef d, VariableRef s, Property ip) {
+    public CodeSourceBuilder fromObjectToObject(VariableRef d, VariableRef s, Property ip) {
         
         String mapNewObject = d.assign(format("(%s)mapperFacade.map(%s, %s, %s, mappingContext)", d.typeName(), s, usedType(s), usedType(d)));
         String mapExistingObject = format("mapperFacade.map(%s, %s, %s, %s, mappingContext)", s, d, usedType(s), usedType(d));
@@ -311,46 +284,25 @@ public class CodeSourceBuilder {
         
         return this;
     }
-    
-//    public CodeSourceBuilder ifSourceNotNull(Property sp) {
-//        final String typeCastGetter = getGetter(sp, "source");
-//        append("if(%s != null)", typeCastGetter);
-//        return this;
-//    }
-    
+
+    /**
+     * Generate code for testing that the given variable reference is not null
+     * 
+     * @param p
+     * @return
+     */
     public CodeSourceBuilder ifNotNull(VariableRef p) {
-        return append(p.ifNotNull());
+        return newLine().append(p.ifNotNull());
     }
     
     public CodeSourceBuilder ifNull(VariableRef p) {
-        return append(p.ifNull());
+        return newLine().append(p.ifNull());
     }
     
     public CodeSourceBuilder ifPathNotNull(VariableRef p) {
     	return append(p.ifPathNotNull());
     }
-    
-//    public CodeSourceBuilder avoidSourceNPE(Property sp) {
-//        newLine();
-//        if (sp.hasPath()) {
-//            boolean first = true;
-//            append("if(");
-//            String expression = "source";
-//            
-//            for (final Property p : sp.getPath()) {
-//                if (!first) {
-//                    append(" && ");
-//                } else {
-//                    first = false;
-//                }
-//                expression = getGetter(p, expression);
-//                append("%s != null", expression);
-//            }
-//            append(")");
-//        }
-//        return this;
-//    }
-    
+ 
     public CodeSourceBuilder assureInstanceExists(VariableRef pRef) {
         
         for (final VariableRef ref : pRef.getPath()) {
@@ -365,159 +317,171 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    
-//    /**
-//     * Generate code setting new property when its value is null
-//     * 
-//     * @param property
-//     *            Property
-//     * @see ma.glasnost.orika.MapperFacade#newObject
-//     * @return CodeSourceBuilder
-//     */
-//    public CodeSourceBuilder ifDestinationNull(Property property) {
-//        
-//        String getterExpression = "destination";
-//        String setterExpression;
-//        for (final Property p : property.getPath()) {
-//            
-//            if (!ClassUtil.isConcrete(p.getType())) {
-//                throw new MappingException("Abstract types are unsupported for nested properties. \n" + property.toString());
-//            }
-//            setterExpression = getSetter(p, getterExpression);
-//            getterExpression = getGetter(p, getterExpression);
-//            
-//            append("if(%s == null) ", getterExpression);
-//            newLine();
-//            final String value = String.format("(%s)mapperFacade.newObject(source, %s, mappingContext)", p.getType().getCanonicalName(),
-//                    usedType(p));
-//            append("\t" + setterExpression + ";", value);
-//        }
-//        return this;
-//    }
-    
     public CodeSourceBuilder ifInstanceOf(String expression, Type<?> sourceClass) {
         append("if(%s instanceof %s)", expression, sourceClass.getCanonicalName());
         return this;
     }
-    
-//    public CodeSourceBuilder setDestinationNull(Property dp) {
-//        if (dp.getSetter() != null)
-//            append(getSetter(dp, "destination") + ";", "null" );
-//        return this;
-//    }
-    
-//    private String getPrimitiveType(Class<?> clazz) {
-//        String type = clazz.getSimpleName().toLowerCase();
-//        if ("integer".equals(type)) {
-//            type = "int";
-//        } else if ("character".equals(type)) {
-//            type = "char";
-//        }
-//        return type;
-//    }
-    
-//    public CodeSourceBuilder declareVar(Class<?> clazz, String var) {
-//        append("\n%s %s = %s;", clazz.getCanonicalName(), var, clazz.isPrimitive() ? getDefaultPrimitiveValue(clazz) : "null");
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignImmutableVar(String var, Property sp) {
-//        append("%s = %s;", var, getGetter(sp, "source"));
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignStringConvertedVar(String var, Property sp) {
-//        append("%s = \"\" + %s;", var, getGetter(sp, "source"));
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignVarConvertedFromString(String var, Property sp, Property dp) {
-//        append("%s = \"\" + %s;", var, getGetter(sp, "source"));
-//        
-//        final String getter = getGetter(sp, "source");
-//        
-//        newLine();
-//        if (dp.getType().isPrimitive()) {
-//            final String wrapperTypeName = ClassUtil.getWrapperType(dp.getRawType()).getCanonicalName();
-//            append("%s = %s.valueOf(%s).%sValue();", var, wrapperTypeName, getter, getPrimitiveType(dp.getRawType()));
-//        } else {
-//            final String wrapperTypeName = dp.getType().getCanonicalName();
-//            ifSourceNotNull(sp).then();
-//            append("%s = %s.valueOf(%s);", var, wrapperTypeName, getter);
-//            end();
-//        }
-//        
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignObjectVar(String var, Property sp, Class<?> targetClass) {
-//        String sourceType = usedType(sp);
-//        String targetType = usedType(TypeFactory.valueOf(targetClass));
-//        append("%s = (%s) mapperFacade.map(%s, %s, %s);", var, targetClass.getCanonicalName(), getGetter(sp, "source"), sourceType,
-//                targetType);
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignCollectionVar(String var, Property sp, Property dp) {
-//        
-//        String destinationCollection = "List";
-//        String sourceType = usedElementType(sp);
-//        String destinationType = usedElementType(dp);
-//        
-//        if (dp.isList()) {
-//            destinationCollection = "List";
-//        } else if (dp.isSet()) {
-//            destinationCollection = "Set";
-//        }
-//        
-//        final String sourceGetter = getGetter(sp, "source");
-//        
-//        append("%s = mapperFacade.mapAs%s(%s, %s, %s, mappingContext);", var, destinationCollection, sourceGetter, sourceType,
-//                destinationType);
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignArrayVar(String var, Property sp, Class<?> targetClass) {
-//        String getter = getGetter(sp, "source");
-//        final String getSizeCode = sp.getRawType().isArray() ? "length" : "size()";
-//        final String castSource = sp.getRawType().isArray() ? "Object[]" : "";
-//        final String sourceType = usedComponentType(sp);
-//        final String targetType = usedType(TypeFactory.valueOf(targetClass));
-//        
-//        append("%s[] %s = new %s[%s.%s];", targetClass, var, targetClass.getCanonicalName(), getter, getSizeCode).append(
-//                "mapperFacade.mapAsArray((Object[])%s, (%s)%s, %s, %s, mappingContext);", var, castSource, getter, sourceType, targetType);
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignPrimitiveToWrapperVar(String var, Property sp, Class<?> targetClass) {
-//        final String getter = getGetter(sp, "source");
-//        
-//        append("%s = %s.valueOf((%s) %s);\n", var, targetClass.getCanonicalName(), getPrimitiveType(targetClass), getter);
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignWrapperToPrimitiveVar(String var, Property sp, Class<?> targetClass) {
-//        String getter = getGetter(sp, "source");
-//        append("%s = %s.%sValue();\n", var, getter, getPrimitiveType(targetClass));
-//        return this;
-//    }
-    
-//    public CodeSourceBuilder assignConvertedVar(String var, Property source, Class<?> targetClass, String converterId) {
-//        final String getter = getGetter(source, "source");
-//        converterId = getConverterId(converterId);
-//        append("%s = ((%s)mapperFacade.convert(%s, %s.class, %s)); \n", var, targetClass.getCanonicalName(), getter,
-//                targetClass.getCanonicalName(), converterId);
-//        return this;
-//        
-//    }
-    
-//    private String getDefaultPrimitiveValue(Class<?> clazz) {
-//        if (Boolean.TYPE.equals(clazz))
-//            return "false";
-//        else if (Character.TYPE.equals(clazz))
-//            return "'\\u0000'";
-//        else
-//            return "0";
-//    }
-    
+
+	public CodeSourceBuilder fromMapToMap(VariableRef d, VariableRef s, Type<?> destinationType) {
+        
+        ifNotNull(s).then();
+        
+        if (d.isAssignable()) {
+            statement("if (%s == null) %s", d, d.assign(d.newMap()));
+        }
+        
+        statement("%s.clear()", d);
+        if (d.mapKeyType().equals(s.mapKeyType()) 
+        	&& d.mapValueType().equals(s.mapValueType())) {
+        	/*
+        	 * Simple map-to-map case: both key and value types are identical
+        	 */
+        	statement("%s.putAll(mapperFacade.mapAsMap(%s, %s, %s, mappingContext));", d, 
+                s, usedType(s.type()), usedType(d.type()));
+        } else {
+        	VariableRef newKey = new VariableRef(d.mapKeyType(), "_$_key");
+        	VariableRef newVal = new VariableRef(d.mapValueType(), "_$_val");
+        	VariableRef entry = new VariableRef(TypeFactory.valueOf(Map.Entry.class), "_$_entry");
+        	VariableRef sourceKey = new MapEntryRef(s.mapKeyType(), "_$_entry", EntryPart.KEY);
+        	VariableRef sourceVal = new MapEntryRef(s.mapValueType(), "_$_entry", EntryPart.VALUE);
+        	/*
+        	 * Loop through the individual entries, map key/value and then put them into the destination
+        	 */
+        	append("for( Object _$_o: %s.entrySet())", s).begin();
+        	statement(entry.declare("_$_o"));
+        	statement(newKey.declare());
+        	statement(newVal.declare());
+        	mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null);
+        	mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null);
+        	statement("%s.put(%s, %s)", d, newKey, newVal);
+        	end();
+        }
+        _else().statement(d.assignIfPossible("null")).end();
+        
+        return this;
+	}
+	
+	
+	public CodeSourceBuilder fromArrayOrCollectionToMap(VariableRef d, VariableRef s) {
+        
+        ifNotNull(s).then();
+        
+        if (d.isAssignable()) {
+            statement("if (%s == null) %s", d, d.assign(d.newMap()));
+        }
+        statement("%s.clear()", d);
+        
+    	//VariableRef newKey = new VariableRef(d.mapKeyType(), "_$_key");
+    	//VariableRef newVal = new VariableRef(d.mapValueType(), "_$_val");
+    	VariableRef element = new VariableRef(s.elementType(), "_$_element");
+    	
+    	@SuppressWarnings("unchecked")
+    	Type<MapEntry<Object, Object>> entryType = MapEntry.concreteEntryType((Type<? extends Map<Object, Object>>) d.type());
+    			
+    	VariableRef newEntry = new VariableRef(entryType, "_$_entry");
+    	VariableRef newKey = new MapEntryRef(newEntry.type(), newEntry.name(), EntryPart.KEY);
+    	VariableRef newVal = new MapEntryRef(newEntry.type(), newEntry.name(), EntryPart.VALUE);
+    	/*
+    	 * Loop through the individual entries, map key/value and then put them into the destination
+    	 */
+    	append("for( Object _o : %s)", s).begin();
+    	statement(element.declare("_o"));
+    	statement(newEntry.declare("mapperFacade.map(%s, %s, %s, mappingContext)", element, usedType(element), usedType(newEntry)));
+    	//statement(newKey.declare());
+    	//statement(newVal.declare());
+    	
+    	statement("%s.put(%s, %s)", d, newKey, newVal);
+    	end();
+        
+        _else().statement(d.assignIfPossible("null")).end();
+        
+        return this;
+	}
+	
+	
+	
+	/**
+	 * Generates the source code to convert from a Map type to an Array type
+	 * 
+	 * @param d a reference to the destination 
+	 * @param s a reference to the source
+	 * @param inverse the destination's inverse property
+	 * @param destinationType
+	 * @return
+	 */
+	private CodeSourceBuilder fromMapToArray(VariableRef d,
+			VariableRef s, Property inverse, Type<?> destinationType) {
+      
+		return fromArrayOrCollectionToArray(d, entrySetRef(s));
+	}
+	
+	
+	private CodeSourceBuilder fromMapToCollection(VariableRef d, VariableRef s, Property inverse, Type<?> destinationType) {
+		
+		return fromArrayOrCollectionToCollection(d, entrySetRef(s) , inverse, destinationType);
+	}
+	
+	
+	private VariableRef entrySetRef(VariableRef s) {
+		@SuppressWarnings("unchecked")
+		Type<Set<Map.Entry<Object, Object>>> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
+		return new VariableRef(sourceEntryType, s + ".entrySet()");
+	}
+	
+	public CodeSourceBuilder mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty, Type<?> destinationType) {
+		
+		// Generate mapping code for every case     
+	    Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
+	    if (converter != null) {
+	        convert(destinationProperty, sourceProperty, fieldMap.getConverterId());
+	    } else if (fieldMap.is(toAnEnumeration())) {
+	        fromStringOrEnumToEnum(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(immutable())) {
+	        copyByReference(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(anArray())) {
+	        fromArrayOrCollectionToArray(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(aCollection())) {
+	        fromArrayOrCollectionToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+	    } else if (fieldMap.is(aWrapperToPrimitive())) {
+	        setPrimitive(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(aMapToMap())) {
+	    	fromMapToMap(destinationProperty, sourceProperty, destinationType);
+	    } else if (fieldMap.is(aMapToArray())) {
+	    	fromMapToArray(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+	    } else if (fieldMap.is(aMapToCollection())) {
+	    	fromMapToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+	    } else if (fieldMap.is(anArrayOrCollectionToMap())) {
+	    	fromArrayOrCollectionToMap(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(aPrimitiveToWrapper())) {
+	        fromPrimitiveToWrapper(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(aConversionFromString())) {
+	        fromStringToStringConvertable(destinationProperty, sourceProperty);
+	    } else if (fieldMap.is(aConversionToString())) {
+	        fromAnyTypeToString(destinationProperty, sourceProperty);
+	    } else {
+	        /**/
+	        
+	        if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive())
+	            newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
+	        
+	        else {
+	            fromObjectToObject(destinationProperty, sourceProperty, fieldMap.getInverse());
+	        }
+	    }
+	    return this;
+	}
+
+	
+
+	private Converter<Object, Object> getConverter(FieldMap fieldMap, String converterId) {
+        Converter<Object, Object> converter = null;
+        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
+        if (converterId != null) {
+            converter = converterFactory.getConverter(converterId);
+        } else {
+            converter = converterFactory.getConverter(fieldMap.getSource().getType(), fieldMap.getDestination().getType());
+        }
+        return converter;
+    }
+	
 }

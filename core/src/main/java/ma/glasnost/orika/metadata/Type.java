@@ -5,6 +5,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Collection;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 
@@ -141,8 +142,12 @@ public final class Type<T> implements ParameterizedType {
     }
     
     public Type<?> getComponentType() {
-        if (componentType == null) {
-            componentType = rawType.isArray() ? TypeFactory.valueOf(rawType.getComponentType()) : TypeFactory.valueOf(rawType);
+    	if (componentType == null) {
+            if (rawType.isArray()) {
+            	componentType = TypeFactory.valueOf(rawType.getComponentType());
+            } else if (isParameterized){
+            	componentType = this.getNestedType(0);
+            }
         }
         return componentType;
     }
@@ -223,6 +228,18 @@ public final class Type<T> implements ParameterizedType {
     	return getRawType().isEnum();
     }
    
+    public boolean isArray() {
+    	return getRawType().isArray();
+    }
+    
+    public boolean isCollection() {
+    	return Collection.class.isAssignableFrom(getRawType());
+    }
+    
+    public boolean isMap() {
+    	return Map.class.isAssignableFrom(getRawType());
+    }
+    
     public boolean isPrimitive() {
     	return getRawType().isPrimitive();
     }

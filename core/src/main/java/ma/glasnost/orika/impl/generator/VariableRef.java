@@ -422,7 +422,7 @@ public class VariableRef {
         return getter() + "." + (rawType().isArray() ? "length" : "size()");
     }
     
-    private static String getGetter(final Property property, String variableExpression) {
+    protected static String getGetter(final Property property, String variableExpression) {
         String var = variableExpression;
         if (property.hasPath()) {
             for (final Property p : property.getPath()) {
@@ -447,7 +447,7 @@ public class VariableRef {
      *            is called
      * @return
      */
-    private static String getSetter(final Property property, final String variableExpression) {
+    protected static String getSetter(final Property property, final String variableExpression) {
         if (property.getSetter() == null)
             return null;
         

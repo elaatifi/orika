@@ -18,16 +18,12 @@
 
 package ma.glasnost.orika.impl.generator;
 
-import static ma.glasnost.orika.impl.Specifications.*;
-
 import java.util.Set;
 
 import javassist.CannotCompileException;
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.GeneratedMapperBase;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -78,7 +74,7 @@ public final class MapperGenerator {
     
     private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
         
-        final CodeSourceBuilder out = new CodeSourceBuilder(2, usedTypes);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ")
                 .append(mapMethod)
@@ -173,37 +169,8 @@ public final class MapperGenerator {
                 code.assureInstanceExists(destinationProperty);
             }
             
-            // Generate mapping code for every case     
-            Converter<Object, Object> converter = getConverter(fieldMap);
-            if (converter != null) {
-                code.convert(destinationProperty, sourceProperty, fieldMap.getConverterId());
-            } else if (fieldMap.is(toAnEnumeration())) {
-                code.setToEnumeration(destinationProperty, sourceProperty);
-            } else if (fieldMap.is(immutable())) {
-                code.set(destinationProperty, sourceProperty);
-            } else if (fieldMap.is(anArray())) {
-                code.setArray(destinationProperty, sourceProperty);
-            } else if (fieldMap.is(aCollection())) {
-                code.setCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
-            } else if (fieldMap.is(aWrapperToPrimitive())) {
-                code.setPrimitive(destinationProperty, sourceProperty);
-            } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                code.setWrapper(destinationProperty, sourceProperty);
-            } else if (fieldMap.is(aConversionFromString())) {
-                code.setFromStringConversion(destinationProperty, sourceProperty);
-            } else if (fieldMap.is(aConversionToString())) {
-                code.setToStringConversion(destinationProperty, sourceProperty);
-            } else {
-                /**/
-                
-                if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive())
-                    code.newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
-                
-                else {
-                    code.setObject(destinationProperty, sourceProperty, fieldMap.getInverse());
-                }
-            }
-            
+            code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType);
+                        
             // Close up, and set null to destination
             if (sourceProperty.isNestedProperty()) {
                 code.end();
@@ -215,17 +182,6 @@ public final class MapperGenerator {
                 // elsewise ignore
             }
         }
-    }
-    
-    private Converter<Object, Object> getConverter(FieldMap fieldMap) {
-        Converter<Object, Object> converter = null;
-        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-        if (fieldMap.getConverterId() != null) {
-            converter = converterFactory.getConverter(fieldMap.getConverterId());
-        } else {
-            converter = converterFactory.getConverter(fieldMap.getSource().getType(), fieldMap.getDestination().getType());
-        }
-        return converter;
     }
     
 }

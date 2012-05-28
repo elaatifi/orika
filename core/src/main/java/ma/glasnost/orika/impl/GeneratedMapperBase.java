@@ -29,7 +29,7 @@ import ma.glasnost.orika.metadata.Type;
 public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
 
     protected Mapper<Object, Object> customMapper;
-    protected Type<Object>[] usedTypes;
+    protected Type<?>[] usedTypes;
     private Mapper<Object, Object>[] usedMappers;
     private Type<Object> aType;
     private Type<Object> bType;

@@ -72,8 +72,7 @@ public class ObjectFactoryGenerator {
     
     public GeneratedObjectFactory build(Type<?> type) {
         
-        final String className = type.getSimpleName() + "ObjectFactory" + 
-        	/*System.identityHashCode(type) +*/ nameSuffix;
+        final String className = type.getSimpleName() + "ObjectFactory" + nameSuffix;
         
         try {
             final GeneratedSourceCode factoryCode = 
@@ -93,7 +92,7 @@ public class ObjectFactoryGenerator {
     }
     
     private void addCreateMethod(GeneratedSourceCode context, Type<?> clazz) throws CannotCompileException {
-        final CodeSourceBuilder out = new CodeSourceBuilder(1, usedTypes);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
@@ -170,21 +169,21 @@ public class ObjectFactoryGenerator {
                     if (fieldMap.is(aWrapperToPrimitive())) {
                         out.ifNotNull(s).setPrimitive(v, s);
                     } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                        out.setWrapper(v, s);
+                        out.fromPrimitiveToWrapper(v, s);
                     } else if (fieldMap.is(aPrimitive())) {
-                        out.set(v, s);
+                        out.copyByReference(v, s);
                     } else if (fieldMap.is(immutable())) {
-                        out.ifNotNull(s).set(v, s);
+                        out.ifNotNull(s).copyByReference(v, s);
                     } else if (fieldMap.is(anArray())) {
-                        out.setArray(v, s);
+                        out.fromArrayOrCollectionToArray(v, s);
                     } else if (fieldMap.is(aCollection())) {
-                        out.setCollection(v, s, fieldMap.getDestination(), fieldMap.getDestination().getType());
+                        out.fromArrayOrCollectionToCollection(v, s, fieldMap.getDestination(), fieldMap.getDestination().getType());
                     } else if (fieldMap.is(aConversionFromString())) { 
-                        out.setFromStringConversion(v, s);
+                        out.fromStringToStringConvertable(v, s);
                     } else if (fieldMap.is(aConversionToString())) {
-                        out.setToStringConversion(v, s);
+                        out.fromAnyTypeToString(v, s);
                     } else { /**/
-                        out.setObject(v, s, null);
+                        out.fromObjectToObject(v, s, null);
                     }
                     
                 } catch (final Exception e) {

@@ -221,7 +221,7 @@ public interface MapperFacade {
     <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context);
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // New method sigantures to support generics mapping
+    // New method signatures to support generics mapping
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType);
     
@@ -256,11 +256,26 @@ public interface MapperFacade {
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // New method signatures to support java.util.Map types
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    /*
-     * New mapping type: Map to Map
+    
+    /**
+     * Map from one instance of java.util.Map to another.
+     * 
+     * @param source the source Map
+     * @param sourceType the parameterized type of the source Map object
+     * @param destinationType the parameterized type of the destination Map object
+     * @return a new Map instance, with key and value types as defined by destinationType
      */
     <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType);
     
+    /**
+     * Map from one instance of java.util.Map to another.
+     * 
+     * @param source
+     * @param sourceType
+     * @param destinationType
+     * @param context context the context from the current mapping request
+     * @return a new Map instance, with key and value types as defined by destinationType
+     */
     <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType, MappingContext context);
     
     /*

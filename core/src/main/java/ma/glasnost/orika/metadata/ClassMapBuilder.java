@@ -18,9 +18,13 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.Mapper;
@@ -40,6 +44,8 @@ public final class ClassMapBuilder<A, B> {
     private Mapper<A, B> customizedMapper;
     private String[] constructorA;
     private String[] constructorB;
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClassMapBuilder.class);
     
     private ClassMapBuilder(Type<A> aType, Type<B> bType) {
         
@@ -80,9 +86,19 @@ public final class ClassMapBuilder<A, B> {
     }
     
     public FieldMapBuilder<A, B> fieldMap(String a, String b) {
-        final FieldMapBuilder<A, B> fieldMapBuilder = new FieldMapBuilder<A, B>(this, a, b);
-        
-        return fieldMapBuilder;
+    
+    	try {
+	    	final FieldMapBuilder<A, B> fieldMapBuilder = new FieldMapBuilder<A, B>(this, a, b);
+	        
+	        return fieldMapBuilder;
+	    } catch (MappingException e) {
+	    	/*
+	    	 * Add more information to the message to help with debugging
+	    	 */
+	    	String msg = getClass().getSimpleName() + ".map(" + aType + ", " + bType + ")" +
+	    			".field('" + a + "', '" + b + "'): Error: " + e.getLocalizedMessage();
+	    	throw new MappingException(msg, e);
+	    }
     }
     
     public ClassMapBuilder<A, B> exclude(String a) {
@@ -113,6 +129,14 @@ public final class ClassMapBuilder<A, B> {
         return this;
     }
     
+    /**
+     * Configure this ClassMapBuilder to use an existing mapping (for parent classes)
+     * defined from <code>aParentClass</code> to <code>bParentClass</code>.
+     * 
+     * @param aParentClass the source class of the parent mapping
+     * @param bParentClass the destination class of the parent mapping
+     * @return this ClassMapBuilder
+     */
     public <X, Y> ClassMapBuilder<A, B> use(Class<?> aParentClass, Class<?> bParentClass) {
         
         @SuppressWarnings("unchecked")
@@ -120,12 +144,25 @@ public final class ClassMapBuilder<A, B> {
         @SuppressWarnings("unchecked")
         Type<Object> bParentType = TypeFactory.valueOf((Class<Object>) bParentClass);
         
+        return use(aParentType, bParentType);
+    }
+    
+    /**
+     * Configure this ClassMapBuilder to use an existing mapping (for parent classes)
+     * defined from <code>aParentClass</code> to <code>bParentClass</code>.
+     * 
+     * @param aParentClass the source type of the parent mapping
+     * @param bParentClass the destination type of the parent mapping
+     * @return this ClassMapBuilder
+     */
+    public <X, Y> ClassMapBuilder<A, B> use(Type<?> aParentType, Type<?> bParentType) {
+        
         if (!aParentType.isAssignableFrom(aType)) {
-            throw new MappingException(aType.getSimpleName() + " is not a subclass of " + aParentClass.getSimpleName());
+            throw new MappingException(aType.getSimpleName() + " is not a subclass of " + aParentType.getSimpleName());
         }
         
         if (!bParentType.isAssignableFrom(bType)) {
-            throw new MappingException(bType.getSimpleName() + " is not a subclass of " + bParentClass.getSimpleName());
+            throw new MappingException(bType.getSimpleName() + " is not a subclass of " + bParentType.getSimpleName());
         }
         
         usedMappers.add(new MapperKey(aParentType, bParentType));
@@ -133,6 +170,15 @@ public final class ClassMapBuilder<A, B> {
         return this;
     }
     
+    /**
+     * Configures this class-map builder to employ the default property mapping
+     * behavior to any properties that have not already been mapped or excluded; 
+     * if any DefaultFieldMapper instances are passed, they will be used to attempt a
+     * property name match if a direct match is not found.
+     * 
+     * @param defaults zero or more DefaultFieldMapper instances to apply during the default mapping
+     * @return this ClassMapBuilder instance
+     */
     public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... defaults) {
         
         for (final String propertyName : aProperties.keySet()) {
@@ -220,22 +266,72 @@ public final class ClassMapBuilder<A, B> {
         return this;
     }
     
+    /**
+     * Produces a ClassMap instance based on the configurations defined on this
+     * ClassMapBuilder. A ClassMap is used by Orika as a runtime descriptor for
+     * the details of a mapping between one type and another.
+     * 
+     * @return a ClassMap as configured by this ClassMapBuilder
+     */
     public ClassMap<A, B> toClassMap() {
+    	
+    	if(LOGGER.isDebugEnabled()) {
+    		StringBuilder output = new StringBuilder();
+        	output.append(getClass().getSimpleName() + ".map(" + aType + ", " + bType + ")\n");
+        	for (FieldMap f: fieldsMapping) {
+        		if (f.isExcluded()) {
+        			output.append(".exclude('" + f.getSourceName() + "')\n");
+        		} else {
+        			output.append(".field([" + f.getSource() + "], [" + f.getDestination() + "])\n");
+        		}
+        	}	
+        	if (constructorA != null) {
+        		output.append(".constructorA(" + Arrays.toString(constructorA) + ")");
+        	}
+        	if (constructorB != null) {
+        		output.append(".constructorB(" + Arrays.toString(constructorB) + ")");
+        	}
+        	LOGGER.debug(output.toString());
+        }
+    	
         return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
     }
     
+    /**
+     * Creates a new ClassMapBuilder configuration for mapping between <code>aType</code>
+     * and <code>bType</code>.
+     * 
+     * @param aType
+     * @param bType
+     * @return
+     */
     public static <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
         return new ClassMapBuilder<A, B>(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType));
     }
     
+    /**
+     * @param aType
+     * @param bType
+     * @return
+     */
     public static <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Type<B> bType) {
         return new ClassMapBuilder<A, B>(aType, bType);
     }
     
+    /**
+     * @param aType
+     * @param bType
+     * @return
+     */
     public static <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Type<B> bType) {
         return new ClassMapBuilder<A, B>(TypeFactory.<A> valueOf(aType), bType);
     }
     
+    /**
+     * @param aType
+     * @param bType
+     * @return
+     */
     public static <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Class<B> bType) {
         return new ClassMapBuilder<A, B>(aType, TypeFactory.<B> valueOf(bType));
     }

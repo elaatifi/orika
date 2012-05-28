@@ -43,6 +43,11 @@ public class MapEntry<K, V> implements Map.Entry<K, V> {
 
     public MapEntry() { }
     
+    public MapEntry(K key, V value) {
+    	this.key = key;
+    	this.value = value;
+    }
+    
     private MapEntry(Entry<K, V> copy) {
         this.key = copy.getKey();
         this.value = copy.getValue();
@@ -69,11 +74,30 @@ public class MapEntry<K, V> implements Map.Entry<K, V> {
         return originalValue;
     }
     
+    /**
+     * Returns the concrete <code>MapEntry&lt;K,V&gt;</code> type that represents the entries of the given map
+     * 
+     * @param mapType
+     * @return
+     */
     @SuppressWarnings("unchecked")
-    public static <K, V> Type<MapEntry<K, V>> entryType(Type<? extends Map<K, V>> mapType) {
+    public static <K, V> Type<MapEntry<K, V>> concreteEntryType(Type<? extends Map<K, V>> mapType) {
         
         Type<?> type = TypeFactory.valueOf(MapEntry.class, mapType.getActualTypeArguments()); 
         return (Type<MapEntry<K, V>>)type; 
+    }
+    
+    /**
+     * Returns the <code>Map.Entry&lt;K,V&gt;</code> type that represents the entries of the given map
+     * 
+     * @param mapType
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <K, V> Type<Map.Entry<K, V>> entryType(Type<? extends Map<K, V>> mapType) {
+        
+        Type<?> type = TypeFactory.valueOf(Map.Entry.class, mapType.getActualTypeArguments()); 
+        return (Type<Map.Entry<K, V>>)type; 
     }
     
     public static <K, V> Set<MapEntry<K, V>> entrySet(Map<K, V> map) {

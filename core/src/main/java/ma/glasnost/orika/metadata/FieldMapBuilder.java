@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.metadata;
 
-import java.lang.reflect.Type;
+import ma.glasnost.orika.MappingException;
 
 public class FieldMapBuilder<A, B> {
     
@@ -42,6 +42,7 @@ public class FieldMapBuilder<A, B> {
         
         this.aProperty = classMapBuilder.resolveAProperty(a);
         this.bProperty = classMapBuilder.resolveBProperty(b);
+        
     }
     
     public ClassMapBuilder<A, B> add() {
@@ -89,5 +90,34 @@ public class FieldMapBuilder<A, B> {
     public FieldMapBuilder<A, B> exclude() {
         excluded = true;
         return this;
+    }
+    
+    
+    public static FieldMap mapKeys(Type<?> aType, Type<?> bType) {
+    	
+    	Property aProperty = new Property();
+    	aProperty.setName("key");
+    	aProperty.setExpression("key");
+    	aProperty.setGetter("getKey()");
+    	aProperty.setSetter("setKey(%s)");
+    	aProperty.setType(aType);
+    	Property bProperty = aProperty.copy();
+    	bProperty.setType(bType);
+    	
+    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, true, false, null);
+    }
+    
+    public static FieldMap mapValues(Type<?> aType, Type<?> bType) {
+    	
+    	Property aProperty = new Property();
+    	aProperty.setName("value");
+    	aProperty.setExpression("value");
+    	aProperty.setGetter("getValue()");
+    	aProperty.setSetter("setValue(%s)");
+    	aProperty.setType(aType);
+    	Property bProperty = aProperty.copy();
+    	bProperty.setType(bType);
+    	
+    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, true, false, null);
     }
 }

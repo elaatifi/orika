@@ -121,7 +121,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return map(sourceObject, sourceType, destinationClass, new MappingContext());
     }
     
-    public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> D map(final S sourceObject, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
         if (destinationType == null) {
             throw new MappingException("Can not map to a null class.");
         }
@@ -159,7 +159,6 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         
         MappingStrategyRecorder strategyRecorder = null;
-        final Object originalSourceObject = sourceObject;
         if (useStrategyCache) {
             /*
              * Convert the current key to an immutable copy (and clear it) so that other 
@@ -170,12 +169,12 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         
         final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
-        sourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
+        final S resolvedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
         
         if (useStrategyCache) {
             strategyRecorder.setResolvedSourceType(resolvedSourceType);
             strategyRecorder.setResolvedDestinationType(destinationType);
-            if (originalSourceObject != sourceObject) {
+            if (sourceObject != resolvedSourceObject) {
                 strategyRecorder.setUnenhance(true);
             }
             strategyRecorder.setInstantiate(true);
@@ -192,7 +191,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 }
             }
             @SuppressWarnings("unchecked")
-            D result = (D) sourceObject;
+            D result = (D) resolvedSourceObject;
             return result;
         }
         
@@ -205,7 +204,7 @@ public class MapperFacadeImpl implements MapperFacade {
                     log.debug(strategyRecorder.describeDetails());
                 }
             }
-            return convert(sourceObject, sourceType, destinationType, null);
+            return convert(resolvedSourceObject, sourceType, destinationType, null);
         }
         
         Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
@@ -228,11 +227,11 @@ public class MapperFacadeImpl implements MapperFacade {
             strategyRecorder.setResolvedMapper(mapper);
         }
         
-        final D destinationObject = newObject(sourceObject, resolvedDestinationType, context, strategyRecorder);
+        final D destinationObject = newObject(resolvedSourceObject, resolvedDestinationType, context, strategyRecorder);
         
         context.cacheMappedObject(sourceObject, destinationType, destinationObject);
         
-        mapDeclaredProperties(sourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper, strategyRecorder);
+        mapDeclaredProperties(resolvedSourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper, strategyRecorder);
         
         if (useStrategyCache) {
             strategyCache.put(key, strategyRecorder.playback());
@@ -582,7 +581,7 @@ public class MapperFacadeImpl implements MapperFacade {
         Map<Dk,Dv> destination = new HashMap<Dk,Dv>();
         
         for (S element: source) {
-            Type<MapEntry<Dk, Dv>> entryType = MapEntry.entryType(destinationType);
+            Type<MapEntry<Dk, Dv>> entryType = MapEntry.concreteEntryType(destinationType);
             MapEntry<Dk, Dv> entry = (MapEntry<Dk, Dv>) map(element, sourceType, entryType, context);
             destination.put(entry.getKey(), entry.getValue());
         }
@@ -605,7 +604,7 @@ public class MapperFacadeImpl implements MapperFacade {
          */
         List<D> destination = new ArrayList<D>(source.size());
         
-        Type<MapEntry<Sk,Sv>> entryType = MapEntry.entryType(sourceType);
+        Type<MapEntry<Sk,Sv>> entryType = MapEntry.concreteEntryType(sourceType);
         
         return (List<D>) mapAsCollection(MapEntry.entrySet(source), entryType, destinationType, destination, context);
     }
@@ -631,7 +630,7 @@ public class MapperFacadeImpl implements MapperFacade {
     
     public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
        
-        Type<MapEntry<Sk,Sv>> entryType = MapEntry.entryType(sourceType);
+        Type<MapEntry<Sk,Sv>> entryType = MapEntry.concreteEntryType(sourceType);
         
         return mapAsArray(destination, MapEntry.entrySet(source), entryType, destinationType, context);
     }
