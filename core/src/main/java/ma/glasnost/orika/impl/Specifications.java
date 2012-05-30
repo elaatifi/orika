@@ -79,6 +79,10 @@ public final class Specifications {
     	return ARRAY_OR_COLLECTION_TO_MAP;
     }
     
+    public static Specification aMappingOfTheRequiredClassProperty() {
+    	return OBJECT_CLASS_PROPERTY;
+    }
+    
     /**
      * @return true if this field map specifies a mapping from a String type field
      * to another field which has a static valueOf method which allows parsing the
@@ -196,6 +200,16 @@ public final class Specifications {
     	public boolean apply(FieldMap fieldMap) {
     		return fieldMap.getDestination().isMap() && 
     				(fieldMap.getSource().isCollection() || fieldMap.getSource().isArray());
+    	}
+    };
+    
+    private static final Specification OBJECT_CLASS_PROPERTY = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return "class".equals(fieldMap.getSource().getName()) &&
+    				"class".equals(fieldMap.getDestination().getName()) &&
+    				Class.class.equals(fieldMap.getSource().getRawType());
+    				
     	}
     };
 }

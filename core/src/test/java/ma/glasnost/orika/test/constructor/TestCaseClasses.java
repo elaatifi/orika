@@ -18,7 +18,9 @@
 
 package ma.glasnost.orika.test.constructor;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
 import ma.glasnost.orika.test.common.types.TestCaseClasses.PrimitiveWrapperHolder;
 
@@ -115,6 +117,53 @@ public interface TestCaseClasses {
             this.age = age!=null ? age.longValue() : 0;
             this.dateOfBirth = dateOfBirth;
         }
+        
+        public String getFirstName() {
+            return firstName;
+        }
+        
+        public String getLastName() {
+            return lastName;
+        }
+        
+        public long getAge() {
+            return age;
+        }
+        
+        public String getDateOfBirth() {
+            return dateOfBirth;
+        }
+    }
+    
+    
+    public static class PersonVO3 {
+    	
+    	private final String firstName;
+        private final String lastName;
+        
+        private final long age;
+        private final String dateOfBirth;
+        
+        public PersonVO3(String dateOfBirth, Long age, String lastName, String firstName) {
+        	this(firstName, lastName, age, dateOfBirth);
+        }
+        
+        public PersonVO3(String firstName, String lastName, Long age, String dateOfBirth) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.age = age!=null ? age.longValue() : 0;
+            this.dateOfBirth = dateOfBirth;
+        }
+        
+        public PersonVO3(String firstName, String lastName, Date dateOfBirth) {
+        	this(firstName, lastName, yearsDifference(dateOfBirth, new Date()), 
+        			new SimpleDateFormat("dd/MM/yyyy").format(dateOfBirth));
+        }
+        
+		public static long yearsDifference(final Date start, final Date end) {
+			long diff = end.getTime() - start.getTime();
+			return diff / TimeUnit.SECONDS.toMillis(60*60*24*365);
+		}
         
         public String getFirstName() {
             return firstName;
