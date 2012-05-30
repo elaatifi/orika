@@ -21,13 +21,11 @@ import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Map;
 
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
-import ma.glasnost.orika.property.PropertyResolver;
 
 import com.thoughtworks.paranamer.AdaptiveParanamer;
 import com.thoughtworks.paranamer.AnnotationParanamer;
@@ -65,8 +63,6 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         		Property destination = aToB ? fieldMap.getDestination() : fieldMap.getSource();
         		targetParameterNames.add(destination.getName());
         	}
-//        	Map<String, Property> destinationProperties = PropertyResolver.getInstance().getProperties(targetClass);
-//        	arguments = new ArrayList<String>(destinationProperties.keySet());
         }
         
         Constructor<T>[] constructors = (Constructor<T>[]) targetClass.getRawType().getConstructors();
