@@ -56,4 +56,12 @@ public interface Converter<S, D> {
      * @return a new instance of <code>destinationType</code>
      */
     D convert(S source, Type<? extends D> destinationType);
+    
+    /**
+     * Store an instance of the current MapperFacade which may be used 
+     * in mapping of nested types.
+     * 
+     * @param mapper the current MapperFacade
+     */
+    void setMapperFacade(MapperFacade mapper);
 }

@@ -154,4 +154,54 @@ public interface MapperFactory {
      */
     void build();
     
+    
+    /**
+     * Constructs a new ClassMapBuilder instance initialized with the provided types
+     * which can be used to configure/customize the mapping between the two types.<br><br>
+     * The returned ClassMapBuilder instance, after being fully configured, should
+     * finally be registered with the factory using the <code>registerClassMap</code> method.
+     * 
+     * 
+     * @param aType the Type instance representing the "A" side of the mapping
+     * @param bType the Type instance representing the "B" side of the mapping
+     * @return
+     */
+    public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType);
+    
+    /**
+     * Constructs a new ClassMapBuilder instance initialized with the provided types
+     * which can be used to configure/customize the mapping between the two types.<br><br>
+     * The returned ClassMapBuilder instance, after being fully configured, should
+     * finally be registered with the factory using the <code>registerClassMap</code> method.
+     * 
+     * @param aType the Class instance representing the "A" side of the mapping
+     * @param bType the Type instance representing the "B" side of the mapping
+     * @return
+     */
+    public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Type<B> bType);
+    
+    /**
+     * Constructs a new ClassMapBuilder instance initialized with the provided types
+     * which can be used to configure/customize the mapping between the two types.<br><br>
+     * The returned ClassMapBuilder instance, after being fully configured, should
+     * finally be registered with the factory using the <code>registerClassMap</code> method.
+     * 
+     * @param aType the Type instance representing the "A" side of the mapping
+     * @param bType the Class instance representing the "B" side of the mapping
+     * @return
+     */
+    public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Class<B> bType);
+	
+    /**
+     * Constructs a new ClassMapBuilder instance initialized with the provided types
+     * which can be used to configure/customize the mapping between the two types.<br><br>
+     * The returned ClassMapBuilder instance, after being fully configured, should
+     * finally be registered with the factory using the <code>registerClassMap</code> method.
+     * 
+     * @param aType the Class instance representing the "A" side of the mapping
+     * @param bType the Class instance representing the "B" side of the mapping
+     * @return
+     */
+    public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Class<B> bType);
+    
 }

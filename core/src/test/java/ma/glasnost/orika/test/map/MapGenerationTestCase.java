@@ -11,12 +11,8 @@ import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
-import ma.glasnost.orika.metadata.TypeBuilder;
-import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.test.MappingUtil;
-import ma.glasnost.orika.test.map.CoreMappingFunctionsTestCase.Ranking;
 
 import org.junit.Test;
 
@@ -28,7 +24,7 @@ public class MapGenerationTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
-				ClassMapBuilder.map(MapWithSetter.class, MapWithSetterDto.class)
+				factory.classMap(MapWithSetter.class, MapWithSetterDto.class)
 				.field("testScores", "scores").byDefault());
 		
 		MapperFacade mapper = factory.getMapperFacade();
@@ -58,7 +54,7 @@ public class MapGenerationTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
-				ClassMapBuilder.map(MapWithSetter.class, MapWithoutSetter.class)
+				factory.classMap(MapWithSetter.class, MapWithoutSetter.class)
 				.field("testScores", "scores").byDefault());
 		
 		MapperFacade mapper = factory.getMapperFacade();
@@ -88,7 +84,7 @@ public class MapGenerationTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
-				ClassMapBuilder.map(MapWithSetter.class, GenericDto.class)
+				factory.classMap(MapWithSetter.class, GenericDto.class)
 				.field("testScores", "stringArray").byDefault());
         
         /*
@@ -125,7 +121,7 @@ public class MapGenerationTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
-				ClassMapBuilder.map(MapWithSetter.class, GenericDto.class)
+				factory.classMap(MapWithSetter.class, GenericDto.class)
 				.field("testScores", "stringList").byDefault());
         
         /*
@@ -162,7 +158,7 @@ public class MapGenerationTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
-				ClassMapBuilder.map(MapWithoutSetter.class, GenericDto.class)
+				factory.classMap(MapWithoutSetter.class, GenericDto.class)
 				.field("scores", "stringList").byDefault());
         
         /*
@@ -208,7 +204,7 @@ public class MapGenerationTestCase {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
-				ClassMapBuilder.map(MapWithoutSetter.class, GenericDto.class)
+				factory.classMap(MapWithoutSetter.class, GenericDto.class)
 				.field("scores", "stringArray").byDefault());
         
         /*

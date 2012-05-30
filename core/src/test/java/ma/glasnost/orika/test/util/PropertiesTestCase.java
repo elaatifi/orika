@@ -19,8 +19,9 @@
 package ma.glasnost.orika.test.util;
 
 import junit.framework.Assert;
+import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.metadata.NestedProperty;
-import ma.glasnost.orika.property.PropertyResolver;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.junit.Test;
 
@@ -29,8 +30,8 @@ public class PropertiesTestCase {
 	@Test
 	public void testNestedProperty() {
 		String np = "start.x";
-
-		NestedProperty p = PropertyResolver.getInstance().getNestedProperty(Line.class, np);
+		PropertyResolverStrategy propertyResolver = UtilityResolver.getDefaultPropertyResolverStrategy();
+		NestedProperty p = propertyResolver.getNestedProperty(Line.class, np);
 
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
 	}

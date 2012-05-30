@@ -36,6 +36,7 @@ public final class Type<T> implements ParameterizedType {
     private Type<?>[] interfaces;
     private Type<?> componentType;
     private final TypeKey key;
+    private Boolean hasSingleStringConstructor;
 
     /**
      * @param rawType
@@ -249,7 +250,21 @@ public final class Type<T> implements ParameterizedType {
     }
     
     public boolean isConvertibleFromString() {
-    	return ClassUtil.isConvertibleFromString(getRawType());
+    	return isPrimitive() || isPrimitiveWrapper()
+				|| isEnum() || hasSingleStringConstructor();
+    }
+    
+    public boolean hasSingleStringConstructor() {
+    	if (hasSingleStringConstructor == null) {
+	    	try {
+	    		hasSingleStringConstructor = rawType.getConstructor(String.class)!=null;
+			} catch (NoSuchMethodException e) {
+				hasSingleStringConstructor = false;
+			} catch (SecurityException e) {
+				hasSingleStringConstructor = false;
+			}
+    	}
+    	return hasSingleStringConstructor;
     }
     
     public String toString() {

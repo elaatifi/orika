@@ -18,18 +18,20 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.property.PropertyResolver;
+import ma.glasnost.orika.impl.UtilityResolver;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class ClassMapBuilder<A, B> {
     
@@ -44,28 +46,67 @@ public final class ClassMapBuilder<A, B> {
     private Mapper<A, B> customizedMapper;
     private String[] constructorA;
     private String[] constructorB;
+    private final PropertyResolverStrategy propertyResolver;
+    private DefaultFieldMapper[] defaults;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ClassMapBuilder.class);
     
-    private ClassMapBuilder(Type<A> aType, Type<B> bType) {
+    private static volatile WeakReference<PropertyResolverStrategy> defaultPropertyResolver;
+    
+    /**
+     * @param aType
+     * @param bType
+     * @param propertyResolver
+     * @param defaults
+     */
+    ClassMapBuilder(Type<A> aType, Type<B> bType, PropertyResolverStrategy propertyResolver, DefaultFieldMapper... defaults) {
+	    
+    	if (aType == null) {
+	        throw new MappingException("[aType] is required");
+	    }
+	    
+	    if (bType == null) {
+	        throw new MappingException("[bType] is required");
+	    }
+	    
+	    this.propertyResolver = propertyResolver;
+	    this.defaults = defaults;
+	    
+	    aProperties = propertyResolver.getProperties(aType);
+	    bProperties = propertyResolver.getProperties(bType);
+	    propertiesCacheA = new HashSet<String>();
+	    propertiesCacheB = new HashSet<String>();
+	    
+	    this.aType = aType;
+	    this.bType = bType;
+	    this.fieldsMapping = new HashSet<FieldMap>();
+	    this.usedMappers = new HashSet<MapperKey>();
+	    
+	}
+	
+    /**
+     * @param aType
+     * @param bType
+     * @deprecated Use of this method instantiates a new PropertyResolverStrategy instance
+     * each time; instead, {@link ma.glasnost.orika.MapperFactory#classMap(Type, Type)} should
+     * be used which leverages the PropertyResolverStrategy instance associated with the factory.
+     */
+    @Deprecated
+	private ClassMapBuilder(Type<A> aType, Type<B> bType) {
         
-        if (aType == null) {
-            throw new MappingException("[aType] is required");
+    	this(aType, bType, getDefaultPropertyResolver());
+    }
+    
+    private static PropertyResolverStrategy getDefaultPropertyResolver() {
+    	if (defaultPropertyResolver == null || defaultPropertyResolver.get() == null) {
+        	synchronized(ClassMapBuilder.class) {
+        		if (defaultPropertyResolver == null || defaultPropertyResolver.get() == null) {
+        			defaultPropertyResolver = new WeakReference<PropertyResolverStrategy>(
+        					UtilityResolver.getDefaultPropertyResolverStrategy());
+        		}
+        	}
         }
-        
-        if (bType == null) {
-            throw new MappingException("[bType] is required");
-        }
-        
-        aProperties = PropertyResolver.getInstance().getProperties(aType);
-        bProperties = PropertyResolver.getInstance().getProperties(bType);
-        propertiesCacheA = new HashSet<String>();
-        propertiesCacheB = new HashSet<String>();
-        
-        this.aType = aType;
-        this.bType = bType;
-        this.fieldsMapping = new HashSet<FieldMap>();
-        this.usedMappers = new HashSet<MapperKey>();
+    	return defaultPropertyResolver.get();
     }
     
     /**
@@ -179,8 +220,15 @@ public final class ClassMapBuilder<A, B> {
      * @param defaults zero or more DefaultFieldMapper instances to apply during the default mapping
      * @return this ClassMapBuilder instance
      */
-    public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... defaults) {
+    public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... withDefaults) {
         
+    	DefaultFieldMapper[] defaults;
+    	if (withDefaults.length == 0) {
+    		defaults = this.defaults;
+    	} else {
+    		defaults = withDefaults;
+    	}
+    	
         for (final String propertyName : aProperties.keySet()) {
             if (!propertiesCacheA.contains(propertyName)) {
                 if (bProperties.containsKey(propertyName)) {
@@ -304,6 +352,7 @@ public final class ClassMapBuilder<A, B> {
      * @param aType
      * @param bType
      * @return
+     * @deprecated use {@link ma.glasnost.orika.MapperFactory#classMap(Class, Class)} instead
      */
     public static <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
         return new ClassMapBuilder<A, B>(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType));
@@ -313,6 +362,7 @@ public final class ClassMapBuilder<A, B> {
      * @param aType
      * @param bType
      * @return
+     * @deprecated use {@link ma.glasnost.orika.MapperFactory#classMap(Type, Type)} instead
      */
     public static <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Type<B> bType) {
         return new ClassMapBuilder<A, B>(aType, bType);
@@ -322,6 +372,7 @@ public final class ClassMapBuilder<A, B> {
      * @param aType
      * @param bType
      * @return
+     * @deprecated use {@link ma.glasnost.orika.MapperFactory#classMap(Class, Type)} instead
      */
     public static <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Type<B> bType) {
         return new ClassMapBuilder<A, B>(TypeFactory.<A> valueOf(aType), bType);
@@ -331,6 +382,7 @@ public final class ClassMapBuilder<A, B> {
      * @param aType
      * @param bType
      * @return
+     * @deprecated use {@link ma.glasnost.orika.MapperFactory#classMap(Type, Class)} instead
      */
     public static <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Class<B> bType) {
         return new ClassMapBuilder<A, B>(aType, TypeFactory.<B> valueOf(bType));
@@ -343,9 +395,9 @@ public final class ClassMapBuilder<A, B> {
     Property resolveProperty(java.lang.reflect.Type type, String expr) {
         Property property;
         if (isPropertyExpression(expr)) {
-            property = PropertyResolver.getInstance().getNestedProperty(type, expr);
+            property = propertyResolver.getNestedProperty(type, expr);
         } else {
-            final Map<String, Property> properties = PropertyResolver.getInstance().getProperties(type);
+            final Map<String, Property> properties = propertyResolver.getProperties(type);
             if (properties.containsKey(expr)) {
                 property = properties.get(expr);
             } else {
@@ -359,7 +411,7 @@ public final class ClassMapBuilder<A, B> {
     Property resolveAProperty(String expr) {
         Property property;
         if (isPropertyExpression(expr)) {
-            property = PropertyResolver.getInstance().getNestedProperty(aType, expr);
+            property = propertyResolver.getNestedProperty(aType, expr);
         } else if (aProperties.containsKey(expr)) {
             property = aProperties.get(expr);
         } else {
@@ -372,7 +424,7 @@ public final class ClassMapBuilder<A, B> {
     Property resolveBProperty(String expr) {
         Property property;
         if (isPropertyExpression(expr)) {
-            property = PropertyResolver.getInstance().getNestedProperty(bType, expr);
+            property = propertyResolver.getNestedProperty(bType, expr);
         } else if (bProperties.containsKey(expr)) {
             property = bProperties.get(expr);
         } else {

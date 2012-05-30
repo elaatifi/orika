@@ -454,7 +454,7 @@ public class CodeSourceBuilder {
 	    	fromArrayOrCollectionToMap(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aPrimitiveToWrapper())) {
 	        fromPrimitiveToWrapper(destinationProperty, sourceProperty);
-	    } else if (fieldMap.is(aConversionFromString())) {
+	    } else if (fieldMap.is(aStringToPrimitiveOrWrapper())) {
 	        fromStringToStringConvertable(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aConversionToString())) {
 	        fromAnyTypeToString(destinationProperty, sourceProperty);

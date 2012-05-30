@@ -178,7 +178,7 @@ public class ObjectFactoryGenerator {
                         out.fromArrayOrCollectionToArray(v, s);
                     } else if (fieldMap.is(aCollection())) {
                         out.fromArrayOrCollectionToCollection(v, s, fieldMap.getDestination(), fieldMap.getDestination().getType());
-                    } else if (fieldMap.is(aConversionFromString())) { 
+                    } else if (fieldMap.is(aStringToPrimitiveOrWrapper())) { 
                         out.fromStringToStringConvertable(v, s);
                     } else if (fieldMap.is(aConversionToString())) {
                         out.fromAnyTypeToString(v, s);

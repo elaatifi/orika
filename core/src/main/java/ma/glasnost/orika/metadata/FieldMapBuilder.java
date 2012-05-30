@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.metadata;
 
-import ma.glasnost.orika.MappingException;
 
 public class FieldMapBuilder<A, B> {
     
@@ -54,14 +53,14 @@ public class FieldMapBuilder<A, B> {
     }
     
     public FieldMapBuilder<A, B> aInverse(String aInverse) {
-        final Type type = aProperty.isCollection() ? aProperty.getElementType() : aProperty.getType();
+        final Type<?> type = aProperty.isCollection() ? aProperty.getElementType() : aProperty.getType();
         aInverseProperty = classMapBuilder.resolveProperty(type, aInverse);
         
         return this;
     }
     
     public FieldMapBuilder<A, B> bInverse(String bInverse) {
-        final Type type = bProperty.isCollection() ? bProperty.getElementType() : bProperty.getType();
+        final Type<?> type = bProperty.isCollection() ? bProperty.getElementType() : bProperty.getType();
         bInverseProperty = classMapBuilder.resolveProperty(type, bInverse);
         
         return this;

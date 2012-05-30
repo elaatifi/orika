@@ -8,11 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -53,7 +52,7 @@ public class CoreMappingFunctionsTestCase {
         sourceMap.put("C", 3);
         
         MapperFactory factory = MappingUtil.getMapperFactory();
-        factory.getConverterFactory().registerConverter(new Converter<Integer, String>() {
+        factory.getConverterFactory().registerConverter(new CustomConverter<Integer, String>() {
 
             public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
                 return destinationType.getRawType().equals(String.class) && 
@@ -130,7 +129,7 @@ public class CoreMappingFunctionsTestCase {
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(rankingType, entryType )
+        factory.registerClassMap(factory.classMap(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());
@@ -179,7 +178,7 @@ public class CoreMappingFunctionsTestCase {
          * represents map entries.
          */
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
+        factory.registerClassMap(factory.classMap(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());
@@ -214,7 +213,7 @@ public class CoreMappingFunctionsTestCase {
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(rankingType, entryType)
+        factory.registerClassMap(factory.classMap(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());
@@ -248,7 +247,7 @@ public class CoreMappingFunctionsTestCase {
         
         
         MapperFactory factory = MappingUtil.getMapperFactory(true);
-        factory.registerClassMap(ClassMapBuilder.map(rankingType, entryType)
+        factory.registerClassMap(factory.classMap(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
                 .byDefault().toClassMap());

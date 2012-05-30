@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.Type;
@@ -36,17 +37,27 @@ public class DefaultConverterFactory implements ConverterFactory {
     private final Cache<ConverterKey, Converter<Object, Object>> converterCache;
     private final Set<Converter<Object, Object>> converters;
     private final Map<String, Converter<Object, Object>> convertersMap;
+    private MapperFacade mapperFacade;
     
     public DefaultConverterFactory(Cache<ConverterKey, Converter<Object, Object>> converterCache, Set<Converter<Object, Object>> converters) {
         super();
         this.converterCache = converterCache;
         this.converters = converters;
-        
         this.convertersMap = new ConcurrentHashMap<String, Converter<Object, Object>>();
     }
     
     public DefaultConverterFactory() {
         this(new CacheLRULinkedHashMap<ConverterKey, Converter<Object, Object>>(CACHE_SIZE), new HashSet<Converter<Object, Object>>());
+    }
+    
+    public void setMapperFacade(MapperFacade mapperFacade) {
+    	this.mapperFacade = mapperFacade;
+    	for (Converter<?,?> converter: converters) {
+    		converter.setMapperFacade(mapperFacade);
+    	}
+    	for (Converter<?,?> converter: convertersMap.values()) {
+    		converter.setMapperFacade(mapperFacade);
+    	}
     }
     
     /*
@@ -185,7 +196,10 @@ public class DefaultConverterFactory implements ConverterFactory {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public <S, D> void registerConverter(Converter<S, D> converter) {
-        converters.add((Converter) converter);
+    	if (this.mapperFacade != null) {
+    		converter.setMapperFacade(mapperFacade);
+    	}
+    	converters.add((Converter) converter);
     }
     
     /*
@@ -197,7 +211,10 @@ public class DefaultConverterFactory implements ConverterFactory {
      */
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public <S, D> void registerConverter(String converterId, Converter<S, D> converter) {
-        convertersMap.put(converterId, (Converter) converter);
+    	if (this.mapperFacade != null) {
+    		converter.setMapperFacade(mapperFacade);
+    	}
+    	convertersMap.put(converterId, (Converter) converter);
     }
     
     /*

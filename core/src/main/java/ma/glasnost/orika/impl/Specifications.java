@@ -84,8 +84,8 @@ public final class Specifications {
      * to another field which has a static valueOf method which allows parsing the
      * field from a string.
      */
-    public static Specification aConversionFromString() {
-    	return CONVERSION_FROM_STRING;
+    public static Specification aStringToPrimitiveOrWrapper() {
+    	return STRING_TO_PRIMITIVE_OR_WRAPPER;
     }
     
     
@@ -146,10 +146,10 @@ public final class Specifications {
         
     };
     
-    private static final Specification CONVERSION_FROM_STRING = new Specification() {
+    private static final Specification STRING_TO_PRIMITIVE_OR_WRAPPER = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
-            return String.class.equals(fieldMap.getSource().getType().getRawType()) && fieldMap.getDestination().getType().isConvertibleFromString();
+            return String.class.equals(fieldMap.getSource().getType().getRawType()) && (fieldMap.getDestination().getType().isPrimitive() || fieldMap.getDestination().getType().isPrimitiveWrapper());
         }
         
     };

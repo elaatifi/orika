@@ -42,6 +42,7 @@ public class MappingStrategyKey {
     private Class<?> rawSourceType;
     private Type<?> sourceType;
     private Type<?> destinationType;
+    private boolean destinationProvided;
     
     private MappingStrategyKey() {
         
@@ -59,10 +60,15 @@ public class MappingStrategyKey {
         return destinationType;
     }
 
-    public void initialize(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType) {
+    protected boolean isDestinationProvided() {
+    	return destinationProvided;
+    }
+    
+    public void initialize(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
         this.rawSourceType = rawSourceType;
         this.sourceType = sourceType;
         this.destinationType = destinationType;
+        this.destinationProvided = destinationProvided;
     }
     
     public void clear() {
@@ -72,7 +78,7 @@ public class MappingStrategyKey {
     }
     
     public MappingStrategyKey toImmutableCopy() {
-        MappingStrategyKey copy = new ImmutableMappingStrategyKey(this.rawSourceType, this.sourceType, this.destinationType);
+        MappingStrategyKey copy = new ImmutableMappingStrategyKey(this.rawSourceType, this.sourceType, this.destinationType, this.destinationProvided);
         clear();
         return copy;
     }
@@ -81,6 +87,7 @@ public class MappingStrategyKey {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
+        result = prime * result + (isDestinationProvided() ? 1231 : 1237);
         result = prime * result + ((getDestinationType() == null) ? 0 : getDestinationType().hashCode());
         result = prime * result + ((getRawSourceType() == null) ? 0 : getRawSourceType().hashCode());
         result = prime * result + ((getSourceType() == null) ? 0 : getSourceType().hashCode());
@@ -96,6 +103,8 @@ public class MappingStrategyKey {
         if (getClass() != obj.getClass() && ImmutableMappingStrategyKey.class != obj.getClass())
             return false;
         MappingStrategyKey other = (MappingStrategyKey) obj;
+        if (isDestinationProvided() != other.isDestinationProvided())
+        	return false;
         if (getDestinationType() == null) {
             if (other.getDestinationType() != null)
                 return false;
@@ -111,7 +120,13 @@ public class MappingStrategyKey {
                 return false;
         } else if (!getSourceType().equals(other.getSourceType()))
             return false;
+        
+        
         return true;
+    }
+    
+    public String toString() {
+    	return "[" + getRawSourceType().getSimpleName() + ", " + getSourceType() + ", " + getDestinationType() +"]";
     }
     
     public static class ImmutableMappingStrategyKey extends MappingStrategyKey {
@@ -119,11 +134,13 @@ public class MappingStrategyKey {
         protected final Class<?> immutableRawSourceType;
         protected final Type<?> immutableSourceType;
         protected final Type<?> immutableDestinationType;
+        protected final boolean immutableDestinationProvided;
         
-        public ImmutableMappingStrategyKey(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType) {
+        public ImmutableMappingStrategyKey(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
             this.immutableRawSourceType = rawSourceType;
             this.immutableSourceType = sourceType;
             this.immutableDestinationType = destinationType;
+            this.immutableDestinationProvided = destinationProvided;
         }
         
         protected Class<?> getRawSourceType() {
@@ -137,6 +154,11 @@ public class MappingStrategyKey {
         protected Type<?> getDestinationType() {
             return immutableDestinationType;
         }
+        
+        protected boolean isDestinationProvided() {
+        	return immutableDestinationProvided;
+        }
+        
     }
     
 }

@@ -148,7 +148,7 @@ public class MapperFacadeImpl implements MapperFacade {
         MappingStrategyKey key = null;
         if (useStrategyCache) {
             key = MappingStrategyKey.getCurrent();
-            key.initialize(sourceObject.getClass(), sourceType, destinationType);
+            key.initialize(sourceObject.getClass(), sourceType, destinationType, false);
             
             MappingStrategy strategy = strategyCache.get(key);
             if (strategy != null) {
@@ -280,7 +280,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         
         MappingStrategyKey key = MappingStrategyKey.getCurrent();
-        key.initialize(sourceObject.getClass(), sourceType, destinationType);
+        key.initialize(sourceObject.getClass(), sourceType, destinationType, true);
         
         MappingStrategy strategy = strategyCache.get(key);
         if (strategy != null) {

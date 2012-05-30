@@ -49,6 +49,7 @@ import ma.glasnost.orika.inheritance.DefaultSuperTypeResolverStrategy;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.metadata.ClassMapBuilderFactory;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -80,6 +81,8 @@ public class DefaultMapperFactory implements MapperFactory {
     private final CompilerStrategy compilerStrategy;
     private final Map<java.lang.reflect.Type, Type<?>> concreteTypeRegistry;
     private volatile boolean isBuilt = false;
+    private volatile ClassMapBuilderFactory classMapBuilderFactory;
+    private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     /**
      * Place-holder object factory used to represent the default constructor in
@@ -91,7 +94,6 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     };
     
-    private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
             SuperTypeResolverStrategy superTypeStrategy, ConstructorResolverStrategy constructorResolverStrategy,
@@ -283,9 +285,8 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
-            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType())
-                    .byDefault(this.defaultFieldMappers.toArray(new DefaultFieldMapper[0]))
-                    .toClassMap();
+            final ClassMap<?, ?> classMap = classMap(mapperKey.getAType(), mapperKey.getBType())
+                    .byDefault().toClassMap();
             buildObjectFactories(classMap);
             buildMapper(classMap);
             initializeUsedMappers(classMap);
@@ -402,6 +403,8 @@ public class DefaultMapperFactory implements MapperFactory {
         
     	isBuilt = true;
         
+    	converterFactory.setMapperFacade(mapperFacade);
+    	
         buildClassMapRegistry();
         
         for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
@@ -412,7 +415,6 @@ public class DefaultMapperFactory implements MapperFactory {
             buildObjectFactories(classMap);
             initializeUsedMappers(classMap);
         }
-        
     }
     
     public Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey) {
@@ -573,5 +575,29 @@ public class DefaultMapperFactory implements MapperFactory {
     public <T> void registerObjectFactory(ObjectFactory<T> objectFactory, Class<T> targetClass) {
         registerObjectFactory(objectFactory, TypeFactory.<T>valueOf(targetClass));
     }
+
+	public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
+		if (classMapBuilderFactory == null) {
+			synchronized(this) {
+				if (classMapBuilderFactory == null) {
+					classMapBuilderFactory = new ClassMapBuilderFactory(UtilityResolver.getDefaultPropertyResolverStrategy(), 
+							defaultFieldMappers.toArray(new DefaultFieldMapper[defaultFieldMappers.size()]));
+				}
+			}
+		}
+		return classMapBuilderFactory.map(aType, bType);
+	}
+
+	public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Type<B> bType) {
+		return classMap(TypeFactory.<A>valueOf(aType), bType);
+	}
+
+	public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Class<B> bType) {
+		return classMap(aType, TypeFactory.<B>valueOf(bType));
+	}
+
+	public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Class<B> bType) {
+		return classMap(TypeFactory.<A>valueOf(aType), TypeFactory.<B>valueOf(bType));
+	}
     
 }
