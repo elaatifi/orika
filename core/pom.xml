@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>orika-parent</artifactId>
         <groupId>ma.glasnost.orika</groupId>
@@ -15,8 +16,8 @@
     <scm>
         <url>https://orika.googlecode.com/svn/trunk</url>
         <developerConnection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</developerConnection>
-      <connection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</connection>
-  </scm>
+        <connection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</connection>
+    </scm>
     <organization>
         <name>Glasnost</name>
         <url>http://www.glasnost.ma</url>
@@ -28,6 +29,12 @@
             <artifactId>orika-eclipse-tools</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -73,8 +80,13 @@
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
         </dependency>
 
         <dependency>
@@ -106,7 +118,7 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-orm</artifactId>
         </dependency>
-        
+
     </dependencies>
 
 </project>

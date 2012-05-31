@@ -24,6 +24,8 @@ import static ma.glasnost.orika.impl.Specifications.*;
 import java.util.Map;
 import java.util.Set;
 
+import org.slf4j.Logger;
+
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
@@ -42,10 +44,12 @@ public class CodeSourceBuilder {
     private final StringBuilder out = new StringBuilder();
     private final UsedTypesContext usedTypes;
     private final MapperFactory mapperFactory;
+    private final Logger logger;
     
-    public CodeSourceBuilder(UsedTypesContext usedTypes, MapperFactory mapperFactory) {
+    public CodeSourceBuilder(UsedTypesContext usedTypes, MapperFactory mapperFactory, Logger logger) {
         this.usedTypes = usedTypes;
         this.mapperFactory = mapperFactory;
+        this.logger = logger;
     }
     
     private String usedType(Type<?> type) {
@@ -351,8 +355,8 @@ public class CodeSourceBuilder {
         	statement(entry.declare("_$_o"));
         	statement(newKey.declare());
         	statement(newVal.declare());
-        	mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null);
-        	mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null);
+        	mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null);
+        	mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null);
         	statement("%s.put(%s, %s)", d, newKey, newVal);
         	end();
         }
@@ -428,43 +432,88 @@ public class CodeSourceBuilder {
 		return new VariableRef(sourceEntryType, s + ".entrySet()");
 	}
 	
-	public CodeSourceBuilder mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty, Type<?> destinationType) {
+	public CodeSourceBuilder mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty, Type<?> destinationType, StringBuilder logDetails) {
 		
 		// Generate mapping code for every case     
 	    Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
 	    if (converter != null) {
-	        convert(destinationProperty, sourceProperty, fieldMap.getConverterId());
+	    	if (logDetails != null) {
+	    		logDetails.append("using converter " + converter);
+	    	}
+	    	convert(destinationProperty, sourceProperty, fieldMap.getConverterId());
 	    } else if (fieldMap.is(toAnEnumeration())) {
-	        fromStringOrEnumToEnum(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping from String or enum to enum");
+	    	}
+	    	fromStringOrEnumToEnum(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(immutable())) {
-	        copyByReference(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("treating as immutable (using copy-by-reference)");
+	    	}
+	    	copyByReference(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(anArray())) {
-	        fromArrayOrCollectionToArray(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Array or Collection to Array");
+	    	}
+	    	fromArrayOrCollectionToArray(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aCollection())) {
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Array or Collection to Collection");
+	    	}
 	        fromArrayOrCollectionToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
 	    } else if (fieldMap.is(aWrapperToPrimitive())) {
-	        setPrimitive(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping primitive wrapper to primitive");
+	    	}
+	    	setPrimitive(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aMapToMap())) {
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Map to Map");
+	    	}
 	    	fromMapToMap(destinationProperty, sourceProperty, destinationType);
 	    } else if (fieldMap.is(aMapToArray())) {
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Map to Array");
+	    	}
 	    	fromMapToArray(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
 	    } else if (fieldMap.is(aMapToCollection())) {
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Map to Collection");
+	    	}
 	    	fromMapToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
 	    } else if (fieldMap.is(anArrayOrCollectionToMap())) {
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Map to Array");
+	    	}
 	    	fromArrayOrCollectionToMap(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aPrimitiveToWrapper())) {
-	        fromPrimitiveToWrapper(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping primitive to primitive wrapper");
+	    	}
+	    	fromPrimitiveToWrapper(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aStringToPrimitiveOrWrapper())) {
-	        fromStringToStringConvertable(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping String to \"String-convertable\"");
+	    	}
+	    	fromStringToStringConvertable(destinationProperty, sourceProperty);
 	    } else if (fieldMap.is(aConversionToString())) {
-	        fromAnyTypeToString(destinationProperty, sourceProperty);
+	    	if (logDetails != null) {
+	    		logDetails.append("mapping Object to String");
+	    	}
+	    	fromAnyTypeToString(destinationProperty, sourceProperty);
 	    } else {
 	        /**/
 	        
-	        if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive())
-	            newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
+	        if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive()) {
+	        	if (logDetails != null) {
+		    		logDetails.append("ignoring { Object to primitive or primitive to Object}");
+		    	}
+	        	newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
 	        
-	        else {
+	    	} else {
+	    		if (logDetails != null) {
+		    		logDetails.append("mapping Object to Object");
+		    	}
 	            fromObjectToObject(destinationProperty, sourceProperty, fieldMap.getInverse());
 	        }
 	    }

@@ -51,7 +51,7 @@ import com.thoughtworks.paranamer.Paranamer;
 
 public class ObjectFactoryGenerator {
     
-    private final static Logger LOG = LoggerFactory.getLogger(ObjectFactoryGenerator.class);
+    private final static Logger LOGGER = LoggerFactory.getLogger(ObjectFactoryGenerator.class);
     
     private final ConstructorResolverStrategy constructorResolverStrategy;
     private final MapperFactory mapperFactory;
@@ -92,7 +92,7 @@ public class ObjectFactoryGenerator {
     }
     
     private void addCreateMethod(GeneratedSourceCode context, Type<?> clazz) throws CannotCompileException {
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory, LOGGER);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
@@ -103,6 +103,9 @@ public class ObjectFactoryGenerator {
                 addSourceClassConstructor(out, clazz, sourceType);
             }
         }
+        // TODO: this error is unclear, and should never really be reached;
+        // if object factory generation failed, we should not create the factory
+        // which is unable to construct an instance of anything.
         out.append("throw new %s(s.getClass().getCanonicalName() + \" is an unsupported source class : \"+s.getClass().getCanonicalName());",
                 IllegalArgumentException.class.getCanonicalName());
         out.append("\n}");
@@ -123,10 +126,15 @@ public class ObjectFactoryGenerator {
             
             if (constructor == null) {
                 throw new IllegalArgumentException("no constructors found for " + type);
+            } else if (LOGGER.isDebugEnabled()) {
+            	LOGGER.debug("Using constructor: " + constructor);
             }
             
             String[] parameters = paranamer.lookupParameterNames(constructor);
             Class<?>[] constructorArguments = constructor.getParameterTypes();
+            if (LOGGER.isDebugEnabled()) {
+            	LOGGER.debug("Attempting to resolve constructor parameters " + parameters + " against class map");
+            }
             
             // TODO need optimizations
             int argIndex = 0;
@@ -147,7 +155,11 @@ public class ObjectFactoryGenerator {
             }
             
             if (parameters.length != properties.size()) {
-                throw new MappingException("Can not find all constructor's parameters");
+                throw new MappingException("While generating object factory for " + type + ": " +
+                		"could not match all of the resolved constructor's parameters against the class-map.\n" +
+                		"constructor = " + constructor + "\n" +
+                		"parameters = " + parameters + "\n" +
+                		"resolved = " + properties);
             }
             
             out.ifInstanceOf("s", sourceClass).then();
@@ -201,7 +213,7 @@ public class ObjectFactoryGenerator {
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            LOG.warn("Could not find " + type.getName() + " constructor's parameters name");
+            LOGGER.warn("Could not find " + type.getName() + " constructor's parameters name");
             /* SKIP */
         }
     }

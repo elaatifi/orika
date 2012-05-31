@@ -1,0 +1,22 @@
+<configuration>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<Pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</Pattern>
+		</encoder>
+	</appender>
+
+	<!--| 
+		| Quiet the logger during tests; if something specific you want to capture, 
+		| create one or more copies of the commented logger definition below for
+		| specific packages,classes,etc. you care to listen for during testing
+		| -->
+	<root>
+		<level value="OFF" />
+	</root>
+	
+    <logger name="ma.glasnost.orika" level="DEBUG"> -->
+        <appender-ref ref="STDOUT" /> -->
+    </logger>
+
+</configuration>

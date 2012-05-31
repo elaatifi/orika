@@ -325,19 +325,19 @@ public final class ClassMapBuilder<A, B> {
     	
     	if(LOGGER.isDebugEnabled()) {
     		StringBuilder output = new StringBuilder();
-        	output.append(getClass().getSimpleName() + ".map(" + aType + ", " + bType + ")\n");
+        	output.append("ClassMap created:\n\t"+ getClass().getSimpleName() + ".map(" + aType + ", " + bType + ")");
         	for (FieldMap f: fieldsMapping) {
         		if (f.isExcluded()) {
-        			output.append(".exclude('" + f.getSourceName() + "')\n");
+        			output.append("\n\t .exclude('" + f.getSourceName() + "')");
         		} else {
-        			output.append(".field([" + f.getSource() + "], [" + f.getDestination() + "])\n");
+        			output.append("\n\t .field([" + f.getSource() + "], [" + f.getDestination() + "])");
         		}
         	}	
         	if (constructorA != null) {
-        		output.append(".constructorA(" + Arrays.toString(constructorA) + ")");
+        		output.append("\n\t .constructorA(" + Arrays.toString(constructorA) + ")");
         	}
         	if (constructorB != null) {
-        		output.append(".constructorB(" + Arrays.toString(constructorB) + ")");
+        		output.append("\n\t .constructorB(" + Arrays.toString(constructorB) + ")");
         	}
         	LOGGER.debug(output.toString());
         }

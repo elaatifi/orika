@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.impl.generator;
 
+import java.util.Arrays;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -35,16 +36,14 @@ import org.slf4j.LoggerFactory;
 
 public final class MapperGenerator {
     
-    private static Logger LOG = LoggerFactory.getLogger(MapperGenerator.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(MapperGenerator.class);
     
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
-    private final UsedTypesContext usedTypes;
     
     public MapperGenerator(MapperFactory mapperFactory, CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
-        this.usedTypes = new UsedTypesContext();
     }
     
     public GeneratedMapperBase build(ClassMap<?, ?> classMap) {
@@ -57,13 +56,31 @@ public final class MapperGenerator {
                     classMap.getMapperClassName(), GeneratedMapperBase.class,
                     compilerStrategy);
             
-            addMapMethod(mapperCode, true, classMap);
-            addMapMethod(mapperCode, false, classMap);
+            UsedTypesContext usedTypes = new UsedTypesContext();
+            
+            StringBuilder logDetails;
+            if (LOGGER.isDebugEnabled()) {
+            	logDetails = new StringBuilder();
+            	logDetails.append("Generating new mapper for (" + classMap.getAType()+", " + classMap.getBTypeName() +")");
+            } else {
+            	logDetails = null;
+            }
+            
+            
+            addMapMethod(mapperCode, true, classMap, usedTypes, logDetails);
+            addMapMethod(mapperCode, false, classMap, usedTypes, logDetails);
             
             GeneratedMapperBase instance = mapperCode.getInstance();
             instance.setAType(classMap.getAType());
             instance.setBType(classMap.getBType());
+            if (logDetails != null) {
+            	logDetails.append("\n\tUsed types for mapper: " + Arrays.toString(usedTypes.getUsedTypesArray()));
+            } 
             instance.setUsedTypes(usedTypes.getUsedTypesArray());
+            
+            if (logDetails != null) {
+            	LOGGER.debug(logDetails.toString());
+            }
             
             return instance;
             
@@ -72,9 +89,21 @@ public final class MapperGenerator {
         }
     }
     
-    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
+    private String getFieldTag(FieldMap fieldMap) {
+    	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
+    }
+    
+    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes, StringBuilder logDetails) throws CannotCompileException {
         
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory);
+    	if (logDetails != null) {
+        	if (aToB) {
+        		logDetails.append("\n\t" +context.getClassSimpleName() + ".mapAToB("+ classMap.getAType()+", " + classMap.getBTypeName() +") {");
+        	} else {
+        		logDetails.append("\n\t" +context.getClassSimpleName() + ".mapBToA("+ classMap.getBType()+", " + classMap.getATypeName() +") {");
+        	}
+        }
+    	
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory, LOGGER);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ")
                 .append(mapMethod)
@@ -98,23 +127,43 @@ public final class MapperGenerator {
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
             
+        	
             if (fieldMap.isExcluded()) {
+            	if (logDetails != null) {
+            		logDetails.append(getFieldTag(fieldMap) + "excuding (explicitly)");
+            	}
                 continue;
             }
             
             if (isAlreadyExistsInUsedMappers(fieldMap, classMap)) {
-                continue;
+            	if (logDetails != null) {
+            		logDetails.append(getFieldTag(fieldMap) + "excluding because it is already handled by another mapper in this hierarchy");
+            		
+            	}
+            	continue;
             }
             
             if (!aToB) {
                 fieldMap = fieldMap.flip();
             }
+            
+            if (logDetails != null) {
+        		logDetails.append(getFieldTag(fieldMap));
+        	}
+            
             if (!fieldMap.isIgnored()) {
                 try {
-                    generateFieldMapCode(out, fieldMap, destination.type());
+                    generateFieldMapCode(out, fieldMap, destination.type(), logDetails);
                 } catch (final Exception e) {
-                    throw new MappingException(e);
+                    MappingException me = new MappingException(e);
+                    me.setSourceProperty(fieldMap.getSource());
+                    me.setDestinationProperty(fieldMap.getDestination());
+                    me.setSourceType(source.type());
+                    me.setDestinationType(destination.type());
+                    throw me;
                 }
+            } else if (logDetails !=null) {
+            	logDetails.append("ignored for this mapping direction");
             }
         }
         out.append("\n\t\tif(customMapper != null) { \n\t\t\t customMapper.")
@@ -123,7 +172,12 @@ public final class MapperGenerator {
         
         out.append("\n\t}");
         
+        if (logDetails != null) {
+        	logDetails.append("\n\t}");
+        }
+        
         context.addMethod(out.toString());
+        
     }
     
     private boolean isAlreadyExistsInUsedMappers(FieldMap fieldMap, ClassMap<?, ?> classMap) {
@@ -142,7 +196,7 @@ public final class MapperGenerator {
         return exists;
     }
     
-    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType) throws Exception {
+    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType, StringBuilder logDetails) throws Exception {
         
         final VariableRef sourceProperty = new VariableRef(fieldMap.getSource(), "source");
         final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
@@ -153,7 +207,6 @@ public final class MapperGenerator {
         
         // Make sure the source and destination types are accessible to the
         // builder
-        
         compilerStrategy.assureTypeIsAccessible(sourceProperty.rawType());
         compilerStrategy.assureTypeIsAccessible(destinationProperty.rawType());
         
@@ -169,7 +222,7 @@ public final class MapperGenerator {
                 code.assureInstanceExists(destinationProperty);
             }
             
-            code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType);
+            code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType, logDetails);
                         
             // Close up, and set null to destination
             if (sourceProperty.isNestedProperty()) {

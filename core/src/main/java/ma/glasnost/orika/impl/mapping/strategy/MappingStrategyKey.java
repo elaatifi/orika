@@ -48,19 +48,19 @@ public class MappingStrategyKey {
         
     }
     
-    protected Class<?> getRawSourceType() {
+    public Class<?> getRawSourceType() {
         return rawSourceType;
     }
 
-    protected Type<?> getSourceType() {
+    public Type<?> getSourceType() {
         return sourceType;
     }
 
-    protected Type<?> getDestinationType() {
+    public Type<?> getDestinationType() {
         return destinationType;
     }
 
-    protected boolean isDestinationProvided() {
+    public boolean isDestinationProvided() {
     	return destinationProvided;
     }
     
@@ -143,19 +143,19 @@ public class MappingStrategyKey {
             this.immutableDestinationProvided = destinationProvided;
         }
         
-        protected Class<?> getRawSourceType() {
+        public Class<?> getRawSourceType() {
             return immutableRawSourceType;
         }
 
-        protected Type<?> getSourceType() {
+        public Type<?> getSourceType() {
             return immutableSourceType;
         }
 
-        protected Type<?> getDestinationType() {
+        public Type<?> getDestinationType() {
             return immutableDestinationType;
         }
         
-        protected boolean isDestinationProvided() {
+        public boolean isDestinationProvided() {
         	return immutableDestinationProvided;
         }
         

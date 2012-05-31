@@ -18,10 +18,18 @@
 
 package ma.glasnost.orika;
 
+import ma.glasnost.orika.metadata.Property;
+import ma.glasnost.orika.metadata.Type;
+
 public class MappingException extends RuntimeException {
 
 	private static final long serialVersionUID = -1485137975363692382L;
 
+	private Property sourceProperty;
+	private Property destinationProperty;
+	private Type<?> sourceType;
+	private Type<?> destinationType;
+	
 	public MappingException(Throwable e) {
 		super(e);
 	}
@@ -33,4 +41,37 @@ public class MappingException extends RuntimeException {
 	public MappingException(String message, Throwable e) {
 		super(message, e);
 	}
+
+	public Property getSourceProperty() {
+		return sourceProperty;
+	}
+
+	public void setSourceProperty(Property sourceProperty) {
+		this.sourceProperty = sourceProperty;
+	}
+
+	public Property getDestinationProperty() {
+		return destinationProperty;
+	}
+
+	public void setDestinationProperty(Property destinationProperty) {
+		this.destinationProperty = destinationProperty;
+	}
+
+	public Type<?> getSourceType() {
+		return sourceType;
+	}
+
+	public void setSourceType(Type<?> sourceType) {
+		this.sourceType = sourceType;
+	}
+
+	public Type<?> getDestinationType() {
+		return destinationType;
+	}
+
+	public void setDestinationType(Type<?> destinationType) {
+		this.destinationType = destinationType;
+	}
+	
 }
