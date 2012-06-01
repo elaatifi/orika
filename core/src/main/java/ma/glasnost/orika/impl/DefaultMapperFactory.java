@@ -31,6 +31,9 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
@@ -66,6 +69,8 @@ import ma.glasnost.orika.unenhance.UnenhanceStrategy;
  */
 public class DefaultMapperFactory implements MapperFactory {
     
+	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMapperFactory.class);
+	
     private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
     private final ObjectFactoryGenerator objectFactoryGenerator;
@@ -74,15 +79,16 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<MapperKey, GeneratedMapperBase> mappersRegistry;
     private final ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> objectFactoryRegistry;
     private final Map<Type<?>, Set<Type<?>>> aToBRegistry;
-    private final Map<Type<?>, Type<?>> mappedConverters;
     private final List<DefaultFieldMapper> defaultFieldMappers;
     private final UnenhanceStrategy unenhanceStrategy;
     private final ConverterFactory converterFactory;
     private final CompilerStrategy compilerStrategy;
     private final Map<java.lang.reflect.Type, Type<?>> concreteTypeRegistry;
-    private volatile boolean isBuilt = false;
     private volatile ClassMapBuilderFactory classMapBuilderFactory;
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
+    private final boolean useAutoMapping;
+    private volatile boolean isBuilt = false;
+    private volatile boolean isBuilding = false;
     
     /**
      * Place-holder object factory used to represent the default constructor in
@@ -95,33 +101,108 @@ public class DefaultMapperFactory implements MapperFactory {
     };
     
     
-    private DefaultMapperFactory(Set<ClassMap<?, ?>> classMaps, UnenhanceStrategy delegateStrategy,
-            SuperTypeResolverStrategy superTypeStrategy, ConstructorResolverStrategy constructorResolverStrategy,
-            ConverterFactory converterFactory, CompilerStrategy compilerStrategy) {
+    /**
+     * Constructs a new instance of DefaultMapperFactory
+     * 
+     * @param builder
+     */
+    protected DefaultMapperFactory(MapperFactoryBuilder<?, ?> builder) {
         
-        this.converterFactory = converterFactory;
-        this.compilerStrategy = compilerStrategy;
+    	this.converterFactory = builder.converterFactory;
+        this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new ConcurrentHashMap<MapperKey, GeneratedMapperBase>();
         this.aToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
-        // TODO: note that this map is now always empty because the ConverterFactory
-        // now contains all mapped converters; thus it should be removed -- but that
-        // also means that super-type resolution is ignoring converters (which is a problem)
-        this.mappedConverters = new ConcurrentHashMap<Type<?>, Type<?>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
-        this.unenhanceStrategy = buildUnenhanceStrategy(delegateStrategy, superTypeStrategy);
+        this.unenhanceStrategy = buildUnenhanceStrategy(builder.unenhanceStrategy, builder.superTypeStrategy);
         this.mapperFacade = new MapperFacadeImpl(this, unenhanceStrategy);
         this.concreteTypeRegistry = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
-        if (classMaps != null) {
-            for (final ClassMap<?, ?> classMap : classMaps) {
+        if (builder.classMaps != null) {
+            for (final ClassMap<?, ?> classMap : builder.classMaps) {
                 registerClassMap(classMap);
             }
         }
         
-        this.mapperGenerator = new MapperGenerator(this, compilerStrategy);
-        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, constructorResolverStrategy, compilerStrategy);
+        this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy);
+        this.useAutoMapping = builder.useAutoMapping;
+    }
+    
+    /**
+     * MapperFactoryBuilder provides an extensible Builder definition usable for
+     * providing your own Builder class for subclasses of DefaultMapperFactory.<br><br>
+     * 
+     * See the defined {@link Builder} below for example of how to subclass.
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     * @param <F>
+     * @param <B>
+     */
+    public static abstract class MapperFactoryBuilder<F extends DefaultMapperFactory, B extends MapperFactoryBuilder<F, B>> {
+    
+        protected UnenhanceStrategy unenhanceStrategy;
+        protected SuperTypeResolverStrategy superTypeStrategy;
+        protected ConstructorResolverStrategy constructorResolverStrategy;
+        protected CompilerStrategy compilerStrategy;
+        protected Set<ClassMap<?, ?>> classMaps;
+        protected ConverterFactory converterFactory;
+        protected boolean useAutoMapping = true;
+        
+        public MapperFactoryBuilder() {
+	        converterFactory = UtilityResolver.getDefaultConverterFactory();
+			constructorResolverStrategy = UtilityResolver.getDefaultConstructorResolverStrategy();
+			compilerStrategy = UtilityResolver.getDefaultCompilerStrategy();
+        }
+        
+		protected abstract B self();
+        
+        public B classMaps(Set<ClassMap<?, ?>> classMaps) {
+            this.classMaps = classMaps;
+            return self();
+        }
+        
+        public B unenhanceStrategy(UnenhanceStrategy unenhanceStrategy) {
+            this.unenhanceStrategy = unenhanceStrategy;
+            return self();
+        }
+        
+        public B superTypeResolverStrategy(SuperTypeResolverStrategy superTypeStrategy) {
+            this.superTypeStrategy = superTypeStrategy;
+            return self();
+        }
+        
+        public B constructorResolverStrategy(ConstructorResolverStrategy constructorResolverStrategy) {
+            this.constructorResolverStrategy = constructorResolverStrategy;
+            return self();
+        }
+        
+        public B converterFactory(ConverterFactory converterFactory) {
+            this.converterFactory = converterFactory;
+            return self();
+        }
+        
+        public B compilerStrategy(CompilerStrategy compilerStrategy) {
+            this.compilerStrategy = compilerStrategy;
+            return self();
+        }
+        
+        public B useAutoMapping(boolean useAutoMapping) {
+        	this.useAutoMapping = useAutoMapping;
+        	return self();
+        }
+        
+        /**
+         * @return a new instance of the Factory for which this builder is defined.
+         * The construction should be performed via the single-argument constructor which
+         * takes in a builder; no initialization code should be performed here, as it
+         * will not be inherited by subclasses; instead, place such initialization (defaults, etc.)
+         * in the Builder's constructor.
+         */
+        public abstract F build();
+        
     }
     
     /**
@@ -141,65 +222,33 @@ public class DefaultMapperFactory implements MapperFactory {
      * 
      * @author matt.deboer@gmail.com
      */
-    public static final class Builder {
-        private UnenhanceStrategy unenhanceStrategy;
-        private SuperTypeResolverStrategy superTypeStrategy;
-        private ConstructorResolverStrategy constructorResolverStrategy;
-        private CompilerStrategy compilerStrategy;
-        private Set<ClassMap<?, ?>> classMaps;
-        private ConverterFactory converterFactory;
-        
-        public Builder classMaps(Set<ClassMap<?, ?>> classMaps) {
-            this.classMaps = classMaps;
-            return this;
-        }
-        
-        public Builder unenhanceStrategy(UnenhanceStrategy unenhanceStrategy) {
-            this.unenhanceStrategy = unenhanceStrategy;
-            return this;
-        }
-        
-        public Builder superTypeResolverStrategy(SuperTypeResolverStrategy superTypeStrategy) {
-            this.superTypeStrategy = superTypeStrategy;
-            return this;
-        }
-        
-        public Builder constructorResolverStrategy(ConstructorResolverStrategy constructorResolverStrategy) {
-            this.constructorResolverStrategy = constructorResolverStrategy;
-            return this;
-        }
-        
-        public Builder converterFactory(ConverterFactory converterFactory) {
-            this.converterFactory = converterFactory;
-            return this;
-        }
-        
-        public Builder compilerStrategy(CompilerStrategy compilerStrategy) {
-            this.compilerStrategy = compilerStrategy;
-            return this;
-        }
-        
-        public DefaultMapperFactory build() {
-            
-            if (converterFactory == null) {
-                converterFactory = UtilityResolver.getDefaultConverterFactory();
-            }
-            if (constructorResolverStrategy == null) {
-                constructorResolverStrategy = UtilityResolver.getDefaultConstructorResolverStrategy();
-            }
-            if (compilerStrategy == null) {
-                compilerStrategy = UtilityResolver.getDefaultCompilerStrategy();
-            }
-            
-            return new DefaultMapperFactory(classMaps, unenhanceStrategy, superTypeStrategy, constructorResolverStrategy, converterFactory,
-                    compilerStrategy);
-        }
-        
+    public static class Builder extends MapperFactoryBuilder<DefaultMapperFactory, Builder> {
+
+		/* (non-Javadoc)
+		 * @see ma.glasnost.orika.impl.DefaultMapperFactory.MapperFactoryBuilder#build()
+		 */
+		@Override
+		public DefaultMapperFactory build() {
+			return new DefaultMapperFactory(this);
+		}
+
+		/* (non-Javadoc)
+		 * @see ma.glasnost.orika.impl.DefaultMapperFactory.MapperFactoryBuilder#self()
+		 */
+		@Override
+		protected Builder self() {
+			return this;
+		}
+    	
     }
     
     /**
      * Generates the UnenhanceStrategy to be used for this MapperFactory,
-     * applying the passed delegateStrategy if not null.
+     * applying the passed delegateStrategy if not null.<br>
+     * This allows the MapperFactory a chance to fill in the unenhance
+     * strategy with references to other parts of the factory (registered
+     * mappers, converters, object factories) which may be important in
+     * the "unenhancing" process.
      * 
      * @param unenhanceStrategy
      * @param overrideDefaultUnenhanceBehavior
@@ -231,9 +280,9 @@ public class DefaultMapperFactory implements MapperFactory {
                 
                 @Override
                 public boolean isAcceptable(Type<?> type) {
-                    return aToBRegistry.containsKey(type) || mappedConverters.containsKey(type);
+                    return aToBRegistry.containsKey(type);
                 }
-            };
+            }; 
             
             unenhancer.addSuperTypeResolverStrategy(registeredMappersStrategy);
         }
@@ -284,21 +333,48 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
-        if (!mappersRegistry.containsKey(mapperKey)) {
-            final ClassMap<?, ?> classMap = classMap(mapperKey.getAType(), mapperKey.getBType())
-                    .byDefault().toClassMap();
-            buildObjectFactories(classMap);
-            buildMapper(classMap);
-            initializeUsedMappers(classMap);
+        if (!isMapperRegistered(mapperKey)) {
+        	if(useAutoMapping) {
+        		try {
+	        		if (LOGGER.isDebugEnabled()) {
+	        			LOGGER.debug("No mapper registered for " + mapperKey + ": attempting to generate");
+	        		}
+		        	final ClassMap<?, ?> classMap = classMap(mapperKey.getAType(), mapperKey.getBType())
+		                    .byDefault().toClassMap();
+		            buildObjectFactories(classMap);
+		            buildMapper(classMap);
+		            initializeUsedMappers(classMap);
+        		} catch (MappingException e) {
+        			e.setSourceType(mapperKey.getAType());
+        			e.setDestinationType(mapperKey.getBType());
+        			throw e;
+        		}
+        	}
         }
-        return mappersRegistry.get(mapperKey);
+        return getRegisteredMapper(mapperKey);
     }
     
+    protected boolean isMapperRegistered(MapperKey mapperKey) {
+    	return mappersRegistry.containsKey(mapperKey);
+    }
+    
+    protected GeneratedMapperBase getRegisteredMapper(MapperKey mapperKey) {
+    	return mappersRegistry.get(mapperKey);
+    }
+    
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFactory#getMapperFacade()
+     * 
+     * Since getMapperFacade() triggers the build() process, it is
+     * important that none of the methods called during the build()
+     * invoke getMapperFacade() again.
+     * 
+     */
     public MapperFacade getMapperFacade() {
         if (!isBuilt) {
             synchronized (mapperFacade) {
                 if (!isBuilt) {
-                    build();
+                	build();
                 }
             }
         }
@@ -341,16 +417,18 @@ public class DefaultMapperFactory implements MapperFactory {
         if (result == null) {
             // Check if we can use default constructor...
             try {
-                targetType.getRawType().getConstructor(/* new Class[0] */);
+                targetType.getRawType().getConstructor();
                 // Mark the class with null value in the registry
                 // to avoid repeating the getConstructor call
                 objectFactoryRegistry.put(targetType, USE_DEFAULT_CONSTRUCTOR);
             } catch (Exception e) {
                 // Generate an object factory
-                synchronized (objectFactoryGenerator) {
-                    result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
-                    objectFactoryRegistry.put(targetType, result);
-                }
+            	if (useAutoMapping || !isBuilt) {
+	                synchronized (objectFactoryGenerator) {
+	                    result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
+	                    objectFactoryRegistry.put(targetType, result);
+	                }
+            	}
             }
         } else if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
             result = null;
@@ -401,20 +479,26 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public synchronized void build() {
         
-    	isBuilt = true;
+    	if (!isBuilding) {
+	    	isBuilding = true;
+	    	
+	    	converterFactory.setMapperFacade(mapperFacade);
+	    	
+	        buildClassMapRegistry();
+	        
+	        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
+	            buildMapper(classMap);
+	        }
+	        
+	        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
+	            buildObjectFactories(classMap);
+	            initializeUsedMappers(classMap);
+	        }
+	        
+	        isBuilt = true;
+	        isBuilding = false;
+    	}
         
-    	converterFactory.setMapperFacade(mapperFacade);
-    	
-        buildClassMapRegistry();
-        
-        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
-            buildMapper(classMap);
-        }
-        
-        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
-            buildObjectFactories(classMap);
-            initializeUsedMappers(classMap);
-        }
     }
     
     public Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey) {
@@ -467,7 +551,7 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     }
     
-    private static final Comparator<MapperKey> mapperComparator = new Comparator<MapperKey>() {
+    private static final Comparator<MapperKey> MAPPER_COMPARATOR = new Comparator<MapperKey>() {
         
         public int compare(MapperKey key1, MapperKey key2) {
             if (key1.getAType().isAssignableFrom(key2.getAType()) && key1.getBType().isAssignableFrom(key2.getBType())) {
@@ -500,7 +584,7 @@ public class DefaultMapperFactory implements MapperFactory {
              * mappers to avoid calling the same mapper multiple times during a
              * single map request
              */
-            Set<MapperKey> usedMappers = new TreeSet<MapperKey>(mapperComparator);
+            Set<MapperKey> usedMappers = new TreeSet<MapperKey>(MAPPER_COMPARATOR);
             for (MapperKey key : this.classMapRegistry.keySet()) {
                 if (!key.getAType().equals(classMap.getAType()) || !key.getBType().equals(classMap.getBType())) {
                     if (key.getAType().isAssignableFrom(classMap.getAType()) && key.getBType().isAssignableFrom(classMap.getBType())) {
@@ -550,7 +634,7 @@ public class DefaultMapperFactory implements MapperFactory {
         classMapRegistry.put(mapperKey, (ClassMap<Object, Object>) classMap);
     }
     
-    private <S, D> void register(Type<S> sourceClass, Type<D> destinationClass) {
+    protected <S, D> void register(Type<S> sourceClass, Type<D> destinationClass) {
         Set<Type<?>> destinationSet = aToBRegistry.get(sourceClass);
         if (destinationSet == null) {
             destinationSet = new HashSet<Type<?>>();
@@ -576,8 +660,8 @@ public class DefaultMapperFactory implements MapperFactory {
         registerObjectFactory(objectFactory, TypeFactory.<T>valueOf(targetClass));
     }
 
-	public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
-		if (classMapBuilderFactory == null) {
+    protected ClassMapBuilderFactory getClassMapBuilderFactory() {
+    	if (classMapBuilderFactory == null) {
 			synchronized(this) {
 				if (classMapBuilderFactory == null) {
 					classMapBuilderFactory = new ClassMapBuilderFactory(UtilityResolver.getDefaultPropertyResolverStrategy(), 
@@ -585,7 +669,11 @@ public class DefaultMapperFactory implements MapperFactory {
 				}
 			}
 		}
-		return classMapBuilderFactory.map(aType, bType);
+    	return classMapBuilderFactory;
+    }
+    
+	public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
+		return getClassMapBuilderFactory().map(aType, bType);
 	}
 
 	public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Type<B> bType) {
