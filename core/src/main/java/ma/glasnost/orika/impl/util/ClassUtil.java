@@ -141,6 +141,35 @@ public final class ClassUtil {
 		}
     }
     
+    /**
+     * Returns the corresponding primitive type for the given primitive wrapper,
+     * or null if the type is not a primitive wrapper.
+     * 
+     * @param wrapperType
+     * @return the corresponding primitive type
+     */
+    public static Class<?> getPrimitiveType(Class<?> wrapperType) {
+		if (Boolean.class.equals(wrapperType)) {
+			return Boolean.TYPE;
+		} else if (Byte.class.equals(wrapperType)) {
+			return Byte.TYPE;
+		} else if (Character.class.equals(wrapperType)) {
+			return Character.TYPE;
+		} else if (Short.class.equals(wrapperType)) {
+			return Short.TYPE;
+		} else if (Integer.class.equals(wrapperType)) {
+			return Integer.TYPE;
+		} else if (Long.class.equals(wrapperType)) {
+			return Long.TYPE;
+		} else if (Float.class.equals(wrapperType)) {
+			return Float.TYPE;
+		} else if (Double.class.equals(wrapperType)) {
+			return Double.TYPE;
+		} else {
+			return null;
+		}
+    }
+    
     public static boolean isProxy(Class<?> clazz) {
         if (clazz.isInterface()) {
             return false;

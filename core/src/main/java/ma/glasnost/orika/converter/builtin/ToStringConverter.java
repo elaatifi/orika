@@ -17,24 +17,13 @@
  */
 package ma.glasnost.orika.converter.builtin;
 
-import ma.glasnost.orika.converter.Converter;
+import ma.glasnost.orika.CustomConverter;
+import ma.glasnost.orika.metadata.Type;
 
 
-/**
- * 
- * @deprecated use {@link FromStringConverter} instead
- */
-@SuppressWarnings("rawtypes")
-@Deprecated
-public class StringToEnumConverter implements Converter<String, Enum> {
-    
-    @SuppressWarnings("unchecked")
-    public Enum convert(String source, Class<? extends Enum> destinationClass) {
-        return Enum.valueOf(destinationClass, source);
-    }
-    
-    public boolean canConvert(Class<String> sourceClass, Class<? extends Enum> destinationClass) {
-        return String.class.equals(sourceClass) && destinationClass != null && destinationClass.isEnum();
-    }
-    
+public class ToStringConverter extends CustomConverter<Object, String> {
+
+	public String convert(Object source, Type<? extends String> destinationType) {
+		return source.toString();
+	}
 }
