@@ -43,17 +43,24 @@ public class CodeSourceBuilder {
     
     private final StringBuilder out = new StringBuilder();
     private final UsedTypesContext usedTypes;
+    private final UsedConvertersContext usedConverters;
     private final MapperFactory mapperFactory;
     private final Logger logger;
     
-    public CodeSourceBuilder(UsedTypesContext usedTypes, MapperFactory mapperFactory, Logger logger) {
+    public CodeSourceBuilder(UsedTypesContext usedTypes, UsedConvertersContext usedConverters, MapperFactory mapperFactory, Logger logger) {
         this.usedTypes = usedTypes;
+        this.usedConverters = usedConverters;
         this.mapperFactory = mapperFactory;
         this.logger = logger;
     }
     
+    private String usedConverter(Converter<?,?> converter) {
+    	int index = usedConverters.getIndex(converter);
+        return "(("+Converter.class.getCanonicalName()+")usedConverters[" + index + "])";
+    }
+    
     private String usedType(Type<?> type) {
-        int index = usedTypes.getUsedTypeIndex(type);
+        int index = usedTypes.getIndex(type);
         return "(("+Type.class.getCanonicalName()+")usedTypes[" + index + "])";
     }
     
@@ -61,11 +68,14 @@ public class CodeSourceBuilder {
         return usedType(r.type());
     }
     
-    public CodeSourceBuilder convert(VariableRef d, VariableRef s, String converterId) {
+    public CodeSourceBuilder convert(VariableRef d, VariableRef s, Converter converter) {
           
-        converterId = getConverterId(converterId);  
-        String statement = d.assign("mapperFacade.convert(%s, %s, %s, %s)", s.asWrapper(), usedType(s), usedType(d), converterId);
+        //converterId = getConverterId(converterId);  
+        //String statement = d.assign("mapperFacade.convert(%s, %s, %s, %s)", s.asWrapper(), usedType(s), usedType(d), converterId);
+        String statement = d.assign("%s.convert(%s, %s)", usedConverter(converter), s.asWrapper(), usedType(d));
         
+        		
+        //D convert(S source, Type<? extends D> destinationType)
         if (s.isPrimitive()) {
             statement(statement);
         } else {
@@ -440,7 +450,7 @@ public class CodeSourceBuilder {
 	    	if (logDetails != null) {
 	    		logDetails.append("using converter " + converter);
 	    	}
-	    	convert(destinationProperty, sourceProperty, fieldMap.getConverterId());
+	    	convert(destinationProperty, sourceProperty, converter);
 	    } else if (fieldMap.is(toAnEnumeration())) {
 	    	if (logDetails != null) {
 	    		logDetails.append("mapping from String or enum to enum");

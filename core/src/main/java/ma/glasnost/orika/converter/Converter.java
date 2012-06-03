@@ -60,6 +60,10 @@ public interface Converter<S, D> {
 				((CustomConverterBase<?,?>)delegate).setMapperFacade(mapper);
 			}
 		}
+		
+		public String toString() {
+	    	return LegacyConverter.class.getSimpleName() + "(" + delegate.toString() + ")";
+	    }
         
     }
 }

@@ -51,4 +51,9 @@ public abstract class BidirectionalConverter<S, D> extends CustomConverter<Objec
     			this.destinationType.isAssignableFrom(sourceType) && this.sourceType.equals(destinationType);
     }
     
+    public String toString() {
+    	String subClass = getClass().equals(BidirectionalConverter.class) ? "" : "("+getClass().getSimpleName()+")";
+    	return "BidirectionalConverter"+subClass+"<"+sourceType + ", " + destinationType+">";
+    }
+    
 }

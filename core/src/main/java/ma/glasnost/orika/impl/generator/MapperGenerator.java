@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Set;
 
 import javassist.CannotCompileException;
+import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
@@ -57,6 +58,7 @@ public final class MapperGenerator {
                     compilerStrategy);
             
             UsedTypesContext usedTypes = new UsedTypesContext();
+            UsedConvertersContext usedConverters = new UsedConvertersContext();
             
             StringBuilder logDetails;
             if (LOGGER.isDebugEnabled()) {
@@ -67,17 +69,26 @@ public final class MapperGenerator {
             }
             
             
-            addMapMethod(mapperCode, true, classMap, usedTypes, logDetails);
-            addMapMethod(mapperCode, false, classMap, usedTypes, logDetails);
+            addMapMethod(mapperCode, true, classMap, usedTypes, usedConverters, logDetails);
+            addMapMethod(mapperCode, false, classMap, usedTypes, usedConverters, logDetails);
             
             GeneratedMapperBase instance = mapperCode.getInstance();
             instance.setAType(classMap.getAType());
             instance.setBType(classMap.getBType());
-            if (logDetails != null) {
-            	logDetails.append("\n\tUsed types for mapper: " + Arrays.toString(usedTypes.getUsedTypesArray()));
-            } 
-            instance.setUsedTypes(usedTypes.getUsedTypesArray());
             
+            Type<Object>[] usedTypesArray = usedTypes.toArray();
+            Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
+            if (logDetails != null) {
+            	if (usedTypesArray.length > 0) {
+            		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));
+            	}
+            	if (usedConvertersArray.length > 0) {
+            		logDetails.append("\n\tConverters used: " + Arrays.toString(usedConvertersArray));
+            	}
+            	// TODO: what about doing the same thing for custom mappers?
+            } 
+            instance.setUsedTypes(usedTypesArray);
+            instance.setUsedConverters(usedConvertersArray);
             if (logDetails != null) {
             	LOGGER.debug(logDetails.toString());
             }
@@ -93,7 +104,7 @@ public final class MapperGenerator {
     	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
     }
     
-    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes, StringBuilder logDetails) throws CannotCompileException {
+    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes, UsedConvertersContext usedConverters, StringBuilder logDetails) throws CannotCompileException {
         
     	if (logDetails != null) {
         	if (aToB) {
@@ -103,7 +114,7 @@ public final class MapperGenerator {
         	}
         }
     	
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory, LOGGER);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory, LOGGER);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ")
                 .append(mapMethod)

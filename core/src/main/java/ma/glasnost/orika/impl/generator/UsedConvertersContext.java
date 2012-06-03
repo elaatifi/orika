@@ -21,37 +21,37 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.Converter;
 
 /**
  * 
  * @author matt.deboer@gmail.com
  *
  */
-public class UsedTypesContext {
+public class UsedConvertersContext {
     
-    private Map<Type<Object>,Integer> usedTypes = new HashMap<Type<Object>,Integer>();
+    private Map<Converter<Object, Object>,Integer> usedConverters = new HashMap<Converter<Object, Object>,Integer>();
     private int usedTypeIndex = 0;
     
     @SuppressWarnings("unchecked")
-    public int getIndex(Type<?> type) {
-        if (type==null) {
+    public int getIndex(Converter<?, ?> converter) {
+        if (converter==null) {
             throw new NullPointerException("type must not be null");
         }
-        Integer index = usedTypes.get(type);
+        Integer index = usedConverters.get(converter);
         if (index == null) {
             index = Integer.valueOf(usedTypeIndex++);
-            usedTypes.put((Type<Object>)type, index);
+            usedConverters.put((Converter<Object, Object>)converter, index);
         }
         return index;
     }
     
-    public Type<Object>[] toArray() {
+    public Converter<Object, Object>[] toArray() {
         @SuppressWarnings("unchecked")
-        Type<Object>[] types = new Type[usedTypes.size()];
-        for (Entry<Type<Object>, Integer> entry: usedTypes.entrySet()) {
-            types[entry.getValue()] = entry.getKey();
+        Converter<Object, Object>[] converters = new Converter[usedConverters.size()];
+        for (Entry<Converter<Object, Object>, Integer> entry: usedConverters.entrySet()) {
+            converters[entry.getValue()] = entry.getKey();
         }
-        return types;
+        return converters;
     }
 }

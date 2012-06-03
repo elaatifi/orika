@@ -23,6 +23,7 @@ import static ma.glasnost.orika.metadata.TypeFactory.valueOf;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -58,7 +59,6 @@ public class ObjectFactoryGenerator {
     private final Paranamer paranamer;
     private final CompilerStrategy compilerStrategy;
     private final String nameSuffix;
-    private final UsedTypesContext usedTypes ;
     
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
     		CompilerStrategy compilerStrategy) {
@@ -67,7 +67,6 @@ public class ObjectFactoryGenerator {
         this.nameSuffix = Integer.toHexString(System.identityHashCode(compilerStrategy));
         this.paranamer = new CachingParanamer(new AdaptiveParanamer(new BytecodeReadingParanamer(), new AnnotationParanamer()));
         this.constructorResolverStrategy = constructorResolverStrategy;
-        this.usedTypes = new UsedTypesContext();
     }
     
     public GeneratedObjectFactory build(Type<?> type) {
@@ -78,11 +77,39 @@ public class ObjectFactoryGenerator {
             final GeneratedSourceCode factoryCode = 
         			new GeneratedSourceCode(className,GeneratedObjectFactory.class,compilerStrategy);
         	
-            addCreateMethod(factoryCode, type);
+            StringBuilder logDetails;
+            if (LOGGER.isDebugEnabled()) {
+            	logDetails = new StringBuilder();
+            	logDetails.append("Generating new object factory for (" + type +")");
+            } else {
+            	logDetails = null;
+            }
+            
+            UsedTypesContext usedTypes = new UsedTypesContext();
+            UsedConvertersContext usedConverters = new UsedConvertersContext();
+            
+            addCreateMethod(factoryCode, usedTypes, usedConverters, type, logDetails);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
-            objectFactory.setUsedTypes(usedTypes.getUsedTypesArray());
+            
+            Type<Object>[] usedTypesArray = usedTypes.toArray();
+            Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
+            if (logDetails != null) {
+            	if (usedTypesArray.length > 0) {
+            		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));
+            	}
+            	if (usedConvertersArray.length > 0) {
+            		logDetails.append("\n\tConverters used: " + Arrays.toString(usedConvertersArray));
+            	}
+            	// TODO: what about doing the same thing for custom mappers?
+            } 
+            objectFactory.setUsedTypes(usedTypesArray);
+            objectFactory.setUsedConverters(usedConvertersArray);
+            
+            if (logDetails != null) {
+            	LOGGER.debug(logDetails.toString());
+            }
             
             return objectFactory;
             
@@ -91,8 +118,10 @@ public class ObjectFactoryGenerator {
         } 
     }
     
-    private void addCreateMethod(GeneratedSourceCode context, Type<?> clazz) throws CannotCompileException {
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, mapperFactory, LOGGER);
+    private void addCreateMethod(GeneratedSourceCode context, UsedTypesContext usedTypes, 
+    		UsedConvertersContext usedConverters, Type<?> clazz, StringBuilder logDetails) throws CannotCompileException {
+    	
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory, LOGGER);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
@@ -100,7 +129,7 @@ public class ObjectFactoryGenerator {
         
         if (sourceClasses != null && !sourceClasses.isEmpty()) {
             for (Type<? extends Object> sourceType : sourceClasses) {
-                addSourceClassConstructor(out, clazz, sourceType);
+                addSourceClassConstructor(out, clazz, sourceType, logDetails);
             }
         }
         // TODO: this error is unclear, and should never really be reached;
@@ -113,7 +142,7 @@ public class ObjectFactoryGenerator {
         context.addMethod(out.toString());
     }
     
-    private void addSourceClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceClass) {
+    private void addSourceClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceClass, StringBuilder logDetails) {
         List<FieldMap> properties = new ArrayList<FieldMap>();
         ClassMap<Object, Object> classMap = mapperFactory.getClassMap(new MapperKey(type,sourceClass)); 
         if (classMap==null) {
@@ -123,7 +152,9 @@ public class ObjectFactoryGenerator {
         
         try {
             Constructor<?> constructor = (Constructor<?>) constructorResolverStrategy.resolve(classMap, type);
-            
+            if (logDetails != null) {
+            	logDetails.append("\n\tUsing constructor: " + constructor);
+            }
             if (constructor == null) {
                 throw new IllegalArgumentException("no constructors found for " + type);
             } else if (LOGGER.isDebugEnabled()) {
@@ -177,7 +208,7 @@ public class ObjectFactoryGenerator {
                     continue;
                 }
                 try {
-                    
+                    // TODO: should we use CodeSourceBuilder.mapFields here?
                     if (fieldMap.is(aWrapperToPrimitive())) {
                         out.ifNotNull(s).setPrimitive(v, s);
                     } else if (fieldMap.is(aPrimitiveToWrapper())) {
@@ -232,7 +263,7 @@ public class ObjectFactoryGenerator {
         }
         
         if (converter != null) {
-            code.ifNotNull(s).then().convert(v, s, fieldMap.getConverterId()).end();
+            code.ifNotNull(s).then().convert(v, s, converter).end();
             return true;
         } else {
             return false;
