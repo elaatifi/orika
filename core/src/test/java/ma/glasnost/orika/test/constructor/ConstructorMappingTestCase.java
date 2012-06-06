@@ -5,7 +5,10 @@ import static org.junit.Assert.assertNotNull;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
@@ -36,6 +39,7 @@ import ma.glasnost.orika.test.constructor.TestCaseClasses.NestedPrimitiveHolder;
 import ma.glasnost.orika.test.constructor.TestCaseClasses.Person;
 import ma.glasnost.orika.test.constructor.TestCaseClasses.PersonVO;
 import ma.glasnost.orika.test.constructor.TestCaseClasses.PersonVO2;
+import ma.glasnost.orika.test.constructor.TestCaseClasses.PersonVO3;
 import ma.glasnost.orika.test.constructor.TestCaseClasses.PrimitiveNumberHolder;
 import ma.glasnost.orika.test.constructor.TestCaseClasses.WrapperHolder;
 
@@ -78,6 +82,68 @@ public class ConstructorMappingTestCase {
         Assert.assertEquals("01/01/1980", vo.getDateOfBirth());
     }
     
+    
+    @Test
+    public void testFindConstructor() throws Throwable {
+    	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        
+        factory.registerClassMap(ClassMapBuilder.map(PersonVO3.class, Person.class)
+                .fieldMap("dateOfBirth", "date").converter(DATE_CONVERTER).add()
+                .byDefault()
+                .toClassMap());
+        factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
+        
+      
+        Person person = new Person();
+        person.setFirstName("Abdelkrim");
+        person.setLastName("EL KHETTABI");
+        person.setDate(df.parse("01/01/1980"));
+        person.setAge(31L);
+        
+        PersonVO3 vo = factory.getMapperFacade().map(person, PersonVO3.class);
+        
+        Assert.assertEquals(person.getFirstName(), vo.getFirstName());
+        Assert.assertEquals(person.getLastName(), vo.getLastName());
+        Assert.assertTrue(person.getAge() == vo.getAge());
+        Assert.assertEquals("01/01/1980", vo.getDateOfBirth());
+    }
+    
+    public static long yearsDifference(final Date start, final Date end) {
+		long diff = end.getTime() - start.getTime();
+		return diff / TimeUnit.SECONDS.toMillis(60*60*24*365);
+	}
+    
+    @Test
+    public void testFindConstructor2() throws Throwable {
+    	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        
+        factory.registerClassMap(ClassMapBuilder.map(PersonVO3.class, Person.class)
+                .field("firstName", "firstName")
+                .field("lastName", "lastName")
+        		.field("dateOfBirth", "date").toClassMap());
+        factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
+        
+        Person person = new Person();
+        person.setFirstName("Abdelkrim");
+        person.setLastName("EL KHETTABI");
+        person.setDate(df.parse("01/01/1980"));
+        
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.YEAR, 1980);
+        c.set(Calendar.MONTH, 0);
+        c.set(Calendar.DAY_OF_MONTH, 1);
+        
+        person.setAge(yearsDifference(c.getTime(), new Date()));
+        
+        PersonVO3 vo = factory.getMapperFacade().map(person, PersonVO3.class);
+        
+        Assert.assertEquals(person.getFirstName(), vo.getFirstName());
+        Assert.assertEquals(person.getLastName(), vo.getLastName());
+        Assert.assertTrue(person.getAge() == vo.getAge());
+        Assert.assertEquals("01/01/1980", vo.getDateOfBirth());
+    }
     
     @Test
     public void testAutomaticCaseWithHint() throws Throwable {

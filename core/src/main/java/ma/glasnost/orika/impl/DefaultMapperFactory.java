@@ -505,8 +505,10 @@ public class DefaultMapperFactory implements MapperFactory {
         parentMappers.add(parentMapper);
         
         Set<ClassMap<Object, Object>> usedClassMapSet = usedMapperMetadataRegistry.get(parentMapperKey);
-        for (ClassMap<Object, Object> cm : usedClassMapSet) {
-            collectUsedMappers(cm, parentMappers, new MapperKey(cm.getAType(), cm.getBType()));
+        if (usedClassMapSet != null) {
+	        for (ClassMap<Object, Object> cm : usedClassMapSet) {
+	            collectUsedMappers(cm, parentMappers, new MapperKey(cm.getAType(), cm.getBType()));
+	        }
         }
     }
     

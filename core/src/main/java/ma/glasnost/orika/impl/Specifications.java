@@ -78,6 +78,10 @@ public final class Specifications {
     	return CONVERSION_TO_STRING;
     }
     
+    public static Specification aMappingOfTheRequiredClassProperty() {
+    	return OBJECT_CLASS_PROPERTY;
+    }
+    
     private static final Specification IS_IMMUTABLE = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
@@ -152,5 +156,15 @@ public final class Specifications {
             return String.class.equals(fieldMap.getDestination().getType().getRawType());
         }
         
+    };
+    
+    private static final Specification OBJECT_CLASS_PROPERTY = new Specification() {
+    	
+    	public boolean apply(FieldMap fieldMap) {
+    		return "class".equals(fieldMap.getSource().getName()) &&
+    				"class".equals(fieldMap.getDestination().getName()) &&
+    				Class.class.equals(fieldMap.getSource().getRawType());
+    				
+    	}
     };
 }
