@@ -185,26 +185,25 @@ public class DynamicSuite extends ParentRunner<Runner> {
 			while (!stack.isEmpty()) {
 
 				File file = stack.removeFirst();
+				
 				if (file.isDirectory()) {
 					// push
 					stack.addAll(Arrays.asList(file.listFiles()));
-				} else if (testCasePattern.matcher(file.getName()).matches()) {
-					if (!currentDirectory.equals(file.getParentFile())) {
-						currentDirectory = file.getParentFile();
-						currentPackage = currentDirectory.getAbsolutePath()
-								.substring(classFolderPathLength + 1);
-						currentPackage = currentPackage
-								.replaceAll("[\\/]", ".");
+				} else {
+					if (file.getName().endsWith(".class")) {
+						String className = file.getAbsolutePath().replace(classFolder.getAbsolutePath() + File.separator,"");
+						className = className.replaceAll("[\\\\/]", ".").replace(".class", "");
+						if (testCasePattern.matcher(className).matches()) {
+							if (!currentDirectory.equals(file.getParentFile())) {
+								currentDirectory = file.getParentFile();
+								currentPackage = currentDirectory.getAbsolutePath()
+										.substring(classFolderPathLength + 1);
+								currentPackage = currentPackage
+										.replaceAll("[\\/]", ".");
+							}
+							testCases.add(Class.forName(className, false, tccl));
+						}
 					}
-					String className = currentPackage
-							+ "."
-							+ file.getName()
-									.substring(
-											0,
-											file.getName().length()
-													- ".class".length());
-					className = className.replace('\\', '.').replace('/', '.');
-					testCases.add(Class.forName(className, false, tccl));
 				}
 			}
 

@@ -317,23 +317,5 @@ public final class Type<T> implements ParameterizedType {
         Type<?> other = (Type<?>) obj;
         
         return this.key.equals(other.key);
-//        if (!this.key.equals(other.key)) {
-//            // shortcut
-//            return false;
-//        }
-//        
-//        if (rawType == null) {
-//            if (other.rawType != null) {
-//                return false;
-//            }
-//        } else if (!rawType.equals(other.rawType)) {
-//            return false;
-//        }
-//        
-//        if (!Arrays.equals(actualTypeArguments, other.actualTypeArguments)) {
-//            return false;
-//        }
-//        
-//        return true;
     }
 }

@@ -112,7 +112,9 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
                         
                         Class<?> rawType = resolveRawPropertyType(pd);
                         
-                        if (typeHolder.isParameterized() || rawType.getTypeParameters().length > 0) {
+                        if (typeHolder.isParameterized() 
+                        		|| type.getTypeParameters().length > 0 
+                        		|| rawType.getTypeParameters().length > 0) {
                             /*
                              * Make attempts to determine the parameters
                              */
@@ -222,19 +224,23 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
      * @return
      */
     private Type<?> resolveGenericType(java.lang.reflect.Type genericType, Type<?> referenceType) {
-        Type<?> resolvedType = null;
-        if (genericType instanceof TypeVariable && referenceType.isParameterized()) {
-            java.lang.reflect.Type t = referenceType.getTypeByVariable((TypeVariable<?>) genericType);
-            if (t != null) {
-                resolvedType = TypeFactory.valueOf(t);
-            }
-        } else if (genericType instanceof ParameterizedType) {
-            if (referenceType.isParameterized()) {
-                resolvedType = TypeFactory.resolveValueOf((ParameterizedType) genericType, referenceType);
-            } else {
-                resolvedType = TypeFactory.valueOf((ParameterizedType) genericType);
-            }
-        }
+    	Type<?> resolvedType = null;
+        Type<?> reference = referenceType;
+        do {
+	        if (genericType instanceof TypeVariable && reference.isParameterized()) {
+	            java.lang.reflect.Type t = reference.getTypeByVariable((TypeVariable<?>) genericType);
+	            if (t != null) {
+	                resolvedType = TypeFactory.valueOf(t);
+	            }
+	        } else if (genericType instanceof ParameterizedType) {
+	            if (reference.isParameterized()) {
+	                resolvedType = TypeFactory.resolveValueOf((ParameterizedType) genericType, reference);
+	            } else {
+	                resolvedType = TypeFactory.valueOf((ParameterizedType) genericType);
+	            }
+	        }
+	        reference = reference.getSuperType();
+        } while (resolvedType == null && reference != TypeFactory.TYPE_OF_OBJECT);
         return resolvedType;
     }
     

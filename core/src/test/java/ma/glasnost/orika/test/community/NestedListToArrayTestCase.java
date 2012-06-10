@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.Assert;
-
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
@@ -104,7 +102,7 @@ public class NestedListToArrayTestCase {
 		
 		
 		MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
-        final ClassMapBuilder<R1, R2> builder = ClassMapBuilder.map(R1.class, R2.class);
+        final ClassMapBuilder<R1, R2> builder = mapperFactory.classMap(R1.class, R2.class);
 
         mapperFactory.registerClassMap(builder.byDefault().toClassMap());
         
