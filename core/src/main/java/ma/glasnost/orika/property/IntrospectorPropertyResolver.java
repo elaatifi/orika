@@ -54,164 +54,182 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
     
     public Map<String, Property> getProperties(java.lang.reflect.Type theType) {
         
-        if (propertiesCache.containsKey(theType)) {
-            return propertiesCache.get(theType);
+    	Map<String, Property> properties = propertiesCache.get(theType);
+        if (properties == null) {
+        	synchronized(theType) {
+	        	properties = propertiesCache.get(theType);
+	        	if (properties == null) {
+	        		
+			        properties = new HashMap<String, Property>();
+			        Type<?> typeHolder;
+			        
+			        if (theType instanceof Type) {
+			            typeHolder = (Type<?>) theType;
+			        } else if (theType instanceof Class) {
+			            typeHolder = TypeFactory.valueOf((Class<?>) theType);
+			        } else {
+			            throw new IllegalArgumentException("type " + theType + " not supported.");
+			        }
+			        
+			        BeanInfo beanInfo;
+			        PropertyDescriptor currentPd = null;
+			        try {
+			            LinkedList<Class<? extends Object>> types = new LinkedList<Class<? extends Object>>();
+			            types.addFirst((Class<? extends Object>) typeHolder.getRawType());
+			            while (!types.isEmpty()) {
+			                Class<? extends Object> type = types.removeFirst();
+			                beanInfo = Introspector.getBeanInfo(type);
+			                PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
+			                for (final PropertyDescriptor pd : descriptors) {
+			                	currentPd = pd;
+			                	try {
+			                        
+			                        final Property property = new Property();
+			                        final String capitalName = pd.getName().substring(0,1).toUpperCase() + pd.getName().substring(1);
+			                        Method readMethod;
+			                        if (pd.getReadMethod() == null && Boolean.class.equals(pd.getPropertyType())) {
+			                        	/*
+			                             * Special handling for Boolean "is" read method; not compliant with JavaBeans spec, but still very common
+			                             */
+			                        	try {
+			                        		readMethod = type.getMethod("is" + capitalName);
+			                        	} catch (NoSuchMethodException e) {
+			                        		readMethod = null;
+			                        	}
+			                        } else {
+			                        	readMethod = pd.getReadMethod();
+			                        }
+			                        Method writeMethod = pd.getWriteMethod();
+			                        
+			                        property.setExpression(pd.getName());
+			                        property.setName(pd.getName());
+			                        
+			                        
+			                        if (readMethod != null) {
+			                            property.setGetter(readMethod.getName() + "()");
+			                        }
+			                        if (writeMethod != null) {
+			                            property.setSetter(writeMethod.getName() + "(%s)");
+			                        } 
+			                        
+			                        if (readMethod == null && writeMethod == null) {
+			                            continue;
+			                        }
+			                        
+			                        Class<?> rawType = resolveRawPropertyType(pd);
+			                        
+			                        if (typeHolder.isParameterized() 
+			                        		|| type.getTypeParameters().length > 0 
+			                        		|| rawType.getTypeParameters().length > 0) {
+			                            /*
+			                             * Make attempts to determine the parameters
+			                             */
+			                            Type<?> resolvedGenericType = null;
+			                            if (readMethod != null) {
+			                                try {
+												resolvedGenericType = resolveGenericType(readMethod.getDeclaringClass()
+												        .getDeclaredMethod(readMethod.getName(), new Class[0])
+												        .getGenericReturnType(), typeHolder);
+											} catch (NoSuchMethodException e) {
+												throw new IllegalStateException("readMethod does not exist",e);
+											}
+			                            }
+			                            
+			                            if (resolvedGenericType != null && !resolvedGenericType.isAssignableFrom(rawType)) {
+			                                property.setType(resolvedGenericType);
+			                            } else {
+			                                property.setType(TypeFactory.valueOf(rawType));
+			                            }
+			                            
+			                        } else {
+			                            /*
+			                             * Neither the type nor it's parameter is generic; use the raw type
+			                             */
+			                            property.setType(TypeFactory.valueOf(rawType));
+			                        }
+			                        
+			                        if (writeMethod == null) {
+			                            /*
+			                             * Special handling for fluid APIs where setters return a value
+			                             */
+			                            try {
+			                                writeMethod = type.getMethod("set" + capitalName, property.getType().getRawType());
+			                                property.setSetter(writeMethod.getName() + "(%s)");
+			                            } catch (NoSuchMethodException e) {
+			                                writeMethod = null;
+			                            }
+			                        }
+			
+			                        
+			                        Property existing = properties.get(pd.getName());
+			                        if (existing == null) {
+			                            properties.put(pd.getName(), property);
+			                        } else if (existing.getType().isAssignableFrom(property.getType()) && !existing.getType().equals(property.getType())) {
+			                            /*
+			                             * The type has been refined by the generic information in a super-type
+			                             */
+			                            existing.setType(property.getType());
+			                        }
+			                        
+			                    } catch (final RuntimeException e) {
+			                    	/*
+			                    	 * Wrap with info for the property we were trying to introspect 
+			                    	 */
+			                    	throw new RuntimeException("Unexpected error while trying to resolve property " + theType + ", [" + pd.getName() + "]", e);
+			                    }
+			                }
+			                
+			                if (type.getSuperclass() != null && !Object.class.equals(type.getSuperclass())) {
+			                    types.add(type.getSuperclass());
+			                }
+			                
+			                @SuppressWarnings("unchecked")
+			                List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
+			                types.addAll(interfaces);
+			            }
+			        
+			        } catch (final IntrospectionException e) {
+			            if (currentPd != null) {
+			            	throw new RuntimeException("Unexpected error while trying to resolve property " + theType + ", [" + currentPd.getName() + "]", e);
+			            } else {
+			            	throw new RuntimeException("Unexpected error while trying to resolve properties for " + theType, e);
+			            }
+			        }
+			        
+			        /*
+			         * Add public non-static fields as properties; we call this outside of
+			         * the loop because the fields returned are already inclusive of
+			         * ancestors.
+			         */
+			        for (Field f : typeHolder.getRawType().getFields()) {
+			            if (!Modifier.isStatic(f.getModifiers())) {
+			                final Property property = new Property();
+			                property.setExpression(f.getName());
+			                property.setName(f.getName());
+			                
+			                Class<?> rawType = f.getType();
+			                Type<?> genericType = resolveGenericType(f.getGenericType(), typeHolder);
+			                if (genericType != null && !genericType.isAssignableFrom(rawType)) {
+			                    property.setType(genericType);
+			                } else {
+			                    property.setType(TypeFactory.valueOf(rawType));
+			                }
+			                
+			                Property existing = properties.get(property.getName());
+			                if (existing == null) {
+			                    property.setGetter(property.getName());
+			                    property.setSetter(property.getName() + " = %s");
+			                    properties.put(property.getName(), property);
+			                } else if (existing.getSetter() == null) {
+			                    existing.setSetter(property.getName() + " = %s");
+			                }
+			            }
+			        }
+		        
+			        propertiesCache.put(theType, Collections.unmodifiableMap(properties));
+	        	}
+        	}
         }
-        
-        final Map<String, Property> properties = new HashMap<String, Property>();
-        Type<?> typeHolder;
-        if (theType instanceof Type) {
-            typeHolder = (Type<?>) theType;
-        } else if (theType instanceof Class) {
-            typeHolder = TypeFactory.valueOf((Class<?>) theType);
-        } else {
-            throw new IllegalArgumentException("type " + theType + " not supported.");
-        }
-        BeanInfo beanInfo;
-        try {
-            LinkedList<Class<? extends Object>> types = new LinkedList<Class<? extends Object>>();
-            types.addFirst((Class<? extends Object>) typeHolder.getRawType());
-            while (!types.isEmpty()) {
-                Class<? extends Object> type = types.removeFirst();
-                beanInfo = Introspector.getBeanInfo(type);
-                PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
-                for (final PropertyDescriptor pd : descriptors) {
-                    try {
-                        
-                        final Property property = new Property();
-                        final String capitalName = pd.getName().substring(0,1).toUpperCase() + pd.getName().substring(1);
-                        Method readMethod;
-                        if (pd.getReadMethod() == null && Boolean.class.equals(pd.getPropertyType())) {
-                        	/*
-                             * Special handling for Boolean "is" read method; not compliant with JavaBeans spec, but still very common
-                             */
-                        	try {
-                        		readMethod = type.getMethod("is" + capitalName);
-                        	} catch (NoSuchMethodException e) {
-                        		readMethod = null;
-                        	}
-                        } else {
-                        	readMethod = pd.getReadMethod();
-                        }
-                        Method writeMethod = pd.getWriteMethod();
-                        
-                        property.setExpression(pd.getName());
-                        property.setName(pd.getName());
-                        
-                        
-                        if (readMethod != null) {
-                            property.setGetter(readMethod.getName() + "()");
-                        }
-                        if (writeMethod != null) {
-                            property.setSetter(writeMethod.getName() + "(%s)");
-                        } 
-                        
-                        if (readMethod == null && writeMethod == null) {
-                            continue;
-                        }
-                        
-                        Class<?> rawType = resolveRawPropertyType(pd);
-                        
-                        if (typeHolder.isParameterized() 
-                        		|| type.getTypeParameters().length > 0 
-                        		|| rawType.getTypeParameters().length > 0) {
-                            /*
-                             * Make attempts to determine the parameters
-                             */
-                            Type<?> resolvedGenericType = null;
-                            if (readMethod != null) {
-                                resolvedGenericType = resolveGenericType(readMethod.getDeclaringClass()
-                                        .getDeclaredMethod(readMethod.getName(), new Class[0])
-                                        .getGenericReturnType(), typeHolder);
-                            }
-                            
-                            if (resolvedGenericType != null && !resolvedGenericType.isAssignableFrom(rawType)) {
-                                property.setType(resolvedGenericType);
-                            } else {
-                                property.setType(TypeFactory.valueOf(rawType));
-                            }
-                            
-                        } else {
-                            /*
-                             * Neither the type nor it's parameter is generic; use the raw type
-                             */
-                            property.setType(TypeFactory.valueOf(rawType));
-                        }
-                        
-                        if (writeMethod == null) {
-                            /*
-                             * Special handling for fluid APIs where setters return a value
-                             */
-                            try {
-                                writeMethod = type.getMethod("set" + capitalName, property.getType().getRawType());
-                                property.setSetter(writeMethod.getName() + "(%s)");
-                            } catch (NoSuchMethodException e) {
-                                writeMethod = null;
-                            }
-                        }
-
-                        
-                        Property existing = properties.get(pd.getName());
-                        if (existing == null) {
-                            properties.put(pd.getName(), property);
-                        } else if (existing.getType().isAssignableFrom(property.getType()) && !existing.getType().equals(property.getType())) {
-                            /*
-                             * The type has been refined by the generic information in a super-type
-                             */
-                            existing.setType(property.getType());
-                        }
-                        
-                    } catch (final Throwable e) {
-                        // TODO: should we really do this? 
-                        // 
-                        e.printStackTrace();
-                    }
-                }
-                
-                if (type.getSuperclass() != null && !Object.class.equals(type.getSuperclass())) {
-                    types.add(type.getSuperclass());
-                }
-                
-                @SuppressWarnings("unchecked")
-                List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
-                types.addAll(interfaces);
-            }
-        } catch (final IntrospectionException e) {
-            e.printStackTrace();
-            /* Ignore */
-        }
-        
-        /*
-         * Add public non-static fields as properties; we call this outside of
-         * the loop because the fields returned are already inclusive of
-         * ancestors.
-         */
-        for (Field f : typeHolder.getRawType().getFields()) {
-            if (!Modifier.isStatic(f.getModifiers())) {
-                final Property property = new Property();
-                property.setExpression(f.getName());
-                property.setName(f.getName());
-                
-                Class<?> rawType = f.getType();
-                Type<?> genericType = resolveGenericType(f.getGenericType(), typeHolder);
-                if (genericType != null && !genericType.isAssignableFrom(rawType)) {
-                    property.setType(genericType);
-                } else {
-                    property.setType(TypeFactory.valueOf(rawType));
-                }
-                
-                Property existing = properties.get(property.getName());
-                if (existing == null) {
-                    property.setGetter(property.getName());
-                    property.setSetter(property.getName() + " = %s");
-                    properties.put(property.getName(), property);
-                } else if (existing.getSetter() == null) {
-                    existing.setSetter(property.getName() + " = %s");
-                }
-            }
-        }
-        
-        propertiesCache.put(theType, Collections.unmodifiableMap(properties));
         return properties;
     }
     
