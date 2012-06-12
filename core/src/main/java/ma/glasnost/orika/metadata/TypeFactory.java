@@ -69,7 +69,7 @@ public abstract class TypeFactory {
         
         WeakReference<Type<?>> mapped = typeCache.get(key);
         if (mapped == null || mapped.get() == null) {
-        	synchronized(key) {
+        	synchronized(rawType) {
         		mapped = typeCache.get(key);
         		if (mapped == null || mapped.get() == null) {
 		            mapped = new WeakReference<Type<?>>(createType(key, rawType, convertedArguments));
