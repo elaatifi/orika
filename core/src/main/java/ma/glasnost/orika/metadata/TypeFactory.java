@@ -69,19 +69,24 @@ public abstract class TypeFactory {
         
         WeakReference<Type<?>> mapped = typeCache.get(key);
         if (mapped == null || mapped.get() == null) {
-            mapped = new WeakReference<Type<?>>(createType(key, rawType, convertedArguments));
-            WeakReference<Type<?>> existing = typeCache.putIfAbsent(key, mapped);
-            if (existing != null) {
-                if (existing.get() == null) {
-                    // Should not be possible, since the references are based on Class objects,
-                    // which cannot be GC'd until their respective class loader is GC'd,
-                    // in which case, such a Class could not be passed into this method as
-                    // an argument, or embedded within an argument
-                    typeCache.put(key, mapped);
-                } else {
-                    mapped = existing;
-                }
-            }
+        	synchronized(rawType) {
+        		mapped = typeCache.get(key);
+        		if (mapped == null || mapped.get() == null) {
+		            mapped = new WeakReference<Type<?>>(createType(key, rawType, convertedArguments));
+		            WeakReference<Type<?>> existing = typeCache.putIfAbsent(key, mapped);
+		            if (existing != null) {
+		                if (existing.get() == null) {
+		                    // Should not be possible, since the references are based on Class objects,
+		                    // which cannot be GC'd until their respective class loader is GC'd,
+		                    // in which case, such a Class could not be passed into this method as
+		                    // an argument, or embedded within an argument
+		                    typeCache.put(key, mapped);
+		                } else {
+		                    mapped = existing;
+		                }
+		            }
+        		}
+        	}
         }
         return (Type<T>) mapped.get();
     }
