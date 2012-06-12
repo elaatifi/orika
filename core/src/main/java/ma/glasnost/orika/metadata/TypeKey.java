@@ -32,7 +32,7 @@ class TypeKey {
     
 	private static volatile WeakHashMap<java.lang.reflect.Type, Integer> knownTypes =
 			new WeakHashMap<java.lang.reflect.Type, Integer>();
-	private static AtomicInteger currentIndex = new AtomicInteger(-1);
+	private static AtomicInteger currentIndex = new AtomicInteger(0);
 	
 	private static int getTypeIndex(java.lang.reflect.Type type) {
 		Integer typeIndex = knownTypes.get(type);
@@ -40,11 +40,10 @@ class TypeKey {
 			synchronized(type) {
 				typeIndex = knownTypes.get(type);
 				if (typeIndex == null) {
-					typeIndex = currentIndex.incrementAndGet();
+					typeIndex = currentIndex.getAndAdd(1);
 					knownTypes.put(type, typeIndex);
 				}
 			}
-			
 		}	
 		return typeIndex;
 	}
@@ -73,19 +72,19 @@ class TypeKey {
      * @param typeArguments
      * @return
      */
-    static final TypeKey valueOf(Class<?> rawType, java.lang.reflect.Type[] typeArguments) {
+    public static final TypeKey valueOf(Class<?> rawType, java.lang.reflect.Type[] typeArguments) {
         
     	byte[] identityHashBytes = new byte[(typeArguments.length + 1) * 4];
         intToByteArray(getTypeIndex(rawType), identityHashBytes, 0);
         for (int i = 0, len = typeArguments.length; i < len; ++i) {
             intToByteArray(getTypeIndex(typeArguments[i]), identityHashBytes, i + 1);
-        } 
-        return new TypeKey(identityHashBytes); 
+        }
+        return new TypeKey(identityHashBytes);
     }
     
     private final byte[] bytes;
 
-    public TypeKey(byte[] bytes) {
+    private TypeKey(byte[] bytes) {
         this.bytes = bytes;
     }
     

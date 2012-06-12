@@ -269,7 +269,11 @@ public final class Type<T> implements ParameterizedType {
     
     public String toString() {
     	StringBuilder stringValue = new StringBuilder();
-    	stringValue.append(rawType.getSimpleName());
+    	if (rawType.isAnonymousClass()) {
+    		rawType.getName();
+    	} else {	
+    		stringValue.append(rawType.getSimpleName());
+    	}
     	if (actualTypeArguments.length > 0) {
     		stringValue.append("<");
     		for (java.lang.reflect.Type arg: actualTypeArguments) {

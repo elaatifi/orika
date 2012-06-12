@@ -20,8 +20,10 @@ package ma.glasnost.orika.test.perf;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,9 +53,10 @@ public class MultiThreadedTestCase {
 	@Rule
 	public ConcurrentRule concurrentRule = new ConcurrentRule();
 	
-	private volatile Set<Class<?>> classes = new HashSet<Class<?>>(getClassesList());
+	private volatile Set<Class<?>> classes = getNonAnonymousClasses();
 	
-	private static List<Class<?>> getClassesList() {
+	private static Set<Class<?>> getNonAnonymousClasses() {
+		Set<Class<?>> classes = new HashSet<Class<?>>();
 		File classFolder;
 		try {
 			classFolder = new File(URLDecoder.decode(MultiThreadedTestCase.class.getResource("/")
@@ -61,7 +64,13 @@ public class MultiThreadedTestCase {
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
-		return DynamicSuite.findTestCases(classFolder, ".*");
+		List<Class<?>> allClasses = DynamicSuite.findTestCases(classFolder, ".*");
+		for (Class<?> aClass: allClasses) {
+			if (!aClass.isAnonymousClass()) {
+				classes.add(aClass);
+			}
+		}
+		return classes;
 	}
 	
 	private final AtomicInteger threadIndex = new AtomicInteger(0);
@@ -90,15 +99,17 @@ public class MultiThreadedTestCase {
 	 * the same set of values over a large number of classes.
 	 */
 	@Test
-	@Concurrent(15)
+	@Concurrent(10)
 	public void testDefineTypesSimultaneously() {
 		
-		Set<Type<?>> types = new HashSet<Type<?>>();
+		Map<Type<?>,Class<?>> types = new HashMap<Type<?>,Class<?>>();
 		for (Class<?> aClass: classes) {
+			
 			Type<?> aType = TypeFactory.valueOf(aClass);
-			boolean exists = types.add(aType);
-			if (exists) {
-				throw new IllegalStateException("type already exists for " + aClass + ": " + aType);
+			if (!types.containsKey(aType)) {
+				types.put(aType, aClass);
+			} else {	
+				throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
 			}
 		}
 		
