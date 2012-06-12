@@ -18,6 +18,8 @@
 package ma.glasnost.orika.metadata;
 
 import java.util.Arrays;
+import java.util.WeakHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * TypeKey provides a way to uniquely identify a {Class, Type[]} pair
@@ -28,6 +30,25 @@ import java.util.Arrays;
  */
 class TypeKey {
     
+	private static volatile WeakHashMap<java.lang.reflect.Type, Integer> knownTypes =
+			new WeakHashMap<java.lang.reflect.Type, Integer>();
+	private static AtomicInteger currentIndex = new AtomicInteger(-1);
+	
+	private static int getTypeIndex(java.lang.reflect.Type type) {
+		Integer typeIndex = knownTypes.get(type);
+		if (typeIndex == null) {
+			synchronized(type) {
+				typeIndex = knownTypes.get(type);
+				if (typeIndex == null) {
+					typeIndex = currentIndex.incrementAndGet();
+					knownTypes.put(type, typeIndex);
+				}
+			}
+			
+		}	
+		return typeIndex;
+	}
+	
     /**
      * Merge an int value into byte array, starting at the specified starting
      * index (occupies the next 4 bytes);
@@ -53,16 +74,17 @@ class TypeKey {
      * @return
      */
     static final TypeKey valueOf(Class<?> rawType, java.lang.reflect.Type[] typeArguments) {
-        byte[] identityHashBytes = new byte[(typeArguments.length + 1) * 4];
-        intToByteArray(System.identityHashCode(rawType), identityHashBytes, 0);
+        
+    	byte[] identityHashBytes = new byte[(typeArguments.length + 1) * 4];
+        intToByteArray(getTypeIndex(rawType), identityHashBytes, 0);
         for (int i = 0, len = typeArguments.length; i < len; ++i) {
-            intToByteArray(System.identityHashCode(typeArguments[i]), identityHashBytes, i + 1);
-        }
-        return new TypeKey(identityHashBytes);
+            intToByteArray(getTypeIndex(typeArguments[i]), identityHashBytes, i + 1);
+        } 
+        return new TypeKey(identityHashBytes); 
     }
     
     private final byte[] bytes;
-    
+
     public TypeKey(byte[] bytes) {
         this.bytes = bytes;
     }
