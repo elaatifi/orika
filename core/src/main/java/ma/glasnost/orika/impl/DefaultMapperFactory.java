@@ -308,16 +308,19 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
-            Lock lock = getLock(mapperKey);
-            if (!mappersRegistry.containsKey(mapperKey)) {
-	        	final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType())
-	                    .byDefault(this.defaultFieldMappers.toArray(new DefaultFieldMapper[0]))
-	                    .toClassMap();
-	            buildObjectFactories(classMap);
-	            buildMapper(classMap);
-	            initializeUsedMappers(classMap);
+            // Lock lock = getLock(mapperKey);
+            synchronized (this) {
+                
+                if (!mappersRegistry.containsKey(mapperKey)) {
+                    final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType())
+                            .byDefault(this.defaultFieldMappers.toArray(new DefaultFieldMapper[0]))
+                            .toClassMap();
+                    buildObjectFactories(classMap);
+                    buildMapper(classMap);
+                    initializeUsedMappers(classMap);
+                }
             }
-            lock.unlock();
+            // lock.unlock();
         }
         return mappersRegistry.get(mapperKey);
     }
@@ -359,28 +362,28 @@ public class DefaultMapperFactory implements MapperFactory {
         
         ObjectFactory<T> result = (ObjectFactory<T>) objectFactoryRegistry.get(targetType);
         if (result == null) {
-        	Lock lock = getLock(targetType);
-        	// Check if we can use default constructor...
-            try {
-                targetType.getRawType().getConstructor(/* new Class[0] */);
-                // Mark the class with null value in the registry
-                // to avoid repeating the getConstructor call
-                objectFactoryRegistry.put(targetType, USE_DEFAULT_CONSTRUCTOR);
-            } catch (Exception e) {
-                // Generate an object factory
-                synchronized (objectFactoryGenerator) {
+            // Lock lock = getLock(targetType);
+            // Check if we can use default constructor...
+            synchronized (this) {
+                try {
+                    targetType.getRawType().getConstructor(/* new Class[0] */);
+                    // Mark the class with null value in the registry
+                    // to avoid repeating the getConstructor call
+                    objectFactoryRegistry.put(targetType, USE_DEFAULT_CONSTRUCTOR);
+                } catch (Exception e) {
+                    // Generate an object factory
                     result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
                     objectFactoryRegistry.put(targetType, result);
                 }
             }
-            lock.unlock();
+            // lock.unlock();
         } else if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
             result = null;
         }
         
         return result;
     }
-    
+
     @SuppressWarnings("unchecked")
     public <S, D> Type<? extends D> lookupConcreteDestinationType(Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         final Type<? extends D> concreteType = context.getConcreteClass(sourceType, destinationType);
