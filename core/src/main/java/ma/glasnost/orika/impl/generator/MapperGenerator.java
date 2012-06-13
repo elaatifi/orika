@@ -52,12 +52,10 @@ public final class MapperGenerator {
     
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
-    private final UsedTypesContext usedTypes;
     
     public MapperGenerator(MapperFactory mapperFactory, CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
-        this.usedTypes = new UsedTypesContext();
     }
     
     public GeneratedMapperBase build(ClassMap<?, ?> classMap) {
@@ -66,11 +64,13 @@ public final class MapperGenerator {
             compilerStrategy.assureTypeIsAccessible(classMap.getAType().getRawType());
             compilerStrategy.assureTypeIsAccessible(classMap.getBType().getRawType());
             
+            final UsedTypesContext usedTypes = new UsedTypesContext();
+            
             final GeneratedSourceCode mapperCode = new GeneratedSourceCode(classMap.getMapperClassName(), GeneratedMapperBase.class,
                     compilerStrategy);
             
-            addMapMethod(mapperCode, true, classMap);
-            addMapMethod(mapperCode, false, classMap);
+            addMapMethod(mapperCode, true, classMap, usedTypes);
+            addMapMethod(mapperCode, false, classMap, usedTypes);
             
             GeneratedMapperBase instance = mapperCode.getInstance();
             instance.setAType(classMap.getAType());
@@ -84,7 +84,7 @@ public final class MapperGenerator {
         }
     }
     
-    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap) throws CannotCompileException {
+    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes) throws CannotCompileException {
         
         final CodeSourceBuilder out = new CodeSourceBuilder(2, usedTypes);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");

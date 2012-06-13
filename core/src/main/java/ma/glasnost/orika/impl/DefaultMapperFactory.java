@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.impl;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,6 +31,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.Mapper;
@@ -79,6 +82,8 @@ public class DefaultMapperFactory implements MapperFactory {
     private final ConverterFactory converterFactory;
     private final CompilerStrategy compilerStrategy;
     private volatile boolean isBuilt = false;
+    
+    private final ConcurrentHashMap<WeakReference<Object>, Lock> locks = new ConcurrentHashMap<WeakReference<Object>, Lock>();
     
     /**
      * Place-holder object factory used to represent the default constructor in
@@ -195,6 +200,27 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     /**
+     * Gets a lock(ed) lock to be used for a given object
+     * 
+     * @param object
+     * @return
+     */
+    private Lock getLock(Object object) {
+    	WeakReference<Object> ref = new WeakReference<Object>(object);
+    	Lock lock = locks.get(ref);
+    	if (lock == null) {
+    		lock = new ReentrantLock();
+    		Lock existingLock = locks.putIfAbsent(ref, lock);
+    		if (existingLock != null) {
+    			lock = existingLock;
+    		}
+    	}
+    	lock.lock();
+    	return lock;
+    }
+    
+    
+    /**
      * Generates the UnenhanceStrategy to be used for this MapperFactory,
      * applying the passed delegateStrategy if not null.
      * 
@@ -228,7 +254,7 @@ public class DefaultMapperFactory implements MapperFactory {
                 
                 @Override
                 public boolean isAcceptable(Type<?> type) {
-                    return aToBRegistry.containsKey(type) || mappedConverters.containsKey(type);
+                    return type != null && (aToBRegistry.containsKey(type) || mappedConverters.containsKey(type));
                 }
             };
             
@@ -282,12 +308,16 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!mappersRegistry.containsKey(mapperKey)) {
-            final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType())
-                    .byDefault(this.defaultFieldMappers.toArray(new DefaultFieldMapper[0]))
-                    .toClassMap();
-            buildObjectFactories(classMap);
-            buildMapper(classMap);
-            initializeUsedMappers(classMap);
+            Lock lock = getLock(mapperKey);
+            if (!mappersRegistry.containsKey(mapperKey)) {
+	        	final ClassMap<?, ?> classMap = ClassMapBuilder.map(mapperKey.getAType(), mapperKey.getBType())
+	                    .byDefault(this.defaultFieldMappers.toArray(new DefaultFieldMapper[0]))
+	                    .toClassMap();
+	            buildObjectFactories(classMap);
+	            buildMapper(classMap);
+	            initializeUsedMappers(classMap);
+            }
+            lock.unlock();
         }
         return mappersRegistry.get(mapperKey);
     }
@@ -329,7 +359,8 @@ public class DefaultMapperFactory implements MapperFactory {
         
         ObjectFactory<T> result = (ObjectFactory<T>) objectFactoryRegistry.get(targetType);
         if (result == null) {
-            // Check if we can use default constructor...
+        	Lock lock = getLock(targetType);
+        	// Check if we can use default constructor...
             try {
                 targetType.getRawType().getConstructor(/* new Class[0] */);
                 // Mark the class with null value in the registry
@@ -342,6 +373,7 @@ public class DefaultMapperFactory implements MapperFactory {
                     objectFactoryRegistry.put(targetType, result);
                 }
             }
+            lock.unlock();
         } else if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
             result = null;
         }

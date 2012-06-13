@@ -57,29 +57,27 @@ public class ObjectFactoryGenerator {
     private final MapperFactory mapperFactory;
     private final Paranamer paranamer;
     private final CompilerStrategy compilerStrategy;
-    private final String nameSuffix;
-    private final UsedTypesContext usedTypes ;
     
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
     		CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
-        this.nameSuffix = Integer.toHexString(System.identityHashCode(compilerStrategy));
         this.paranamer = new CachingParanamer(new AdaptiveParanamer(new BytecodeReadingParanamer(), new AnnotationParanamer()));
         this.constructorResolverStrategy = constructorResolverStrategy;
-        this.usedTypes = new UsedTypesContext();
+
     }
     
     public GeneratedObjectFactory build(Type<?> type) {
         
-        final String className = type.getSimpleName() + "ObjectFactory" + 
-        	System.identityHashCode(type) + nameSuffix;
+        final String className = type.getSimpleName() + "ObjectFactory";
         
         try {
+        	final UsedTypesContext usedTypes = new UsedTypesContext();
+        	
             final GeneratedSourceCode factoryCode = 
         			new GeneratedSourceCode(className,GeneratedObjectFactory.class,compilerStrategy);
         	
-            addCreateMethod(factoryCode, type);
+            addCreateMethod(factoryCode, type, usedTypes);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
@@ -92,7 +90,7 @@ public class ObjectFactoryGenerator {
         } 
     }
     
-    private void addCreateMethod(GeneratedSourceCode context, Type<?> clazz) throws CannotCompileException {
+    private void addCreateMethod(GeneratedSourceCode context, Type<?> clazz, UsedTypesContext usedTypes) throws CannotCompileException {
         final CodeSourceBuilder out = new CodeSourceBuilder(1, usedTypes);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());

@@ -20,6 +20,9 @@ package ma.glasnost.orika.test.perf;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,12 +32,21 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.Assert;
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.test.ConcurrentRule;
 import ma.glasnost.orika.test.ConcurrentRule.Concurrent;
 import ma.glasnost.orika.test.DynamicSuite;
+import ma.glasnost.orika.test.MappingUtil;
+import ma.glasnost.orika.test.common.types.TestCaseClasses.AuthorImpl;
+import ma.glasnost.orika.test.common.types.TestCaseClasses.Book;
+import ma.glasnost.orika.test.common.types.TestCaseClasses.BookImpl;
+import ma.glasnost.orika.test.common.types.TestCaseClasses.Library;
+import ma.glasnost.orika.test.common.types.TestCaseClasses.LibraryDTO;
+import ma.glasnost.orika.test.common.types.TestCaseClasses.LibraryImpl;
 
+import org.apache.commons.lang.time.DateUtils;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -54,6 +66,9 @@ public class MultiThreadedTestCase {
 	public ConcurrentRule concurrentRule = new ConcurrentRule();
 	
 	private volatile Set<Class<?>> classes = getNonAnonymousClasses();
+	
+	
+	private final MapperFacade mapper = MappingUtil.getMapperFactory().getMapperFacade();
 	
 	private static Set<Class<?>> getNonAnonymousClasses() {
 		Set<Class<?>> classes = new HashSet<Class<?>>();
@@ -99,21 +114,133 @@ public class MultiThreadedTestCase {
 	 * the same set of values over a large number of classes.
 	 */
 	@Test
-	@Concurrent(10)
+	@Concurrent(100)
 	public void testDefineTypesSimultaneously() {
 		
-		Map<Type<?>,Class<?>> types = new HashMap<Type<?>,Class<?>>();
-		for (Class<?> aClass: classes) {
-			
-			Type<?> aType = TypeFactory.valueOf(aClass);
-			if (!types.containsKey(aType)) {
-				types.put(aType, aClass);
-			} else {	
-				throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
-			}
-		}
 		
-		Assert.assertEquals(classes.size(), types.size());
+		for (int i=0; i < 20; ++i) {
+			Map<Type<?>,Class<?>> types = new HashMap<Type<?>,Class<?>>();
+			for (Class<?> aClass: classes) {
+			
+				Type<?> aType = TypeFactory.valueOf(aClass);
+				if (!types.containsKey(aType)) {
+					types.put(aType, aClass);
+				} else {	
+					throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
+				}
+			}
+		
+			Assert.assertEquals(classes.size(), types.size());
+		}
 	}
+	
+	@Test
+	@Concurrent(20)
+	public void testGenerateMappers() {
+		BookImpl book = new BookImpl("The Book Title", new AuthorImpl("The Author Name"));
+		Library lib = new LibraryImpl("The Library", Arrays.<Book>asList(book));
+		
+		LibraryDTO mappedLib = mapper.map(lib, LibraryDTO.class);
+		
+		// Just to be sure things mapped as expected
+		Assert.assertEquals(lib.getTitle(),mappedLib.getTitle());
+		Assert.assertEquals(book.getTitle(),mappedLib.getBooks().get(0).getTitle());
+		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getBooks().get(0).getAuthor().getName());
+	
+	}
+	
+	
+	@Test
+	@Concurrent(20)
+	public void testGenerateObjectFactories() {
+        
+        Person person = new Person();
+        person.setFirstName("Abdelkrim");
+        person.setLastName("EL KHETTABI");
+        Calendar cal = Calendar.getInstance();
+        cal = DateUtils.truncate(cal, Calendar.DAY_OF_MONTH);
+        cal.add(Calendar.YEAR, -31);
+        person.setDateOfBirth(cal.getTime());
+        person.setAge(31L);
+        
+        PersonVO vo = mapper.map(person, PersonVO.class);
+        
+        Assert.assertEquals(person.getFirstName(), vo.getFirstName());
+        Assert.assertEquals(person.getLastName(), vo.getLastName());
+        Assert.assertTrue(person.getAge() == vo.getAge());
+        Assert.assertEquals(cal.getTime(), vo.getDateOfBirth());
+	}
+	
+	public static class Person {
+        private String firstName;
+        private String lastName;
+        
+        private Long age;
+        private Date date;
+        
+        public String getFirstName() {
+            return firstName;
+        }
+        
+        public void setFirstName(String firstName) {
+            this.firstName = firstName;
+        }
+        
+        public String getLastName() {
+            return lastName;
+        }
+        
+        public void setLastName(String lastName) {
+            this.lastName = lastName;
+        }
+        
+        public Long getAge() {
+            return age;
+        }
+        
+        public void setAge(Long age) {
+            this.age = age;
+        }
+        
+        public Date getDateOfBirth() {
+            return date;
+        }
+        
+        public void setDateOfBirth(Date date) {
+            this.date = date;
+        }
+        
+    }
+    
+    public static class PersonVO {
+        private final String firstName;
+        private final String lastName;
+        
+        private final long age;
+        private final Date dateOfBirth;
+        
+        public PersonVO(String firstName, String lastName, long age, Date dateOfBirth) {
+            this.firstName = firstName;
+            this.lastName = lastName;
+            this.age = age;
+            this.dateOfBirth = dateOfBirth;
+        }
+        
+        public String getFirstName() {
+            return firstName;
+        }
+        
+        public String getLastName() {
+            return lastName;
+        }
+        
+        public long getAge() {
+            return age;
+        }
+        
+        public Date getDateOfBirth() {
+            return dateOfBirth;
+        }
+    }
 	
 }
