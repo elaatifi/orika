@@ -19,7 +19,9 @@ package ma.glasnost.orika.test.perf;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.ref.SoftReference;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -109,6 +111,9 @@ public class MultiThreadedTestCase {
 		}
 	}
 	
+	
+	AtomicInteger myIndex = new AtomicInteger();
+	
 	/**
 	 * Verifies that multiple threads requesting the type for the same set of classes receive
 	 * the same set of values over a large number of classes.
@@ -117,21 +122,37 @@ public class MultiThreadedTestCase {
 	@Concurrent(100)
 	public void testDefineTypesSimultaneously() {
 		
-		
-		for (int i=0; i < 20; ++i) {
-			Map<Type<?>,Class<?>> types = new HashMap<Type<?>,Class<?>>();
-			for (Class<?> aClass: classes) {
+		int i = myIndex.getAndIncrement();
+		int c = 0;
+		Map<Type<?>,Class<?>> types = new HashMap<Type<?>,Class<?>>();
+		for (Class<?> aClass: classes) {
 			
-				Type<?> aType = TypeFactory.valueOf(aClass);
-				if (!types.containsKey(aType)) {
-					types.put(aType, aClass);
-				} else {	
-					throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
-				}
+			/*
+			 * In this section, we force each of the threads to trigger a GC 
+			 * at some point in mid process; this should help shake out any 
+			 * issues with weak references getting cleared (that we didn't expect to
+			 * be cleared).
+			 */
+			++c;
+			if (c == i) {
+				forceClearSoftAndWeakReferences();
 			}
-		
-			Assert.assertEquals(classes.size(), types.size());
+			
+			Type<?> aType = TypeFactory.valueOf(aClass);
+			if (aType == null) {
+				throw new IllegalStateException("TypeFactory.valueOf() returned null for " + aClass);
+			} else if (types.containsKey(aType)) {
+				throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
+			} else {
+				if (aClass.isAssignableFrom(aType.getRawType())) {
+					types.put(aType, aClass);
+				} else {
+					throw new IllegalStateException(aType + " is not an instance of " + aClass);
+				}
+			} 
 		}
+		
+		Assert.assertEquals(classes.size(), types.size());
 	}
 	
 	@Test
@@ -242,5 +263,28 @@ public class MultiThreadedTestCase {
             return dateOfBirth;
         }
     }
+    
+    /**
+	 * Since the contract for SoftReference states that all soft references
+	 * will be cleared by the garbage collector before OOME is thrown, we
+	 * allocate dummy bytes until we reach OOME.
+	 */
+	private void forceClearSoftAndWeakReferences() {
+		
+		SoftReference<Object> checkReference = new SoftReference<Object>(new Object());
+		Assert.assertNotNull(checkReference.get());
+		try {
+			List<byte[]> byteBucket = new ArrayList<byte[]>();
+			for (int i=0; i < Integer.MAX_VALUE; ++i) {
+				int available = (int)Math.min((long)Integer.MAX_VALUE,Runtime.getRuntime().maxMemory());
+		    	byteBucket.add(new byte[available]);
+			}
+		} catch (Throwable e) {
+		    // Ignore OME; soft references should now have been cleared 
+			Assert.assertNull(checkReference.get());
+		}
+		
+	}
+	
 	
 }
