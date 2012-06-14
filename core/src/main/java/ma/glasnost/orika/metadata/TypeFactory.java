@@ -68,11 +68,19 @@ public abstract class TypeFactory {
         TypeKey key = TypeKey.valueOf(rawType, convertedArguments);
         
         WeakReference<Type<?>> mapped = typeCache.get(key);
-        if (mapped == null || mapped.get() == null) {
+        Type<T> typeResult = null;
+        if (mapped != null) {
+        	typeResult = (Type<T>) mapped.get();
+        }
+        if (typeResult == null) {
         	synchronized(rawType) {
         		mapped = typeCache.get(key);
-        		if (mapped == null || mapped.get() == null) {
-		            mapped = new WeakReference<Type<?>>(createType(key, rawType, convertedArguments));
+        		if (mapped != null) {
+                	typeResult = (Type<T>) mapped.get();
+                }
+        		if (typeResult == null) {
+        			typeResult = createType(key, rawType, convertedArguments);
+		            mapped = new WeakReference<Type<?>>(typeResult);
 		            WeakReference<Type<?>> existing = typeCache.putIfAbsent(key, mapped);
 		            if (existing != null) {
 		                if (existing.get() == null) {
@@ -83,12 +91,14 @@ public abstract class TypeFactory {
 		                    typeCache.put(key, mapped);
 		                } else {
 		                    mapped = existing;
+		                    typeResult = (Type<T>) mapped.get();
 		                }
 		            }
         		}
         	}
         }
-        return (Type<T>) mapped.get();
+        return typeResult;
+
     }
     
     private static <T> Type<T> createType(TypeKey key, Class<T> rawType, Type<?>[] typeArguments) {

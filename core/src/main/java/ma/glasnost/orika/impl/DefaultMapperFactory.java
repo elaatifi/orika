@@ -280,7 +280,7 @@ public class DefaultMapperFactory implements MapperFactory {
                 
                 @Override
                 public boolean isAcceptable(Type<?> type) {
-                    return aToBRegistry.containsKey(type);
+                    return type != null && aToBRegistry.containsKey(type);
                 }
             }; 
             
@@ -335,19 +335,21 @@ public class DefaultMapperFactory implements MapperFactory {
     public GeneratedMapperBase lookupMapper(MapperKey mapperKey) {
         if (!isMapperRegistered(mapperKey)) {
         	if(useAutoMapping) {
-        		try {
-	        		if (LOGGER.isDebugEnabled()) {
-	        			LOGGER.debug("No mapper registered for " + mapperKey + ": attempting to generate");
+        		synchronized (this) {
+	        		try {
+		        		if (LOGGER.isDebugEnabled()) {
+		        			LOGGER.debug("No mapper registered for " + mapperKey + ": attempting to generate");
+		        		}
+			        	final ClassMap<?, ?> classMap = classMap(mapperKey.getAType(), mapperKey.getBType())
+			                    .byDefault().toClassMap();
+			            buildObjectFactories(classMap);
+			            buildMapper(classMap);
+			            initializeUsedMappers(classMap);
+	        		} catch (MappingException e) {
+	        			e.setSourceType(mapperKey.getAType());
+	        			e.setDestinationType(mapperKey.getBType());
+	        			throw e;
 	        		}
-		        	final ClassMap<?, ?> classMap = classMap(mapperKey.getAType(), mapperKey.getBType())
-		                    .byDefault().toClassMap();
-		            buildObjectFactories(classMap);
-		            buildMapper(classMap);
-		            initializeUsedMappers(classMap);
-        		} catch (MappingException e) {
-        			e.setSourceType(mapperKey.getAType());
-        			e.setDestinationType(mapperKey.getBType());
-        			throw e;
         		}
         	}
         }
@@ -416,19 +418,19 @@ public class DefaultMapperFactory implements MapperFactory {
         ObjectFactory<T> result = (ObjectFactory<T>) objectFactoryRegistry.get(targetType);
         if (result == null) {
             // Check if we can use default constructor...
-            try {
-                targetType.getRawType().getConstructor();
-                // Mark the class with null value in the registry
-                // to avoid repeating the getConstructor call
-                objectFactoryRegistry.put(targetType, USE_DEFAULT_CONSTRUCTOR);
-            } catch (Exception e) {
-                // Generate an object factory
-            	if (useAutoMapping || !isBuilt) {
-	                synchronized (objectFactoryGenerator) {
-	                    result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
-	                    objectFactoryRegistry.put(targetType, result);
-	                }
-            	}
+            synchronized(this) {
+	        	try {
+	                targetType.getRawType().getConstructor();
+	                // Mark the class with null value in the registry
+	                // to avoid repeating the getConstructor call
+	                objectFactoryRegistry.put(targetType, USE_DEFAULT_CONSTRUCTOR);
+	            } catch (Exception e) {
+	                // Generate an object factory
+	            	if (useAutoMapping || !isBuilt) {
+		                result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
+		                objectFactoryRegistry.put(targetType, result);
+	            	}
+	            }
             }
         } else if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
             result = null;
