@@ -60,8 +60,12 @@ abstract class TypeUtil {
                 var = (TypeVariable<?>)typeArg;
             }
             Type<?> typeFromReference = (Type<?>) reference.getTypeByVariable(var);
-            Type<?> typeFromArgument = (Type<?>) TypeFactory.valueOf(typeArg);
-            actualTypeArguments[i] = getMostSpecificType(typeFromReference, typeFromArgument, IGNORED_TYPES);
+            if (typeFromReference != null && typeArg.equals(var)) {
+                actualTypeArguments[i] = typeFromReference;
+            } else {
+                Type<?> typeFromArgument = (Type<?>) TypeFactory.valueOf(typeArg);
+                actualTypeArguments[i] = getMostSpecificType(typeFromReference, typeFromArgument, IGNORED_TYPES);
+            }
         }   
         return actualTypeArguments;
 	

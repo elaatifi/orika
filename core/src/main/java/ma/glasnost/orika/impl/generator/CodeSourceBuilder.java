@@ -161,7 +161,7 @@ public class CodeSourceBuilder {
         final Class<?> dc = destinationType.getRawType();
         final Class<?> destinationElementClass = dp.getElementType().getRawType();
         
-        if (destinationElementClass == null) {
+        if (destinationElementClass == null || Object.class.equals(destinationElementClass)) {
             throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + dp.getName());
         }
         

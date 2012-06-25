@@ -23,6 +23,7 @@ import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.TreeMap;
 
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -82,25 +83,22 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         }
         
         Constructor<T>[] constructors = (Constructor<T>[]) targetClass.getRawType().getConstructors();
-        
+        TreeMap<Integer, Constructor<T>> constructorsByMatchedParams = new TreeMap<Integer, Constructor<T>>();
         for (Constructor<T> constructor: constructors) {
         	
         	try {
         		String[] parameterNames = paranamer.lookupParameterNames(constructor);
         		if (targetParameterNames.containsAll(Arrays.asList(parameterNames))) {
-        			return constructor;
+        			constructorsByMatchedParams.put(parameterNames.length, constructor);
         		}
         	} catch (ParameterNamesNotFoundException e) {
-        		Class<?>[] parameterTypes = constructor.getParameterTypes();
-            	/*
-            	 * TODO: is this really valid? what will the ObjectFactoryGenerator
-            	 * do with such a constructor, given that it can't read the parameter
-            	 * names?
-            	 */
-        		if (parameterTypes.length == targetParameterNames.size()) {
-            		return constructor;
-            	}
+        	    throw new IllegalStateException("Constructor matching cannot be performed against types which" +
+        	    		" have not been compiled with debug information",e);
         	}
+        }
+        
+        if (constructorsByMatchedParams.size() > 0) {
+            return constructorsByMatchedParams.lastEntry().getValue();
         }
         
         /* fail-safe if we couldn't find any better match 

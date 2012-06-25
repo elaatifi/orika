@@ -17,12 +17,19 @@
  */
 package ma.glasnost.orika.impl.generator;
 
-
-import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionFromString;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
+import static ma.glasnost.orika.impl.Specifications.aPrimitive;
+import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
+import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
+import static ma.glasnost.orika.impl.Specifications.anArray;
+import static ma.glasnost.orika.impl.Specifications.immutable;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -36,9 +43,11 @@ import ma.glasnost.orika.impl.GeneratedObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.metadata.MappingDirection;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,14 +66,16 @@ public class ObjectFactoryGenerator {
     private final MapperFactory mapperFactory;
     private final Paranamer paranamer;
     private final CompilerStrategy compilerStrategy;
+    private final PropertyResolverStrategy propertyResolver;
     
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
-    		CompilerStrategy compilerStrategy) {
+            CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
         this.paranamer = new CachingParanamer(new AdaptiveParanamer(new BytecodeReadingParanamer(), new AnnotationParanamer()));
         this.constructorResolverStrategy = constructorResolverStrategy;
-
+        this.propertyResolver = propertyResolver;
+        
     }
     
     public GeneratedObjectFactory build(Type<?> type) {
@@ -146,14 +157,35 @@ public class ObjectFactoryGenerator {
             }
             
             if (parameters.length != properties.size()) {
-                throw new MappingException("Can not find all constructor's parameters");
+                /*
+                 * Attempt to map the constructor parameters to the properties of the source type;
+                 * these may not exist in the field mappings, since the destination may not have
+                 * properties defined which directly match them
+                 */
+                Map<String, Property> sourceProps = propertyResolver.getProperties(sourceClass);
+                for (int p = 0, len = parameters.length; p < len; ++p) {
+                    String name = parameters[p];
+                    Class<?> rawType = constructorArguments[p];
+                    if (sourceProps.get(name) != null) {
+                        Property destProp = new Property();
+                        destProp.setName(name);
+                        destProp.setType(TypeFactory.valueOf(rawType));
+                        properties.add(new FieldMap(sourceProps.get(name), destProp, null, null, MappingDirection.A_TO_B, false, false,
+                                null));
+                    }
+                }
+                // Still couldn't find all of the properties?
+                if (parameters.length != properties.size()) {
+                    throw new MappingException("Can not find all constructor's parameters");
+                }
             }
             
             out.ifSourceInstanceOf(sourceClass).then();
+            
             out.append("%s source = (%s) s;", sourceClass.getCanonicalName(), sourceClass.getCanonicalName());
             argIndex = 0;
             for (FieldMap fieldMap : properties) {
-            	
+                
                 final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
                 
                 String var = "arg" + argIndex;
@@ -161,32 +193,36 @@ public class ObjectFactoryGenerator {
                 out.declareVar(targetClass, var);
                 argIndex++;
                 
-                if (generateConverterCode(out, var, fieldMap)) {
-                    continue;
-                }
-                try {
+                if (dp.getSetter() == null) {
                     
-                    if (fieldMap.is(aWrapperToPrimitive())) {
-                        out.ifSourceNotNull(sp).assignWrapperToPrimitiveVar(var, sp, targetClass);
-                    } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                        out.assignPrimitiveToWrapperVar(var, sp, targetClass);
-                    } else if (fieldMap.is(aPrimitive())) {
-                        out.assignImmutableVar(var, sp);
-                    } else if (fieldMap.is(immutable())) {
-                        out.ifSourceNotNull(sp).assignImmutableVar(var, sp);
-                    } else if (fieldMap.is(anArray())) {
-                        out.ifSourceNotNull(sp).assignArrayVar(var, sp, targetClass);
-                    } else if (fieldMap.is(aCollection())) {
-                        out.ifSourceNotNull(sp).assignCollectionVar(var, sp, dp);
-                    } else if (fieldMap.is(aConversionFromString())) { 
-                    	out.assignVarConvertedFromString(var, sp, dp);
-                    } else if (fieldMap.is(aConversionToString())) {
-                    	out.ifSourceNotNull(sp).assignStringConvertedVar(var, sp);
-                    } else { /**/
-                        out.ifSourceNotNull(sp).then().assignObjectVar(var, sp, targetClass).end();
+                    if (generateConverterCode(out, var, fieldMap)) {
+                        continue;
                     }
-                    
-                } catch (final Exception e) {
+                    try {
+                        
+                        if (fieldMap.is(aWrapperToPrimitive())) {
+                            out.ifSourceNotNull(sp).assignWrapperToPrimitiveVar(var, sp, targetClass);
+                        } else if (fieldMap.is(aPrimitiveToWrapper())) {
+                            out.assignPrimitiveToWrapperVar(var, sp, targetClass);
+                        } else if (fieldMap.is(aPrimitive())) {
+                            out.assignImmutableVar(var, sp);
+                        } else if (fieldMap.is(immutable())) {
+                            out.ifSourceNotNull(sp).assignImmutableVar(var, sp);
+                        } else if (fieldMap.is(anArray())) {
+                            out.ifSourceNotNull(sp).assignArrayVar(var, sp, targetClass);
+                        } else if (fieldMap.is(aCollection())) {
+                            out.ifSourceNotNull(sp).assignCollectionVar(var, sp, dp);
+                        } else if (fieldMap.is(aConversionFromString())) {
+                            out.assignVarConvertedFromString(var, sp, dp);
+                        } else if (fieldMap.is(aConversionToString())) {
+                            out.ifSourceNotNull(sp).assignStringConvertedVar(var, sp);
+                        } else { /**/
+                            out.ifSourceNotNull(sp).then().assignObjectVar(var, sp, targetClass).end();
+                        }
+                        
+                    } catch (final Exception e) {
+                        // TODO: should we really do this?
+                    }
                 }
             }
             

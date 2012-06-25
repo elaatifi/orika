@@ -10,8 +10,6 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
-import ma.glasnost.orika.test.MappingUtil;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.junit.Assert;
@@ -92,7 +90,7 @@ public class GenericCollectionsTestCase {
             factory.getMapperFacade().map(t1, TaskLayer2.class);
             Assert.fail("nested generic collection type not supported by Class-based signatures");
         } catch (RuntimeException ex) {
-            Assert.assertTrue(ex.getLocalizedMessage().contains("No concrete class mapping defined"));
+            Assert.assertTrue(ex.getLocalizedMessage().contains("cannot determine runtime type of destination collection"));
         }
     }
     

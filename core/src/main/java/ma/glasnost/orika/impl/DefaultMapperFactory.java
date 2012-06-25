@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.impl;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,6 +53,7 @@ import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.unenhance.BaseUnenhancer;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
@@ -118,7 +120,7 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         this.mapperGenerator = new MapperGenerator(this, compilerStrategy);
-        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, constructorResolverStrategy, compilerStrategy);
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, constructorResolverStrategy, compilerStrategy, PropertyResolver.getInstance());
     }
     
     /**
@@ -335,19 +337,22 @@ public class DefaultMapperFactory implements MapperFactory {
         if (result == null) {
             // Check if we can use default constructor...
             synchronized (this) {
-                try {
-                    targetType.getRawType().getConstructor(/* new Class[0] */);
-                    // Mark the class with null value in the registry
-                    // to avoid repeating the getConstructor call
-                    objectFactoryRegistry.put(targetType, USE_DEFAULT_CONSTRUCTOR);
-                } catch (Exception e) {
-                    // Generate an object factory
+                Constructor<?>[] constructors = targetType.getRawType().getConstructors();
+                if (constructors.length == 1 && constructors[0].getParameterTypes().length == 0) {
+                    /*
+                     * Only use the default constructor in the case where
+                     * it is the only option
+                     */
+                    result = (ObjectFactory<T>) USE_DEFAULT_CONSTRUCTOR;
+                } else {
                     result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
-                    objectFactoryRegistry.put(targetType, result);
                 }
+                objectFactoryRegistry.put(targetType, result);
             }
-        } else if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
-            result = null;
+        }  
+        
+        if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
+           result = null;
         }
         
         return result;
