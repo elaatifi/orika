@@ -98,7 +98,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         }
         
         if (constructorsByMatchedParams.size() > 0) {
-            return constructorsByMatchedParams.lastEntry().getValue();
+            return constructorsByMatchedParams.get(constructorsByMatchedParams.lastKey());
         }
         
         /* fail-safe if we couldn't find any better match 
