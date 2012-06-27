@@ -32,25 +32,24 @@ import ma.glasnost.orika.test.community.issue28.OrderData;
 import org.junit.Test;
 
 public class Issue28TestCase {
-	@Test
-	public void testMapping() {
-		MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
-		mapperFactory.getConverterFactory().registerConverter(new OrderIdConverter());
-		ClassMapBuilder<Order, OrderData> builder = ClassMapBuilder.map(Order.class, OrderData.class);
-		ClassMap<Order, OrderData> classMap = builder.field("id", "number").byDefault().toClassMap();
-		mapperFactory.registerClassMap(classMap);
-		MapperFacade facade = mapperFactory.getMapperFacade();
-		OrderData data = new OrderData(1234l);
-		Order order = facade.map(data, Order.class);
-		Assert.assertEquals(Long.valueOf(1234l), order.getId());
-	}
-	
-	
-	public static class OrderIdConverter extends CustomConverter<Long, OrderID> {
-
+    @Test
+    public void testMapping() {
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
+        mapperFactory.getConverterFactory().registerConverter(new OrderIdConverter());
+        ClassMapBuilder<Order, OrderData> builder = ClassMapBuilder.map(Order.class, OrderData.class);
+        ClassMap<Order, OrderData> classMap = builder.field("id", "number").byDefault().toClassMap();
+        mapperFactory.registerClassMap(classMap);
+        MapperFacade facade = mapperFactory.getMapperFacade();
+        OrderData data = new OrderData(1234l);
+        Order order = facade.map(data, Order.class);
+        Assert.assertEquals(Long.valueOf(1234l), order.getId());
+    }
+    
+    public static class OrderIdConverter extends CustomConverter<Long, OrderID> {
+        
         public OrderID convert(Long source, Type<? extends OrderID> destinationType) {
             return new OrderID(source);
         }
-	}
-	
+    }
+    
 }

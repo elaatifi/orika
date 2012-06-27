@@ -19,9 +19,7 @@
 package ma.glasnost.orika.unenhance;
 
 import java.util.LinkedList;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import ma.glasnost.orika.inheritance.SuperTypeResolver;
 import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
@@ -91,7 +89,7 @@ public class BaseUnenhancer implements UnenhanceStrategy {
             // Accept the first delegate strategy result which produces
             // something different than the object's getClass method
             if (delegateUnenhanced != null && delegateUnenhanced != object) {
-                return (T)delegateUnenhanced;
+                return (T) delegateUnenhanced;
             }
         }
         return object;
