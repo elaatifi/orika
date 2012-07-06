@@ -23,6 +23,10 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 abstract class TypeUtil {
@@ -33,6 +37,8 @@ abstract class TypeUtil {
                     TypeFactory.valueOf(Cloneable.class), 
                     TypeFactory.valueOf(Serializable.class),
                     TypeFactory.valueOf(Externalizable.class)));
+    
+    
     static java.lang.reflect.Type[] resolveActualTypeArguments(ParameterizedType type, Type<?> reference) {
           
         return resolveActualTypeArguments(((Class<?>)type.getRawType()).getTypeParameters(), type.getActualTypeArguments(), reference);
@@ -129,22 +135,91 @@ abstract class TypeUtil {
      * @param actualTypeArguments
      * @return
      */
-    static Type<?>[] convertTypeArguments(Class<?> rawType, java.lang.reflect.Type[] actualTypeArguments) {
+    static Type<?>[] convertTypeArguments(final Class<?> rawType, final java.lang.reflect.Type[] actualTypeArguments, final Set<java.lang.reflect.Type> recursiveBounds) {
         
         TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
         Type<?>[] resultTypeArguments = new Type<?>[typeVariables.length];
-        if (actualTypeArguments.length == 0) {
-            for (int i=0, len=typeVariables.length; i < len; ++i) {
-                resultTypeArguments[i] = TypeFactory.TYPE_OF_OBJECT;
-            }
+        
+        if (recursiveBounds.contains(rawType)) {
+        	return new Type<?>[0];
+        } else if (actualTypeArguments.length == 0 && typeVariables.length > 0) {
+            
+        	recursiveBounds.add(rawType);
+            resultTypeArguments = convertTypeArgumentsFromAncestry(rawType, recursiveBounds);
+            recursiveBounds.remove(rawType);
+            
         } else if (actualTypeArguments.length < typeVariables.length) {
             throw new IllegalArgumentException("Must provide all type-arguments or none");
         } else {
+        	
             for (int i=0, len=actualTypeArguments.length; i < len; ++i) {
                 java.lang.reflect.Type t = actualTypeArguments[i];
-                resultTypeArguments[i] = TypeFactory.valueOf(t);
+                recursiveBounds.add(rawType);
+                resultTypeArguments[i] = TypeFactory.limitedValueOf(t, recursiveBounds);
+                recursiveBounds.remove(rawType);
             }
         }
         return resultTypeArguments;
     }
+    
+    /**
+     * Use the ancestry of a given raw type in order to determine the most specific type
+     * parameters possible from the known bounds.
+     * 
+     * @param rawType
+     * @return
+     */
+    static Type<?>[] convertTypeArgumentsFromAncestry(final Class<?> rawType, final Set<java.lang.reflect.Type> bounds) {
+        
+    	
+    	
+    	Map<TypeVariable<?>, Type<?>> typesByVariable = new LinkedHashMap<TypeVariable<?>, Type<?>>();
+        for(TypeVariable<?> var: rawType.getTypeParameters()) {
+        	typesByVariable.put(var, TypeFactory.limitedValueOf(var, bounds));
+        }
+        
+        Set<java.lang.reflect.Type> genericAncestors = new LinkedHashSet<java.lang.reflect.Type>();
+    	
+        genericAncestors.add(rawType.getGenericSuperclass());
+    	genericAncestors.add(rawType.getSuperclass());
+        genericAncestors.addAll(Arrays.asList(rawType.getGenericInterfaces()));
+        genericAncestors.addAll(Arrays.asList(rawType.getInterfaces()));
+    	
+        Iterator<java.lang.reflect.Type> iter = genericAncestors.iterator();
+    	while (iter.hasNext()) {
+    		
+    		java.lang.reflect.Type ancestor = iter.next();
+    		iter.remove();
+    		
+    		if (ancestor instanceof ParameterizedType) {
+        		
+    			ParameterizedType superType = (ParameterizedType)ancestor;
+    			TypeVariable<?>[] variables = ((Class<?>)superType.getRawType()).getTypeParameters();
+    			java.lang.reflect.Type[] actuals = superType.getActualTypeArguments();
+        		for (int i=0; i < variables.length; ++ i) {
+        			Type<?> resolvedActual = TypeFactory.limitedValueOf(actuals[i], bounds);
+        			TypeVariable<?> var = (TypeVariable<?>) ((actuals[i] instanceof TypeVariable) ? actuals[i] : variables[i]);
+        			Type<?> currentActual = typesByVariable.get(var);
+        			if (currentActual != null) {
+        				typesByVariable.put(var, getMostSpecificType(currentActual, resolvedActual));
+        			}
+        		}
+        	} else if (ancestor instanceof Class) {
+        		
+        		Class<?> superType = (Class<?>)ancestor;
+        		
+        		TypeVariable<?>[] variables = superType.getTypeParameters();
+        		for (int i=0; i < variables.length; ++ i) {
+        			Type<?> resolvedActual = TypeFactory.limitedValueOf(variables[i], bounds);
+        			Type<?> currentActual = typesByVariable.get(variables[i]);
+        			if (currentActual != null) {
+        				typesByVariable.put(variables[i], getMostSpecificType(currentActual, resolvedActual));
+        			}
+        		}
+        	}
+    	}
+        
+        return typesByVariable.values().toArray(new Type<?>[0]);
+    }
+    
 }

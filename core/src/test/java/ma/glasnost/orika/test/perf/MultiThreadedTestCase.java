@@ -137,8 +137,12 @@ public class MultiThreadedTestCase {
 			if (c == i) {
 				forceClearSoftAndWeakReferences();
 			}
-			
-			Type<?> aType = TypeFactory.valueOf(aClass);
+			Type<?> aType;
+			try {
+				aType = TypeFactory.valueOf(aClass);
+			} catch (StackOverflowError e) {
+				throw new RuntimeException("while trying to evaluate valueOf(" + aClass.getCanonicalName() + ")", e);
+			}
 			if (aType == null) {
 				throw new IllegalStateException("TypeFactory.valueOf() returned null for " + aClass);
 			} else if (types.containsKey(aType)) {

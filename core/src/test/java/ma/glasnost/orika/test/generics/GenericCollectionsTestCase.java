@@ -5,11 +5,13 @@ import java.util.Arrays;
 import java.util.List;
 
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.converter.builtin.PassThroughConverter;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
+
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.junit.Assert;
@@ -73,7 +75,7 @@ public class GenericCollectionsTestCase {
      * to determine the proper type hierarchy from the raw types
      */
     @Test
-    public void testFailingParameterizedCollection() {
+    public void testParameterizedCollection_rawTypes() {
         
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         
@@ -81,17 +83,22 @@ public class GenericCollectionsTestCase {
         ClassMap<?, ?> classMap = builder.toClassMap();
         factory.registerClassMap(classMap);
         
+        /*
+         * Let Orika know that it's okay to copy Employee or Person by reference...
+         */
+        factory.getConverterFactory().registerConverter(new PassThroughConverter(Employee.class, Person.class));
+        
+        
         Employee e = new Employee();
         e.setName("Name");
         TaskLayer1<Employee> t1 = new TaskLayer1<Employee>();
         t1.setWorkers(Arrays.asList(e));
         
-        try {
-            factory.getMapperFacade().map(t1, TaskLayer2.class);
-            Assert.fail("nested generic collection type not supported by Class-based signatures");
-        } catch (RuntimeException ex) {
-            Assert.assertTrue(ex.getLocalizedMessage().contains("cannot determine runtime type of destination collection"));
-        }
+       
+    	TaskLayer2<?> t2 = factory.getMapperFacade().map(t1, TaskLayer2.class);
+    	Assert.assertNotNull(t2);
+        Assert.assertTrue(t1.getWorkers().containsAll(t2.getWorkers()));
+        Assert.assertTrue(t2.getWorkers().containsAll(t1.getWorkers())); 
     }
     
     /**
@@ -99,7 +106,7 @@ public class GenericCollectionsTestCase {
      * which allow passing in the exact runtime types.
      */
     @Test
-    public void testParameterizedCollection() {
+    public void testParameterizedCollection_genericTypes() {
        
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         

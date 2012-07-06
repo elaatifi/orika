@@ -301,6 +301,10 @@ public class GenericsTestCase {
         Assert.assertNotNull(recursive);
         Type<?> recursiveSuper = recursive.getSuperType();
         Assert.assertNotNull(recursiveSuper);
+        
+        recursive = TypeFactory.valueOf(RecursiveType.class);
+        Assert.assertNotNull(recursive);
+        Assert.assertEquals(recursive.getNestedType(0).getRawType(), RecursiveType.class);
     }
     
     

@@ -34,7 +34,7 @@ import org.junit.Test;
 public class Issue28TestCase {
     @Test
     public void testMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
         mapperFactory.getConverterFactory().registerConverter(new OrderIdConverter());
         ClassMapBuilder<Order, OrderData> builder = ClassMapBuilder.map(Order.class, OrderData.class);
         ClassMap<Order, OrderData> classMap = builder.field("id", "number").byDefault().toClassMap();

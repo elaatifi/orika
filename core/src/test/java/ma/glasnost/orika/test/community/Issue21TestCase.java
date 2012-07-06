@@ -25,7 +25,6 @@ import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.test.community.issue21.Authority;
 import ma.glasnost.orika.test.community.issue21.AuthorityDto;
@@ -106,7 +105,6 @@ public class Issue21TestCase {
 
 		DefaultMapperFactory.Builder builder = new DefaultMapperFactory.Builder();
 		builder.unenhanceStrategy(new HibernateUnenhanceStrategy());
-		builder.compilerStrategy(new EclipseJdtCompilerStrategy());
 		MapperFactory factory = builder.build();
 		mapperFacade = factory.getMapperFacade();
 
