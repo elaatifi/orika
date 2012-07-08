@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 
+import org.apache.commons.collections.list.TreeList;
+
 import ma.glasnost.orika.test.common.types.TestCaseClasses.Author;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.AuthorDTO;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.AuthorNested;
@@ -18,8 +20,6 @@ import ma.glasnost.orika.test.common.types.TestCaseClasses.PrimitiveHolder;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.PrimitiveHolderDTO;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.PrimitiveWrapperHolder;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.PrimitiveWrapperHolderDTO;
-
-import org.apache.commons.collections.list.TreeList;
 
 public class Validations {
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

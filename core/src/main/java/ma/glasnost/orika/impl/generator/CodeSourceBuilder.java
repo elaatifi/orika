@@ -35,6 +35,7 @@ import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.FieldMapBuilder;
+import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -101,6 +102,7 @@ public class CodeSourceBuilder {
         if (destinationElementClass == null) {
             throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + d.name());
         }
+        
        
         if (d.isAssignable()) {
             statement("if (%s == null) %s", d, d.assign(d.newCollection()));
@@ -114,9 +116,21 @@ public class CodeSourceBuilder {
         	else 
         		newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", d, s, d.typeName());
         } else {
+        	/*
+        	 * 
+        	 */
 	        newLine().append("%s.clear();", d);
 	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", d, d.collectionType(),
 	                s, usedType(s.elementType()), usedType(d.elementType()));
+	        
+	        /*
+	         * Instead, create a new element
+	         */
+	        VariableRef collection = new VariableRef(d.type(), "destinationCollection");
+	        newLine().append("%s.clear();", d);
+	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", d, d.collectionType(),
+	                s, usedType(s.elementType()), usedType(d.elementType()));
+	        
         }
         if (ip != null) {
             final VariableRef inverse = new VariableRef(ip, "orikaCollectionItem");
@@ -451,6 +465,11 @@ public class CodeSourceBuilder {
 	    		logDetails.append("using converter " + converter);
 	    	}
 	    	convert(destinationProperty, sourceProperty, converter);
+	    } else if (mapperFactory.existsRegisteredMapper(fieldMap.getSource().getType(), fieldMap.getDestination().getType())) {	
+	    	if (logDetails != null) {
+	    		logDetails.append("using registered mapper");
+	    	}
+	    	fromObjectToObject(destinationProperty, sourceProperty, fieldMap.getInverse());
 	    } else if (fieldMap.is(toAnEnumeration())) {
 	    	if (logDetails != null) {
 	    		logDetails.append("mapping from String or enum to enum");

@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.metadata;
 
-
 public class NestedProperty extends Property {
     
     private final Property[] path;

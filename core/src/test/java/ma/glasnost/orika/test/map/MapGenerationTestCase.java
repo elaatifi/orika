@@ -90,9 +90,9 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the map entries to the result array component type (String)
          */
-        factory.getConverterFactory().registerConverter(new CustomConverter<MapEntry<String, Integer>, String>() {
+        factory.getConverterFactory().registerConverter(new CustomConverter<Map.Entry<String, Integer>, String>() {
 
-			public String convert(MapEntry<String, Integer> source,
+			public String convert(Map.Entry<String, Integer> source,
 					Type<? extends String> destinationType) {
 				return source.getKey();
 			}});
@@ -127,9 +127,9 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the map entries to the result list element type (String)
          */
-        factory.getConverterFactory().registerConverter(new CustomConverter<MapEntry<String, Integer>, String>() {
+        factory.getConverterFactory().registerConverter(new CustomConverter<Map.Entry<String, Integer>, String>() {
 
-			public String convert(MapEntry<String, Integer> source,
+			public String convert(Map.Entry<String, Integer> source,
 					Type<? extends String> destinationType) {
 				return source.getKey();
 			}});
@@ -164,11 +164,11 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the list element type to map entry
          */
-        factory.getConverterFactory().registerConverter(new CustomConverter<String,MapEntry<String, Integer>>() {
+        factory.getConverterFactory().registerConverter(new CustomConverter<String,Map.Entry<String, Integer>>() {
 
         	@SuppressWarnings("serial")
-			private Map<String, MapEntry<String, Integer>> testScores = 
-				new LinkedHashMap<String, MapEntry<String, Integer>>() {{
+			private Map<String, Map.Entry<String, Integer>> testScores = 
+				new LinkedHashMap<String, Map.Entry<String, Integer>>() {{
 	        		put("A", new MapEntry<String, Integer>("A",90));
 	        		put("B", new MapEntry<String, Integer>("B",80));
 	        		put("C", new MapEntry<String, Integer>("C",70));
@@ -176,7 +176,7 @@ public class MapGenerationTestCase {
 	        		put("F", new MapEntry<String, Integer>("F",50));
 	        	}};
         	
-			public MapEntry<String, Integer> convert(String source, Type<? extends MapEntry<String, Integer>> destinationType) {
+			public Map.Entry<String, Integer> convert(String source, Type<? extends Map.Entry<String, Integer>> destinationType) {
 				return testScores.get(source);
 			}});
 		
@@ -210,19 +210,19 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the list element type to map entry
          */
-        factory.getConverterFactory().registerConverter(new CustomConverter<String,MapEntry<String, Integer>>() {
+        factory.getConverterFactory().registerConverter(new CustomConverter<String,Map.Entry<String, Integer>>() {
 
         	@SuppressWarnings("serial")
-			private Map<String, MapEntry<String, Integer>> testScores = 
-				new LinkedHashMap<String, MapEntry<String, Integer>>() {{
-	        		put("A", new MapEntry<String, Integer>("A",90));
+			private Map<String, Map.Entry<String, Integer>> testScores = 
+				new LinkedHashMap<String, Map.Entry<String, Integer>>() {{
+	        		put("A", new MyMapEntry<String, Integer>("A",90));
 	        		put("B", new MapEntry<String, Integer>("B",80));
 	        		put("C", new MapEntry<String, Integer>("C",70));
 	        		put("D", new MapEntry<String, Integer>("D",60));
 	        		put("F", new MapEntry<String, Integer>("F",50));
 	        	}};
         	
-			public MapEntry<String, Integer> convert(String source, Type<? extends MapEntry<String, Integer>> destinationType) {
+			public Map.Entry<String, Integer> convert(String source, Type<? extends Map.Entry<String, Integer>> destinationType) {
 				return testScores.get(source);
 			}});
 		
@@ -241,6 +241,32 @@ public class MapGenerationTestCase {
 		
 		Assert.assertNotNull(result.getScores());
 		
+	}
+	
+	public static class MyMapEntry<K,V> implements Map.Entry<K, V> {
+
+	    private K key;
+	    private V value;
+	    
+	    public MyMapEntry(K key, V value) {
+	        this.key = key;
+	        this.value = value;
+	    }
+	    
+        public K getKey() {
+            return key;
+        }
+
+        public V getValue() {
+            return value;
+        }
+
+        public V setValue(V value) {
+            V oldValue = this.value;
+            this.value = value;
+            return oldValue;
+        }
+	    
 	}
 	
 	

@@ -66,7 +66,8 @@ public class ConstructorMappingTestCase {
                 .toClassMap());
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
-      
+        factory.build();
+        
         Person person = new Person();
         person.setFirstName("Abdelkrim");
         person.setLastName("EL KHETTABI");

@@ -18,13 +18,21 @@
 package ma.glasnost.orika.impl.generator;
 
 
-import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
+import static ma.glasnost.orika.impl.Specifications.aPrimitive;
+import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
+import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
+import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
+import static ma.glasnost.orika.impl.Specifications.anArray;
+import static ma.glasnost.orika.impl.Specifications.immutable;
 import static ma.glasnost.orika.metadata.TypeFactory.valueOf;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -38,8 +46,11 @@ import ma.glasnost.orika.impl.GeneratedObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.metadata.MappingDirection;
+import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,15 +69,18 @@ public class ObjectFactoryGenerator {
     private final MapperFactory mapperFactory;
     private final Paranamer paranamer;
     private final CompilerStrategy compilerStrategy;
+    private final PropertyResolverStrategy propertyResolver;
     private final String nameSuffix;
     
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
-    		CompilerStrategy compilerStrategy) {
+    		CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
         this.nameSuffix = Integer.toHexString(System.identityHashCode(compilerStrategy));
         this.paranamer = new CachingParanamer(new AdaptiveParanamer(new BytecodeReadingParanamer(), new AnnotationParanamer()));
         this.constructorResolverStrategy = constructorResolverStrategy;
+        this.propertyResolver = propertyResolver;
+        
     }
     
     public GeneratedObjectFactory build(Type<?> type) {
@@ -131,7 +145,10 @@ public class ObjectFactoryGenerator {
             for (Type<? extends Object> sourceType : sourceClasses) {
                 addSourceClassConstructor(out, clazz, sourceType, logDetails);
             }
+        } else {
+            throw new MappingException("Cannot generate ObjectFactory for " + clazz);
         }
+        
         // TODO: this error is unclear, and should never really be reached;
         // if object factory generation failed, we should not create the factory
         // which is unable to construct an instance of anything.
@@ -186,11 +203,31 @@ public class ObjectFactoryGenerator {
             }
             
             if (parameters.length != properties.size()) {
-                throw new MappingException("While generating object factory for " + type + ": " +
-                		"could not match all of the resolved constructor's parameters against the class-map.\n" +
-                		"constructor = " + constructor + "\n" +
-                		"parameters = " + parameters + "\n" +
-                		"resolved = " + properties);
+                /*
+                 * Attempt to map the constructor parameters to the properties of the source type;
+                 * these may not exist in the field mappings, since the destination may not have
+                 * properties defined which directly match them
+                 */
+                Map<String, Property> sourceProps = propertyResolver.getProperties(sourceClass);
+                for (int p = 0, len = parameters.length; p < len; ++p) {
+                    String name = parameters[p];
+                    Class<?> rawType = constructorArguments[p];
+                    if (sourceProps.get(name) != null) {
+                        Property destProp = new Property();
+                        destProp.setName(name);
+                        destProp.setType(TypeFactory.valueOf(rawType));
+                        properties.add(new FieldMap(sourceProps.get(name), destProp, null, null, MappingDirection.A_TO_B, false, false,
+                                null));
+                    }
+                }
+                // Still couldn't find all of the properties?
+                if (parameters.length != properties.size()) {
+                    throw new MappingException("While generating object factory for " + type + ": " +
+                            "could not match all of the resolved constructor's parameters against the class-map.\n" +
+                            "constructor = " + constructor + "\n" +
+                            "parameters = " + parameters + "\n" +
+                            "resolved = " + properties);
+                }
             }
             
             out.ifInstanceOf("s", sourceClass).then();

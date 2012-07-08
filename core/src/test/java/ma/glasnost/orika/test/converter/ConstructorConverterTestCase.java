@@ -23,6 +23,7 @@ import java.net.URL;
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.converter.builtin.ConstructorConverter;
 import ma.glasnost.orika.test.MappingUtil;
 

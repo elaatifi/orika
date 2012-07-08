@@ -233,7 +233,14 @@ public final class ClassMapBuilder<A, B> {
             if (!propertiesCacheA.contains(propertyName)) {
                 if (bProperties.containsKey(propertyName)) {
                     if (!propertiesCacheB.contains(propertyName)) {
-                        fieldMap(propertyName).add();
+                        /*
+                         * Don't include the default mapping of Class to Class; this
+                         * property is resolved for all types, but can't be mapped 
+                         * in either direction.
+                         */
+                        if (!propertyName.equals("class")) {
+                            fieldMap(propertyName).add();
+                        }
                     }
                 } else {
                     Property prop = aProperties.get(propertyName);
@@ -295,7 +302,14 @@ public final class ClassMapBuilder<A, B> {
             if (!propertiesCacheA.contains(propertyName)) {
                 if (bProperties.containsKey(propertyName)) {
                     if (!propertiesCacheB.contains(propertyName)) {
-                        fieldMap(propertyName).add();
+                        /*
+                         * Don't include the default mapping of Class to Class; this
+                         * property is resolved for all types, but can't be mapped 
+                         * in either direction.
+                         */
+                        if (!propertyName.equals("class")) {
+                            fieldMap(propertyName).add();
+                        }
                     }
                 } else {
                     Property prop = aProperties.get(propertyName);

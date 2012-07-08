@@ -25,25 +25,24 @@ import ma.glasnost.orika.impl.util.ClassUtil;
  *
  * @param <T>
  */
-public final class Type<T> implements ParameterizedType {
+public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
     private final Class<T> rawType;
     //private java.lang.reflect.Type ownerType;
     private final Type<?>[] actualTypeArguments;
     private final boolean isParameterized;
-    private Map<String, Type<?>> typesByVariable;
+    private Map<TypeVariable<?>, Type<?>> typesByVariable;
     private Type<?> superType;
     private Type<?>[] interfaces;
     private Type<?> componentType;
     private final TypeKey key;
-    private Boolean hasSingleStringConstructor;
 
     /**
      * @param rawType
      * @param actualTypeArguments
      */
     @SuppressWarnings("unchecked")
-    Type(TypeKey key, Class<?> rawType, Map<String, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
+    Type(TypeKey key, Class<?> rawType, Map<TypeVariable<?>, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
         this.key = key;
         this.rawType = (Class<T>)rawType;
         this.actualTypeArguments = actualTypeArguments;
@@ -126,13 +125,13 @@ public final class Type<T> implements ParameterizedType {
         return actualTypeArguments;
     }
     
-    public Map<String, Type<?>> getTypesByVariable() {
+    public Map<TypeVariable<?>, Type<?>> getTypesByVariable() {
     	return Collections.unmodifiableMap(typesByVariable);
     }
     
     public java.lang.reflect.Type getTypeByVariable(TypeVariable<?> typeVariable) {
         if (isParameterized) {
-            return typesByVariable.get(typeVariable.getName());
+            return typesByVariable.get(typeVariable);
         } else {
             return null;
         }
@@ -143,7 +142,7 @@ public final class Type<T> implements ParameterizedType {
     }
     
     public Type<?> getComponentType() {
-    	if (componentType == null) {
+        if (componentType == null) {
             if (rawType.isArray()) {
             	componentType = TypeFactory.valueOf(rawType.getComponentType());
             } else if (isParameterized){
@@ -250,21 +249,7 @@ public final class Type<T> implements ParameterizedType {
     }
     
     public boolean isConvertibleFromString() {
-    	return isPrimitive() || isPrimitiveWrapper()
-				|| isEnum() || hasSingleStringConstructor();
-    }
-    
-    public boolean hasSingleStringConstructor() {
-    	if (hasSingleStringConstructor == null) {
-	    	try {
-	    		hasSingleStringConstructor = rawType.getConstructor(String.class)!=null;
-			} catch (NoSuchMethodException e) {
-				hasSingleStringConstructor = false;
-			} catch (SecurityException e) {
-				hasSingleStringConstructor = false;
-			}
-    	}
-    	return hasSingleStringConstructor;
+    	return ClassUtil.isConvertibleFromString(getRawType());
     }
     
     public String toString() {
@@ -322,4 +307,16 @@ public final class Type<T> implements ParameterizedType {
         
         return this.key.equals(other.key);
     }
+
+    
+    public int compareTo(Type<?> other) {
+        if (this.equals(other)) {
+            return 0;
+        } else if (this.isAssignableFrom(other)) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
 }

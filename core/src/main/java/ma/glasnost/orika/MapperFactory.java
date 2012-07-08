@@ -38,11 +38,30 @@ public interface MapperFactory {
     
     /**
      * Get the Mapper (if any) which has been associated with the given MapperKey.
+     * If one does not exist, and the Mapper supports automatic generation, an
+     * appropriate mapper will be generated.
      * 
      * @param mapperKey the MapperKey for which to look up an associated Mapper
      * @return the Mapper associated with <code>mapperKey</code>;
      */
     <A, B> Mapper<A, B> lookupMapper(MapperKey mapperKey);
+    
+    /**
+     * Tests for the existence of a registered mapper which corresponds to the
+     * supplied mapperKey
+     * 
+     * @param mapperKey
+     * @return true if such a mapper is registered with this factory
+     */
+    boolean existsRegisteredMapper(Type<?> sourceType, Type<?> destinationType);
+    
+    /**
+     * Registers the specified custom mapper with the factory;
+     * it will be used for mapping between it's configured types.
+     * 
+     * @param mapper the mapper to register
+     */
+    <A, B> void registerMapper(Mapper<A, B> mapper);
     
     /**
      * Registers the given ClassMap instance with the factory; 
@@ -109,10 +128,32 @@ public interface MapperFactory {
      */
     void registerDefaultFieldMapper(DefaultFieldMapper... fieldDefaults);
     
+    /**
+     * Register a concrete type to use when a need arises to generate a new instance
+     * of a given abstract type (abstract class or interface)
+     * 
+     * @param abstractType the type of the abstract class or interface
+     * @param concreteType the concrete type to instantiate
+     */
     void registerConcreteType(Type<?> abstractType, Type<?> concreteType);
     
+    /**
+     * Register a concrete type to use when a need arises to generate a new instance
+     * of a given abstract type (abstract class or interface)
+     * 
+     * @param abstractType the abstract class or interface
+     * @param concreteType the concrete class to instantiate
+     */
     void registerConcreteType(Class<?> abstractType, Class<?> concreteType);
     
+    /**
+     * Lookup the class map hierarchy used for the mapping defined by the specified
+     * MapperKey, if any exists
+     * 
+     * @param mapperKey the mapper key defining the mapping to resolve
+     * @return the set of class mappings in the hierarchy of mappings used for
+     * the specified mapper key
+     */
     Set<ClassMap<Object, Object>> lookupUsedClassMap(MapperKey mapperKey);
     
     /**

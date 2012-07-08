@@ -30,7 +30,7 @@ public class NestedExpressionTestCase {
     @Test
     public void testNestedProperty() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         factory.registerClassMap(ClassMapBuilder.map(Order.class, OrderDTO.class).field("product.state.type.label", "stateLabel")
                 .field("product.name", "productName").toClassMap());
         

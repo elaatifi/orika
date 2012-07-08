@@ -57,14 +57,15 @@ public abstract class TypeFactory {
      * Use the existing type if already available; we try to enforce that Type
      * should be immutable.
      * 
-     * @param rawType
-     * @param typeArguments
+     * @param rawType the raw class of the type
+     * @param typeArguments the type arguments of the type
+     * @param recursiveBounds the limits on recursively nested types
      * @return
      */
     @SuppressWarnings("unchecked")
-    private static <T> Type<T> intern(Class<T> rawType, java.lang.reflect.Type[] typeArguments) {
+    private static <T> Type<T> intern(final Class<T> rawType, final java.lang.reflect.Type[] typeArguments, final Set<java.lang.reflect.Type> recursiveBounds) {
         
-        Type<?>[] convertedArguments = TypeUtil.convertTypeArguments(rawType, typeArguments);
+        Type<?>[] convertedArguments = TypeUtil.convertTypeArguments(rawType, typeArguments, recursiveBounds);
         TypeKey key = TypeKey.valueOf(rawType, convertedArguments);
         
         WeakReference<Type<?>> mapped = typeCache.get(key);
@@ -102,11 +103,11 @@ public abstract class TypeFactory {
     }
     
     private static <T> Type<T> createType(TypeKey key, Class<T> rawType, Type<?>[] typeArguments) {
-        Map<String, Type<?>> typesByVariable = null;
+        Map<TypeVariable<?>, Type<?>> typesByVariable = null;
         if (typeArguments.length > 0) {
-            typesByVariable = new HashMap<String, Type<?>>(typeArguments.length);
+            typesByVariable = new HashMap<TypeVariable<?>, Type<?>>(typeArguments.length);
             for (int i = 0, len = typeArguments.length; i < len; ++i) {
-                typesByVariable.put(rawType.getTypeParameters()[i].getName(), typeArguments[i]);
+                typesByVariable.put(rawType.getTypeParameters()[i], typeArguments[i]);
             }
         }
         return new Type<T>(key, rawType, typesByVariable, typeArguments);
@@ -124,7 +125,19 @@ public abstract class TypeFactory {
             ParameterizedType genericSuper = (ParameterizedType) rawType.getGenericSuperclass();
             return valueOf(genericSuper);
         } else {
-            return (Type<E>) intern(rawType, new java.lang.reflect.Type[0]);
+            return (Type<E>) intern(rawType, new java.lang.reflect.Type[0], new HashSet<java.lang.reflect.Type>());
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <E> Type<E> limitedValueOf(final Class<?> rawType, Set<java.lang.reflect.Type> recursiveBounds, final java.lang.reflect.Type... actualTypeArguments) {
+        if (rawType == null) {
+            return null;
+        } else if (rawType.isAnonymousClass() && rawType.getGenericSuperclass() instanceof ParameterizedType) {
+            ParameterizedType genericSuper = (ParameterizedType) rawType.getGenericSuperclass();
+            return limitedValueOf(genericSuper, recursiveBounds);
+        } else {
+            return (Type<E>) intern(rawType, actualTypeArguments, recursiveBounds);
         }
     }
     
@@ -138,7 +151,7 @@ public abstract class TypeFactory {
         if (rawType == null) {
             return null;
         } else {
-            return (Type<E>) intern((Class<E>) rawType, actualTypeArguments);
+            return (Type<E>) intern((Class<E>) rawType, actualTypeArguments, new HashSet<java.lang.reflect.Type>());
         }
     }
     
@@ -172,7 +185,17 @@ public abstract class TypeFactory {
         }
     }
     
-    
+    @SuppressWarnings("unchecked")
+    public static <T> Type<T> limitedValueOf(final ParameterizedType type, final Set<java.lang.reflect.Type> recursiveBounds) {
+        if (Enum.class.equals(type.getRawType())) {
+            // Enum is a special recursively-defined type which causes
+            // StackOverflowError; this doesn't seem to occur with other
+            // recursively-defined types...
+            return (Type<T>) valueOf(Enum.class, new Type<?>[0]);
+        } else {
+            return limitedValueOf((Class<? extends T>) type.getRawType(), recursiveBounds, type.getActualTypeArguments());
+        }
+    }
     
     @SuppressWarnings("unchecked")
     public static <T> Type<T> valueOf(final TypeVariable<?> var) {
@@ -189,6 +212,26 @@ public abstract class TypeFactory {
     }
     
     @SuppressWarnings("unchecked")
+    public static <T> Type<T> limitedValueOf(final TypeVariable<?> var, final Set<java.lang.reflect.Type> recursiveBounds) {
+
+        if (var.getBounds().length > 0) {
+            Set<Type<?>> bounds = new HashSet<Type<?>>(var.getBounds().length);
+            for (int i=0, len=var.getBounds().length; i < len; ++i) {
+                bounds.add(limitedValueOf(var.getBounds()[i], recursiveBounds));
+            }
+            return (Type<T>) refineBounds(bounds);
+        } else {
+            return (Type<T>) TYPE_OF_OBJECT;
+        }
+    }
+    
+    /**
+     * Finds the Type value of the given wildcard type
+     * 
+     * @param var
+     * @return
+     */
+    @SuppressWarnings("unchecked")
     public static <T> Type<T> valueOf(final WildcardType var) {
 
         Set<Type<?>> bounds = new HashSet<Type<?>>(var.getUpperBounds().length + var.getLowerBounds().length);
@@ -197,6 +240,28 @@ public abstract class TypeFactory {
         }
         for (int i=0, len=var.getLowerBounds().length; i < len; ++i) {
             bounds.add(valueOf(var.getLowerBounds()[i]));
+        }
+        return (Type<T>) refineBounds(bounds); 
+    }
+    
+    /**
+     * 
+     * Finds the Type value of the given wildcard type, using recursiveBounds to limit the
+     * recursion.
+     * 
+     * @param var
+     * @param recursiveBounds
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Type<T> limitedValueOf(final WildcardType var, final Set<java.lang.reflect.Type> recursiveBounds) {
+
+        Set<Type<?>> bounds = new HashSet<Type<?>>(var.getUpperBounds().length + var.getLowerBounds().length);
+        for (int i=0, len=var.getUpperBounds().length; i < len; ++i) {
+            bounds.add(limitedValueOf(var.getUpperBounds()[i], recursiveBounds));
+        }
+        for (int i=0, len=var.getLowerBounds().length; i < len; ++i) {
+            bounds.add(limitedValueOf(var.getLowerBounds()[i], recursiveBounds));
         }
         return (Type<T>) refineBounds(bounds); 
     }
@@ -260,6 +325,30 @@ public abstract class TypeFactory {
         }
     }
     
+    /**
+     * Return the Type for the given java.lang.reflect.Type, limiting the recursive depth
+     * on any type already contained in recursiveBounds.
+     * 
+     * @param type
+     * @param recursiveBounds
+     * @return
+     */
+    @SuppressWarnings("unchecked")
+	public static <T> Type<T> limitedValueOf(final java.lang.reflect.Type type, final Set<java.lang.reflect.Type> recursiveBounds) {
+    	if (type instanceof Type) {
+            return (Type<T>)type;
+        } else if (type instanceof ParameterizedType) {
+            return limitedValueOf((ParameterizedType)type, recursiveBounds);
+        } else if (type instanceof Class) {
+            return limitedValueOf((Class<T>)type, recursiveBounds, new java.lang.reflect.Type[0]);
+        } else if (type instanceof TypeVariable) {
+            return limitedValueOf((TypeVariable<?>)type, recursiveBounds);
+        } else if (type instanceof WildcardType) {
+            return limitedValueOf((WildcardType)type, recursiveBounds);
+        } else {
+            throw new IllegalArgumentException(type + " is an unsupported type");
+        }
+    }
     
     /**
      * Resolve the Type for the given ParameterizedType, using the provided
@@ -275,7 +364,7 @@ public abstract class TypeFactory {
             return null;
         } else {
             java.lang.reflect.Type[] actualTypeArguments = TypeUtil.resolveActualTypeArguments(type, referenceType);
-            Type<T> result = intern((Class<T>) type.getRawType(), actualTypeArguments);
+            Type<T> result = intern((Class<T>) type.getRawType(), actualTypeArguments, new HashSet<java.lang.reflect.Type>());
             
             return result;
         }

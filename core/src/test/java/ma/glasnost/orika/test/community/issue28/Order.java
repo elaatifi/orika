@@ -15,22 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.test.community.issue26;
+package ma.glasnost.orika.test.community.issue28;
 
-public class OrderID extends AbstractOrderID {
-	
+public class Order extends AbstractOrder<Order> {
 	private static final long serialVersionUID = 1L;
+	private int customerNumber;
 
-	public OrderID() { /* Required by Orika mapping */
+	public Order() {
 		this(null);
 	}
 
-	public OrderID(Long orderID) {
-		super(orderID);
+	public Order(Long id) {
+		super(id);
 	}
 
-	public OrderID(long orderID) {
-		super(orderID);
+	public int getCustomerNumber() {
+		return customerNumber;
 	}
-	
+
+	public void setCustomerNumber(int customerNumber) {
+		this.customerNumber = customerNumber;
+	}
 }

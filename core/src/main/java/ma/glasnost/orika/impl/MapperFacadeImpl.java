@@ -28,9 +28,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
@@ -50,6 +47,9 @@ import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 import ma.glasnost.orika.util.CacheLRULinkedHashMap;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MapperFacadeImpl implements MapperFacade {
     
@@ -85,7 +85,8 @@ public class MapperFacadeImpl implements MapperFacade {
             if (sourceType != null) {
                 if (destinationType != null &&
                         (canCopyByReference(destinationType, sourceType)
-                        || canConvert(sourceType, destinationType))) {
+                        || canConvert(sourceType, destinationType))
+                        /*|| mapperFactory.existsRegisteredMapper(sourceType, destinationType)*/) {
                     /*
                      * We shouldn't bother further resolving the source type
                      * if we already have a converter or copy-by-reference
@@ -98,7 +99,12 @@ public class MapperFacadeImpl implements MapperFacade {
                     if (sourceType.isAssignableFrom(sourceObject.getClass())) {
                         sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
                     }
-                    if (ClassUtil.isConcrete(sourceType)) {
+                    Type<?> sourceObjectType = TypeFactory.resolveTypeOf(sourceObject, sourceType);
+                    if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType)) {
+                        newlyResolvedType = sourceObjectType;
+                    } else if (mapperFactory.existsRegisteredMapper(sourceType, destinationType)) {
+                        newlyResolvedType = sourceType;
+                    } else if (ClassUtil.isConcrete(sourceType)) {
                         newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
                     } else {
                         newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.resolveTypeOf(sourceObject, sourceType));
@@ -427,16 +433,28 @@ public class MapperFacadeImpl implements MapperFacade {
         return mapper;
     }
     
-    void mapDeclaredProperties(Object sourceObject, Object destinationObject, Type<?> sourceClass, Type<?> destinationType,
+    /**
+     * Maps the declared properties of the source object into the destination object,
+     * using the specified mapper.
+     * 
+     * @param sourceObject the source object from which to map property values
+     * @param destinationObject the destination object onto which the source object's property values will be mapped
+     * @param sourceType the type of the source object
+     * @param destinationType the type of the destination object
+     * @param context the current mapping context
+     * @param mapper the mapper to use for mapping the source property values onto the destination
+     * @param strategyBuilder the strategy builder used to record the mapping strategy taken
+     */
+    void mapDeclaredProperties(Object sourceObject, Object destinationObject, Type<?> sourceType, Type<?> destinationType,
             MappingContext context, Mapper<Object, Object> mapper, MappingStrategyRecorder strategyBuilder) {
         
-        if (mapper.getAType().equals(sourceClass)) {
+        if (mapper.getAType().equals(sourceType)) {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().equals(destinationType)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
             if (strategyBuilder != null)
                 strategyBuilder.setMapReverse(true);
-        } else if (mapper.getAType().isAssignableFrom(sourceClass)) {
+        } else if (mapper.getAType().isAssignableFrom(sourceType)) {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().isAssignableFrom(destinationType)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
@@ -472,6 +490,14 @@ public class MapperFacadeImpl implements MapperFacade {
         return newObject(sourceObject, destinationType, context, null);
     }
     
+    /**
+     * @param source
+     * @param sourceType
+     * @param destinationType
+     * @param destination
+     * @param context
+     * @return
+     */
     <S, D> Collection<D> mapAsCollection(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, Collection<D> destination,
             MappingContext context) {
         
@@ -483,7 +509,7 @@ public class MapperFacadeImpl implements MapperFacade {
             destination.add(map(item, sourceType, destinationType, context));
         }
         return destination;
-    }
+    }   
     
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {

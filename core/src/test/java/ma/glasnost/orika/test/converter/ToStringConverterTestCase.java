@@ -22,6 +22,7 @@ import java.util.Date;
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.converter.builtin.ToStringConverter;
 import ma.glasnost.orika.test.MappingUtil;
 
@@ -30,7 +31,7 @@ import org.junit.Test;
 
 public class ToStringConverterTestCase {
 
-	@Test
+	@Test(expected=MappingException.class)
 	public void testToString_withoutConverter() {
 		MapperFactory factory = MappingUtil.getMapperFactory();
 		MapperFacade mapper = factory.getMapperFacade();

@@ -15,22 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.test.community.issue26;
+package ma.glasnost.orika.test.community.issue28;
 
-public class OrderID extends AbstractOrderID {
-	
-	private static final long serialVersionUID = 1L;
+public abstract class AbstractOrder<T extends AbstractOrder<T>> extends PositionContainer<T> {
+	private static final long serialVersionUID = 3L;
 
-	public OrderID() { /* Required by Orika mapping */
+	private Long number;
+
+	public AbstractOrder() {
 		this(null);
 	}
 
-	public OrderID(Long orderID) {
-		super(orderID);
+	public AbstractOrder(Long number) {
+		this.number = number;
 	}
 
-	public OrderID(long orderID) {
-		super(orderID);
+	public Long getId() {
+		return number;
 	}
-	
 }
