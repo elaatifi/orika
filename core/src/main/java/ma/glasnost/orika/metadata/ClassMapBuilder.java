@@ -33,6 +33,13 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * ClassMapBuilder provides a fluent API which can be used to define 
+ * a mapping from one class to another.
+ *
+ * @param <A>
+ * @param <B>
+ */
 public final class ClassMapBuilder<A, B> {
     
     private final Map<String, Property> aProperties;
@@ -110,18 +117,47 @@ public final class ClassMapBuilder<A, B> {
     }
     
     /**
-     * Map a field two way
+     * Map a field in both directions
      * 
-     * @param a
+     * @param fieldNameA
      *            property name in type A
-     * @param b
+     * @param fieldNameB
      *            property name in type B
      * @return
      */
-    public ClassMapBuilder<A, B> field(String a, String b) {
-        return fieldMap(a, b).add();
+    public ClassMapBuilder<A, B> field(String fieldNameA, String fieldNameB) {
+        return fieldMap(fieldNameA, fieldNameB).add();
     }
     
+    
+    /**
+     * Map a field in one direction only (from fieldNameA to fieldNameB)
+     * 
+     * @param fieldNameA the (source) fieldName from type A
+     * @param fieldNameB the (destination) fieldName from type B
+     * @return
+     */
+    public ClassMapBuilder<A, B> fieldAToB(String fieldNameA, String fieldNameB) {
+        return fieldMap(fieldNameA, fieldNameB).aToB().add();
+    }
+    
+    /**
+     * Map a field in one direction only (from fieldNameB to fieldNameA)
+     * 
+     * @param fieldNameB the (source) fieldName from type B
+     * @param fieldNameA the (destination) fieldName from type A
+     * @return
+     */
+    public ClassMapBuilder<A, B> fieldBToA(String fieldNameB, String fieldNameA) {
+        return fieldMap(fieldNameA, fieldNameB).bToA().add();
+    }
+    
+    /**
+     * Create a fieldMap for the particular field
+     * 
+     * @param a
+     * @return
+     */
     public FieldMapBuilder<A, B> fieldMap(String a) {
         return fieldMap(a, a);
     }
@@ -142,8 +178,14 @@ public final class ClassMapBuilder<A, B> {
 	    }
     }
     
-    public ClassMapBuilder<A, B> exclude(String a) {
-        return fieldMap(a).exclude().add();
+    /**
+     * Exclude the specified field from mapping
+     * 
+     * @param fieldName the name of the field/property to exclude
+     * @return
+     */
+    public ClassMapBuilder<A, B> exclude(String fieldName) {
+        return fieldMap(fieldName).exclude().add();
     }
     
     /**

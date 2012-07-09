@@ -66,25 +66,45 @@ public class FieldMapBuilder<A, B> {
         return this;
     }
     
+    /**
+     * Specify that the configured field mapping (property) should only be used
+     * when mapping in the direction from A to B
+     * 
+     * @return
+     */
     public FieldMapBuilder<A, B> aToB() {
+        
         mappingDirection = MappingDirection.A_TO_B;
         
         return this;
     }
     
+    /**
+     * Specify that the configured field mapping (property) should only be used
+     * when mapping in the direction from B to A
+     * 
+     * @return
+     */
     public FieldMapBuilder<A, B> bToA() {
         mappingDirection = MappingDirection.B_TO_A;
         
         return this;
     }
     
+    /**
+     * Specify that the converter (which was previously registered with the specified id)
+     * should be applied to this specific field mapping.
+     * 
+     * @param id the id with which the converter to use was registered
+     * @return
+     */
     public FieldMapBuilder<A, B> converter(String id) {
         this.converterId = id;
         return this;
     }
     
     /**
-     * Exclude property from mapping
+     * Specify that the property should be excluded from mapping
      */
     public FieldMapBuilder<A, B> exclude() {
         excluded = true;

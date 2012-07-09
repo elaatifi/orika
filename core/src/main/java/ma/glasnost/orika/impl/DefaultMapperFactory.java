@@ -42,6 +42,7 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.converter.builtin.BuiltinConverters;
 import ma.glasnost.orika.impl.generator.CompilerStrategy;
 import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.impl.generator.MapperGenerator;
@@ -137,6 +138,10 @@ public class DefaultMapperFactory implements MapperFactory {
         this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
         this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy, propertyResolverStrategy);
         this.useAutoMapping = builder.useAutoMapping;
+        
+        if (builder.usedBuiltinConverters) {
+            BuiltinConverters.register(converterFactory);
+        }
     }
     
     /**
@@ -159,6 +164,7 @@ public class DefaultMapperFactory implements MapperFactory {
         protected Set<ClassMap<?, ?>> classMaps;
         protected ConverterFactory converterFactory;
         protected PropertyResolverStrategy propertyResolverStrategy;
+        protected boolean usedBuiltinConverters = false;
         protected boolean useAutoMapping = true;
         
         public MapperFactoryBuilder() {
@@ -210,6 +216,10 @@ public class DefaultMapperFactory implements MapperFactory {
         	return self();
         }
         
+        public B usedBuiltinConverters(boolean useBuiltinConverters) {
+            this.usedBuiltinConverters = useBuiltinConverters;
+            return self();
+        }
         /**
          * @return a new instance of the Factory for which this builder is defined.
          * The construction should be performed via the single-argument constructor which
@@ -230,10 +240,7 @@ public class DefaultMapperFactory implements MapperFactory {
      * the following code:
      * 
      * <pre>
-     * {
-     *     &#064;code
-     *     MapperFactory factory = new DefaultMapperFactory.Builder().build();
-     * }
+     * MapperFactory factory = new DefaultMapperFactory.Builder().build();
      * </pre>
      * 
      * @author matt.deboer@gmail.com

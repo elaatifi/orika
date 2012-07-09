@@ -67,6 +67,15 @@ public class MapperFacadeImpl implements MapperFacade {
         this.useStrategyCache = Boolean.valueOf(System.getProperty(OrikaSystemProperties.USE_STRATEGY_CACHE, "true"));
     }
     
+    /**
+     * Normalize the source type based on the registered converters, mappers and
+     * accessible super types, as well as available unenhancers
+     * 
+     * @param sourceObject
+     * @param sourceType
+     * @param destinationType
+     * @return
+     */
     @SuppressWarnings("unchecked")
     private <S, D> Type<S> normalizeSourceType(S sourceObject, Type<S> sourceType, Type<D> destinationType) {
         
@@ -100,6 +109,12 @@ public class MapperFacadeImpl implements MapperFacade {
                         sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
                     }
                     Type<?> sourceObjectType = TypeFactory.resolveTypeOf(sourceObject, sourceType);
+                    /*
+                     * In the case where there is an existing mapper registered for either the
+                     * source object type or the source type, we should use that type, rather
+                     * than applying unenhancement which could result in another type which 
+                     * would not use that mapper
+                     */
                     if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType)) {
                         newlyResolvedType = sourceObjectType;
                     } else if (mapperFactory.existsRegisteredMapper(sourceType, destinationType)) {
