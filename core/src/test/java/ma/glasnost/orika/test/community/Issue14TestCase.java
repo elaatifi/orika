@@ -21,10 +21,10 @@ import java.util.Calendar;
 import java.util.Date;
 
 import junit.framework.Assert;
-
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.BidirectionalConverter;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 
@@ -79,6 +79,20 @@ public class Issue14TestCase {
             }
             
         });
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Product p = new Product();
+        p.setTempCal(new Date());
+        
+        ProductDTO result = mapper.map(p, ProductDTO.class);
+        
+        Assert.assertEquals(p.getTempCal(), result.getTempCal().getTime());
+    }
+    
+    @Test
+    public void testMapDateToCalendar_usingBuiltinConverters() {
+        MapperFactory factory = new DefaultMapperFactory.Builder()
+                .usedBuiltinConverters(true).build();
         MapperFacade mapper = factory.getMapperFacade();
         
         Product p = new Product();
