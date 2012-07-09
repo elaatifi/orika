@@ -144,6 +144,7 @@ public class MapperFacadeImpl implements MapperFacade {
             
             MappingStrategy strategy = strategyCache.get(key);
             if (strategy != null) {
+                key.clear();
                 @SuppressWarnings("unchecked")
                 D result = (D)strategy.map(sourceObject, null, context);
                 return result;
