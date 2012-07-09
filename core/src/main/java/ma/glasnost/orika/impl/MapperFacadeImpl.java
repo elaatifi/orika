@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -170,12 +172,10 @@ public class MapperFacadeImpl implements MapperFacade {
 	        MappingStrategyKey key = null;
 	        if (useStrategyCache) {
 	            
-	            key = MappingStrategyKey.getCurrent();
-	            key.initialize(sourceObject.getClass(), sourceType, destinationType, false);
+	            key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, false);
 	            
 	            MappingStrategy strategy = strategyCache.get(key);
 	            if (strategy != null) {
-	                key.clear();
 	                @SuppressWarnings("unchecked")
 	                D result = (D)strategy.map(sourceObject, null, context);
 	                return result;
@@ -188,7 +188,6 @@ public class MapperFacadeImpl implements MapperFacade {
 	             * Convert the current key to an immutable copy (and clear it) so that other 
 	             * lookups on the same thread can use it
 	             */
-	            key = key.toImmutableCopy();
 	            strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
 	        }
 	        
@@ -316,14 +315,12 @@ public class MapperFacadeImpl implements MapperFacade {
 	            throw new MappingException("[sourceObject] can not be null.");
 	        }
 	        
-	        MappingStrategyKey key = MappingStrategyKey.getCurrent();
-	        key.initialize(sourceObject.getClass(), sourceType, destinationType, true);
+	        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, true);
 	        
 	        MappingStrategy strategy = strategyCache.get(key);
 	        if (strategy != null) {
 	            strategy.map(sourceObject, destinationObject, context);
 	        } else {
-	            key = key.toImmutableCopy();
 	            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
 	        
 	            final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), null);
@@ -527,6 +524,48 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         return destination;
     }   
+    
+    /**
+     * Merges one collection into another; existing elements in the destination
+     * collection are modified in-place (where possible). New values are added,
+     * and any values without a corresponding value in the source are removed.
+     * 
+     * @param source the source iterable
+     * @param sourceType the source type
+     * @param destinationType the destination type
+     * @param destination the destination collection
+     * @param context the current mapping context
+     * @return
+     */
+    <S, D> void mergeCollection(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, Collection<D> destination,
+            MappingContext context) {
+        
+    	/*
+    	 * TODO: see if this will work...
+    	 */
+    	
+        if (source == null || destination == null) {
+            return;
+        }
+        
+        Map<D,S> newValues = new LinkedHashMap<D,S>(destination.size());
+        for (final S item : source) {
+        	newValues.put(map(item, sourceType, destinationType, context), item);
+        }
+        
+        destination.retainAll(newValues.values());
+        
+        Iterator<D> iter = destination.iterator();
+        while (iter.hasNext()) {
+        	D existing = iter.next();
+        	S item = newValues.remove(existing);
+        	if (item != null) {
+        		map(item, existing, sourceType, destinationType, context);
+        	}
+        }
+        destination.addAll(newValues.keySet());
+    }
+    
     
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
