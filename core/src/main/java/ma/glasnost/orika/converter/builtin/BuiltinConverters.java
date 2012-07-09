@@ -76,6 +76,14 @@ public abstract class BuiltinConverters {
         converterFactory.registerConverter(new DateAndTimeConverters.LongToXmlGregorianCalendarConverter());
         
         /*
+         * Register numeric type converter
+         */
+        converterFactory.registerConverter(new NumericConverters.BigDecimalToDoubleConverter());
+        converterFactory.registerConverter(new NumericConverters.BigDecimalToFloatConverter());
+        converterFactory.registerConverter(new NumericConverters.BigIntegerToIntegerConverter(false));
+        converterFactory.registerConverter(new NumericConverters.BigIntegerToLongConverter(false));
+        
+        /*
          * Register additional common "immutable" types
          */
         converterFactory.registerConverter(new PassThroughConverter(

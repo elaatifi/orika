@@ -29,10 +29,7 @@ import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.impl.UtilityResolver;
-import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
-import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
@@ -59,10 +56,10 @@ public class CustomMergerTest {
 		dto.setName("A");
 		dtos.add(dto);
 		
-		Dto dto2 = new Dto();
-		dto2.setId(2L);
-		dto2.setName("B");
-		dtos.add(dto2);
+		dto = new Dto();
+		dto.setId(2L);
+		dto.setName("B");
+		dtos.add(dto);
 		
 		dto = new Dto();
 		dto.setId(3L);
@@ -72,31 +69,12 @@ public class CustomMergerTest {
 		DtoHolder source = new DtoHolder();
 		source.setEntities(dtos);
 		
-		Type<?> typeOf_DtoHolder = TypeFactory.valueOf(DtoHolder.class);
-		UtilityResolver.getDefaultPropertyResolverStrategy().getProperties(typeOf_DtoHolder);
-		
-		final EntityHolder entities = mapper.map(source, EntityHolder.class);
-		
+		EntityHolder entities = mapper.map(source, EntityHolder.class);
 		
 		Assert.assertNotNull(entities);
 		Assert.assertEquals(3, entities.getEntities().size());
 		
-		final EntityHolder originalEntities = entities;
-		source.getEntities().remove(dto2);
-		dto2.setName("B-Changed");
-		source.getEntities().add(dto2);
 		
-		mapper.map(source, entities);
-		
-		Assert.assertEquals(entities.getEntities().size(), originalEntities.getEntities().size());
-		
-		Iterator<Entity> entitiesIter = entities.getEntities().iterator();
-		Iterator<Entity> originalIter = originalEntities.getEntities().iterator();
-		while (entitiesIter.hasNext()) {
-		    Entity e = entitiesIter.next();
-		    Entity o = originalIter.next();
-		    Assert.assertSame(e, o);
-		}
 	}
 	
 	
