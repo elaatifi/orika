@@ -139,12 +139,10 @@ public class MapperFacadeImpl implements MapperFacade {
          */
         MappingStrategyKey key = null;
         if (useStrategyCache) {
-            key = MappingStrategyKey.getCurrent();
-            key.initialize(sourceObject.getClass(), sourceType, destinationType, false);
+            key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, false);
             
             MappingStrategy strategy = strategyCache.get(key);
             if (strategy != null) {
-                key.clear();
                 @SuppressWarnings("unchecked")
                 D result = (D)strategy.map(sourceObject, null, context);
                 return result;
@@ -157,7 +155,6 @@ public class MapperFacadeImpl implements MapperFacade {
              * Convert the current key to an immutable copy (and clear it) so that other 
              * lookups on the same thread can use it
              */
-            key = key.toImmutableCopy();
             strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         }
         
@@ -251,14 +248,12 @@ public class MapperFacadeImpl implements MapperFacade {
             throw new MappingException("[sourceObject] can not be null.");
         }
         
-        MappingStrategyKey key = MappingStrategyKey.getCurrent();
-        key.initialize(sourceObject.getClass(), sourceType, destinationType, true);
+        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, true);
         
         MappingStrategy strategy = strategyCache.get(key);
         if (strategy != null) {
             strategy.map(sourceObject, destinationObject, context);
         } else {
-            key = key.toImmutableCopy();
             MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         
             final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), null);

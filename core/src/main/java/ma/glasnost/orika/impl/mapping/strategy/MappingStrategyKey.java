@@ -29,58 +29,32 @@ import ma.glasnost.orika.metadata.Type;
  */
 public class MappingStrategyKey {
     
-    private static final ThreadLocal<Object> strategyKey = new ThreadLocal<Object>() {
-        protected Object initialValue() {
-            return new MappingStrategyKey();
-        }
-    };
+    protected final Class<?> immutableRawSourceType;
+    protected final Type<?> immutableSourceType;
+    protected final Type<?> immutableDestinationType;
+    protected final boolean immutableDestinationProvided;
     
-    public static MappingStrategyKey getCurrent() {
-        return (MappingStrategyKey)strategyKey.get();
-    }
-    
-    private Class<?> rawSourceType;
-    private Type<?> sourceType;
-    private Type<?> destinationType;
-    private boolean destinationProvided;
-    
-    private MappingStrategyKey() {
-        
+    public MappingStrategyKey(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
+        this.immutableRawSourceType = rawSourceType;
+        this.immutableSourceType = sourceType;
+        this.immutableDestinationType = destinationType;
+        this.immutableDestinationProvided = destinationProvided;
     }
     
     protected Class<?> getRawSourceType() {
-        return rawSourceType;
+        return immutableRawSourceType;
     }
 
     protected Type<?> getSourceType() {
-        return sourceType;
+        return immutableSourceType;
     }
 
     protected Type<?> getDestinationType() {
-        return destinationType;
+        return immutableDestinationType;
     }
-
+    
     protected boolean isDestinationProvided() {
-    	return destinationProvided;
-    }
-    
-    public void initialize(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
-        this.rawSourceType = rawSourceType;
-        this.sourceType = sourceType;
-        this.destinationType = destinationType;
-        this.destinationProvided = destinationProvided;
-    }
-    
-    public void clear() {
-        this.rawSourceType = null;
-        this.sourceType = null;
-        this.destinationType = null;
-    }
-    
-    public MappingStrategyKey toImmutableCopy() {
-        MappingStrategyKey copy = new ImmutableMappingStrategyKey(this.rawSourceType, this.sourceType, this.destinationType, this.destinationProvided);
-        clear();
-        return copy;
+    	return immutableDestinationProvided;
     }
     
     @Override
@@ -100,7 +74,7 @@ public class MappingStrategyKey {
             return true;
         if (obj == null)
             return false;
-        if (getClass() != obj.getClass() && ImmutableMappingStrategyKey.class != obj.getClass())
+        if (getClass() != obj.getClass())
             return false;
         MappingStrategyKey other = (MappingStrategyKey) obj;
         if (isDestinationProvided() != other.isDestinationProvided())
@@ -128,37 +102,4 @@ public class MappingStrategyKey {
     public String toString() {
     	return "[" + getRawSourceType().getSimpleName() + ", " + getSourceType() + ", " + getDestinationType() +"]";
     }
-    
-    public static class ImmutableMappingStrategyKey extends MappingStrategyKey {
-        
-        protected final Class<?> immutableRawSourceType;
-        protected final Type<?> immutableSourceType;
-        protected final Type<?> immutableDestinationType;
-        protected final boolean immutableDestinationProvided;
-        
-        public ImmutableMappingStrategyKey(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
-            this.immutableRawSourceType = rawSourceType;
-            this.immutableSourceType = sourceType;
-            this.immutableDestinationType = destinationType;
-            this.immutableDestinationProvided = destinationProvided;
-        }
-        
-        protected Class<?> getRawSourceType() {
-            return immutableRawSourceType;
-        }
-
-        protected Type<?> getSourceType() {
-            return immutableSourceType;
-        }
-
-        protected Type<?> getDestinationType() {
-            return immutableDestinationType;
-        }
-        
-        protected boolean isDestinationProvided() {
-        	return immutableDestinationProvided;
-        }
-        
-    }
-    
 }
