@@ -369,8 +369,8 @@ public class DefaultMapperFactory implements MapperFactory {
                          * immutable type, which would be valid.
                          */
 		        		if (ClassUtil.isImmutable(mapperKey.getBType()) && !objectFactoryRegistry.containsKey(mapperKey.getBType())) {
-		        		    throw new MappingException("No converter registered for " + mapperKey + ", nor any ObjectFactory " +
-		        		        "which can generate " + mapperKey.getBType() + " from " + mapperKey.getAType());
+		        		    throw new MappingException("No converter registered for conversion from " + mapperKey.getAType() + " to " + 
+		        		    		mapperKey.getBType() + ", nor any ObjectFactory which can generate " + mapperKey.getBType() + " from " + mapperKey.getAType());
 		        		}
 		        		
 	        		    if (LOGGER.isDebugEnabled()) {
