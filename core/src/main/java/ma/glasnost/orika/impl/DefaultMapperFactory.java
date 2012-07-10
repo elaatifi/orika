@@ -495,7 +495,11 @@ public class DefaultMapperFactory implements MapperFactory {
                             }
                         }
                     }
-                    objectFactoryRegistry.put(targetType, result);
+                    ObjectFactory<T> existing = (ObjectFactory<T>) objectFactoryRegistry.putIfAbsent(targetType, result);
+                    if (existing != null) {
+                    	result = existing;
+                    }
+                    
                 } else {
                     for (Constructor<?> constructor: constructors) {
                         if (constructor.getParameterTypes().length == 0) {

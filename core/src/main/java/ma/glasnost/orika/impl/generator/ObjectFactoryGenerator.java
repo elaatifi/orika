@@ -181,7 +181,7 @@ public class ObjectFactoryGenerator {
             String[] parameters = paranamer.lookupParameterNames(constructor);
             Class<?>[] constructorArguments = constructor.getParameterTypes();
             if (LOGGER.isDebugEnabled()) {
-            	LOGGER.debug("Attempting to resolve constructor parameters " + parameters + " against class map");
+            	LOGGER.debug("Attempting to resolve constructor parameters " + Arrays.toString(parameters) + " against class map");
             }
             
             // TODO need optimizations
@@ -225,7 +225,7 @@ public class ObjectFactoryGenerator {
                     throw new MappingException("While generating object factory for " + type + ": " +
                             "could not match all of the resolved constructor's parameters against the class-map.\n" +
                             "constructor = " + constructor + "\n" +
-                            "parameters = " + parameters + "\n" +
+                            "parameters = " + Arrays.toString(parameters) + "\n" +
                             "resolved = " + properties);
                 }
             }

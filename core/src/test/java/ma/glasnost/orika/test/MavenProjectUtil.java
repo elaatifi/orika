@@ -29,7 +29,7 @@ public class MavenProjectUtil {
 		while(classFolder != null && !(classFolder.isDirectory() && "target".equals(classFolder.getName())))
 			classFolder = classFolder.getParentFile();
 		
-		return classFolder.getParentFile();
+		return classFolder != null ? classFolder.getParentFile() : null;
 			
 	}
 }

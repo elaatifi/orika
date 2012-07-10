@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
@@ -185,23 +184,28 @@ public class DynamicSuite extends ParentRunner<Runner> {
 			while (!stack.isEmpty()) {
 
 				File file = stack.removeFirst();
-				
+
 				if (file.isDirectory()) {
 					// push
 					stack.addAll(Arrays.asList(file.listFiles()));
 				} else {
 					if (file.getName().endsWith(".class")) {
-						String className = file.getAbsolutePath().replace(classFolder.getAbsolutePath() + File.separator,"");
-						className = className.replaceAll("[\\\\/]", ".").replace(".class", "");
+						String className = file.getAbsolutePath().replace(
+								classFolder.getAbsolutePath() + File.separator,
+								"");
+						className = className.replaceAll("[\\\\/]", ".")
+								.replace(".class", "");
 						if (testCasePattern.matcher(className).matches()) {
 							if (!currentDirectory.equals(file.getParentFile())) {
 								currentDirectory = file.getParentFile();
-								currentPackage = currentDirectory.getAbsolutePath()
-										.substring(classFolderPathLength + 1);
-								currentPackage = currentPackage
-										.replaceAll("[\\/]", ".");
+								currentPackage = currentDirectory
+										.getAbsolutePath().substring(
+												classFolderPathLength + 1);
+								currentPackage = currentPackage.replaceAll(
+										"[\\/]", ".");
 							}
-							testCases.add(Class.forName(className, false, tccl));
+							testCases
+									.add(Class.forName(className, false, tccl));
 						}
 					}
 				}
@@ -273,7 +277,9 @@ public class DynamicSuite extends ParentRunner<Runner> {
 				this.fRunners = new ArrayList<Runner>(runners.size());
 				for (Runner runner : runners) {
 					if (!(runner instanceof BlockJUnit4ClassRunner)) {
-						throw new IllegalArgumentException("Unexpected Runner type: " + runner.getClass().getName());
+						throw new IllegalArgumentException(
+								"Unexpected Runner type: "
+										+ runner.getClass().getName());
 					}
 					fRunners.add(proxyFactory.forTestScenario(runner,
 							scenarioName));
@@ -316,7 +322,7 @@ public class DynamicSuite extends ParentRunner<Runner> {
 	private static class TestScenarioProxyFactory {
 
 		private ClassPool pool;
-		private Map<String, Class<Runner>> proxyCache;
+		private ConcurrentHashMap<String, Class<Runner>> proxyCache;
 
 		private TestScenarioProxyFactory() {
 			this.pool = new ClassPool();
@@ -331,28 +337,35 @@ public class DynamicSuite extends ParentRunner<Runner> {
 					+ "_$$_Proxy";
 			Class<? extends Runner> proxyClass = proxyCache.get(proxyName);
 			if (proxyClass == null) {
-				synchronized (proxyCache) {
-					proxyClass = proxyCache.get(proxyName);
-					if (proxyClass == null) {
-						try {
+
+				try {
+					try {
+						/*
+						 * Try to load the class; in case another javassist pool
+						 * has already created this class, just reuse it.
+						 */
+						proxyClass = (Class<? extends Runner>) pool
+								.getClassLoader().loadClass(proxyName);
+					} catch (ClassNotFoundException e) {
+						synchronized (pool) {
 							try {
-								/*
-								 * Try to load the class; in case another javassist pool has already
-								 * created this class, just reuse it.
-								 */
 								proxyClass = (Class<? extends Runner>) pool
 										.getClassLoader().loadClass(proxyName);
-							} catch (ClassNotFoundException e) {
+							} catch (ClassNotFoundException e2) {
 								/*
-								 * Generate a subclass of the provided type, where the
-								 * testName method is overridden to provide the modified
-								 * name which includes the scenario
+								 * Generate a subclass of the provided type,
+								 * where the testName method is overridden to
+								 * provide the modified name which includes the
+								 * scenario
 								 */
-								CtClass superClass = pool.get(delegate.getClass().getName());
+								CtClass superClass = pool.get(delegate
+										.getClass().getName());
 								CtClass subClass = pool.makeClass(proxyName);
 								subClass.setSuperclass(superClass);
 
-								CtField scenarioNameField = CtField.make("private java.lang.String scenarioName;", subClass);
+								CtField scenarioNameField = CtField
+										.make("private java.lang.String scenarioName;",
+												subClass);
 								subClass.addField(scenarioNameField);
 
 								CtMethod overriddenMethod = CtMethod
@@ -370,12 +383,18 @@ public class DynamicSuite extends ParentRunner<Runner> {
 										.setBody("{ super($1); this.scenarioName = $2; }");
 								subClass.addConstructor(constructor);
 								proxyClass = subClass.toClass();
+
 							}
-							proxyCache.put(proxyName, (Class<Runner>) proxyClass);
-						} catch (Exception e) {
-							throw new RuntimeException(e);
 						}
 					}
+
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
+				Class<Runner> existing = proxyCache.putIfAbsent(proxyName,
+						(Class<Runner>) proxyClass);
+				if (existing != null) {
+					proxyClass = existing;
 				}
 			}
 

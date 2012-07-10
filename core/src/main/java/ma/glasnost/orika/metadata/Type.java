@@ -32,8 +32,8 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     private final Type<?>[] actualTypeArguments;
     private final boolean isParameterized;
     private Map<TypeVariable<?>, Type<?>> typesByVariable;
-    private Type<?> superType;
-    private Type<?>[] interfaces;
+    private volatile Type<?> superType;
+    private volatile Type<?>[] interfaces;
     private Type<?> componentType;
     private final TypeKey key;
 
