@@ -25,7 +25,6 @@ import java.util.Map;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.UtilityResolver;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
@@ -217,15 +216,15 @@ public class GenericsTestCase {
         /*
          * We map the field types explicitly for the separate type mappings
          */
-        factory.registerClassMap(ClassMapBuilder.map(_Holder_String, _Container_String)
+        factory.registerClassMap(factory.classMap(_Holder_String, _Container_String)
                 .field("held", "contained")
                 .byDefault()
                 .toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(_Holder_Long, _Container_String)
+        factory.registerClassMap(factory.classMap(_Holder_Long, _Container_String)
                 .field("held", "contained")
                 .byDefault()
                 .toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(_Holder_Long, _Container_Long)
+        factory.registerClassMap(factory.classMap(_Holder_Long, _Container_Long)
                 .field("held", "secondaryContained")
                 .byDefault()
                 .toClassMap());

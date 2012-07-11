@@ -315,6 +315,10 @@ public class MapperFacadeImpl implements MapperFacade {
 	            throw new MappingException("[sourceObject] can not be null.");
 	        }
 	        
+	        if (context.isAlreadyMapped(sourceObject, destinationType)) {
+                return;
+            }
+	        
 	        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, true);
 	        
 	        MappingStrategy strategy = strategyCache.get(key);
@@ -331,6 +335,8 @@ public class MapperFacadeImpl implements MapperFacade {
 	            strategyRecorder.setResolvedSourceType(theSourceType);
 	            strategyRecorder.setResolvedDestinationType(theDestinationType);
 	            strategyRecorder.setResolvedMapper(mapper);
+	            
+	            context.cacheMappedObject(sourceObject, destinationType, destinationObject);
 	            
 	            mapDeclaredProperties(sourceObject, destinationObject, theSourceType, theDestinationType, context, mapper, strategyRecorder);
 	            

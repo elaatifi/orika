@@ -117,20 +117,18 @@ public abstract class TypeFactory {
      * @param rawType
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public static <E> Type<E> valueOf(final Class<?> rawType) {
+    public static <E> Type<E> valueOf(final Class<E> rawType) {
         if (rawType == null) {
             return null;
         } else if (rawType.isAnonymousClass() && rawType.getGenericSuperclass() instanceof ParameterizedType) {
             ParameterizedType genericSuper = (ParameterizedType) rawType.getGenericSuperclass();
             return valueOf(genericSuper);
         } else {
-            return (Type<E>) intern(rawType, new java.lang.reflect.Type[0], new HashSet<java.lang.reflect.Type>());
+            return intern(rawType, new java.lang.reflect.Type[0], new HashSet<java.lang.reflect.Type>());
         }
     }
-    
-    @SuppressWarnings("unchecked")
-    public static <E> Type<E> limitedValueOf(final Class<?> rawType, Set<java.lang.reflect.Type> recursiveBounds, final java.lang.reflect.Type... actualTypeArguments) {
+
+    public static <E> Type<E> limitedValueOf(final Class<E> rawType, Set<java.lang.reflect.Type> recursiveBounds, final java.lang.reflect.Type... actualTypeArguments) {
         if (rawType == null) {
             return null;
         } else if (rawType.isAnonymousClass() && rawType.getGenericSuperclass() instanceof ParameterizedType) {
@@ -146,8 +144,7 @@ public abstract class TypeFactory {
      * @param actualTypeArguments
      * @return
      */
-    @SuppressWarnings("unchecked")
-    public static <E> Type<E> valueOf(final Class<?> rawType, final java.lang.reflect.Type... actualTypeArguments) {
+    public static <E> Type<E> valueOf(final Class<E> rawType, final java.lang.reflect.Type... actualTypeArguments) {
         if (rawType == null) {
             return null;
         } else {
@@ -181,7 +178,7 @@ public abstract class TypeFactory {
             // recursively-defined types...
             return (Type<T>) valueOf(Enum.class, new Type<?>[0]);
         } else {
-            return valueOf((Class<? extends T>) type.getRawType(), type.getActualTypeArguments());
+            return valueOf((Class<T>) type.getRawType(), type.getActualTypeArguments());
         }
     }
     
@@ -193,7 +190,7 @@ public abstract class TypeFactory {
             // recursively-defined types...
             return (Type<T>) valueOf(Enum.class, new Type<?>[0]);
         } else {
-            return limitedValueOf((Class<? extends T>) type.getRawType(), recursiveBounds, type.getActualTypeArguments());
+            return limitedValueOf((Class<T>) type.getRawType(), recursiveBounds, type.getActualTypeArguments());
         }
     }
     

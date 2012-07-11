@@ -19,12 +19,21 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
+import static ma.glasnost.orika.impl.Specifications.aMapToArray;
+import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
+import static ma.glasnost.orika.impl.Specifications.aMapToMap;
+import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
+import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
+import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
+import static ma.glasnost.orika.impl.Specifications.anArray;
+import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
+import static ma.glasnost.orika.impl.Specifications.immutable;
+import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
 
 import java.util.Map;
 import java.util.Set;
-
-import org.slf4j.Logger;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
@@ -35,10 +44,11 @@ import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.FieldMapBuilder;
-import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+
+import org.slf4j.Logger;
 
 public class CodeSourceBuilder {
     
@@ -46,13 +56,13 @@ public class CodeSourceBuilder {
     private final UsedTypesContext usedTypes;
     private final UsedConvertersContext usedConverters;
     private final MapperFactory mapperFactory;
-    private final Logger logger;
+    //private final Logger logger;
     
     public CodeSourceBuilder(UsedTypesContext usedTypes, UsedConvertersContext usedConverters, MapperFactory mapperFactory, Logger logger) {
         this.usedTypes = usedTypes;
         this.usedConverters = usedConverters;
         this.mapperFactory = mapperFactory;
-        this.logger = logger;
+        //this.logger = logger;
     }
     
     private String usedConverter(Converter<?,?> converter) {
@@ -69,7 +79,7 @@ public class CodeSourceBuilder {
         return usedType(r.type());
     }
     
-    public CodeSourceBuilder convert(VariableRef d, VariableRef s, Converter converter) {
+    public CodeSourceBuilder convert(VariableRef d, VariableRef s, Converter<Object, Object> converter) {
           
         //converterId = getConverterId(converterId);  
         //String statement = d.assign("mapperFacade.convert(%s, %s, %s, %s)", s.asWrapper(), usedType(s), usedType(d), converterId);
@@ -85,10 +95,10 @@ public class CodeSourceBuilder {
         return this;
     }
     
-    private String getConverterId(String converterId) {
-        converterId = converterId == null ? "null" : ("\"" + converterId + "\"");
-        return converterId;
-    }
+//    private String getConverterId(String converterId) {
+//        converterId = converterId == null ? "null" : ("\"" + converterId + "\"");
+//        return converterId;
+//    }
     
     public CodeSourceBuilder copyByReference(VariableRef d, VariableRef s) {
         return statement(d.assign(s));
@@ -126,11 +136,11 @@ public class CodeSourceBuilder {
 	        /*
 	         * Instead, create a new element
 	         */
-	        VariableRef collection = new VariableRef(d.type(), "destinationCollection");
-	        newLine().append("%s.clear();", d);
-	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", d, d.collectionType(),
-	                s, usedType(s.elementType()), usedType(d.elementType()));
-	        
+//	        VariableRef collection = new VariableRef(d.type(), "destinationCollection");
+//	        newLine().append("%s.clear();", d);
+//	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", d, d.collectionType(),
+//	                s, usedType(s.elementType()), usedType(d.elementType()));
+//	        
         }
         if (ip != null) {
             final VariableRef inverse = new VariableRef(ip, "orikaCollectionItem");
@@ -451,8 +461,8 @@ public class CodeSourceBuilder {
 	
 	
 	private VariableRef entrySetRef(VariableRef s) {
-		@SuppressWarnings("unchecked")
-		Type<Set<Map.Entry<Object, Object>>> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
+		@SuppressWarnings({ "unchecked", "rawtypes" })
+		Type<Set> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
 		return new VariableRef(sourceEntryType, s + ".entrySet()");
 	}
 	
