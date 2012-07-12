@@ -95,7 +95,7 @@ public class CodeSourceBuilder {
     }
     
     private String getUsedElementType(Property prop) {
-        return getUsedType(prop.isArray() ? prop.getType().getComponentType() :prop.getElementType());
+        return getUsedType(prop.isArray() ? prop.getType().getComponentType() : prop.getElementType());
     }
     
     public CodeSourceBuilder assertType(String var, Class<?> clazz) {
@@ -116,12 +116,10 @@ public class CodeSourceBuilder {
         final Class<?> destinationClass = destination.getRawType();
         converterId = getConverterId(converterId);
         
-        
-        if(source.isPrimitive()) {
-        	String sourceWrapperClassName = ClassUtil.getWrapperType(source.getRawType()).getCanonicalName();
-        	typeCastGetter = String.format("(%s) %s.valueOf(%s)", sourceWrapperClassName, sourceWrapperClassName, typeCastGetter);
+        if (source.isPrimitive()) {
+            String sourceWrapperClassName = ClassUtil.getWrapperType(source.getRawType()).getCanonicalName();
+            typeCastGetter = String.format("(%s) %s.valueOf(%s)", sourceWrapperClassName, sourceWrapperClassName, typeCastGetter);
         }
-        
         
         String exprValue = String.format("mapperFacade.convert(%s, %s, %s, %s)", typeCastGetter, sourceType, targetType, converterId);
         
@@ -132,14 +130,12 @@ public class CodeSourceBuilder {
         
         String value = String.format("(%s) %s", destinationClass.getCanonicalName(), exprValue);
         
-        
-        
         newLine();
-        if(!source.isPrimitive())
-        	ifSourceNotNull(source).then();
+        if (!source.isPrimitive())
+            ifSourceNotNull(source).then();
         append(String.format(typeCastSetter + ";", value));
-        if(!source.isPrimitive())
-        	end();
+        if (!source.isPrimitive())
+            end();
         
         return this;
     }
@@ -184,7 +180,7 @@ public class CodeSourceBuilder {
         
         boolean destinationHasSetter = false;
         try {
-            destinationHasSetter = (dc.getMethod(dp.getSetterName(), dp.getRawType()) != null);
+            destinationHasSetter = hasSetter(dp, dc);
             
         } catch (Exception e) {
             /* ignored: no destination setter available */
@@ -195,15 +191,16 @@ public class CodeSourceBuilder {
         }
         // Start check if source property ! = null
         ifSourceNotNull(sp).then();
-        if(sp.isArray()) {
-        	if(sp.getType().getComponentType().isPrimitive())
-        		newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
-        	else 
-        		newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        if (sp.isArray()) {
+            if (sp.getType().getComponentType().isPrimitive())
+                newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+            else
+                newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", destinationGetter, sourceGetter,
+                        dp.getType().getCanonicalName());
         } else {
-	        newLine().append("%s.clear();", destinationGetter);
-	        newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
-	                sourceGetter, sourceType, destinationElementType);
+            newLine().append("%s.clear();", destinationGetter);
+            newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
+                    sourceGetter, sourceType, destinationElementType);
         }
         if (ip != null) {
             final String ipGetter = getGetter(ip, "orikaCollectionItem");
@@ -241,6 +238,10 @@ public class CodeSourceBuilder {
         elze().setDestinationNull(dp).end();
         
         return this;
+    }
+
+    private boolean hasSetter(Property dp, final Class<?> dc) throws NoSuchMethodException {
+        return dp.getSetter().indexOf('=') != -1 || (dc.getMethod(dp.getSetterName(), dp.getRawType()) != null);
     }
     
     public CodeSourceBuilder newLine() {
@@ -510,7 +511,7 @@ public class CodeSourceBuilder {
     
     public CodeSourceBuilder setDestinationNull(Property dp) {
         if (dp.getSetter() != null)
-            append(getSetter(dp, "destination") + ";", "null" );
+            append(getSetter(dp, "destination") + ";", "null");
         return this;
     }
     
