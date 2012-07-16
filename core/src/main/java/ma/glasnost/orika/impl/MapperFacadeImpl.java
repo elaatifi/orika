@@ -117,10 +117,10 @@ public class MapperFacadeImpl implements MapperFacade {
                      * than applying unenhancement which could result in another type which 
                      * would not use that mapper
                      */
-                    if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType)) {
-                        newlyResolvedType = sourceObjectType;
-                    } else if (mapperFactory.existsRegisteredMapper(sourceType, destinationType)) {
+                    if (mapperFactory.existsRegisteredMapper(sourceType, destinationType)) {
                         newlyResolvedType = sourceType;
+                    } else if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType)) {
+                        newlyResolvedType = sourceObjectType;
                     } else if (ClassUtil.isConcrete(sourceType)) {
                         newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
                     } else {

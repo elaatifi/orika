@@ -103,11 +103,11 @@ public abstract class TypeFactory {
     }
     
     private static <T> Type<T> createType(TypeKey key, Class<T> rawType, Type<?>[] typeArguments) {
-        Map<TypeVariable<?>, Type<?>> typesByVariable = null;
+        Map<String, Type<?>> typesByVariable = null;
         if (typeArguments.length > 0) {
-            typesByVariable = new HashMap<TypeVariable<?>, Type<?>>(typeArguments.length);
+            typesByVariable = new HashMap<String, Type<?>>(typeArguments.length);
             for (int i = 0, len = typeArguments.length; i < len; ++i) {
-                typesByVariable.put(rawType.getTypeParameters()[i], typeArguments[i]);
+                typesByVariable.put(rawType.getTypeParameters()[i].getName(), typeArguments[i]);
             }
         }
         return new Type<T>(key, rawType, typesByVariable, typeArguments);
