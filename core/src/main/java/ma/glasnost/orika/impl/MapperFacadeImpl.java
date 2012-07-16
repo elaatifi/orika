@@ -327,7 +327,7 @@ public class MapperFacadeImpl implements MapperFacade {
 	        } else {
 	            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
 	        
-	            final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), null);
+	            final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), destinationType);
 	            final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);
 	            
 	            final Mapper<Object, Object> mapper = prepareMapper(theSourceType, theDestinationType);
