@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.impl;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -136,162 +137,164 @@ public class ConfigurableMapper implements MapperFacade {
         return facade.map(sourceObject, destinationClass);
     }
 
-
     public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
         return facade.map(sourceObject, destinationClass, context);
     }
-
 
     public <S, D> void map(S sourceObject, D destinationObject) {
         facade.map(sourceObject, destinationObject);
     }
 
-
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
         facade.map(sourceObject, destinationObject, context);
     }
-
 
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType) {
         facade.map(sourceObject, destinationObject, sourceType, destinationType);
     }
 
-
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         facade.map(sourceObject, destinationObject, sourceType, destinationType, context);
     }
-
 
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass) {
         return facade.mapAsSet(source, destinationClass);
     }
 
-
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
         return facade.mapAsSet(source, destinationClass, context);
     }
-
 
     public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass) {
         return facade.mapAsSet(source, destinationClass);
     }
 
-
     public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass, MappingContext context) {
         return facade.mapAsSet(source, destinationClass, context);
     }
-
 
     public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass) {
         return facade.mapAsList(source, destinationClass);
     }
 
-
     public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
         return facade.mapAsList(source, destinationClass, context);
     }
-
 
     public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass) {
         return facade.mapAsList(source, destinationClass);
     }
 
-
     public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context) {
         return facade.mapAsList(source, destinationClass, context);
     }
-
 
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass) {
         return facade.mapAsArray(destination, source, destinationClass);
     }
 
-
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass) {
         return facade.mapAsArray(destination, source, destinationClass);
     }
-
 
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context) {
         return facade.mapAsArray(destination, source, destinationClass, context);
     }
 
-
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context) {
         return facade.mapAsArray(destination, source, destinationClass, context);
     }
-
 
     public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType) {
         return facade.map(sourceObject, sourceType, destinationType);
     }
 
-
     public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.map(sourceObject, sourceType, destinationType, context);
     }
-
 
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
         return facade.mapAsSet(source, sourceType, destinationType);
     }
 
-
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.mapAsSet(source, sourceType, destinationType, context);
     }
-
 
     public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType) {
         return facade.mapAsSet(source, sourceType, destinationType);
     }
 
-
     public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.mapAsSet(source, sourceType, destinationType, context);
     }
-
 
     public <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
         return facade.mapAsList(source, sourceType, destinationType);
     }
 
-
     public <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.mapAsList(source, sourceType, destinationType, context);
     }
-
 
     public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType) {
         return facade.mapAsList(source, sourceType, destinationType);
     }
 
-
     public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.mapAsList(source, sourceType, destinationType, context);
     }
-
 
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
         return facade.mapAsArray(destination, source, sourceType, destinationType);
     }
 
-
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType) {
         return facade.mapAsArray(destination, source, sourceType, destinationType);
     }
-
 
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.mapAsArray(destination, source, sourceType, destinationType, context);
     }
 
-
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         return facade.mapAsArray(destination, source, sourceType, destinationType, context);
     }
+    
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass) {
+        facade.mapAsCollection(source, destination, destinationClass);
+    }
 
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
+        facade.mapAsCollection(source, destination, destinationClass, context);
+    }
 
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationCollection) {
+        facade.mapAsCollection(source, destination, destinationCollection);
+    }
+
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationCollection, MappingContext context) {
+        facade.mapAsCollection(source, destination, destinationCollection, context);
+    }
+
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
+        facade.mapAsCollection(source, destination, sourceType, destinationType);
+    }
+
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
+        facade.mapAsCollection(source, destination, sourceType, destinationType);
+    }
+
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType,
+            MappingContext context) {
+        facade.mapAsCollection(source, destination, sourceType, destinationType, context);
+    }
+
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType,
+            MappingContext context) {
+        facade.mapAsCollection(source, destination, sourceType, destinationType, context);
+    }
+    
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
         return facade.convert(source, sourceType, destinationType, converterId);
     }

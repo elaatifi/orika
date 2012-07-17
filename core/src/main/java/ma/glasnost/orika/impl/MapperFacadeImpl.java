@@ -22,8 +22,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -443,6 +441,48 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
+    /**
+     * Map an iterable onto an existing collection
+     * 
+     * @param source the source iterable
+     * @param destination the destination into which the results will be mapped
+     * @param sourceType the type of 
+     * @param destinationType
+     * @param context
+     */
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        if (source == null) {
+            return;
+        }
+        if (destination != null) {
+            destination.clear();
+            for (S item : source) {
+                destination.add(map(item, sourceType, destinationType, context));
+            }
+        }
+    }
+    
+    /**
+     * Map an array onto an existing collection
+     * 
+     * @param source
+     * @param destination
+     * @param sourceType
+     * @param destinationType
+     * @param context
+     */
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+        if (source == null) {
+            return;
+        }
+        if (destination != null) {
+            destination.clear();
+            for (S item : source) {
+                destination.add(map(item, sourceType, destinationType, context));
+            }
+        }
+    }
+    
     Mapper<Object, Object> prepareMapper(Type<?> sourceType, Type<?> destinationType) {
         final MapperKey mapperKey = new MapperKey(sourceType, destinationType);
         final Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
@@ -506,6 +546,9 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFacade#newObject(java.lang.Object, ma.glasnost.orika.metadata.Type, ma.glasnost.orika.MappingContext)
+     */
     public <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context) {
         return newObject(sourceObject, destinationType, context, null);
     }
@@ -530,49 +573,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
         return destination;
     }   
-    
-    /**
-     * Merges one collection into another; existing elements in the destination
-     * collection are modified in-place (where possible). New values are added,
-     * and any values without a corresponding value in the source are removed.
-     * 
-     * @param source the source iterable
-     * @param sourceType the source type
-     * @param destinationType the destination type
-     * @param destination the destination collection
-     * @param context the current mapping context
-     * @return
-     */
-    <S, D> void mergeCollection(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, Collection<D> destination,
-            MappingContext context) {
-        
-    	/*
-    	 * TODO: see if this will work...
-    	 */
-    	
-        if (source == null || destination == null) {
-            return;
-        }
-        
-        Map<D,S> newValues = new LinkedHashMap<D,S>(destination.size());
-        for (final S item : source) {
-        	newValues.put(map(item, sourceType, destinationType, context), item);
-        }
-        
-        destination.retainAll(newValues.values());
-        
-        Iterator<D> iter = destination.iterator();
-        while (iter.hasNext()) {
-        	D existing = iter.next();
-        	S item = newValues.remove(existing);
-        	if (item != null) {
-        		map(item, existing, sourceType, destinationType, context);
-        	}
-        }
-        destination.addAll(newValues.keySet());
-    }
-    
-    
+
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
         final Type<? extends Object> sourceClass = normalizeSourceType(source, sourceType, destinationType);
@@ -748,6 +749,31 @@ public class MapperFacadeImpl implements MapperFacade {
         Type<MapEntry<Sk,Sv>> entryType = MapEntry.concreteEntryType(sourceType);
         
         return mapAsArray(destination, MapEntry.entrySet(source), entryType, destinationType, context);
+    }
+
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass) {
+        mapAsCollection(source, destination, destinationClass, new MappingContext());
+    }
+
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
+        mapAsCollection(source, destination, null, TypeFactory.valueOf(destinationClass), context);
+    }
+    
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass) {
+        mapAsCollection(source, destination, destinationClass, new MappingContext());
+    }
+
+    @SuppressWarnings("unchecked")
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
+        mapAsCollection(source, destination, (Type<S>)TypeFactory.valueOf(source.getClass().getComponentType()), TypeFactory.valueOf(destinationClass), context);
+    }
+
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
+        mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
+    }
+
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
+        mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
     }
     
 }
