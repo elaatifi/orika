@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<parent>
 		<artifactId>orika-parent</artifactId>
 		<groupId>ma.glasnost.orika</groupId>
 		<version>1.1.9-SNAPSHOT</version>
 	</parent>
-	
+
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>orika-eclipse-tools</artifactId>
 	<name>Orika - eclipse-jdt Dependencies</name>
@@ -16,18 +17,18 @@
 
 	<dependencies>
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-        </dependency>
-    
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
+
 		<dependency>
 			<groupId>org.sonatype.tycho</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
 			<version>3.5.2.v_981_R35x</version>
 			<scope>compile</scope>
 		</dependency>
-        
+
 		<dependency>
 			<groupId>org.eclipse</groupId>
 			<artifactId>text</artifactId>
@@ -40,7 +41,7 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-        
+
 		<dependency>
 			<groupId>org.eclipse.core</groupId>
 			<artifactId>runtime</artifactId>
@@ -53,43 +54,43 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
-	
+
 	</dependencies>
 
-    <profiles>
-        <profile>
-            <id>docs</id>
-            <build>
-                <plugins>
-                    <!-- Generate a source jar for the project -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-source-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-sources</id>
-                            </execution>
-                        </executions>
-                        <configuration>
-                            <attach>true</attach>
-                        </configuration>
-                    </plugin>
-                    <!-- Generate a JavaDoc jar for the project -->
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-javadoc-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>attach-javadocs</id>
-                                <goals>
-                                    <goal>jar</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
+	<profiles>
+		<profile>
+			<id>docs</id>
+			<build>
+				<plugins>
+					<!-- Generate a source jar for the project -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-source-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-sources</id>
+							</execution>
+						</executions>
+						<configuration>
+							<attach>true</attach>
+						</configuration>
+					</plugin>
+					<!-- Generate a JavaDoc jar for the project -->
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 
 </project>
