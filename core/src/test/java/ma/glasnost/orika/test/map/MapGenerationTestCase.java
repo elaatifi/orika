@@ -11,6 +11,7 @@ import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 
@@ -241,6 +242,98 @@ public class MapGenerationTestCase {
 		
 		Assert.assertNotNull(result.getScores());
 		
+	}
+	
+	@Test
+	public void testNewSyntax_mapToArrays() throws Exception {
+		
+		
+		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		factory.registerClassMap(
+				factory.classMap(MapWithoutSetter.class, GenericDto.class)
+				.field("scores[key]", "stringArray[]")
+				.field("scores[value]", "intArray[]")
+				.byDefault());
+        
+		@SuppressWarnings("serial")
+		Map<String, Map.Entry<String, Integer>> testScoresMap = 
+			new LinkedHashMap<String, Map.Entry<String, Integer>>() {{
+        		put("A", new MyMapEntry<String, Integer>("A",90));
+        		put("B", new MapEntry<String, Integer>("B",80));
+        		put("C", new MapEntry<String, Integer>("C",70));
+        		put("D", new MapEntry<String, Integer>("D",60));
+        		put("F", new MapEntry<String, Integer>("F",50));
+        	}};
+		
+        /*
+         * Tell Orika how we should convert the list element type to map entry
+         */
+		MapperFacade mapper = factory.getMapperFacade();
+		
+		GenericDto source = new GenericDto();
+		List<String> testScores = new ArrayList<String>();
+		List<Integer> numericScores = new ArrayList<Integer>();
+		testScores.add("A");
+		numericScores.add(90);
+		testScores.add("B");
+		numericScores.add(80);
+		testScores.add("C");
+		numericScores.add(70);
+		source.setStringArray(testScores.toArray(new String[testScores.size()]));
+		source.setIntArray(ClassUtil.intArray(numericScores));
+		
+		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		
+		Assert.assertNotNull(result.getScores());
+		
+	}
+	
+	/**
+	 * Demonstrates how a single field can be mapped to more than one destination,
+	 * in both directions.
+	 * 
+	 * @throws Exception
+	 */
+	@Test
+	public void testNewSyntax_map$key() throws Exception {
+		
+		
+		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		factory.registerClassMap(
+				factory.classMap(MapWithoutSetter.class, GenericDto.class)
+				.field("scores[key]", "stringArray[]")
+				.field("scores[value]", "intArray[]")
+				.field("scores[key]", "gradeList[letterGrade]")
+				.field("scores[value]", "gradeList[minimumScore]")
+				.byDefault());
+        
+		MapWithoutSetter source = new MapWithoutSetter();
+		source.setScores(
+				new LinkedHashMap<String, String>() {{
+        		put("A", "90");
+        		put("B", "80");
+        		put("C", "70");
+        		put("D", "60");
+        		put("F", "50");
+        	}});
+		
+        /*
+         * Tell Orika how we should convert the list element type to map entry
+         */
+		MapperFacade mapper = factory.getMapperFacade();
+		
+		GenericDto result = mapper.map(source, GenericDto.class);
+		
+		Assert.assertNotNull(result.getGradeList());
+		Assert.assertEquals(source.getScores().size(), result.getGradeList().size());
+		for (Grade g: result.getGradeList()) {
+			Assert.assertTrue(source.getScores().containsKey(""+g.getLetterGrade()));
+			Assert.assertTrue(source.getScores().get(""+g.getLetterGrade()).equals(""+g.getMinimumScore()));
+		}
+		
+		MapWithoutSetter mapBack = mapper.map(result, MapWithoutSetter.class);
+		Assert.assertTrue(source.getScores().keySet().containsAll(mapBack.getScores().keySet()));
+		Assert.assertTrue(mapBack.getScores().keySet().containsAll(source.getScores().keySet()));
 	}
 	
 	public static class MyMapEntry<K,V> implements Map.Entry<K, V> {

@@ -553,6 +553,12 @@ public class DefaultMapperFactory implements MapperFactory {
     @SuppressWarnings("unchecked")
     public <A, B> void registerClassMap(ClassMap<A, B> classMap) {
         classMapRegistry.put(new MapperKey(classMap.getAType(), classMap.getBType()), (ClassMap<Object, Object>) classMap);
+        if (isBuilding || isBuilt) {
+        	buildMapper(classMap);
+        	
+        	buildObjectFactories(classMap);
+            initializeUsedMappers(classMap);
+        }
     }
     
     public <A, B> void registerClassMap(ClassMapBuilder<A, B> builder) {

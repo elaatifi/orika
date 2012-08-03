@@ -135,7 +135,7 @@ public class ObjectFactoryGenerator {
     private void addCreateMethod(GeneratedSourceCode context, UsedTypesContext usedTypes, 
     		UsedConvertersContext usedConverters, Type<?> clazz, StringBuilder logDetails) throws CannotCompileException {
     	
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory, LOGGER);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
@@ -216,8 +216,8 @@ public class ObjectFactoryGenerator {
                         Property destProp = new Property();
                         destProp.setName(name);
                         destProp.setType(TypeFactory.valueOf(rawType));
-                        properties.add(new FieldMap(sourceProps.get(name), destProp, null, null, MappingDirection.A_TO_B, false, false,
-                                null));
+                        properties.add(new FieldMap(sourceProps.get(name), destProp, null, null, MappingDirection.A_TO_B, false,
+                                null, null));
                     }
                 }
                 // Still couldn't find all of the properties?

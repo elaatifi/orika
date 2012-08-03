@@ -19,6 +19,7 @@
 package ma.glasnost.orika.impl.generator;
 
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -114,7 +115,7 @@ public final class MapperGenerator {
         	}
         }
     	
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory, LOGGER);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ")
                 .append(mapMethod)
@@ -135,6 +136,7 @@ public final class MapperGenerator {
         out.statement("super.%s(a, b, mappingContext);", mapMethod);
         out.statement(source.declare("a"));
         out.statement(destination.declare("b"));
+        LinkedList<FieldMap> nestedFieldMaps = new LinkedList<FieldMap>();
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
             
@@ -158,6 +160,11 @@ public final class MapperGenerator {
                 fieldMap = fieldMap.flip();
             }
             
+            if (fieldMap.getElementMap() != null) {
+            	nestedFieldMaps.add(fieldMap);
+            	continue;
+            }
+            
             if (logDetails != null) {
         		logDetails.append(getFieldTag(fieldMap));
         	}
@@ -177,6 +184,13 @@ public final class MapperGenerator {
             	logDetails.append("ignored for this mapping direction");
             }
         }
+        
+        while (!nestedFieldMaps.isEmpty()) {
+        	Set<FieldMap> associated = out.getAssociatedMappings(nestedFieldMaps, nestedFieldMaps.getFirst());
+        	nestedFieldMaps.removeAll(associated);
+        	out.fromMultiOccurrenceToMultiOccurrence(associated, logDetails);
+        }
+        
         out.append("\n\t\tif(customMapper != null) { \n\t\t\t customMapper.")
                 .append(mapMethod)
                 .append("(source, destination, mappingContext);\n\t\t}");
@@ -213,39 +227,24 @@ public final class MapperGenerator {
         final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
         
         if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection())) {
-            return;
+            if (logDetails != null) {
+            	logDetails.append("excluding because ");
+    			if (!sourceProperty.isReadable()) {
+    				logDetails.append(fieldMap.getSource().getType() + "." + fieldMap.getSource().getName() + " is not readable");
+    			} else {
+    				// TODO: this brings up an important case: sometimes the destination is not assignable, 
+    				// but it's properties can still be mapped in-place. Should we handle it?
+    				logDetails.append(fieldMap.getDestination().getType() + "." + fieldMap.getDestination().getName() + " is neither assignable nor a collection");
+    			}		
+            }
+        	return;
         }
         
-        // Make sure the source and destination types are accessible to the
-        // builder
+        // Make sure the source and destination types are accessible to the builder
         compilerStrategy.assureTypeIsAccessible(sourceProperty.rawType());
         compilerStrategy.assureTypeIsAccessible(destinationProperty.rawType());
-        
-        try {
-            //
-            // Ensure that there we will not cause a NPE
-            //
-            if (sourceProperty.isNestedProperty()) {
-                code.ifPathNotNull(sourceProperty).then();
-            }
-            
-            if (destinationProperty.isNestedProperty()) {
-                code.assureInstanceExists(destinationProperty);
-            }
-            
-            code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType, logDetails);
-                        
-            // Close up, and set null to destination
-            if (sourceProperty.isNestedProperty()) {
-                code.end();
-            }
-            
-        } catch (final Exception e) {
-            if (fieldMap.isConfigured()) {
-                throw e;
-                // elsewise ignore
-            }
-        }
+
+        code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType, logDetails);
     }
     
 }

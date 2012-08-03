@@ -23,7 +23,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
+import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
@@ -106,8 +109,20 @@ public class VariableRef {
         return property != null ? property.isCollection() : Collection.class.isAssignableFrom(rawType());
     }
     
+    public boolean isList() {
+    	return property != null ? property.isList() : List.class.isAssignableFrom(rawType());
+    }
+    
+    public boolean isSet() {
+    	return property != null ? property.isSet() : Set.class.isAssignableFrom(rawType());
+    }
+    
     public boolean isMap() {
     	return property != null ? property.isMap() : Map.class.isAssignableFrom(rawType());
+    }
+    
+    public boolean isMapEntry() {
+    	return Entry.class.isAssignableFrom(rawType());
     }
     
     public boolean isWrapper() {
@@ -126,10 +141,13 @@ public class VariableRef {
         return elementType() != null ? elementType().getCanonicalName() : null;
     }
     
-    public Type<?> elementType() {
+    @SuppressWarnings("unchecked")
+	public Type<?> elementType() {
        
         if (type.getRawType().isArray()) {
             return type.getComponentType();
+        } else if (type.isMap()) {
+        	return MapEntry.concreteEntryType((Type<Map<Object,Object>>) type);
         } else {
             return property != null ? property.getElementType() : ((Type<?>)type.getActualTypeArguments()[0]); 
         }
@@ -214,6 +232,14 @@ public class VariableRef {
             } else if (type.isPrimitive() && value.type().isPrimitiveWrapper()) {
                 expr = format("((%s)%s).%sValue()", ClassUtil.getWrapperType(rawType()).getCanonicalName(), expr,
                         primitiveType(rawType()));
+            } else if (type.isArray() && value.isCollection()) {
+            	if (type.getComponentType().isPrimitive() && value.elementType().isPrimitiveWrapper()) {
+                    String wrapperType = ClassUtil.getWrapperType(rawType().getComponentType()).getCanonicalName();
+                    expr = format("(%s[])%s.toArray(new %s[0])", wrapperType, expr, wrapperType);
+                } else {
+                	expr = format("(%s[])%s.toArray(new %s[0])", value.elementType().getCanonicalName(), 
+                			expr, value.elementType().getCanonicalName());
+                }
             }
             return format(setter(),expr);
         } else {
@@ -337,10 +363,10 @@ public class VariableRef {
     }
     
     public String newCollection() {
-        return newCollection("");
+        return newInstance("");
     }
     
-    public String newCollection(String sizeExpr) {
+    public String newInstance(String sizeExpr) {
     	if ("Set".equals(collectionType())) {
             return "new java.util.HashSet(" + sizeExpr + ")";
         } else {

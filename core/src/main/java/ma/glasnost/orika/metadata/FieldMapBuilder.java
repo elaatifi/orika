@@ -18,6 +18,10 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.util.Map;
+
+import ma.glasnost.orika.MapEntry;
+
 
 public class FieldMapBuilder<A, B> {
     
@@ -34,21 +38,80 @@ public class FieldMapBuilder<A, B> {
     private String converterId;
     
     private MappingDirection mappingDirection = MappingDirection.BIDIRECTIONAL;
+    
     private boolean excluded;
     
-    FieldMapBuilder(ClassMapBuilder<A, B> classMapBuilder, String a, String b) {
+    private FieldMap elementMap;
+    
+    FieldMapBuilder(final ClassMapBuilder<A, B> classMapBuilder, final String a, final String b) {
+
+    	this(classMapBuilder, a, b, classMapBuilder.getAType(), classMapBuilder.getBType());
+    }
+    
+    /**
+     * Creates a new FieldMapBuilder, with type overrides for the aType and bType
+     * 
+     * @param classMapBuilder
+     * @param a
+     * @param b
+     * @param aType
+     * @param bType
+     */
+    FieldMapBuilder(final ClassMapBuilder<A, B> classMapBuilder, final String a, final String b, 
+    		final Type<?> aType, final Type<?> bType) {
         this.classMapBuilder = classMapBuilder;
         
-        this.aProperty = classMapBuilder.resolveAProperty(a);
-        this.bProperty = classMapBuilder.resolveBProperty(b);
+        String[] aParts = splitAtRootProperty(a);
+        String[] bParts = splitAtRootProperty(b);
+        
+        this.aProperty = classMapBuilder.resolveProperty(aType, aParts[0]);
+        this.bProperty = classMapBuilder.resolveProperty(bType, bParts[0]);
+        
+        if (aParts.length > 1 || bParts.length > 1) {
+        	String elementA = aParts.length > 0 ? aParts[1] : "";
+        	String elementB = bParts.length > 0 ? bParts[1] : "";
+        	Type<?> elementTypeA = getElementType(aProperty.getType());
+        	Type<?> elementTypeB = getElementType(bProperty.getType());
+        	
+        	this.elementMap = new FieldMapBuilder<A, B>(classMapBuilder, elementA, elementB, elementTypeA, elementTypeB).toFieldMap();
+        }
         
     }
     
+    private Type<?> getElementType(final Type<?> type) {
+    	Type<?> elementType;
+    	if (type.isMap()) {
+    		@SuppressWarnings("unchecked")
+			Type<Map<Object,Object>> mapType = (Type<Map<Object,Object>>)type;
+    		elementType = MapEntry.concreteEntryType(mapType);
+    	} else if (type.isCollection()) {
+    		elementType = type.getNestedType(0);
+    	} else if (type.isArray()) {
+    		elementType = type.getComponentType();
+    	} else {
+    		elementType = type;
+    	}
+    	return elementType;
+    }
+    
+    /**
+     * @param propertyName
+     * @return
+     */
+    String[] splitAtRootProperty(final String propertyName) {
+    	String[] parts = propertyName.split("\\[",2);
+    	if (parts.length > 1) {
+    		if (!parts[1].endsWith("]")) {
+    			throw new IllegalArgumentException("Property name '" + propertyName + "' is invalid");
+    		}
+    		parts[1] = parts[1].substring(0, parts[1].length()-1);
+    	}
+    	return parts;
+    }
+      
     public ClassMapBuilder<A, B> add() {
-        final FieldMap fieldMap = new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, true, excluded,
-                converterId);
-        classMapBuilder.addFieldMap(fieldMap);
-        
+       
+        classMapBuilder.addFieldMap(toFieldMap());
         return classMapBuilder;
     }
     
@@ -64,6 +127,11 @@ public class FieldMapBuilder<A, B> {
         bInverseProperty = classMapBuilder.resolveProperty(type, bInverse);
         
         return this;
+    }
+    
+    private FieldMap toFieldMap() {
+    	return new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, excluded,
+                converterId, elementMap);
     }
     
     /**
@@ -123,7 +191,7 @@ public class FieldMapBuilder<A, B> {
     	Property bProperty = aProperty.copy();
     	bProperty.setType(bType);
     	
-    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, true, false, null);
+    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null);
     }
     
     public static FieldMap mapValues(Type<?> aType, Type<?> bType) {
@@ -137,6 +205,6 @@ public class FieldMapBuilder<A, B> {
     	Property bProperty = aProperty.copy();
     	bProperty.setType(bType);
     	
-    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, true, false, null);
+    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null);
     }
 }

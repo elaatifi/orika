@@ -21,8 +21,10 @@ package ma.glasnost.orika.impl.util;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import ma.glasnost.orika.metadata.Type;
@@ -168,6 +170,79 @@ public final class ClassUtil {
 		} else {
 			return null;
 		}
+    }
+    
+    public static boolean[] booleanArray(Collection<Boolean> collection) {
+    	boolean[] primitives = new boolean[collection.size()];
+    	int index = -1;
+    	Iterator<Boolean> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next();
+    	}
+    	return primitives;
+    }
+    public static byte[] byteArray(Collection<Byte> collection) {
+    	byte[] primitives = new byte[collection.size()];
+    	int index = -1;
+    	Iterator<Byte> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().byteValue();
+    	}
+    	return primitives;
+    }
+    public static char[] charArray(Collection<Character> collection) {
+    	char[] primitives = new char[collection.size()];
+    	int index = -1;
+    	Iterator<Character> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().charValue();
+    	}
+    	return primitives;
+    }
+    public static short[] shortArray(Collection<Short> collection) {
+    	short[] primitives = new short[collection.size()];
+    	int index = -1;
+    	Iterator<Short> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().shortValue();
+    	}
+    	return primitives;
+    }
+    public static int[] intArray(Collection<Integer> collection) {
+    	int[] primitives = new int[collection.size()];
+    	int index = -1;
+    	Iterator<Integer> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().intValue();
+    	}
+    	return primitives;
+    }
+    public static long[] longArray(Collection<Long> collection) {
+    	long[] primitives = new long[collection.size()];
+    	int index = -1;
+    	Iterator<Long> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().longValue();
+    	}
+    	return primitives;
+    }
+    public static float[] floatArray(Collection<Float> collection) {
+    	float[] primitives = new float[collection.size()];
+    	int index = -1;
+    	Iterator<Float> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().floatValue();
+    	}
+    	return primitives;
+    }
+    public static double[] doubleArray(Collection<Double> collection) {
+    	double[] primitives = new double[collection.size()];
+    	int index = -1;
+    	Iterator<Double> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().doubleValue();
+    	}
+    	return primitives;
     }
     
     public static boolean isProxy(Class<?> clazz) {
