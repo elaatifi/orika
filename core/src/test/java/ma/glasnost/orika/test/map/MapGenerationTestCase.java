@@ -254,17 +254,6 @@ public class MapGenerationTestCase {
 				.field("scores[key]", "stringArray[]")
 				.field("scores[value]", "intArray[]")
 				.byDefault());
-        
-		@SuppressWarnings("serial")
-		Map<String, Map.Entry<String, Integer>> testScoresMap = 
-			new LinkedHashMap<String, Map.Entry<String, Integer>>() {{
-        		put("A", new MyMapEntry<String, Integer>("A",90));
-        		put("B", new MapEntry<String, Integer>("B",80));
-        		put("C", new MapEntry<String, Integer>("C",70));
-        		put("D", new MapEntry<String, Integer>("D",60));
-        		put("F", new MapEntry<String, Integer>("F",50));
-        	}};
-		
         /*
          * Tell Orika how we should convert the list element type to map entry
          */
@@ -288,14 +277,51 @@ public class MapGenerationTestCase {
 		
 	}
 	
+	@Test
+	public void testNewSyntax_mapToArraysWithUnequalSize() throws Exception {
+		
+		
+		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		factory.registerClassMap(
+				factory.classMap(MapWithoutSetter.class, GenericDto.class)
+				.field("scores[key]", "stringArray[]")
+				.field("scores[value]", "intArray[]")
+				.byDefault());
+		
+        /*
+         * Tell Orika how we should convert the list element type to map entry
+         */
+		MapperFacade mapper = factory.getMapperFacade();
+		
+		GenericDto source = new GenericDto();
+		List<String> testScores = new ArrayList<String>();
+		List<Integer> numericScores = new ArrayList<Integer>();
+		testScores.add("A");
+		numericScores.add(90);
+		testScores.add("B");
+		numericScores.add(80);
+		testScores.add("C");
+	
+		source.setStringArray(testScores.toArray(new String[testScores.size()]));
+		source.setIntArray(ClassUtil.intArray(numericScores));
+		
+		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		
+		Assert.assertNotNull(result.getScores());
+		Assert.assertTrue("90".equals(result.getScores().get("A")));
+		Assert.assertTrue("80".equals(result.getScores().get("B")));
+		Assert.assertFalse(result.getScores().containsKey("C"));
+	}
+	
 	/**
 	 * Demonstrates how a single field can be mapped to more than one destination,
 	 * in both directions.
 	 * 
 	 * @throws Exception
 	 */
+	@SuppressWarnings("serial")
 	@Test
-	public void testNewSyntax_map$key() throws Exception {
+	public void testNewSyntax_multipleParallel() throws Exception {
 		
 		
 		MapperFactory factory = MappingUtil.getMapperFactory(true);
@@ -335,6 +361,7 @@ public class MapGenerationTestCase {
 		Assert.assertTrue(source.getScores().keySet().containsAll(mapBack.getScores().keySet()));
 		Assert.assertTrue(mapBack.getScores().keySet().containsAll(source.getScores().keySet()));
 	}
+	
 	
 	public static class MyMapEntry<K,V> implements Map.Entry<K, V> {
 

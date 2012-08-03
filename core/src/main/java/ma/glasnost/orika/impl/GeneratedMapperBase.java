@@ -97,6 +97,17 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         }
     }
 
+    
+    protected int min(int...sizes) {
+    	
+    	int min = Integer.MAX_VALUE;
+    	for (int size: sizes) {
+    		if (size < min) {
+    			min = size;
+    		}
+    	}
+    	return min;
+    }
 
     protected static <T> List<T> asList(Iterable<T> iterable) {
         ArrayList<T> ts = new ArrayList<T>();

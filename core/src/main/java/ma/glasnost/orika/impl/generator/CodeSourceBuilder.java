@@ -19,25 +19,16 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.aCollection;
-import static ma.glasnost.orika.impl.Specifications.aConversionToString;
-import static ma.glasnost.orika.impl.Specifications.aMapToArray;
-import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
-import static ma.glasnost.orika.impl.Specifications.aMapToMap;
-import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
-import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
-import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
-import static ma.glasnost.orika.impl.Specifications.anArray;
-import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
-import static ma.glasnost.orika.impl.Specifications.immutable;
-import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
+import static ma.glasnost.orika.impl.Specifications.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -55,6 +46,8 @@ import ma.glasnost.orika.metadata.FieldMapBuilder;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+
+import org.apache.commons.lang.StringUtils;
 
 public class CodeSourceBuilder {
     
@@ -509,21 +502,30 @@ public class CodeSourceBuilder {
 			Map<String, IterableRef> destinations, Map<FieldMap, Set<FieldMap>> subFields,
 			StringBuilder logDetails) {
 		
-		MultiOccurrenceVariableRef firstRef = null;
+		List<String> sourceSizes = new ArrayList<String>();
 		for (IterableRef ref : sources.values()) {
 			statement(ref.multiOccurrenceVar.declareIterator());
-			if (firstRef == null) {
-				firstRef = ref.multiOccurrenceVar;
-			}
+			sourceSizes.add(ref.multiOccurrenceVar.size());
 		}
+		String sizeExpr = "min(" + StringUtils.join(sourceSizes.iterator(),",") + ")";
 		for (IterableRef destRef: destinations.values()) {
-			statement(destRef.newDestination.declare(destRef.newDestination.newInstance(firstRef.size())));
+			statement(destRef.newDestination.declare(destRef.newDestination.newInstance(sizeExpr)));
 			if (destRef.newDestination.isArray()) {
 				statement(destRef.newDestination.declareIterator());
 			}
 		}
 		
-		append("while (" + firstRef.iteratorHasNext() + ") {");
+		append("while (");
+		Iterator<IterableRef> sourcesIter = sources.values().iterator();
+		while (sourcesIter.hasNext()) {
+			IterableRef ref = sourcesIter.next();
+			append(ref.multiOccurrenceVar.iteratorHasNext());
+			if (sourcesIter.hasNext()) {
+				append(" && ");
+			}
+			
+		}
+		append(") {");
 		
 		// get the next elements from the src iterators
 		for (IterableRef srcRef : sources.values()) {
