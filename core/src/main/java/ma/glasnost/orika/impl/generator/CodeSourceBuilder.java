@@ -47,8 +47,6 @@ import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
-import org.apache.commons.lang.StringUtils;
-
 public class CodeSourceBuilder {
     
     private final StringBuilder out = new StringBuilder();
@@ -490,6 +488,14 @@ public class CodeSourceBuilder {
 		return generateMultiOccurrenceMapping(sources, destinations, subFields, logDetails);
 	}
 	
+	private String join(List<?> list, String separator) {
+		StringBuilder result = new StringBuilder();
+		for (Object item: list) {
+			result.append(item + separator);
+		}
+		return result.substring(0, result.length()-separator.length());
+	}
+	
 	/**
 	 * Generates the code to support a (potentially parallel) mapping from one or more
 	 * multi-occurrence fields in the source type to one or more multi-occurrence fields
@@ -507,7 +513,7 @@ public class CodeSourceBuilder {
 			statement(ref.multiOccurrenceVar.declareIterator());
 			sourceSizes.add(ref.multiOccurrenceVar.size());
 		}
-		String sizeExpr = "min(" + StringUtils.join(sourceSizes.iterator(),",") + ")";
+		String sizeExpr = "min(" + join(sourceSizes,",") + ")";
 		for (IterableRef destRef: destinations.values()) {
 			statement(destRef.newDestination.declare(destRef.newDestination.newInstance(sizeExpr)));
 			if (destRef.newDestination.isArray()) {
