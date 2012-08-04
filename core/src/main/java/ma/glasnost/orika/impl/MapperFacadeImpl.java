@@ -576,10 +576,11 @@ public class MapperFacadeImpl implements MapperFacade {
 
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
-        final Type<? extends Object> sourceClass = normalizeSourceType(source, sourceType, destinationType);
+        
         Converter<S, D> converter;
         ConverterFactory converterFactory = mapperFactory.getConverterFactory();
         if (converterId == null) {
+            final Type<? extends Object> sourceClass = normalizeSourceType(source, sourceType, destinationType);
             converter = (Converter<S, D>) converterFactory.getConverter(sourceClass, destinationType);
         } else {
             converter = (Converter<S, D>) converterFactory.getConverter(converterId);
