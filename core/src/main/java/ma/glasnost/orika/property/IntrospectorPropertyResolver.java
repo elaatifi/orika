@@ -294,7 +294,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
             while (i < ps.length) {
                 if (!properties.containsKey(ps[i])) {
                     throw new RuntimeException("could not resolve nested property [" + p + "] on " + type + ", because "
-                            + property.getType() + " does not contain property [" + ps[i] + "]");
+                            + type + " does not contain property [" + ps[i] + "]");
                 }
                 property = properties.get(ps[i]);
                 properties = getProperties(property.getType());

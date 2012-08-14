@@ -43,6 +43,17 @@ public class IntrospectorResolverTestCase {
 
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
 	}
+	
+	@Test
+    public void testGetInvalidNestedProperty() {
+        String np = "bogus.x";
+
+        try {
+            propertyResolver.getNestedProperty(Line.class, np);
+        } catch (RuntimeException e) {
+            Assert.assertTrue(e.getMessage().contains("could not resolve nested property [" + np + "]"));
+        }
+    }
 
 	@Test
 	public void testBooleanMapping() {
