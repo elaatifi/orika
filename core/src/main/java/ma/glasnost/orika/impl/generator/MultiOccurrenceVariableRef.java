@@ -154,7 +154,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
     	} else if (isMap()) {
     		return "new java.util.LinkedHashMap(" + sizeExpr + ")";
     	} else if ("Set".equals(collectionType())) {
-            return "new java.util.HashSet(" + sizeExpr + ")";
+            return "new java.util.LinkedHashSet(" + sizeExpr + ")";
         } else {
             return "new java.util.ArrayList(" + sizeExpr + ")";
         }

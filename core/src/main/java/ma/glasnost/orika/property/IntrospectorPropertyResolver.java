@@ -30,7 +30,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
 	        	properties = propertiesCache.get(theType);
 	        	if (properties == null) {
 	        		
-			        properties = new HashMap<String, Property>();
+			        properties = new LinkedHashMap<String, Property>();
 			        Type<?> typeHolder;
 			        
 			        if (theType instanceof Type) {

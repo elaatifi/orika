@@ -368,7 +368,7 @@ public class VariableRef {
     
     public String newInstance(String sizeExpr) {
     	if ("Set".equals(collectionType())) {
-            return "new java.util.HashSet(" + sizeExpr + ")";
+            return "new java.util.LinkedHashSet(" + sizeExpr + ")";
         } else {
             return "new java.util.ArrayList(" + sizeExpr + ")";
         }

@@ -19,13 +19,23 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
+import static ma.glasnost.orika.impl.Specifications.aMapToArray;
+import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
+import static ma.glasnost.orika.impl.Specifications.aMapToMap;
+import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
+import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
+import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
+import static ma.glasnost.orika.impl.Specifications.anArray;
+import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
+import static ma.glasnost.orika.impl.Specifications.immutable;
+import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -460,7 +470,7 @@ public class CodeSourceBuilder {
 			
 			Set<FieldMap> elements = subFields.get(map.getBaseFieldMap());
 			if (elements == null) {
-				elements = new HashSet<FieldMap>();
+				elements = new LinkedHashSet<FieldMap>();
 				subFields.put(map.getBaseFieldMap(), elements);
 			}
 			elements.add(map.getElementMap());
@@ -611,13 +621,13 @@ public class CodeSourceBuilder {
 	 */
 	public Set<FieldMap> getAssociatedMappings(Collection<FieldMap> fieldMaps, FieldMap map) {
 		
-		Set<FieldMap> associated = new HashSet<FieldMap>();
+		Set<FieldMap> associated = new LinkedHashSet<FieldMap>();
 		associated.add(map);
-		Set<FieldMap> unprocessed = new HashSet<FieldMap>(fieldMaps);
+		Set<FieldMap> unprocessed = new LinkedHashSet<FieldMap>(fieldMaps);
 		unprocessed.remove(map);
 		
-		Set<String> nextRoundSources = new HashSet<String>();
-		Set<String> nextRoundDestinations = new HashSet<String>();
+		Set<String> nextRoundSources = new LinkedHashSet<String>();
+		Set<String> nextRoundDestinations = new LinkedHashSet<String>();
 		Set<String> thisRoundSources = Collections.singleton(map.getSource().getName());
 		Set<String> thisRoundDestinations = Collections.singleton(map.getDestination().getName());
 		
@@ -644,8 +654,8 @@ public class CodeSourceBuilder {
 			
 			thisRoundSources = nextRoundSources;
 			thisRoundDestinations = nextRoundDestinations;
-			nextRoundSources = new HashSet<String>();
-			nextRoundDestinations = new HashSet<String>();
+			nextRoundSources = new LinkedHashSet<String>();
+			nextRoundDestinations = new LinkedHashSet<String>();
 		}
 		
 		return associated;
@@ -696,7 +706,7 @@ public class CodeSourceBuilder {
 	    		logDetails.append("using converter " + converter);
 	    	}
 	    	convert(destinationProperty, sourceProperty, converter);
-	    } else if (mapperFactory.existsRegisteredMapper(fieldMap.getSource().getType(), fieldMap.getDestination().getType())) {	
+	    } else if (mapperFactory.existsRegisteredMapper(fieldMap.getSource().getType(), fieldMap.getDestination().getType(), true)) {	
 	    	if (logDetails != null) {
 	    		logDetails.append("using registered mapper");
 	    	}

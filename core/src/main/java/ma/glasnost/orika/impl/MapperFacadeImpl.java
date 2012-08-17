@@ -115,9 +115,9 @@ public class MapperFacadeImpl implements MapperFacade {
                      * than applying unenhancement which could result in another type which 
                      * would not use that mapper
                      */
-                    if (mapperFactory.existsRegisteredMapper(sourceType, destinationType)) {
+                    if (mapperFactory.existsRegisteredMapper(sourceType, destinationType, false)) {
                         newlyResolvedType = sourceType;
-                    } else if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType)) {
+                    } else if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType, false)) {
                         newlyResolvedType = sourceObjectType;
                     } else if (ClassUtil.isConcrete(sourceType)) {
                         newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
@@ -228,8 +228,7 @@ public class MapperFacadeImpl implements MapperFacade {
 	            return convert(resolvedSourceObject, sourceType, destinationType, null);
 	        }
 	        
-	        Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
-	                context);
+	        Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType/*, false*/, context);
 	        if (resolvedDestinationType == null) {
 	            if (!ClassUtil.isConcrete(destinationType)) {
 	                MappingException e = new MappingException("No concrete class mapping defined for source class " + resolvedSourceType.getName());
@@ -488,7 +487,7 @@ public class MapperFacadeImpl implements MapperFacade {
         final Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
         
         if (mapper == null) {
-            throw new IllegalStateException(String.format("Can not create a mapper for classes : %s, %s", destinationType, sourceType));
+            throw new IllegalStateException(String.format("Cannot create a mapper for classes : %s, %s", destinationType, sourceType));
         }
         return mapper;
     }

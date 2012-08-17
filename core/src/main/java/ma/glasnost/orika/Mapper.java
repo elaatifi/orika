@@ -21,7 +21,7 @@ package ma.glasnost.orika;
 import ma.glasnost.orika.metadata.Type;
 
 /**
- * Defines a contract bewteen internal parts of Orikas such as
+ * Defines a contract between internal parts of Orika such as
  * <code>MapperFacade</code>, <code>MapperGenerator</code>,
  * <code>MapperFactory</code> and generated mappers.
  * 

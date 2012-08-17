@@ -20,7 +20,7 @@ package ma.glasnost.orika.metadata;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -86,13 +86,13 @@ public class ClassMapBuilder<A, B> {
 	    
 	    aProperties = propertyResolver.getProperties(aType);
 	    bProperties = propertyResolver.getProperties(bType);
-	    propertiesCacheA = new HashSet<String>();
-	    propertiesCacheB = new HashSet<String>();
+	    propertiesCacheA = new LinkedHashSet<String>();
+	    propertiesCacheB = new LinkedHashSet<String>();
 	    
 	    this.aType = aType;
 	    this.bType = bType;
-	    this.fieldsMapping = new HashSet<FieldMap>();
-	    this.usedMappers = new HashSet<MapperKey>();
+	    this.fieldsMapping = new LinkedHashSet<FieldMap>();
+	    this.usedMappers = new LinkedHashSet<MapperKey>();
 	    
 	}
 	
