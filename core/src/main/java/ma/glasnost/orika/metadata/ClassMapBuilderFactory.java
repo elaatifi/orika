@@ -57,13 +57,25 @@ public class ClassMapBuilderFactory {
 	public synchronized boolean isInitialized() {
 	    return propertyResolver != null && defaults != null;
 	}
+	
+	/**
+	 * Generates a new ClassMapBuilder instance
+	 * 
+	 * @param aType
+	 * @param bType
+	 * @return
+	 */
+	protected <A,B> ClassMapBuilder<A, B> newClassMapBuilder(Type<A> aType, Type<B> bType) {
+	    return new ClassMapBuilder<A, B>(aType, bType, propertyResolver, defaults);
+	}
+	
 	/**
      * @param aType
      * @param bType
      * @return
      */
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Type<B> bType) {
-        return new ClassMapBuilder<A, B>(aType, bType, propertyResolver, defaults);
+        return newClassMapBuilder(aType, bType);
     }
     
     /**
@@ -72,7 +84,7 @@ public class ClassMapBuilderFactory {
      * @return
      */
     public <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Type<B> bType) {
-        return new ClassMapBuilder<A, B>(TypeFactory.<A> valueOf(aType), bType, propertyResolver, defaults);
+        return newClassMapBuilder(TypeFactory.<A> valueOf(aType), bType);
     }
     
     /**
@@ -81,7 +93,7 @@ public class ClassMapBuilderFactory {
      * @return
      */
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Class<B> bType) {
-        return new ClassMapBuilder<A, B>(aType, TypeFactory.<B> valueOf(bType), propertyResolver, defaults);
+        return newClassMapBuilder(aType, TypeFactory.<B> valueOf(bType));
     }
 	
     /**
@@ -90,7 +102,7 @@ public class ClassMapBuilderFactory {
      * @return
      */
     public <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
-        return new ClassMapBuilder<A, B>(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType), propertyResolver, defaults);
+        return newClassMapBuilder(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType));
     }
     
 }
