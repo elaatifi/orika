@@ -31,24 +31,32 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
  */
 public class ClassMapBuilderFactory {
 
-	private final PropertyResolverStrategy propertyResolver;
-	private final DefaultFieldMapper[] defaults;
+	private PropertyResolverStrategy propertyResolver;
+	private DefaultFieldMapper[] defaults;
 	
 	/**
-	 * Constructs a new instance of the ClassMapBuilderFactory, which will generate
-	 * ClassMapBuilder instances set with the provided PropertyResolverStrategy and DefaultFieldMapper
-	 * instances.
-	 * 
 	 * @param propertyResolver the PropertyResolverStrategy instance to use when resolving properties
-	 * of the mapped types
-	 * @param defaults zero or more DefaultFieldMapper instances that should be applied when the 
-	 * <code>byDefault</code> method of the ClassMapBuilder is called.
+     * of the mapped types
 	 */
-	public ClassMapBuilderFactory(PropertyResolverStrategy propertyResolver, DefaultFieldMapper... defaults) {
-		this.propertyResolver = propertyResolver;
-		this.defaults = defaults;
+	public synchronized void setPropertyResolver(PropertyResolverStrategy propertyResolver) {
+	    this.propertyResolver = propertyResolver;
 	}
 	
+	/**
+	 * @param defaults zero or more DefaultFieldMapper instances that should be applied when the 
+     * <code>byDefault</code> method of the ClassMapBuilder is called.
+	 */
+	public synchronized void setDefaultFieldMappers(DefaultFieldMapper... defaults) {
+	    this.defaults = defaults;
+	}
+	
+	/**
+	 * Verifies whether the factory has been properly initialized
+	 * @return
+	 */
+	public synchronized boolean isInitialized() {
+	    return propertyResolver != null && defaults != null;
+	}
 	/**
      * @param aType
      * @param bType

@@ -283,9 +283,9 @@ public class ClassMapBuilder<A, B> {
     		defaults = withDefaults;
     	}
     	
-        for (final String propertyName : aProperties.keySet()) {
+        for (final String propertyName : getPropertiesForTypeA()) {
             if (!getMappedPropertiesForTypeA().contains(propertyName)) {
-                if (bProperties.containsKey(propertyName)) {
+                if (getPropertiesForTypeB().contains(propertyName)) {
                     if (!getMappedPropertiesForTypeB().contains(propertyName)) {
                         /*
                          * Don't include the default mapping of Class to Class; this
@@ -297,10 +297,10 @@ public class ClassMapBuilder<A, B> {
                         }
                     }
                 } else {
-                    Property prop = aProperties.get(propertyName);
+                    Property prop = resolvePropertyForA(propertyName);
                     for (DefaultFieldMapper defaulter : defaults) {
                         String suggestion = defaulter.suggestMappedField(propertyName, prop.getType());
-                        if (suggestion != null && bProperties.containsKey(suggestion)) {
+                        if (suggestion != null && getPropertiesForTypeB().contains(suggestion)/*bProperties.containsKey(suggestion)*/) {
                             if (!getMappedPropertiesForTypeB().contains(suggestion)) {
                                 fieldMap(propertyName, suggestion).add();
                             }

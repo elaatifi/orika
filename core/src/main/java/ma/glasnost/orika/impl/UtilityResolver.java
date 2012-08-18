@@ -25,6 +25,7 @@ import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.converter.DefaultConverterFactory;
 import ma.glasnost.orika.impl.generator.CompilerStrategy;
 import ma.glasnost.orika.impl.generator.JavassistCompilerStrategy;
+import ma.glasnost.orika.metadata.ClassMapBuilderFactory;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
@@ -76,6 +77,16 @@ public abstract class UtilityResolver {
     public static PropertyResolverStrategy getDefaultPropertyResolverStrategy() {
         return resolveUtility(OrikaSystemProperties.PROPERTY_RESOLVER_STRATEGY, IntrospectorPropertyResolver.class);
         
+    }
+    
+    /**
+     * Provides a default ClassMapBuilderFactory instance, favoring a type
+     * specified in the appropriate system property if found.
+     * 
+     * @return
+     */
+    public static ClassMapBuilderFactory getDefaultClassMapBuilderFactory() {
+        return resolveUtility(OrikaSystemProperties.CLASSMAP_BUILDER_FACTORY, ClassMapBuilderFactory.class);
     }
     
     /**

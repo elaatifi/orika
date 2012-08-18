@@ -75,6 +75,13 @@ public final class OrikaSystemProperties {
     public static final String PROPERTY_RESOLVER_STRATEGY = "ma.glasnost.orika.propertyResolverStrategy";
     
     /**
+     * Specifies the fully-qualified class name of the classmap builder factory be used by
+     * the default mapper factory to generate new ClassMapBuilder instances. <br><br>
+     * default value is {@link ma.glasnost.orika.metadata.ClassMapBuilderFactory}
+     */
+    public static final String CLASSMAP_BUILDER_FACTORY = "ma.glasnost.orika.classMapBuilderFactory";
+    
+    /**
      * Specifies the fully-qualified class name of the converter factory to use when generating converters
      * for target types;<br><br>
      * default value is determined by the MapperFactory implementation.

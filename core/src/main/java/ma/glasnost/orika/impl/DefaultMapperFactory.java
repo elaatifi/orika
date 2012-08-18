@@ -89,7 +89,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final CompilerStrategy compilerStrategy;
     private final PropertyResolverStrategy propertyResolverStrategy;
     private final Map<java.lang.reflect.Type, Type<?>> concreteTypeRegistry;
-    private volatile ClassMapBuilderFactory classMapBuilderFactory;
+    private final ClassMapBuilderFactory classMapBuilderFactory;
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     
@@ -114,11 +114,9 @@ public class DefaultMapperFactory implements MapperFactory {
      */
     protected DefaultMapperFactory(MapperFactoryBuilder<?, ?> builder) {
         
-        
     	this.converterFactory = builder.converterFactory;
         this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
-        //this.mappersRegistry = new ConcurrentHashMap<MapperKey, Mapper<?, ?>>();
         this.mappersRegistry = new TreeMap<MapperKey, Mapper<?, ?>>();
         this.aToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
@@ -135,6 +133,8 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         this.propertyResolverStrategy = builder.propertyResolverStrategy;
+        this.classMapBuilderFactory = builder.classMapBuilderFactory;
+        this.classMapBuilderFactory.setPropertyResolver(this.propertyResolverStrategy);
         this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
         this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy, propertyResolverStrategy);
         this.useAutoMapping = builder.useAutoMapping;
@@ -164,6 +164,7 @@ public class DefaultMapperFactory implements MapperFactory {
         protected Set<ClassMap<?, ?>> classMaps;
         protected ConverterFactory converterFactory;
         protected PropertyResolverStrategy propertyResolverStrategy;
+        protected ClassMapBuilderFactory classMapBuilderFactory;
         protected boolean usedBuiltinConverters = false;
         protected boolean useAutoMapping = true;
         
@@ -172,6 +173,7 @@ public class DefaultMapperFactory implements MapperFactory {
 			constructorResolverStrategy = UtilityResolver.getDefaultConstructorResolverStrategy();
 			compilerStrategy = UtilityResolver.getDefaultCompilerStrategy();
 			propertyResolverStrategy = UtilityResolver.getDefaultPropertyResolverStrategy();
+			classMapBuilderFactory = UtilityResolver.getDefaultClassMapBuilderFactory();
         }
         
 		protected abstract B self();
@@ -208,6 +210,11 @@ public class DefaultMapperFactory implements MapperFactory {
         
         public B propertyResolverStrategy(PropertyResolverStrategy propertyResolverStrategy) {
             this.propertyResolverStrategy = propertyResolverStrategy;
+            return self();
+        }
+        
+        public B classMapBuilderFactory(ClassMapBuilderFactory classMapBuilderFactory) {
+            this.classMapBuilderFactory = classMapBuilderFactory;
             return self();
         }
         
@@ -578,7 +585,7 @@ public class DefaultMapperFactory implements MapperFactory {
 	    	isBuilding = true;
 	    	
 	    	converterFactory.setMapperFacade(mapperFacade);
-	    	
+	    		    	
 	        buildClassMapRegistry();
 	        
 	        for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
@@ -589,6 +596,7 @@ public class DefaultMapperFactory implements MapperFactory {
 	            buildObjectFactories(classMap);
 	            initializeUsedMappers(classMap);
 	        }
+	        
 	        
 	        isBuilt = true;
 	        isBuilding = false;
@@ -759,15 +767,10 @@ public class DefaultMapperFactory implements MapperFactory {
     }
 
     protected ClassMapBuilderFactory getClassMapBuilderFactory() {
-    	if (classMapBuilderFactory == null) {
-			synchronized(this) {
-				if (classMapBuilderFactory == null) {
-					classMapBuilderFactory = new ClassMapBuilderFactory(this.propertyResolverStrategy, 
-							defaultFieldMappers.toArray(new DefaultFieldMapper[defaultFieldMappers.size()]));
-				}
-			}
-		}
-    	return classMapBuilderFactory;
+        if (!classMapBuilderFactory.isInitialized()) {
+            classMapBuilderFactory.setDefaultFieldMappers(defaultFieldMappers.toArray(new DefaultFieldMapper[defaultFieldMappers.size()]));
+        }
+        return classMapBuilderFactory;
     }
     
 	public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
