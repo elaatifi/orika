@@ -183,8 +183,11 @@ public final class MapperGenerator {
             }
             
             if (dp.hasPath()) {
+            	if(!sp.isPrimitive()) code.ifSourceNotNull(sp).then();
                 code.ifDestinationNull(dp);
+                
             }
+            
             
             // Generate mapping code for every case
             
@@ -219,6 +222,9 @@ public final class MapperGenerator {
                 }
             }
             
+            if (dp.hasPath()) {
+                if(!sp.isPrimitive()) code.end();
+            }
             // Close up, and set null to destination
             if (sp.hasPath()) {
                 code.end();

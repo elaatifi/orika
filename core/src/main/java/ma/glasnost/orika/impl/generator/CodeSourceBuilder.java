@@ -487,6 +487,7 @@ public class CodeSourceBuilder {
         
         String getterExpression = "destination";
         String setterExpression;
+        
         for (final Property p : property.getPath()) {
             
             if (!ClassUtil.isConcrete(p.getType())) {
