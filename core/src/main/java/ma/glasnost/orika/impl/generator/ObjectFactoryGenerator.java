@@ -247,7 +247,7 @@ public class ObjectFactoryGenerator {
                 try {
                     // TODO: should we use CodeSourceBuilder.mapFields here?
                     if (fieldMap.is(aWrapperToPrimitive())) {
-                        out.ifNotNull(s).setPrimitive(v, s);
+                        out.ifNotNull(s).fromPrimitiveOrWrapperToPrimitive(v, s);
                     } else if (fieldMap.is(aPrimitiveToWrapper())) {
                         out.fromPrimitiveToWrapper(v, s);
                     } else if (fieldMap.is(aPrimitive())) {

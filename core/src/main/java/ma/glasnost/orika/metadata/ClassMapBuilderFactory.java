@@ -52,7 +52,7 @@ public class ClassMapBuilderFactory {
 	
 	/**
 	 * Verifies whether the factory has been properly initialized
-	 * @return
+	 * @return true if the factory has been initialized
 	 */
 	public synchronized boolean isInitialized() {
 	    return propertyResolver != null && defaults != null;
@@ -63,43 +63,51 @@ public class ClassMapBuilderFactory {
 	 * 
 	 * @param aType
 	 * @param bType
-	 * @return
+	 * @return a new ClassMapBuilder for the provided types
 	 */
 	protected <A,B> ClassMapBuilder<A, B> newClassMapBuilder(Type<A> aType, Type<B> bType) {
 	    return new ClassMapBuilder<A, B>(aType, bType, propertyResolver, defaults);
 	}
 	
 	/**
+	 * Begin a new mapping for the specified types.
+	 * 
      * @param aType
      * @param bType
-     * @return
+     * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Type<B> bType) {
         return newClassMapBuilder(aType, bType);
     }
     
     /**
+     * Begin a new mapping for the specified class and type.
+     * 
      * @param aType
      * @param bType
-     * @return
+     * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Type<B> bType) {
         return newClassMapBuilder(TypeFactory.<A> valueOf(aType), bType);
     }
     
     /**
+     * Begin a new mapping for the specified type and class.
+     * 
      * @param aType
      * @param bType
-     * @return
+     * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Class<B> bType) {
         return newClassMapBuilder(aType, TypeFactory.<B> valueOf(bType));
     }
 	
     /**
+     * Begin a new mapping for the specified classes.
+     * 
      * @param aType
      * @param bType
-     * @return
+     * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
         return newClassMapBuilder(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType));

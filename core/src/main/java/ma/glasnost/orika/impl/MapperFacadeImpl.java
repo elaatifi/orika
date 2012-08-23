@@ -56,7 +56,8 @@ public class MapperFacadeImpl implements MapperFacade {
     private final MapperFactory mapperFactory;
     private final UnenhanceStrategy unenhanceStrategy;
     private final ConcurrentHashMap<java.lang.reflect.Type, Type<?>> resolvedTypes = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
-    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(500);
+    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(
+            500);
     private final boolean useStrategyCache;
     
     private final Logger log = LoggerFactory.getLogger(getClass());
@@ -92,28 +93,31 @@ public class MapperFacadeImpl implements MapperFacade {
         if (resolvedType == null) {
             Type<?> newlyResolvedType;
             if (sourceType != null) {
-                if (destinationType != null &&
-                        (canCopyByReference(destinationType, sourceType)
-                        || canConvert(sourceType, destinationType))
-                        /*|| mapperFactory.existsRegisteredMapper(sourceType, destinationType)*/) {
+                if (destinationType != null && (canCopyByReference(destinationType, sourceType) || canConvert(sourceType, destinationType))
+                /*
+                 * || mapperFactory.existsRegisteredMapper(sourceType,
+                 * destinationType)
+                 */) {
                     /*
-                     * We shouldn't bother further resolving the source type
-                     * if we already have a converter or copy-by-reference
-                     * for the originally specified type -- since these operations
-                     * override the use of a custom mapper which needs the resolution.
+                     * We shouldn't bother further resolving the source type if
+                     * we already have a converter or copy-by-reference for the
+                     * originally specified type -- since these operations
+                     * override the use of a custom mapper which needs the
+                     * resolution.
                      */
                     newlyResolvedType = sourceType;
                 } else {
-                
+                    
                     if (sourceType.isAssignableFrom(sourceObject.getClass())) {
                         sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
                     }
                     Type<?> sourceObjectType = TypeFactory.resolveTypeOf(sourceObject, sourceType);
                     /*
-                     * In the case where there is an existing mapper registered for either the
-                     * source object type or the source type, we should use that type, rather
-                     * than applying unenhancement which could result in another type which 
-                     * would not use that mapper
+                     * In the case where there is an existing mapper registered
+                     * for either the source object type or the source type, we
+                     * should use that type, rather than applying unenhancement
+                     * which could result in another type which would not use
+                     * that mapper
                      */
                     if (mapperFactory.existsRegisteredMapper(sourceType, destinationType, false)) {
                         newlyResolvedType = sourceType;
@@ -122,7 +126,8 @@ public class MapperFacadeImpl implements MapperFacade {
                     } else if (ClassUtil.isConcrete(sourceType)) {
                         newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
                     } else {
-                        newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.resolveTypeOf(sourceObject, sourceType));
+                        newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject,
+                                TypeFactory.resolveTypeOf(sourceObject, sourceType));
                     }
                 }
                 
@@ -144,213 +149,214 @@ public class MapperFacadeImpl implements MapperFacade {
     
     public <S, D> D map(final S sourceObject, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
         try {
-	    	if (destinationType == null) {
-	            throw new MappingException("Can not map to a null class.");
-	        }
-	        if (sourceObject == null) {
-	            // throw new MappingException("Can not map a null object.");
-	            return null;
-	        }
-	        
-	        if (context.isAlreadyMapped(sourceObject, destinationType)) {
-	            D result = context.getMappedObject(sourceObject, destinationType);
-	            return result;
-	        }
-	        
-	        /*
-	         * Note: we cache a MappingStrategy as one of the possible combinations of paths
-	         * through the below code; this allows us to avoid repeating the if-then checks
-	         * and the individual hash lookups at each stage; we resolve them only once and
-	         * then save the "path" we took by using one of the defined strategies
-	         * 
-	         * We use a thread-local for the strategy key so that we don't have to instantiate
-	         * a new key every time we perform a lookup; this approach relies on the assumption
-	         * that resolving the thread local is faster than instantiating a new strategy key
-	         */
-	        MappingStrategyKey key = null;
-	        if (useStrategyCache) {
-	            
-	            key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, false);
-	            
-	            MappingStrategy strategy = strategyCache.get(key);
-	            if (strategy != null) {
-	                @SuppressWarnings("unchecked")
-	                D result = (D)strategy.map(sourceObject, null, context);
-	                return result;
-	            }
-	        }
-	        
-	        MappingStrategyRecorder strategyRecorder = null;
-	        if (useStrategyCache) {
-	            /*
-	             * Convert the current key to an immutable copy (and clear it) so that other 
-	             * lookups on the same thread can use it
-	             */
-	            strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
-	        }
-	        
-	        final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
-	        final S resolvedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
-	        
-	        if (useStrategyCache) {
-	            strategyRecorder.setResolvedSourceType(resolvedSourceType);
-	            strategyRecorder.setResolvedDestinationType(destinationType);
-	            if (sourceObject != resolvedSourceObject) {
-	                strategyRecorder.setUnenhance(true);
-	            }
-	            strategyRecorder.setInstantiate(true);
-	        }
-	        
-	        // We can copy by reference when source and destination types are the
-	        // same and immutable.
-	        if (canCopyByReference(destinationType, resolvedSourceType)) {
-	            if (useStrategyCache) {
-	                strategyRecorder.setCopyByReference(true);
-	                strategyCache.put(key, strategyRecorder.playback());
-	                if (log.isDebugEnabled()) {
-	                    log.debug(strategyRecorder.describeDetails());
-	                }
-	            }
-	            @SuppressWarnings("unchecked")
-	            D result = (D) resolvedSourceObject;
-	            return result;
-	        }
-	        
-	        // Check if we have a converter
-	        if (canConvert(resolvedSourceType, destinationType)) {
-	            if (useStrategyCache) {
-	                strategyRecorder.setResolvedConverter(mapperFactory.getConverterFactory().getConverter(resolvedSourceType, destinationType));
-	                strategyCache.put(key, strategyRecorder.playback());
-	                if (log.isDebugEnabled()) {
-	                    log.debug(strategyRecorder.describeDetails());
-	                }
-	            }
-	            return convert(resolvedSourceObject, sourceType, destinationType, null);
-	        }
-	        
-	        Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType/*, false*/, context);
-	        if (resolvedDestinationType == null) {
-	            if (!ClassUtil.isConcrete(destinationType)) {
-	                MappingException e = new MappingException("No concrete class mapping defined for source class " + resolvedSourceType.getName());
-	                e.setDestinationType(destinationType);
-	                e.setSourceType(resolvedSourceType);
-	                throw e;
-	            } else {
-	                resolvedDestinationType = destinationType;
-	            }
-	        }
-	        
-	        if (useStrategyCache) {
-	            strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
-	        }
-	        
-	        final Mapper<Object, Object> mapper = prepareMapper(resolvedSourceType, resolvedDestinationType);
-	        
-	        if (useStrategyCache) {
-	            strategyRecorder.setResolvedMapper(mapper);
-	        }
-	        
-	        final D destinationObject = newObject(resolvedSourceObject, resolvedDestinationType, context, strategyRecorder);
-	        
-	        context.cacheMappedObject(sourceObject, destinationType, destinationObject);
-	        
-	        mapDeclaredProperties(resolvedSourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper, strategyRecorder);
-	        
-	        if (useStrategyCache) {
-	            strategyCache.put(key, strategyRecorder.playback());
-	            if (log.isDebugEnabled()) {
-	                log.debug(strategyRecorder.describeDetails());
-	            }
-	        }
-	        return destinationObject;
+            if (destinationType == null) {
+                throw new MappingException("Can not map to a null class.");
+            }
+            if (sourceObject == null) {
+                return null;
+            }
+            
+            if (context.isAlreadyMapped(sourceObject, destinationType)) {
+                D result = context.getMappedObject(sourceObject, destinationType);
+                return result;
+            }
+            
+            /*
+             * Note: we cache a MappingStrategy as one of the possible
+             * combinations of paths through the below code; this allows us to
+             * avoid repeating the if-then checks and the individual hash
+             * lookups at each stage; we resolve them only once and then save
+             * the "path" we took by using one of the defined strategies
+             * 
+             * We use a thread-local for the strategy key so that we don't have
+             * to instantiate a new key every time we perform a lookup; this
+             * approach relies on the assumption that resolving the thread local
+             * is faster than instantiating a new strategy key
+             */
+            MappingStrategyKey key = null;
+            if (useStrategyCache) {
+                
+                key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, false);
+                
+                MappingStrategy strategy = strategyCache.get(key);
+                if (strategy != null) {
+                    @SuppressWarnings("unchecked")
+                    D result = (D) strategy.map(sourceObject, null, context);
+                    return result;
+                }
+            }
+            
+            MappingStrategyRecorder strategyRecorder = null;
+            if (useStrategyCache) {
+                strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
+            }
+            
+            final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
+            final S resolvedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
+            
+            if (useStrategyCache) {
+                strategyRecorder.setResolvedSourceType(resolvedSourceType);
+                strategyRecorder.setResolvedDestinationType(destinationType);
+                if (sourceObject != resolvedSourceObject) {
+                    strategyRecorder.setUnenhance(true);
+                }
+                strategyRecorder.setInstantiate(true);
+            }
+            
+            if (canCopyByReference(destinationType, resolvedSourceType)) {
+                /*
+                 * We can copy by reference when source and destination types
+                 * are the same and immutable.
+                 */
+                if (useStrategyCache) {
+                    strategyRecorder.setCopyByReference(true);
+                    strategyCache.put(key, strategyRecorder.playback());
+                    if (log.isDebugEnabled()) {
+                        log.debug(strategyRecorder.describeDetails());
+                    }
+                }
+                @SuppressWarnings("unchecked")
+                D result = (D) resolvedSourceObject;
+                return result;
+            }
+            
+            // Check if we have a converter
+            if (canConvert(resolvedSourceType, destinationType)) {
+                if (useStrategyCache) {
+                    strategyRecorder.setResolvedConverter(mapperFactory.getConverterFactory().getConverter(resolvedSourceType,
+                            destinationType));
+                    strategyCache.put(key, strategyRecorder.playback());
+                    if (log.isDebugEnabled()) {
+                        log.debug(strategyRecorder.describeDetails());
+                    }
+                }
+                return convert(resolvedSourceObject, sourceType, destinationType, null);
+            }
+            
+            Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
+                    context);
+            if (resolvedDestinationType == null) {
+                if (!ClassUtil.isConcrete(destinationType)) {
+                    MappingException e = new MappingException("No concrete class mapping defined for source class "
+                            + resolvedSourceType.getName());
+                    e.setDestinationType(destinationType);
+                    e.setSourceType(resolvedSourceType);
+                    throw e;
+                } else {
+                    resolvedDestinationType = destinationType;
+                }
+            }
+            
+            if (useStrategyCache) {
+                strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
+            }
+            
+            final Mapper<Object, Object> mapper = prepareMapper(resolvedSourceType, resolvedDestinationType);
+            
+            if (useStrategyCache) {
+                strategyRecorder.setResolvedMapper(mapper);
+            }
+            
+            final D destinationObject = newObject(resolvedSourceObject, resolvedDestinationType, context, strategyRecorder);
+            
+            context.cacheMappedObject(sourceObject, destinationType, destinationObject);
+            
+            mapDeclaredProperties(resolvedSourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper,
+                    strategyRecorder);
+            
+            if (useStrategyCache) {
+                strategyCache.put(key, strategyRecorder.playback());
+                if (log.isDebugEnabled()) {
+                    log.debug(strategyRecorder.describeDetails());
+                }
+            }
+            return destinationObject;
         } catch (MappingException e) {
-        	/* don't wrap our own exceptions */
-        	throw e;
+            /* don't wrap our own exceptions */
+            throw e;
         } catch (Exception e) {
-        	throw new MappingException("Error encountered while mapping for the following inputs: " +
-        				"\nrawSource=" + sourceObject + 
-        				"\nsourceClass=" + (sourceObject!=null?sourceObject.getClass():null) +
-        				"\nsourceType=" + sourceType + 
-        				"\ndestinationType=" + destinationType, e);
+            throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
+                    + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) + "\nsourceType=" + sourceType
+                    + "\ndestinationType=" + destinationType, e);
         }
     }
     
     /**
-     * Resolves whether the given mapping operation can use copy-by-reference semantics;
-     * should be true if one of the following is true:
+     * Resolves whether the given mapping operation can use copy-by-reference
+     * semantics; should be true if one of the following is true:
      * <ol>
-     * <li>resolvedSourceType and destinationType are the same, and one of the immutable types
+     * <li>resolvedSourceType and destinationType are the same, and one of the
+     * immutable types
      * <li>resolvedSourceType is the primitive wrapper for destinationType
-     * <li>resolvedSourceType is primitive and destinationType is it's primitive wrapper
+     * <li>resolvedSourceType is primitive and destinationType is it's primitive
+     * wrapper
      * </ol>
+     * 
      * @param destinationType
      * @param resolvedSourceType
      * @return
      */
     private <D, S> boolean canCopyByReference(Type<D> destinationType, final Type<S> resolvedSourceType) {
-        if ( ClassUtil.isImmutable(resolvedSourceType) 
-        		&& (resolvedSourceType.equals(destinationType))) {
-        	return true;
-        } else if (resolvedSourceType.isPrimitiveWrapper() 
-        		&& resolvedSourceType.getRawType().equals(ClassUtil.getWrapperType(destinationType.getRawType()))) {
-        	return true;
-        } else if (resolvedSourceType.isPrimitive() 
-        		&& destinationType.getRawType().equals(ClassUtil.getWrapperType(resolvedSourceType.getRawType()))) {
-        	return true;
+        if (ClassUtil.isImmutable(resolvedSourceType) && (resolvedSourceType.equals(destinationType))) {
+            return true;
+        } else if (resolvedSourceType.isPrimitiveWrapper()
+                && resolvedSourceType.getRawType().equals(ClassUtil.getWrapperType(destinationType.getRawType()))) {
+            return true;
+        } else if (resolvedSourceType.isPrimitive()
+                && destinationType.getRawType().equals(ClassUtil.getWrapperType(resolvedSourceType.getRawType()))) {
+            return true;
         } else {
-        	return false;
+            return false;
         }
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         
-    	try {
-	    	if (destinationObject == null) {
-	            throw new MappingException("[destinationObject] can not be null.");
-	        }
-	        if (sourceObject == null) {
-	            throw new MappingException("[sourceObject] can not be null.");
-	        }
-	        
-	        if (context.isAlreadyMapped(sourceObject, destinationType)) {
+        try {
+            if (destinationObject == null) {
+                throw new MappingException("[destinationObject] can not be null.");
+            }
+            if (sourceObject == null) {
+                throw new MappingException("[sourceObject] can not be null.");
+            }
+            
+            if (context.isAlreadyMapped(sourceObject, destinationType)) {
                 return;
             }
-	        
-	        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, true);
-	        
-	        MappingStrategy strategy = strategyCache.get(key);
-	        if (strategy != null) {
-	            strategy.map(sourceObject, destinationObject, context);
-	        } else {
-	            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
-	        
-	            final Type<S> theSourceType = normalizeSourceType(sourceObject, sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), destinationType);
-	            final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);
-	            
-	            final Mapper<Object, Object> mapper = prepareMapper(theSourceType, theDestinationType);
-	            
-	            strategyRecorder.setResolvedSourceType(theSourceType);
-	            strategyRecorder.setResolvedDestinationType(theDestinationType);
-	            strategyRecorder.setResolvedMapper(mapper);
-	            
-	            context.cacheMappedObject(sourceObject, destinationType, destinationObject);
-	            
-	            mapDeclaredProperties(sourceObject, destinationObject, theSourceType, theDestinationType, context, mapper, strategyRecorder);
-	            
-	            strategyCache.put(key, strategyRecorder.playback());
-	        }
-    	} catch (MappingException e) {
-    		/* don't wrap our own exceptions */
-        	throw e; 
-	    } catch (Exception e) {
-	    	throw new MappingException("Error encountered while mapping for the following inputs: " +
-	    				"\nrawSource=" + sourceObject + 
-	    				"\nsourceClass=" + (sourceObject!=null?sourceObject.getClass():null) +
-	    				"\nsourceType=" + sourceType + 
-        				"\nrawDestination=" + destinationObject + 
-        				"\ndestinationClass=" + (destinationObject!=null?destinationObject.getClass():null) +
-	    				"\ndestinationType=" + destinationType, e);
-	    }
+            
+            MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, true);
+            
+            MappingStrategy strategy = strategyCache.get(key);
+            if (strategy != null) {
+                strategy.map(sourceObject, destinationObject, context);
+            } else {
+                MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
+                
+                final Type<S> theSourceType = normalizeSourceType(sourceObject,
+                        sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), destinationType);
+                final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);
+                
+                final Mapper<Object, Object> mapper = prepareMapper(theSourceType, theDestinationType);
+                
+                strategyRecorder.setResolvedSourceType(theSourceType);
+                strategyRecorder.setResolvedDestinationType(theDestinationType);
+                strategyRecorder.setResolvedMapper(mapper);
+                
+                context.cacheMappedObject(sourceObject, destinationType, destinationObject);
+                
+                mapDeclaredProperties(sourceObject, destinationObject, theSourceType, theDestinationType, context, mapper, strategyRecorder);
+                
+                strategyCache.put(key, strategyRecorder.playback());
+            }
+        } catch (MappingException e) {
+            /* don't wrap our own exceptions */
+            throw e;
+        } catch (Exception e) {
+            throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
+                    + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) + "\nsourceType=" + sourceType
+                    + "\nrawDestination=" + destinationObject + "\ndestinationClass="
+                    + (destinationObject != null ? destinationObject.getClass() : null) + "\ndestinationType=" + destinationType, e);
+        }
         
     }
     
@@ -443,13 +449,17 @@ public class MapperFacadeImpl implements MapperFacade {
     /**
      * Map an iterable onto an existing collection
      * 
-     * @param source the source iterable
-     * @param destination the destination into which the results will be mapped
-     * @param sourceType the type of 
+     * @param source
+     *            the source iterable
+     * @param destination
+     *            the destination into which the results will be mapped
+     * @param sourceType
+     *            the type of
      * @param destinationType
      * @param context
      */
-    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType,
+            MappingContext context) {
         if (source == null) {
             return;
         }
@@ -470,7 +480,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param destinationType
      * @param context
      */
-    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType,
+            MappingContext context) {
         if (source == null) {
             return;
         }
@@ -493,16 +504,25 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     /**
-     * Maps the declared properties of the source object into the destination object,
-     * using the specified mapper.
+     * Maps the declared properties of the source object into the destination
+     * object, using the specified mapper.
      * 
-     * @param sourceObject the source object from which to map property values
-     * @param destinationObject the destination object onto which the source object's property values will be mapped
-     * @param sourceType the type of the source object
-     * @param destinationType the type of the destination object
-     * @param context the current mapping context
-     * @param mapper the mapper to use for mapping the source property values onto the destination
-     * @param strategyBuilder the strategy builder used to record the mapping strategy taken
+     * @param sourceObject
+     *            the source object from which to map property values
+     * @param destinationObject
+     *            the destination object onto which the source object's property
+     *            values will be mapped
+     * @param sourceType
+     *            the type of the source object
+     * @param destinationType
+     *            the type of the destination object
+     * @param context
+     *            the current mapping context
+     * @param mapper
+     *            the mapper to use for mapping the source property values onto
+     *            the destination
+     * @param strategyBuilder
+     *            the strategy builder used to record the mapping strategy taken
      */
     void mapDeclaredProperties(Object sourceObject, Object destinationObject, Type<?> sourceType, Type<?> destinationType,
             MappingContext context, Mapper<Object, Object> mapper, MappingStrategyRecorder strategyBuilder) {
@@ -526,7 +546,8 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    private <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context, MappingStrategyRecorder strategyBuilder) {
+    private <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context,
+            MappingStrategyRecorder strategyBuilder) {
         
         try {
             final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType);
@@ -545,14 +566,19 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.MapperFacade#newObject(java.lang.Object, ma.glasnost.orika.metadata.Type, ma.glasnost.orika.MappingContext)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.MapperFacade#newObject(java.lang.Object,
+     * ma.glasnost.orika.metadata.Type, ma.glasnost.orika.MappingContext)
      */
     public <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context) {
         return newObject(sourceObject, destinationType, context, null);
     }
     
     /**
+     * Map the iterable into the provided destination collection and return it
+     * 
      * @param source
      * @param sourceType
      * @param destinationType
@@ -571,8 +597,8 @@ public class MapperFacadeImpl implements MapperFacade {
             destination.add(map(item, sourceType, destinationType, context));
         }
         return destination;
-    }   
-
+    }
+    
     @SuppressWarnings("unchecked")
     public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
         
@@ -593,92 +619,94 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D map(S sourceObject, Class<D> destinationClass) {
-        return map(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.<D>valueOf(destinationClass));
+        return map(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
-        return map(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.<D>valueOf(destinationClass), context);
+        return map(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass) {
-        return mapAsSet(source, TypeFactory.elementTypeOf(source), TypeFactory.<D>valueOf(destinationClass));
+        return mapAsSet(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
-        return mapAsSet(source, TypeFactory.elementTypeOf(source), TypeFactory.<D>valueOf(destinationClass), context);
+        return mapAsSet(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass) {
-        return mapAsSet(source, TypeFactory.componentTypeOf(source), TypeFactory.<D>valueOf(destinationClass));
+        return mapAsSet(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass, MappingContext context) {
-        return mapAsSet(source, TypeFactory.componentTypeOf(source), TypeFactory.<D>valueOf(destinationClass), context);
+        return mapAsSet(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass) {
-        return mapAsList(source, TypeFactory.elementTypeOf(source), TypeFactory.<D>valueOf(destinationClass));
+        return mapAsList(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
-        return mapAsList(source, TypeFactory.elementTypeOf(source), TypeFactory.<D>valueOf(destinationClass), context);
+        return mapAsList(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass) {
-        return mapAsList(source, TypeFactory.componentTypeOf(source), TypeFactory.<D>valueOf(destinationClass));
+        return mapAsList(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context) {
-        return mapAsList(source, TypeFactory.componentTypeOf(source), TypeFactory.<D>valueOf(destinationClass), context);
+        return mapAsList(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass) {
-        return mapAsArray(destination, source, TypeFactory.elementTypeOf(source), TypeFactory.<D>valueOf(destinationClass));
+        return mapAsArray(destination, source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass) {
-        return mapAsArray(destination, source, TypeFactory.componentTypeOf(source), TypeFactory.<D>valueOf(destinationClass));
+        return mapAsArray(destination, source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context) {
-        return mapAsArray(destination, source, TypeFactory.elementTypeOf(source), TypeFactory.<D>valueOf(destinationClass), context);
+        return mapAsArray(destination, source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context) {
-        return mapAsArray(destination, source, TypeFactory.componentTypeOf(source), TypeFactory.<D>valueOf(destinationClass), context);
+        return mapAsArray(destination, source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
     public <S, D> D convert(S source, Class<D> destinationClass, String converterId) {
-        return convert(source, TypeFactory.typeOf(source), TypeFactory.<D>valueOf(destinationClass), converterId);
+        return convert(source, TypeFactory.typeOf(source), TypeFactory.<D> valueOf(destinationClass), converterId);
     }
     
     /*
      * New mapping type: Map to Map
      */
-    public <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType) {
+    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
+            Type<? extends Map<Dk, Dv>> destinationType) {
         return mapAsMap(source, sourceType, destinationType, new MappingContext());
     }
     
-    public <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType, MappingContext context) {
-        Map<Dk,Dv> destination = new HashMap<Dk,Dv>(source.size());
-        for (Entry<Sk,Sv> entry: source.entrySet()) {
-            Dk key = map(entry.getKey(), sourceType.<Sk>getNestedType(0), destinationType.<Dk>getNestedType(0), context);
-            Dv value = map(entry.getValue(), sourceType.<Sv>getNestedType(1), destinationType.<Dv>getNestedType(1), context);
+    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
+            Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+        Map<Dk, Dv> destination = new HashMap<Dk, Dv>(source.size());
+        for (Entry<Sk, Sv> entry : source.entrySet()) {
+            Dk key = map(entry.getKey(), sourceType.<Sk> getNestedType(0), destinationType.<Dk> getNestedType(0), context);
+            Dv value = map(entry.getValue(), sourceType.<Sv> getNestedType(1), destinationType.<Dv> getNestedType(1), context);
             destination.put(key, value);
         }
         return destination;
     }
     
-    
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
         return mapAsMap(source, sourceType, destinationType, new MappingContext());
     }
     
-    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
+            MappingContext context) {
         
-        Map<Dk,Dv> destination = new HashMap<Dk,Dv>();
+        Map<Dk, Dv> destination = new HashMap<Dk, Dv>();
         
-        for (S element: source) {
+        for (S element : source) {
             Type<?> entryType = TypeFactory.valueOf(Map.Entry.class, destinationType.getNestedType(0), destinationType.getNestedType(1));
             @SuppressWarnings("unchecked")
             Map.Entry<Dk, Dv> entry = (Map.Entry<Dk, Dv>) map(element, sourceType, entryType, context);
@@ -692,11 +720,12 @@ public class MapperFacadeImpl implements MapperFacade {
         return mapAsMap(source, sourceType, destinationType, new MappingContext());
     }
     
-    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
+            MappingContext context) {
         
-        Map<Dk,Dv> destination = new HashMap<Dk,Dv>();
+        Map<Dk, Dv> destination = new HashMap<Dk, Dv>();
         
-        for (S element: source) {
+        for (S element : source) {
             Type<MapEntry<Dk, Dv>> entryType = MapEntry.concreteEntryType(destinationType);
             MapEntry<Dk, Dv> entry = (MapEntry<Dk, Dv>) map(element, sourceType, entryType, context);
             destination.put(entry.getKey(), entry.getValue());
@@ -705,7 +734,6 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    
     /*
      * New mapping type: Map to List, Set or Array
      */
@@ -713,30 +741,31 @@ public class MapperFacadeImpl implements MapperFacade {
         return mapAsList(source, sourceType, destinationType, new MappingContext());
     }
     
-    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
+    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
+            MappingContext context) {
         /*
-         * Use map as collection to map the entry set to a list;
-         * requires an existing mapping for Map.Entry to to type D.
+         * Use map as collection to map the entry set to a list; requires an
+         * existing mapping for Map.Entry to to type D.
          */
         List<D> destination = new ArrayList<D>(source.size());
         
-        Type<MapEntry<Sk,Sv>> entryType = MapEntry.concreteEntryType(sourceType);
+        Type<MapEntry<Sk, Sv>> entryType = MapEntry.concreteEntryType(sourceType);
         
         return (List<D>) mapAsCollection(MapEntry.entrySet(source), entryType, destinationType, destination, context);
     }
-    
     
     public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
         return mapAsSet(source, sourceType, destinationType, new MappingContext());
     }
     
-    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
+    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
+            MappingContext context) {
         /*
-         * Use map as collection to map the entry set to a list;
-         * requires an existing mapping for Map.Entry to to type D.
+         * Use map as collection to map the entry set to a list; requires an
+         * existing mapping for Map.Entry to to type D.
          */
         Set<D> destination = new HashSet<D>(source.size());
-        Type<Entry<Sk,Sv>> entryType = TypeFactory.resolveTypeOf(source.entrySet(), sourceType).getNestedType(0);
+        Type<Entry<Sk, Sv>> entryType = TypeFactory.resolveTypeOf(source.entrySet(), sourceType).getNestedType(0);
         return (Set<D>) mapAsCollection(source.entrySet(), entryType, destinationType, destination, context);
     }
     
@@ -744,17 +773,18 @@ public class MapperFacadeImpl implements MapperFacade {
         return mapAsArray(destination, source, sourceType, destinationType, new MappingContext());
     }
     
-    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context) {
-       
-        Type<MapEntry<Sk,Sv>> entryType = MapEntry.concreteEntryType(sourceType);
+    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
+            MappingContext context) {
+        
+        Type<MapEntry<Sk, Sv>> entryType = MapEntry.concreteEntryType(sourceType);
         
         return mapAsArray(destination, MapEntry.entrySet(source), entryType, destinationType, context);
     }
-
+    
     public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass) {
         mapAsCollection(source, destination, destinationClass, new MappingContext());
     }
-
+    
     public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
         mapAsCollection(source, destination, null, TypeFactory.valueOf(destinationClass), context);
     }
@@ -762,16 +792,17 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass) {
         mapAsCollection(source, destination, destinationClass, new MappingContext());
     }
-
+    
     @SuppressWarnings("unchecked")
     public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
-        mapAsCollection(source, destination, (Type<S>)TypeFactory.valueOf(source.getClass().getComponentType()), TypeFactory.valueOf(destinationClass), context);
+        mapAsCollection(source, destination, (Type<S>) TypeFactory.valueOf(source.getClass().getComponentType()),
+                TypeFactory.valueOf(destinationClass), context);
     }
-
+    
     public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
         mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
     }
-
+    
     public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
         mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
     }

@@ -19,6 +19,9 @@ public abstract class TypeBuilder<T> {
     private final Class<T> rawType;
     private final java.lang.reflect.Type[] actualTypeArguments;
 
+    /**
+     * Constructs a new TypeBuilder instance
+     */
     @SuppressWarnings("unchecked")
     public TypeBuilder() {
        
@@ -34,6 +37,12 @@ public abstract class TypeBuilder<T> {
         }
     }
     
+    /**
+     * Construct a new TypeBuilder instance, filling the actual type arguments from the provided
+     * types.
+     * 
+     * @param types
+     */
     @SuppressWarnings("unchecked")
     public TypeBuilder(Type<?>...types) {
         ParameterizedType parameterizedType = (ParameterizedType)getClass().getGenericSuperclass();
@@ -58,6 +67,9 @@ public abstract class TypeBuilder<T> {
     }
     
     
+    /**
+     * @return the Type instance built by this builder
+     */
     public final Type<T> build() {
     	return TypeFactory.valueOf(rawType, actualTypeArguments);
     }
