@@ -236,9 +236,6 @@ public class Issue25TestCase extends BaseManufacturingFacilityTest{
         MapperFactory factory = builder.build();
         
         factory.registerMapper(new MergingMapper());
-        factory.registerConcreteType(new TypeBuilder<Collection<Entity>>() {
-        }.build(), new TypeBuilder<ArrayList<Entity>>() {
-        }.build());
         return factory.getMapperFacade();
     }
     

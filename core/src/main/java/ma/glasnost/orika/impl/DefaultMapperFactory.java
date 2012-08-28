@@ -21,10 +21,13 @@ package ma.glasnost.orika.impl;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -34,6 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import ma.glasnost.orika.DefaultFieldMapper;
+import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -142,6 +146,16 @@ public class DefaultMapperFactory implements MapperFactory {
         if (builder.useBuiltinConverters) {
             BuiltinConverters.register(converterFactory);
         }
+        
+        /*
+         * Register default concrete types for common collection types;
+         * these can be overridden as needed by user code.
+         */
+        this.registerConcreteType(Collection.class, ArrayList.class);
+        this.registerConcreteType(List.class, ArrayList.class);
+        this.registerConcreteType(Set.class, LinkedHashSet.class);
+        this.registerConcreteType(Map.class, LinkedHashMap.class);
+        this.registerConcreteType(Map.Entry.class, MapEntry.class);
     }
     
     /**
@@ -681,12 +695,12 @@ public class DefaultMapperFactory implements MapperFactory {
                 concreteType = (Type<? extends D>) (registeredMapper.getAType().isAssignableFrom(sourceType) ? registeredMapper.getBType()
                         : registeredMapper.getAType());
                 if (!ClassUtil.isConcrete(concreteType)) {
-                    concreteType = (Type<? extends D>) resolveConcreteType(concreteType);
+                    concreteType = (Type<? extends D>) resolveConcreteType(concreteType, destinationType);
                 } else {
                     return null;
                 }
             } else {
-                concreteType = (Type<? extends D>) resolveConcreteType(destinationType);
+                concreteType = (Type<? extends D>) resolveConcreteType(destinationType, destinationType);
             }
         } else {
             for (final Type<?> type : destinationSet) {
@@ -700,7 +714,7 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         if (concreteType == null) {
-            concreteType = (Type<? extends D>) resolveConcreteType(destinationType);
+            concreteType = (Type<? extends D>) resolveConcreteType(destinationType, destinationType);
         }
         
         return concreteType;
@@ -708,15 +722,31 @@ public class DefaultMapperFactory implements MapperFactory {
     
     /**
      * @param type
+     * @param originalType
      * @return a concrete type (if any) which has been registered for the
      *         specified abstract type
      */
-    protected Type<?> resolveConcreteType(Type<?> type) {
+    protected Type<?> resolveConcreteType(Type<?> type, Type<?> originalType) {
+        
         Type<?> concreteType = (Type<?>) this.concreteTypeRegistry.get(type);
         if (concreteType == null) {
             concreteType = (Type<?>) this.concreteTypeRegistry.get(type.getRawType());
             if (concreteType != null) {
                 concreteType = TypeFactory.resolveValueOf(concreteType.getRawType(), type);
+            }
+        }
+        
+        if (concreteType != null && !concreteType.isAssignableFrom(originalType)) {
+            if (ClassUtil.isConcrete(originalType)) {
+                concreteType = originalType;
+            } else {
+                concreteType = (Type<?>) this.concreteTypeRegistry.get(originalType);
+                if (concreteType == null) {
+                    concreteType = (Type<?>) this.concreteTypeRegistry.get(originalType.getRawType());
+                    if (concreteType != null) {
+                        concreteType = TypeFactory.resolveValueOf(concreteType, originalType);
+                    }
+                }
             }
         }
         return concreteType;

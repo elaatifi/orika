@@ -45,8 +45,6 @@ public class CustomMergerTest {
 		
 		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerMapper(new MergingMapper());
-		factory.registerConcreteType(new TypeBuilder<Collection<Entity>>(){}.build(), 
-				new TypeBuilder<ArrayList<Entity>>(){}.build());
 		MapperFacade mapper = factory.getMapperFacade();
 		
 		List<Dto> dtos = new ArrayList<Dto>();
