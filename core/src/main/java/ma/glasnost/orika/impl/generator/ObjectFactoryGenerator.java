@@ -18,9 +18,6 @@
 package ma.glasnost.orika.impl.generator;
 
 
-import static ma.glasnost.orika.impl.Specifications.*;
-import static ma.glasnost.orika.metadata.TypeFactory.valueOf;
-
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.List;
@@ -39,6 +36,7 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -163,7 +161,7 @@ public class ObjectFactoryGenerator {
         for (FieldMap fieldMap : properties) {
         	
             Class<?> targetClass = constructorArguments[argIndex];
-            VariableRef v = new VariableRef(valueOf(targetClass), "arg" + argIndex++);
+            VariableRef v = new VariableRef(TypeFactory.resolveValueOf(targetClass, type), "arg" + argIndex++);
             VariableRef s = new VariableRef(fieldMap.getSource(), "source");
            
             out.statement(v.declare());
@@ -171,30 +169,8 @@ public class ObjectFactoryGenerator {
             if (generateConverterCode(out, v, fieldMap)) {
                 continue;
             }
-            try {
-                // TODO: should we use CodeSourceBuilder.mapFields here?
-                if (fieldMap.is(aWrapperToPrimitive())) {
-                    out.ifNotNull(s).fromPrimitiveOrWrapperToPrimitive(v, s);
-                } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                    out.fromPrimitiveToWrapper(v, s);
-                } else if (fieldMap.is(aPrimitive())) {
-                    out.copyByReference(v, s);
-                } else if (fieldMap.is(immutable())) {
-                    out.ifNotNull(s).copyByReference(v, s);
-                } else if (fieldMap.is(anArray())) {
-                    out.fromArrayOrCollectionToArray(v, s);
-                } else if (fieldMap.is(aCollection())) {
-                    out.fromArrayOrCollectionToCollection(v, s, fieldMap.getDestination(), fieldMap.getDestination().getType());
-                } else if (fieldMap.is(aStringToPrimitiveOrWrapper())) { 
-                    out.fromStringToStringConvertable(v, s);
-                } else if (fieldMap.is(aConversionToString())) {
-                    out.fromAnyTypeToString(v, s);
-                } else { /**/
-                    out.fromObjectToObject(v, s, null);
-                }
-                
-            } catch (final Exception e) {
-            }
+                        
+            out.mapFields(fieldMap, s, v, fieldMap.getDestination().getType(), logDetails);
         }
         
         out.append("return new %s", type.getCanonicalName()).append("(");

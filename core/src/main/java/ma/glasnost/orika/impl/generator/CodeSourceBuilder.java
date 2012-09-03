@@ -19,18 +19,7 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.aCollection;
-import static ma.glasnost.orika.impl.Specifications.aConversionToString;
-import static ma.glasnost.orika.impl.Specifications.aMapToArray;
-import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
-import static ma.glasnost.orika.impl.Specifications.aMapToMap;
-import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
-import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
-import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
-import static ma.glasnost.orika.impl.Specifications.anArray;
-import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
-import static ma.glasnost.orika.impl.Specifications.immutable;
-import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
+import static ma.glasnost.orika.impl.Specifications.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -147,7 +136,10 @@ public class CodeSourceBuilder {
      * @param destinationType
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef d, VariableRef s, Property ip, Type<?> destinationType) {
+    public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef dest, VariableRef src, Property ip, Type<?> destinationType) {
+               
+        MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+        MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
         
         final Class<?> dc = destinationType.getRawType();
         final Class<?> destinationElementClass = d.elementType().getRawType();
@@ -174,12 +166,12 @@ public class CodeSourceBuilder {
                     usedType(s.elementType()), usedType(d.elementType()));
         }
         if (ip != null) {
-            final VariableRef inverse = new VariableRef(ip, "orikaCollectionItem");
+            final MultiOccurrenceVariableRef inverse = new MultiOccurrenceVariableRef(ip, "orikaCollectionItem");
             
             if (ip.isCollection()) {
                 append(format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", d)
                         + format("    %s orikaCollectionItem = (%s) orikaIterator.next();", d.elementTypeName(), d.elementTypeName())
-                        + format("    %s { %s; }", inverse.ifNull(), inverse.assign(inverse.newCollection()))
+                        + format("    %s { %s; }", inverse.ifNull(), inverse.assignIfPossible(inverse.newCollection()))
                         + format("    %s.add(%s);", inverse, d.owner()) + format("}"));
                 
             } else if (ip.isArray()) {
@@ -434,7 +426,8 @@ public class CodeSourceBuilder {
             VariableRef inverse = new VariableRef(ip, d);
             
             if (inverse.isCollection()) {
-                ipStmt += inverse.ifNull() + inverse.assign(inverse.newCollection()) + ";";
+            	MultiOccurrenceVariableRef inverseCollection = MultiOccurrenceVariableRef.from(inverse);
+                ipStmt += inverse.ifNull() + inverse.assign(inverseCollection.newCollection()) + ";";
                 ipStmt += format("%s.add(%s);", inverse, d.owner());
             } else if (inverse.isArray()) {
                 ipStmt += "/* TODO Orika CodeSourceBuilder.setObject does not support Arrays */";
@@ -530,8 +523,11 @@ public class CodeSourceBuilder {
      *            the type of the destination variable
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromMapToMap(VariableRef d, VariableRef s, Type<?> destinationType) {
+    public CodeSourceBuilder fromMapToMap(VariableRef dest, VariableRef src, Type<?> destinationType) {
         
+    	MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
+    	MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+    	
         ifNotNull(s).then();
         
         if (d.isAssignable()) {
@@ -577,8 +573,11 @@ public class CodeSourceBuilder {
      *            the source variable
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromArrayOrCollectionToMap(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromArrayOrCollectionToMap(VariableRef dest, VariableRef src) {
         
+    	MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
+    	MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+    	
         ifNotNull(s).then();
         
         if (d.isAssignable()) {

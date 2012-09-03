@@ -348,39 +348,6 @@ public class VariableRef {
         return getter();
     }
     
-    public String collectionType() {
-        String collection;
-        if (property.isList()) {
-            collection ="List";
-        } else if (property.isSet()) {
-            collection = "Set";
-        } else if (property.isCollection()){
-        	collection = "Collection";
-        } else {
-            throw new IllegalStateException(property.getType() + " is not a collection type");
-        }
-        return collection;
-    }
-    
-    public String newCollection() {
-        return newInstance("");
-    }
-    
-    public String newInstance(String sizeExpr) {
-    	if ("Set".equals(collectionType())) {
-            return "new java.util.LinkedHashSet(" + sizeExpr + ")";
-        } else {
-            return "new java.util.ArrayList(" + sizeExpr + ")";
-        }
-    }
-    
-    public String newMap(String sizeExpr) {
-    	return "new java.util.LinkedHashMap(" + sizeExpr + ")";
-    }
-    
-    public String newMap() {
-    	return newMap("");
-    }
     
     /**
      * @return whether or not this VariableRef represents a nested property

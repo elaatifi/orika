@@ -41,11 +41,17 @@ public class MultiOccurrenceVariableRef extends VariableRef {
     private String iteratorName;
     private boolean iteratorDeclared;
 	
+    /**
+     * up-converts the specified standard VariableRef into a MultiOccurrenceVariableRef
+     * 
+     * @param r
+     * @return
+     */
     public static MultiOccurrenceVariableRef from(VariableRef r) {
     	if (r.property() != null) {
-    		return new MultiOccurrenceVariableRef(r.property(), r.name());
+    		return new MultiOccurrenceVariableRef(r.property(), r.name);
     	} else {
-    		return new MultiOccurrenceVariableRef(r.type(), r.name());
+    		return new MultiOccurrenceVariableRef(r.type(), r.name);
     	}
     }
     
@@ -203,9 +209,5 @@ public class MultiOccurrenceVariableRef extends VariableRef {
 			}
 		}
     }
-    
-    
-    
-    
     
 }
