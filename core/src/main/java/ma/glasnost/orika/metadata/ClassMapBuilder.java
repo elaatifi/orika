@@ -101,7 +101,7 @@ public class ClassMapBuilder<A, B> {
      * @param bType
      * @deprecated Use of this method instantiates a new PropertyResolverStrategy instance
      * each time; instead, {@link ma.glasnost.orika.MapperFactory#classMap(Type, Type)} should
-     * be used which leverages the PropertyResolverStrategy instance associated with the factory.
+     * be used which will leverage the PropertyResolverStrategy instance associated with the factory.
      */
     @Deprecated
 	private ClassMapBuilder(Type<A> aType, Type<B> bType) {
@@ -268,17 +268,19 @@ public class ClassMapBuilder<A, B> {
     /**
      * Configures this class-map builder to employ the default property mapping
      * behavior to any properties that have not already been mapped or excluded; 
-     * if any DefaultFieldMapper instances are passed, they will be used to attempt a
-     * property name match if a direct match is not found.
+     * if any DefaultFieldMapper instances are passed, they will be used (instead of
+     * those configured on the builder) to attempt a property name match if a direct 
+     * match is not found.
      * 
-     * @param defaults zero or more DefaultFieldMapper instances to apply during the default mapping
+     * @param withDefaults zero or more DefaultFieldMapper instances to apply during the default mapping;
+     * if none are supplied, the configured DefaultFieldMappers for the builder (if any) should be used.
      * @return this ClassMapBuilder instance
      */
     public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... withDefaults) {
         
     	DefaultFieldMapper[] defaults;
     	if (withDefaults.length == 0) {
-    		defaults = this.defaults;
+    		defaults = getDefaultFieldMappers();
     	} else {
     		defaults = withDefaults;
     	}
@@ -300,7 +302,7 @@ public class ClassMapBuilder<A, B> {
                     Property prop = resolvePropertyForA(propertyName);
                     for (DefaultFieldMapper defaulter : defaults) {
                         String suggestion = defaulter.suggestMappedField(propertyName, prop.getType());
-                        if (suggestion != null && getPropertiesForTypeB().contains(suggestion)/*bProperties.containsKey(suggestion)*/) {
+                        if (suggestion != null && getPropertiesForTypeB().contains(suggestion)) {
                             if (!getMappedPropertiesForTypeB().contains(suggestion)) {
                                 fieldMap(propertyName, suggestion).add();
                             }
@@ -381,38 +383,45 @@ public class ClassMapBuilder<A, B> {
     public ClassMap<A, B> toClassMap() {
     	
     	if(LOGGER.isDebugEnabled()) {
-    		StringBuilder output = new StringBuilder();
-        	output.append("ClassMap created:\n\t"+ getClass().getSimpleName() + ".map(" + aType + ", " + bType + ")");
-        	for (FieldMap f: fieldsMapping) {
-        		if (f.isExcluded()) {
-        			output.append("\n\t .exclude('" + f.getSourceName() + "')");
-        		} else if (f.getElementMap() == null){
-        			output.append("\n\t .field( " + f.getSource() + ", " + f.getDestination() + " )");
-        		} else {
-        			StringBuilder source = new StringBuilder(""+f.getSource());
-        			StringBuilder dest = new StringBuilder(""+f.getDestination());
-        			StringBuilder suffix = new StringBuilder();
-        			FieldMap elementMap = f.getElementMap();
-        			while (elementMap != null) {
-        				source.append("[" + elementMap.getSource());
-        				dest.append("[" + elementMap.getDestination());
-        				suffix.append("]");
-        				elementMap = elementMap.getElementMap();
-        			}
-        			
-        			output.append("\n\t .field( " + source + suffix + ", " + dest + suffix + " )");
-        		}
-        	}	
-        	if (constructorA != null) {
-        		output.append("\n\t .constructorA(" + Arrays.toString(constructorA) + ")");
-        	}
-        	if (constructorB != null) {
-        		output.append("\n\t .constructorB(" + Arrays.toString(constructorB) + ")");
-        	}
-        	LOGGER.debug(output.toString());
+        	LOGGER.debug("ClassMap created:\n\t" + describeClassMap());
         }
     	
         return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
+    }
+    
+    /**
+     * @return a pseudo-code description of the class map that is created by this builder
+     */
+    protected String describeClassMap() {
+    	StringBuilder output = new StringBuilder();
+    	output.append(getClass().getSimpleName() + ".map(" + aType + ", " + bType + ")");
+    	for (FieldMap f: fieldsMapping) {
+    		if (f.isExcluded()) {
+    			output.append("\n\t .exclude('" + f.getSourceName() + "')");
+    		} else if (f.getElementMap() == null){
+    			output.append("\n\t .field( " + f.getSource() + ", " + f.getDestination() + " )");
+    		} else {
+    			StringBuilder source = new StringBuilder(""+f.getSource());
+    			StringBuilder dest = new StringBuilder(""+f.getDestination());
+    			StringBuilder suffix = new StringBuilder();
+    			FieldMap elementMap = f.getElementMap();
+    			while (elementMap != null) {
+    				source.append("[" + elementMap.getSource());
+    				dest.append("[" + elementMap.getDestination());
+    				suffix.append("]");
+    				elementMap = elementMap.getElementMap();
+    			}
+    			
+    			output.append("\n\t .field( " + source + suffix + ", " + dest + suffix + " )");
+    		}
+    	}	
+    	if (constructorA != null) {
+    		output.append("\n\t .constructorA(" + Arrays.toString(constructorA) + ")");
+    	}
+    	if (constructorB != null) {
+    		output.append("\n\t .constructorB(" + Arrays.toString(constructorB) + ")");
+    	}
+    	return output.toString();
     }
     
     /**
@@ -582,6 +591,19 @@ public class ClassMapBuilder<A, B> {
     	return bProperties.keySet();
     }
     
+    /**
+     * @return the default field mappers (if any) configured for this builder
+     */
+    protected DefaultFieldMapper[] getDefaultFieldMappers() {
+    	return defaults;
+    }
+    
+    /**
+     * @return the property resolver used by this builder
+     */
+    protected PropertyResolverStrategy getPropertyRessolver() {
+    	return this.propertyResolver;
+    }
     
     /**
      * Declares a constructor to be used for the A type 
