@@ -128,10 +128,7 @@ public class ClassMap<A, B> {
      * @return
      */
     public String getMapperClassName() {
-        // TODO This should be a strategy defined at the MapperGenerator level,
-        // something like mapperClassNameStrategy.getMapperClassName(ClassMap
-        // classMap)
-        return "Orika" + bType.getSimpleName() + getATypeName() + "Mapper";
+        return "Orika_" + bType.getSimpleName() + "_" + getATypeName() + "_Mapper";
     }
     
     /**

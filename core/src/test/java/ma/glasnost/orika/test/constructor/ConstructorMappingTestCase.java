@@ -3,6 +3,8 @@ package ma.glasnost.orika.test.constructor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.net.URL;
+import java.net.URLStreamHandler;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -58,7 +60,7 @@ public class ConstructorMappingTestCase {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
-                .constructorA()
+                //.constructorA()
                 .fieldMap("dateOfBirth", "date")
                 .converter(DATE_CONVERTER)
                 .add()
@@ -389,6 +391,58 @@ public class ConstructorMappingTestCase {
     	assertValidMapping(holder, wrapper);
 	
     } 
+    
+    
+    public static class URLDto1 {
+    	public String protocolX;
+    	public String hostX; 
+    	public int portX;
+    	public String fileX;
+    }
+    
+    public static class URLDto2 {
+    	public String protocol;
+    	public String host; 
+    	public String file;
+    }
+    
+    public static class URLDto3 {
+    	public String protocol;
+    	public String host; 
+    	public int port;
+    	public String file;
+    	public URLStreamHandler handler;
+    }
+    
+    public static class URLDto4 {
+    	public URL context;
+    	public String spec;
+    }
+    
+    @Test
+    public void testConstructorsWithoutDebugInfo() {
+    	MapperFactory factory = MappingUtil.getMapperFactory();
+    	factory.registerClassMap(
+    			factory.classMap(URLDto1.class, URL.class)
+		    		.field("protocolX", "protocol")
+		    		.field("hostX", "host")
+		    		.field("portX", "port")
+		    		.field("fileX", "file"));
+    	MapperFacade mapper = factory.getMapperFacade();
+    	
+    	URLDto1 dto1 = new URLDto1();
+    	dto1.protocolX = "http";
+    	dto1.hostX = "somewhere.com";
+    	dto1.portX = 8080;
+    	dto1.fileX = "index.html";
+    	
+    	URL url = mapper.map(dto1, URL.class);
+    	Assert.assertNotNull(url);
+    	Assert.assertEquals(dto1.protocolX, url.getProtocol());
+    	Assert.assertEquals(dto1.hostX, url.getHost());
+    	Assert.assertEquals(dto1.portX, url.getPort());
+    	
+    }
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Common mapping validations
