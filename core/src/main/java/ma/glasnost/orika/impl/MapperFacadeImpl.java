@@ -93,11 +93,7 @@ public class MapperFacadeImpl implements MapperFacade {
         if (resolvedType == null) {
             Type<?> newlyResolvedType;
             if (sourceType != null) {
-                if (destinationType != null && (canCopyByReference(destinationType, sourceType) || canConvert(sourceType, destinationType))
-                /*
-                 * || mapperFactory.existsRegisteredMapper(sourceType,
-                 * destinationType)
-                 */) {
+                if (destinationType != null && (canCopyByReference(destinationType, sourceType) || canConvert(sourceType, destinationType))) {
                     /*
                      * We shouldn't bother further resolving the source type if
                      * we already have a converter or copy-by-reference for the
