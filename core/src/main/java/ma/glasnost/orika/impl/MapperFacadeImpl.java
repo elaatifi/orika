@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
@@ -55,7 +54,6 @@ public class MapperFacadeImpl implements MapperFacade {
     
     private final MapperFactory mapperFactory;
     private final UnenhanceStrategy unenhanceStrategy;
-    private final ConcurrentHashMap<java.lang.reflect.Type, Type<?>> resolvedTypes = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
     private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(
             500);
     private final boolean useStrategyCache;
@@ -80,62 +78,46 @@ public class MapperFacadeImpl implements MapperFacade {
     @SuppressWarnings("unchecked")
     private <S, D> Type<S> normalizeSourceType(S sourceObject, Type<S> sourceType, Type<D> destinationType) {
         
-        /*
-         * Use the raw type in cases where the sourceType is null or not
-         * providing any extra information
-         */
-        java.lang.reflect.Type typeKey = sourceType;
-        if (sourceType == null || !sourceType.isParameterized()) {
-            typeKey = sourceObject.getClass();
-        }
+        Type<?> resolvedType = null; 
         
-        Type<?> resolvedType = resolvedTypes.get(typeKey);
-        if (resolvedType == null) {
-            Type<?> newlyResolvedType;
-            if (sourceType != null) {
-                if (destinationType != null && (canCopyByReference(destinationType, sourceType) || canConvert(sourceType, destinationType))) {
-                    /*
-                     * We shouldn't bother further resolving the source type if
-                     * we already have a converter or copy-by-reference for the
-                     * originally specified type -- since these operations
-                     * override the use of a custom mapper which needs the
-                     * resolution.
-                     */
-                    newlyResolvedType = sourceType;
-                } else {
-                    
-                    if (sourceType.isAssignableFrom(sourceObject.getClass())) {
-                        sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
-                    }
-                    Type<?> sourceObjectType = TypeFactory.resolveTypeOf(sourceObject, sourceType);
-                    /*
-                     * In the case where there is an existing mapper registered
-                     * for either the source object type or the source type, we
-                     * should use that type, rather than applying unenhancement
-                     * which could result in another type which would not use
-                     * that mapper
-                     */
-                    if (mapperFactory.existsRegisteredMapper(sourceType, destinationType, false)) {
-                        newlyResolvedType = sourceType;
-                    } else if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType, false)) {
-                        newlyResolvedType = sourceObjectType;
-                    } else if (ClassUtil.isConcrete(sourceType)) {
-                        newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
-                    } else {
-                        newlyResolvedType = unenhanceStrategy.unenhanceType(sourceObject,
-                                TypeFactory.resolveTypeOf(sourceObject, sourceType));
-                    }
-                }
-                
-                resolvedType = resolvedTypes.putIfAbsent(typeKey, newlyResolvedType);
-                if (resolvedType == null) {
-                    resolvedType = newlyResolvedType;
-                }
+        if (sourceType != null) {
+            if (destinationType != null && (canCopyByReference(destinationType, sourceType) || canConvert(sourceType, destinationType))) {
+                /*
+                 * We shouldn't bother further resolving the source type if
+                 * we already have a converter or copy-by-reference for the
+                 * originally specified type -- since these operations
+                 * override the use of a custom mapper which needs the
+                 * resolution.
+                 */
+            	resolvedType = sourceType;
             } else {
-                resolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.typeOf(sourceObject));
+                
+                if (sourceType.isAssignableFrom(sourceObject.getClass())) {
+                    sourceType = (Type<S>) TypeFactory.valueOf(sourceObject.getClass());
+                }
+                Type<?> sourceObjectType = TypeFactory.resolveTypeOf(sourceObject, sourceType);
+                /*
+                 * In the case where there is an existing mapper registered
+                 * for either the source object type or the source type, we
+                 * should use that type, rather than applying unenhancement
+                 * which could result in another type which would not use
+                 * that mapper
+                 */
+                if (mapperFactory.existsRegisteredMapper(sourceType, destinationType, false)) {
+                	resolvedType = sourceType;
+                } else if (mapperFactory.existsRegisteredMapper(sourceObjectType, destinationType, false)) {
+                	resolvedType = sourceObjectType;
+                } else if (ClassUtil.isConcrete(sourceType)) {
+                	resolvedType = unenhanceStrategy.unenhanceType(sourceObject, sourceType);
+                } else {
+                	resolvedType = unenhanceStrategy.unenhanceType(sourceObject,
+                            TypeFactory.resolveTypeOf(sourceObject, sourceType));
+                }
             }
-            
+        } else {
+            resolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.typeOf(sourceObject));
         }
+      
         return (Type<S>) resolvedType;
     }
     
