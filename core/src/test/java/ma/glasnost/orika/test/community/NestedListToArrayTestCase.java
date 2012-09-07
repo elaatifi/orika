@@ -102,7 +102,7 @@ public class NestedListToArrayTestCase {
 		
 		
 		MapperFactory mapperFactory = MappingUtil.getMapperFactory();
-        final ClassMapBuilder<R1, R2> builder = ClassMapBuilder.map(R1.class, R2.class);
+        final ClassMapBuilder<R1, R2> builder = mapperFactory.classMap(R1.class, R2.class);
 
         mapperFactory.registerClassMap(builder.byDefault().toClassMap());
         

@@ -31,8 +31,10 @@ import javax.xml.datatype.XMLGregorianCalendar;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingHint;
+import ma.glasnost.orika.impl.generator.EclipseJdtCompiler;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
+import ma.glasnost.orika.test.MavenProjectUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorChild;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.AuthorMyDTO;
@@ -46,8 +48,6 @@ import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryChild;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryMyDTO;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryParent;
 
-import org.codehaus.janino.DebuggingInformation;
-import org.codehaus.janino.JavaSourceClassLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -304,13 +304,12 @@ public class SuperTypeMappingTestCase {
         MapperFacade mapper = factory.getMapperFacade();
         
         // -----------------------------------------------------------------------------
-        File testClassPathRoot = new File(getClass().getResource("/").getFile());
-        File projectRoot = testClassPathRoot.getParentFile().getParentFile();
+        File projectRoot = MavenProjectUtil.findProjectRoot();
         
         ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
         
-        ClassLoader childLoader = new JavaSourceClassLoader(threadContextLoader,
-                new File[] { new File(projectRoot, "src/test/java-hidden") }, "UTF-8", DebuggingInformation.ALL);
+        EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
+		ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
         
         @SuppressWarnings("unchecked")
         Class<? extends Author> hiddenAuthorType = (Class<? extends Author>) childLoader.loadClass("types.AuthorHidden");

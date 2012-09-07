@@ -18,273 +18,261 @@
 
 package ma.glasnost.orika.impl.generator;
 
+import static java.lang.String.format;
+import static ma.glasnost.orika.impl.Specifications.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
+import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.MapEntry;
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.converter.ConverterFactory;
+import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.util.ClassUtil;
+import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.metadata.FieldMap;
+import ma.glasnost.orika.metadata.FieldMapBuilder;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
+/**
+ * CodeSourceBuilder is a utility class used to generate the various source code
+ * snippets needed to generate the Orika mapping objects
+ * 
+ */
 public class CodeSourceBuilder {
     
     private final StringBuilder out = new StringBuilder();
-    private int currentIndent = 1;
     private final UsedTypesContext usedTypes;
+    private final UsedConvertersContext usedConverters;
+    private final MapperFactory mapperFactory;
     
-    public CodeSourceBuilder(int indent, UsedTypesContext usedTypes) {
-        this.currentIndent = indent;
+    /**
+     * Constructs a new instance of SourceCodeBuilder
+     * 
+     * @param usedTypes
+     *            a context for tracking the types used in the generated mapper
+     * @param usedConverters
+     *            a context for tracking the converters used in the generated
+     *            mapper
+     * @param mapperFactory
+     *            the mapper factory for which the mapper is being generated
+     */
+    public CodeSourceBuilder(UsedTypesContext usedTypes, UsedConvertersContext usedConverters, MapperFactory mapperFactory) {
         this.usedTypes = usedTypes;
+        this.usedConverters = usedConverters;
+        this.mapperFactory = mapperFactory;
+    }
+    
+    private String usedConverter(Converter<?, ?> converter) {
+        int index = usedConverters.getIndex(converter);
+        return "((" + Converter.class.getCanonicalName() + ")usedConverters[" + index + "])";
+    }
+    
+    private String usedType(Type<?> type) {
+        int index = usedTypes.getIndex(type);
+        return "((" + Type.class.getCanonicalName() + ")usedTypes[" + index + "])";
+    }
+    
+    private String usedType(VariableRef r) {
+        return usedType(r.type());
     }
     
     /**
-     * Returns a fully type-cast getter for the property which has no reliance
-     * on java generics.
+     * Generate the code to use a specific converter from one type to another
      * 
-     * @param property
-     *            the Property for which to return the getter
-     * @param variableExpression
-     *            the String value to use for the variable on which the getter
-     *            is called
-     * @return
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @param converter
+     * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    private String getGetter(final Property property, String variableExpression) {
-        String var = variableExpression;
-        if (property.hasPath()) {
-            for (final Property p : property.getPath()) {
-                var = getGetter(p, var);
-            }
+    public CodeSourceBuilder convert(VariableRef d, VariableRef s, Converter<Object, Object> converter) {
+        
+        String statement = d.assign("%s.convert(%s, %s)", usedConverter(converter), s.asWrapper(), usedType(d));
+        
+        if (s.isPrimitive()) {
+            statement(statement);
+        } else {
+            statement(s.ifNotNull() + statement);
         }
-        return "((" + property.getType().getCanonicalName() + ")" + var + "." + property.getGetter() + ")";
+        return this;
     }
     
     /**
-     * Returns a fully type-cast setter for the property which has no reliance
-     * on java generics.
+     * Generate the code used to copy properties by reference
      * 
-     * @param property
-     *            the Property for which to return the getter
-     * @param variableExpression
-     *            the String value to use for the variable on which the getter
-     *            is called
-     * @return
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    private String getSetter(final Property property, final String variableExpression) {
-        String var = variableExpression;
-        if (property.hasPath()) {
-            for (final Property p : property.getPath()) {
-                var = getGetter(p, var);
-            }
-        }
-        return var + "." + property.getSetter();
-        
+    public CodeSourceBuilder copyByReference(VariableRef d, VariableRef s) {
+        return statement(d.assign(s));
     }
     
-    private String getUsedType(Type<?> type) {
-        int index = usedTypes.getUsedTypeIndex(type);
-        return "usedTypes[" + index + "]";
-    }
-    
-    private String getUsedType(Property prop) {
-        return getUsedType(prop.getType());
-    }
-    
-    private String getUsedComponentType(Property prop) {
-        return getUsedType(prop.getType().getComponentType());
-    }
-    
-    private String getUsedElementType(Property prop) {
-        return getUsedType(prop.isArray() ? prop.getType().getComponentType() : prop.getElementType());
-    }
-    
-    public CodeSourceBuilder assertType(String var, Class<?> clazz) {
-        newLine();
-        append("if(!(" + var + " instanceof ").append(clazz.getCanonicalName()).append(")) ");
-        begin();
-        append("throw new IllegalStateException(\"[" + var + "] is not an instance of " + clazz.getCanonicalName() + " \");");
-        end();
-        return this;
-    }
-    
-    public CodeSourceBuilder convert(Property destination, Property source, String converterId) {
-        
-        String typeCastGetter = getGetter(source, "source");
-        final String typeCastSetter = getSetter(destination, "destination");
-        final String sourceType = getUsedType(source);
-        final String targetType = getUsedType(destination);
-        final Class<?> destinationClass = destination.getRawType();
-        converterId = getConverterId(converterId);
-        
-        if (source.isPrimitive()) {
-            String sourceWrapperClassName = ClassUtil.getWrapperType(source.getRawType()).getCanonicalName();
-            typeCastGetter = String.format("(%s) %s.valueOf(%s)", sourceWrapperClassName, sourceWrapperClassName, typeCastGetter);
-        }
-        
-        String exprValue = String.format("mapperFacade.convert(%s, %s, %s, %s)", typeCastGetter, sourceType, targetType, converterId);
-        
-        if (destination.isPrimitive()) {
-            exprValue = String.format("((%s)%s).%sValue()", ClassUtil.getWrapperType(destinationClass).getCanonicalName(), exprValue,
-                    getPrimitiveType(destinationClass));
-        }
-        
-        String value = String.format("(%s) %s", destinationClass.getCanonicalName(), exprValue);
-        
-        newLine();
-        if (!source.isPrimitive())
-            ifSourceNotNull(source).then();
-        append(String.format(typeCastSetter + ";", value));
-        if (!source.isPrimitive())
-            end();
-        
-        return this;
-    }
-    
-    private String getConverterId(String converterId) {
-        converterId = converterId == null ? "null" : ("\"" + converterId + "\"");
-        return converterId;
-    }
-    
-    public CodeSourceBuilder set(Property d, Property s) {
-        final String typeCastGetter = getGetter(s, "source");
-        final String typeCastSetter = getSetter(d, "destination");
-        
-        return newLine().append(typeCastSetter + ";", typeCastGetter);
-    }
-    
-    public CodeSourceBuilder setCollection(Property dp, Property sp, Property ip, Type<?> destinationType) {
+    /**
+     * Generate the code to map from an array or collection to another
+     * collection
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @param ip
+     * @param destinationType
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef dest, VariableRef src, Property ip, Type<?> destinationType) {
+               
+        MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+        MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
         
         final Class<?> dc = destinationType.getRawType();
-        final Class<?> destinationElementClass = dp.getElementType().getRawType();
+        final Class<?> destinationElementClass = d.elementType().getRawType();
         
         if (destinationElementClass == null) {
-            throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + dp.getName());
+            throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + d.name());
         }
         
-        String destinationCollection = "List";
-        String newStatement = "new java.util.ArrayList()";
-        if (List.class.isAssignableFrom(dp.getRawType())) {
-            destinationCollection = "List";
-            newStatement = "new java.util.ArrayList()";
-        } else if (Set.class.isAssignableFrom(dp.getRawType())) {
-            destinationCollection = "Set";
-            newStatement = "new java.util.HashSet()";
+        if (d.isAssignable()) {
+            statement("if (%s == null) %s", d, d.assign(d.newCollection()));
         }
         
-        final String sourceGetter = getGetter(sp, "source");
-        final String destinationGetter = getGetter(dp, "destination");
-        final String destinationSetter = getSetter(dp, "destination");
-        
-        final String sourceType = getUsedElementType(sp);
-        final String destinationElementType = getUsedElementType(dp);
-        
-        boolean destinationHasSetter = false;
-        try {
-            destinationHasSetter = hasSetter(dp, dc);
-            
-        } catch (Exception e) {
-            /* ignored: no destination setter available */
-        }
-        
-        if (destinationHasSetter) {
-            newLine().append("if (%s == null) ", destinationGetter).begin().append(destinationSetter + ";", newStatement).end();
-        }
         // Start check if source property ! = null
-        ifSourceNotNull(sp).then();
-        if (sp.isArray()) {
-            if (sp.getType().getComponentType().isPrimitive())
-                newLine().append("%s.addAll(asList(%s));", destinationGetter, sourceGetter, dp.getType().getCanonicalName());
+        ifNotNull(s).then();
+        if (s.isArray()) {
+            if (s.elementType().isPrimitive())
+                newLine().append("%s.addAll(asList(%s));", d, s);
             else
-                newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", destinationGetter, sourceGetter,
-                        dp.getType().getCanonicalName());
+                newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", d, s, d.typeName());
         } else {
-            newLine().append("%s.clear();", destinationGetter);
-            newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", destinationGetter, destinationCollection,
-                    sourceGetter, sourceType, destinationElementType);
+            
+            newLine().append("%s.clear();", d);
+            newLine().append("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext));", d, d.collectionType(), s,
+                    usedType(s.elementType()), usedType(d.elementType()));
         }
         if (ip != null) {
-            final String ipGetter = getGetter(ip, "orikaCollectionItem");
-            final String ipSetter = getSetter(ip, "orikaCollectionItem");
+            final MultiOccurrenceVariableRef inverse = new MultiOccurrenceVariableRef(ip, "orikaCollectionItem");
             
             if (ip.isCollection()) {
-                newLine().append("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) ", destinationGetter);
-                begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getElementType().getCanonicalName(),
-                        dp.getElementType().getCanonicalName());
-                newLine().append("if (%s == null) ", ipGetter);
-                begin();
-                if (ip.isSet()) {
-                    append(ipSetter + ";", "new java.util.HashSet()");
-                    newLine();
-                } else if (ip.isList()) {
-                    append(ipSetter + ";", "new java.util.ArrayList()");
-                    newLine();
-                } else {
-                    throw new MappingException("Unsupported collection type: " + ip.getType());
-                }
-                end();
-                append("%s.add(destination);", ipGetter);
-                end();
+                append(format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", d)
+                        + format("    %s orikaCollectionItem = (%s) orikaIterator.next();", d.elementTypeName(), d.elementTypeName())
+                        + format("    %s { %s; }", inverse.ifNull(), inverse.assignIfPossible(inverse.newCollection()))
+                        + format("    %s.add(%s);", inverse, d.owner()) + format("}"));
+                
             } else if (ip.isArray()) {
                 append(" // TODO support array");
             } else {
-                newLine().append("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();)", destinationGetter);
-                begin().append("%s orikaCollectionItem = (%s) orikaIterator.next();", dp.getElementType().getCanonicalName(),
-                        dp.getElementType().getCanonicalName());
-                newLine().append(ipSetter + ";", "destination");
-                end();
+                append(format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", d)
+                        + format("    %s orikaCollectionItem = (%s) orikaIterator.next();", d.elementTypeName(), d.elementTypeName())
+                        + format("    %s;", inverse.assign(d.owner())) + format("}"));
+                
             }
         }
         // End check if source property ! = null
-        elze().setDestinationNull(dp).end();
+        _else().statement(d.assignIfPossible("null")).end();
         
         return this;
     }
-
-    private boolean hasSetter(Property dp, final Class<?> dc) throws NoSuchMethodException {
-        return dp.getSetter().indexOf('=') != -1 || (dc.getMethod(dp.getSetterName(), dp.getRawType()) != null);
-    }
     
+    /**
+     * Generate a newline in the source code
+     * 
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
     public CodeSourceBuilder newLine() {
-        out.append("\n");
-        for (int i = 0; i < currentIndent; ++i) {
-            out.append("\t");
-        }
-        return this;
+        return append("\n");
     }
     
+    /**
+     * Append the provided string to the current source code, replacing any
+     * string formatting placeholders with the provided replacement arguments
+     * 
+     * @param str
+     * @param args
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
     public CodeSourceBuilder append(String str, Object... args) {
         out.append(String.format(str, args));
         return this;
     }
     
+    /**
+     * Append the provided string to the current source code
+     * 
+     * @param str
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
     public CodeSourceBuilder append(String str) {
         out.append(str);
         return this;
     }
     
-    public CodeSourceBuilder then() {
-        append("{");
-        ++currentIndent;
-        return newLine();
+    /**
+     * Appends the provided string as a source code statement, ending it with a
+     * statement terminator as appropriate.
+     * 
+     * @param str
+     * @param args
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder statement(String str, Object... args) {
+        if (str != null && !"".equals(str.trim())) {
+            String expr = "\n" + format(str, args);
+            append(expr);
+            if (!expr.endsWith(";") && !expr.endsWith("}")) {
+                append(";");
+            }
+        }
+        return this;
     }
     
+    /**
+     * Append an open brace
+     * 
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder then() {
+        return append("{").newLine();
+    }
+    
+    /**
+     * Append an open brace
+     * 
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
     public CodeSourceBuilder begin() {
         return then();
     }
     
+    /**
+     * Append a closing brace
+     * 
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
     public CodeSourceBuilder end() {
-        --currentIndent;
-        newLine();
-        append("}");
-        return newLine();
+        return newLine().append("}").newLine();
     }
     
-    public CodeSourceBuilder elze() {
-        --currentIndent;
-        newLine();
-        append("} else {");
-        ++currentIndent;
-        return newLine();
+    /**
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder _else() {
+        return newLine().append("} else {").newLine();
     }
     
     @Override
@@ -292,342 +280,771 @@ public class CodeSourceBuilder {
         return out.toString();
     }
     
-    public CodeSourceBuilder setFromStringConversion(Property dp, Property sp) {
-        final String getter = getGetter(sp, "source");
-        final String setter = getSetter(dp, "destination");
-        
-        newLine();
-        if (dp.getType().isPrimitive()) {
-            final String wrapperTypeName = ClassUtil.getWrapperType(dp.getRawType()).getCanonicalName();
-            final String value = String.format("%s.valueOf(%s).%sValue()", wrapperTypeName, getter, getPrimitiveType(dp.getRawType()));
-            append(setter + ";", value);
+    /**
+     * Generate mapping code to map from a string to a string-convertible type
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromStringToStringConvertable(final VariableRef d, final VariableRef s) {
+        String value = s.toString();
+        if (String.class.equals(s.rawType()) && (Character.class.equals(d.rawType()) || char.class.equals(d.rawType()))) {
+            value = value + ".charAt(0)";
+        }
+        if (d.isPrimitive()) {
+            statement(d.assign("%s.valueOf(%s)", d.wrapperTypeName(), value));
         } else {
-            final String wrapperTypeName = dp.getType().getCanonicalName();
-            final String value = String.format("%s.valueOf(%s)", wrapperTypeName, getter);
-            ifSourceNotNull(sp).then();
-            append(setter + ";", value);
-            end();
+            statement(s.ifNotNull() + d.assign("%s.valueOf(%s)", d.typeName(), value));
         }
         
         return this;
         
     }
     
-    public CodeSourceBuilder setToStringConversion(Property dp, Property sp) {
-        final String getter = getGetter(sp, "source");
-        final String setter = getSetter(dp, "destination");
+    /**
+     * Generate mapping code to map from any type to a string
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromAnyTypeToString(VariableRef d, VariableRef s) {
         
-        newLine();
-        
-        if (!sp.getType().isPrimitive()) {
-            final String value = String.format("%s.toString()", getter);
-            ifSourceNotNull(sp).then();
-            append(setter + ";", value);
-            end();
+        if (s.isPrimitive()) {
+            statement(d.assign("\"\"+ %s", s));
         } else {
-            final String value = String.format("\"\"+%s", getter);
-            append(setter + ";", value);
+            statement(s.ifNotNull() + d.assign("%s.toString()", s));
         }
         
         return this;
         
     }
     
-    public CodeSourceBuilder setWrapper(Property dp, Property sp) {
-        final String getter = getGetter(sp, "source");
-        final String setter = getSetter(dp, "destination");
-        final String value = String.format("%s.valueOf((%s)%s)", dp.getType().getCanonicalName(), getPrimitiveType(dp.getRawType()), getter);
-        newLine().append(setter + ";", value);
-        return this;
-    }
-    
-    public CodeSourceBuilder setPrimitive(Property dp, Property sp) {
-        final String getter = getGetter(sp, "source");
-        final String setter = getSetter(dp, "destination");
+    /**
+     * Generate mapping code from a primitive to a primitive wrapper
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromPrimitiveToWrapper(VariableRef d, VariableRef s) {
         
-        if (!sp.getType().isPrimitive()) {
-            ifSourceNotNull(sp).then();
-        }
-        final String value = String.format("%s.%sValue()", getter, getPrimitiveType(dp.getRawType()));
-        newLine().append(setter + ";", value);
+        statement(d.assign("%s.valueOf(%s)", d.typeName(), s));
         
-        if (!sp.getType().isPrimitive()) {
-            end();
-        }
-        
-        return this;
-    }
-    
-    public CodeSourceBuilder setArray(Property dp, Property sp) {
-        final String getSizeCode = sp.getRawType().isArray() ? "length" : "size()";
-        
-        final String paramType = dp.getRawType().getComponentType().getCanonicalName();
-        final String getter = getGetter(sp, "source");
-        final String setter = getSetter(dp, "destination");
-        final String sourceType = getUsedComponentType(sp);
-        final String destinationType = getUsedComponentType(dp);
-        
-        ifSourceNotNull(sp).then();
-        
-        newLine().append("%s[] %s = new %s[%s.%s];", paramType, dp.getName(), paramType, getter, getSizeCode);
-        newLine();
-        String convertArrayToList = "asList";
-        if (dp.getRawType().getComponentType().isPrimitive()) {
-            append("mapArray(%s,%s(%s), %s.class, mappingContext);", dp.getName(), convertArrayToList, getter, paramType);
-        } else {
-            append("mapperFacade.mapAsArray(%s, %s(%s), %s, %s, mappingContext);", dp.getName(), convertArrayToList, getter, sourceType,
-                    destinationType);
-        }
-        newLine().append(setter + ";", dp.getName());
-        
-        elze().setDestinationNull(dp).end();
-        
-        return this;
-    }
-    
-    public CodeSourceBuilder setToEnumeration(Property dp, Property sp) {
-        
-        final String typeCastGetter = getGetter(sp, "source");
-        final String typeCastSetter = getSetter(dp, "destination");
-        final String expressionGetter = sp.isEnum() ? typeCastGetter + ".name()" : "\"\"+" + typeCastGetter;
-        
-        ifSourceNotNull(sp).then();
-        
-        final String value = String.format("(%s)Enum.valueOf(%s.class, %s)", dp.getType().getCanonicalName(), dp.getType()
-                .getCanonicalName(), expressionGetter);
-        append(typeCastSetter + ";", value);
-        elze();
-        setDestinationNull(dp);
-        end();
-        return this;
-    }
-    
-    public CodeSourceBuilder setObject(Property dp, Property sp, Property ip) {
-        
-        final String spGetter = getGetter(sp, "source");
-        final String spSetter = getSetter(dp, "destination");
-        final String dpGetter = getGetter(dp, "destination");
-        final String sourceType = getUsedType(sp);
-        final String destinationType = getUsedType(dp);
-        
-        ifSourceNotNull(sp).then();
-        
-        final String value = String.format("(%s)mapperFacade.map(%s, %s, %s, mappingContext)", dp.getType().getCanonicalName(), spGetter,
-                sourceType, destinationType);
-        newLine().append("if (%s == null) ", dpGetter);
-        begin().append(spSetter + ";", value);
-        elze();
-        append("mapperFacade.map(%s, %s, %s, %s, mappingContext);", spGetter, dpGetter, sourceType, destinationType);
-        end();
-        if (ip != null) {
-            final String ipSetter = getSetter(ip, dpGetter);
-            final String ipGetter = getGetter(ip, dpGetter);
-            
-            if (ip.isCollection()) {
-                append("if (%s == null) ", ipGetter);
-                begin();
-                if (ip.isSet()) {
-                    append(ipSetter + ";", "new java.util.HashSet()");
-                } else if (ip.isList()) {
-                    append(ipSetter + ";", "new java.util.ArrayList()");
-                } else {
-                    throw new MappingException("Unsupported collection type: " + ip.getType());
-                }
-                end();
-                append("%s.add(destination);", ipGetter);
-            } else if (ip.isArray()) {
-                // TODO To implement
-                newLine().append("/* TODO Orika CodeSourceBuilder.setObject does not support Arrays */").newLine();
-            } else {
-                append(ipSetter + ";", "destination");
-            }
-        }
-        
-        elze().setDestinationNull(dp).end();
-        
-        return this;
-    }
-    
-    public CodeSourceBuilder ifSourceNotNull(Property sp) {
-        final String typeCastGetter = getGetter(sp, "source");
-        append("if(%s != null)", typeCastGetter);
-        return this;
-    }
-    
-    public CodeSourceBuilder avoidSourceNPE(Property sp) {
-        newLine();
-        if (sp.hasPath()) {
-            boolean first = true;
-            append("if(");
-            String expression = "source";
-            
-            for (final Property p : sp.getPath()) {
-                if (!first) {
-                    append(" && ");
-                } else {
-                    first = false;
-                }
-                expression = getGetter(p, expression);
-                append("%s != null", expression);
-            }
-            append(")");
-        }
         return this;
     }
     
     /**
-     * Generate code setting new property when its value is null
+     * Generate mapping code from a primitive or primitive wrapper to primitive
      * 
-     * @param property
-     *            Property
-     * @see ma.glasnost.orika.MapperFacade#newObject
-     * @return CodeSourceBuilder
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder ifDestinationNull(Property property) {
+    public CodeSourceBuilder fromPrimitiveOrWrapperToPrimitive(VariableRef d, VariableRef s) {
         
-        String getterExpression = "destination";
-        String setterExpression;
-        
-        for (final Property p : property.getPath()) {
-            
-            if (!ClassUtil.isConcrete(p.getType())) {
-                throw new MappingException("Abstract types are unsupported for nested properties. \n" + property.toString());
-            }
-            setterExpression = getSetter(p, getterExpression);
-            getterExpression = getGetter(p, getterExpression);
-            
-            append("if(%s == null) ", getterExpression);
-            newLine();
-            final String value = String.format("(%s)mapperFacade.newObject(source, %s, mappingContext)", p.getType().getCanonicalName(),
-                    getUsedType(p));
-            append("\t" + setterExpression + ";", value);
-        }
-        return this;
-    }
-    
-    public CodeSourceBuilder ifSourceInstanceOf(Type<?> sourceClass) {
-        append("if(s instanceof %s)", sourceClass.getCanonicalName());
-        return this;
-    }
-    
-    public CodeSourceBuilder setDestinationNull(Property dp) {
-        if (dp.getSetter() != null)
-            append(getSetter(dp, "destination") + ";", "null");
-        return this;
-    }
-    
-    private String getPrimitiveType(Class<?> clazz) {
-        String type = clazz.getSimpleName().toLowerCase();
-        if ("integer".equals(type)) {
-            type = "int";
-        } else if ("character".equals(type)) {
-            type = "char";
-        }
-        return type;
-    }
-    
-    public CodeSourceBuilder declareVar(Class<?> clazz, String var) {
-        append("\n%s %s = %s;", clazz.getCanonicalName(), var, clazz.isPrimitive() ? getDefaultPrimtiveValue(clazz) : "null");
-        return this;
-    }
-    
-    public CodeSourceBuilder assignImmutableVar(String var, Property sp) {
-        append("%s = %s;", var, getGetter(sp, "source"));
-        return this;
-    }
-    
-    public CodeSourceBuilder assignStringConvertedVar(String var, Property sp) {
-        append("%s = \"\" + %s;", var, getGetter(sp, "source"));
-        return this;
-    }
-    
-    public CodeSourceBuilder assignVarConvertedFromString(String var, Property sp, Property dp) {
-        append("%s = \"\" + %s;", var, getGetter(sp, "source"));
-        
-        final String getter = getGetter(sp, "source");
-        
-        newLine();
-        if (dp.getType().isPrimitive()) {
-            final String wrapperTypeName = ClassUtil.getWrapperType(dp.getRawType()).getCanonicalName();
-            append("%s = %s.valueOf(%s).%sValue();", var, wrapperTypeName, getter, getPrimitiveType(dp.getRawType()));
+        if (s.isPrimitive()) {
+            statement(d.assign(s));
         } else {
-            final String wrapperTypeName = dp.getType().getCanonicalName();
-            ifSourceNotNull(sp).then();
-            append("%s = %s.valueOf(%s);", var, wrapperTypeName, getter);
+            statement(s.ifNotNull() + d.assign(s));
+        }
+        
+        return this;
+    }
+    
+    /**
+     * Generates code to convert from an array or collection to an array
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromArrayOrCollectionToArray(VariableRef d, VariableRef s) {
+        
+        final VariableRef arrayVar = d.elementRef(d.name());
+        String newArray = format("%s[] %s = new %s[%s]", d.elementTypeName(), d.name(), d.elementTypeName(), s.size());
+        String mapArray;
+        if (d.elementType().isPrimitive()) {
+            mapArray = format("mapArray(%s, asList(%s), %s.class, mappingContext)", arrayVar, s, arrayVar.typeName());
+        } else {
+            mapArray = format("mapperFacade.mapAsArray(%s, asList(%s), %s, %s, mappingContext)", d.name(), s, usedType(s.elementType()),
+                    usedType(d.elementType()));
+        }
+        statement(" %s { %s; %s; %s; } else { %s; }", s.ifNotNull(), newArray, mapArray, d.assign(arrayVar), d.assign("null"));
+        
+        return this;
+    }
+    
+    /**
+     * Generate code to map from a string or enum to another enum
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromStringOrEnumToEnum(VariableRef d, VariableRef s) {
+        
+        String assignEnum = d.assign("Enum.valueOf(%s.class, \"\"+%s)", d.typeName(), s);
+        statement("%s { %s; } else { %s; }", s.ifNotNull(), assignEnum, d.assign("null"));
+        
+        return this;
+    }
+    
+    /**
+     * Generate code to map from one object to another; this is a catch-all
+     * mapping which can result in generating a new mapper for the objects which
+     * have not yet been registered for mapping
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @param ip
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromObjectToObject(VariableRef d, VariableRef s, Property ip) {
+        
+        String mapNewObject = d.assign(format("(%s)mapperFacade.map(%s, %s, %s, mappingContext)", d.typeName(), s, usedType(s), usedType(d)));
+        String mapExistingObject = format("mapperFacade.map(%s, %s, %s, %s, mappingContext)", s, d, usedType(s), usedType(d));
+        String mapStmt = format(" %s { %s; } else { %s; }", d.ifNull(), mapNewObject, mapExistingObject);
+        
+        String ipStmt = "";
+        if (ip != null) {
+            VariableRef inverse = new VariableRef(ip, d);
+            
+            if (inverse.isCollection()) {
+            	MultiOccurrenceVariableRef inverseCollection = MultiOccurrenceVariableRef.from(inverse);
+                ipStmt += inverse.ifNull() + inverse.assign(inverseCollection.newCollection()) + ";";
+                ipStmt += format("%s.add(%s);", inverse, d.owner());
+            } else if (inverse.isArray()) {
+                ipStmt += "/* TODO Orika CodeSourceBuilder.setObject does not support Arrays */";
+            } else {
+                ipStmt += inverse.assign(d.owner()) + ";";
+            }
+        }
+        
+        statement("%s { %s;  %s } else { %s; }", s.ifNotNull(), mapStmt, ipStmt, d.assign("null"));
+        
+        return this;
+    }
+    
+    /**
+     * Generate code for testing that the given variable reference is not null
+     * 
+     * @param ref the variable reference for which to check for non-null
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder ifNotNull(VariableRef ref) {
+        return newLine().append(ref.ifNotNull());
+    }
+    
+    /**
+     * Append an 'if' statement checking whether the provided variable is null
+     * 
+     * @param ref the variable reference for which to check for null
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder ifNull(VariableRef ref) {
+        return newLine().append(ref.ifNull());
+    }
+    
+    /**
+     * Append an 'if' statement checking whether the path of parent variables
+     * leading to this variable are all not null
+     * 
+     * @param ref
+     *            the nested variable reference for which to check for non-null path
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder ifPathNotNull(VariableRef ref) {
+        return append(ref.ifPathNotNull());
+    }
+    
+    /**
+     * Append a statement which assures that the variable reference has an
+     * existing instance; if it does not, a new object is generated using
+     * MapperFacade.newObject
+     * 
+     * @param propertyRef
+     *            the property or variable reference on which to check for an
+     *            instance
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder assureInstanceExists(VariableRef propertyRef) {
+        
+        for (final VariableRef ref : propertyRef.getPath()) {
+            
+            if (!ClassUtil.isConcrete(ref.type())) {
+                throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
+            }
+            statement("if(%s == null) %s", ref,
+                    ref.assign("(%s)mapperFacade.newObject(source, %s, mappingContext)", ref.typeName(), usedType(ref)));
+        }
+        
+        return this;
+    }
+    
+    /**
+     * Append an 'if' statement testing whether the expression is an instance of
+     * the specified source type
+     * 
+     * @param expression
+     *            the expression to test
+     * @param sourceType
+     *            the source type to check
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder ifInstanceOf(String expression, Type<?> sourceType) {
+        append("if(%s instanceof %s)", expression, sourceType.getCanonicalName());
+        return this;
+    }
+    
+    /**
+     * Generate code to map from one java.util.Map to another
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @param destinationType
+     *            the type of the destination variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromMapToMap(VariableRef dest, VariableRef src, Type<?> destinationType) {
+        
+    	MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
+    	MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+    	
+        ifNotNull(s).then();
+        
+        if (d.isAssignable()) {
+            statement("if (%s == null) %s", d, d.assign(d.newMap()));
+        }
+        
+        statement("%s.clear()", d);
+        if (d.mapKeyType().equals(s.mapKeyType()) && d.mapValueType().equals(s.mapValueType())) {
+            /*
+             * Simple map-to-map case: both key and value types are identical
+             */
+            statement("%s.putAll(mapperFacade.mapAsMap(%s, %s, %s, mappingContext));", d, s, usedType(s.type()), usedType(d.type()));
+        } else {
+            VariableRef newKey = new VariableRef(d.mapKeyType(), "_$_key");
+            VariableRef newVal = new VariableRef(d.mapValueType(), "_$_val");
+            VariableRef entry = new VariableRef(TypeFactory.valueOf(Map.Entry.class), "_$_entry");
+            VariableRef sourceKey = new MapEntryRef(s.mapKeyType(), "_$_entry", EntryPart.KEY);
+            VariableRef sourceVal = new MapEntryRef(s.mapValueType(), "_$_entry", EntryPart.VALUE);
+            /*
+             * Loop through the individual entries, map key/value and then put
+             * them into the destination
+             */
+            append("for( Object _$_o: %s.entrySet())", s).begin();
+            statement(entry.declare("_$_o"));
+            statement(newKey.declare());
+            statement(newVal.declare());
+            mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null);
+            mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null);
+            statement("%s.put(%s, %s)", d, newKey, newVal);
+            end();
+        }
+        _else().statement(d.assignIfPossible("null")).end();
+        
+        return this;
+    }
+    
+    /**
+     * Generate code to map from an Array or Collection to a Map
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromArrayOrCollectionToMap(VariableRef dest, VariableRef src) {
+        
+    	MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
+    	MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+    	
+        ifNotNull(s).then();
+        
+        if (d.isAssignable()) {
+            statement("if (%s == null) %s", d, d.assign(d.newMap()));
+        }
+        statement("%s.clear()", d);
+        
+        VariableRef element = new VariableRef(s.elementType(), "_$_element");
+        
+        @SuppressWarnings("unchecked")
+        Type<MapEntry<Object, Object>> entryType = MapEntry.concreteEntryType((Type<? extends Map<Object, Object>>) d.type());
+        
+        VariableRef newEntry = new VariableRef(entryType, "_$_entry");
+        VariableRef newKey = new MapEntryRef(newEntry.type(), newEntry.name(), EntryPart.KEY);
+        VariableRef newVal = new MapEntryRef(newEntry.type(), newEntry.name(), EntryPart.VALUE);
+        /*
+         * Loop through the individual entries, map key/value and then put them
+         * into the destination
+         */
+        append("for( Object _o : %s)", s).begin();
+        statement(element.declare("_o"));
+        statement(newEntry.declare("mapperFacade.map(%s, %s, %s, mappingContext)", element, usedType(element), usedType(newEntry)));
+        
+        statement("%s.put(%s, %s)", d, newKey, newVal);
+        end();
+        
+        _else().statement(d.assignIfPossible("null")).end();
+        
+        return this;
+    }
+    
+    /**
+     * IterableRef is a data structure to hold to variable references needed to
+     * generate a parallel mapping
+     * 
+     */
+    private static class IterableRef {
+        public MultiOccurrenceVariableRef multiOccurrenceVar;
+        public VariableRef elementRef;
+        public MultiOccurrenceVariableRef newDestination;
+        public Set<IterableRef> associations = new LinkedHashSet<IterableRef>();
+    }
+    
+    /**
+     * Generates the code to support a (potentially parallel) mapping from one
+     * or more multi-occurrence fields in the source type to one or more
+     * multi-occurrence fields in the destination type.
+     * 
+     * @param fieldMappings
+     *            the field mappings to be applied
+     * @param logDetails
+     *            a StringBuilder to accept debug logging information
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromMultiOccurrenceToMultiOccurrence(Set<FieldMap> fieldMappings, StringBuilder logDetails) {
+        
+        Map<String, IterableRef> sources = new HashMap<String, IterableRef>();
+        Map<String, IterableRef> destinations = new HashMap<String, IterableRef>();
+        Map<FieldMap, Set<FieldMap>> subFields = new HashMap<FieldMap, Set<FieldMap>>();
+        
+        for (FieldMap map : fieldMappings) {
+            IterableRef srcRef = sources.get(map.getSource().getName());
+            if (srcRef == null) {
+                srcRef = new IterableRef();
+                srcRef.multiOccurrenceVar = new MultiOccurrenceVariableRef(map.getSource(), "source");
+                Type<?> elementType = srcRef.multiOccurrenceVar.elementType();
+                if (MapEntry.class.equals(elementType.getRawType())) {
+                    @SuppressWarnings("unchecked")
+                    Type<Map<Object, Object>> mapType = (Type<Map<Object, Object>>) srcRef.multiOccurrenceVar.type();
+                    elementType = MapEntry.entryType(mapType);
+                }
+                srcRef.elementRef = new VariableRef(elementType, srcRef.multiOccurrenceVar.name() + "_$_srcElement");
+                sources.put(map.getSource().getName(), srcRef);
+            }
+            IterableRef destRef = destinations.get(map.getDestination().getName());
+            if (destRef == null) {
+                destRef = new IterableRef();
+                destRef.multiOccurrenceVar = new MultiOccurrenceVariableRef(map.getDestination(), "destination");
+                destRef.newDestination = new MultiOccurrenceVariableRef(map.getDestination().getType(), "new_$_"
+                        + map.getDestination().getName());
+                destRef.elementRef = destRef.multiOccurrenceVar.elementRef(destRef.multiOccurrenceVar.name() + "_$_dstElement");
+                destinations.put(map.getDestination().getName(), destRef);
+            }
+            destRef.associations.add(srcRef);
+            
+            Set<FieldMap> elements = subFields.get(map.getBaseFieldMap());
+            if (elements == null) {
+                elements = new LinkedHashSet<FieldMap>();
+                subFields.put(map.getBaseFieldMap(), elements);
+            }
+            elements.add(map.getElementMap());
+        }
+        
+        /*
+         * For any of the subField mappings which are between non-immutable
+         * types
+         */
+        Iterator<Entry<FieldMap, Set<FieldMap>>> subfieldIter = subFields.entrySet().iterator();
+        while (subfieldIter.hasNext()) {
+            Entry<FieldMap, Set<FieldMap>> entry = subfieldIter.next();
+            Type<?> srcType = elementType(entry.getKey().getSource().getType());
+            Type<?> dstType = elementType(entry.getKey().getDestination().getType());
+            if (!ClassUtil.isImmutable(dstType) && !ClassUtil.isImmutable(srcType)) {
+                
+                ClassMapBuilder<?, ?> builder = mapperFactory.classMap(srcType, dstType);
+                
+                for (FieldMap f : entry.getValue()) {
+                    builder.field(f.getSource().getExpression(), f.getDestination().getExpression());
+                }
+                mapperFactory.registerClassMap(builder);
+            }
+        }
+        
+        return generateMultiOccurrenceMapping(sources, destinations, subFields, logDetails);
+    }
+    
+    private String join(List<?> list, String separator) {
+        StringBuilder result = new StringBuilder();
+        for (Object item : list) {
+            result.append(item + separator);
+        }
+        return result.substring(0, result.length() - separator.length());
+    }
+    
+    /**
+     * Generates the code to support a (potentially parallel) mapping from one
+     * or more multi-occurrence fields in the source type to one or more
+     * multi-occurrence fields in the destination type.
+     * 
+     * @param sources
+     *            the associated source variables
+     * @param destinations
+     *            the associated destination variables
+     * @param subFields
+     *            the nested properties of the individual field maps
+     * @param logDetails
+     *            a StringBuilder to accept debug logging information
+     * @return a reference to <code>this</code> CodeSourceBuilder
+     */
+    public CodeSourceBuilder generateMultiOccurrenceMapping(Map<String, IterableRef> sources, Map<String, IterableRef> destinations,
+            Map<FieldMap, Set<FieldMap>> subFields, StringBuilder logDetails) {
+        
+        List<String> sourceSizes = new ArrayList<String>();
+        for (IterableRef ref : sources.values()) {
+            statement(ref.multiOccurrenceVar.declareIterator());
+            sourceSizes.add(ref.multiOccurrenceVar.size());
+        }
+        String sizeExpr = "min(" + join(sourceSizes, ",") + ")";
+        for (IterableRef destRef : destinations.values()) {
+            statement(destRef.newDestination.declare(destRef.newDestination.newInstance(sizeExpr)));
+            if (destRef.newDestination.isArray()) {
+                statement(destRef.newDestination.declareIterator());
+            }
+        }
+        
+        append("while (");
+        Iterator<IterableRef> sourcesIter = sources.values().iterator();
+        while (sourcesIter.hasNext()) {
+            IterableRef ref = sourcesIter.next();
+            append(ref.multiOccurrenceVar.iteratorHasNext());
+            if (sourcesIter.hasNext()) {
+                append(" && ");
+            }
+            
+        }
+        append(") {");
+        
+        // get the next elements from the src iterators
+        for (IterableRef srcRef : sources.values()) {
+            statement(srcRef.elementRef.declare(srcRef.multiOccurrenceVar.nextElement()));
+        }
+        
+        // apply the appropriate mappings onto the destination elements
+        for (IterableRef destRef : destinations.values()) {
+            
+            if (ClassUtil.isImmutable(destRef.elementRef.type())) {
+                statement(destRef.elementRef.declare());
+            } else {
+                statement(destRef.elementRef.declare("mapperFacade.newObject(%s, %s, mappingContext)", destRef.associations.iterator()
+                        .next().elementRef, usedType(destRef.elementRef.type())));
+            }
+            
+            for (IterableRef srcRef : destRef.associations) {
+                
+                /*
+                 * check through the subFields mapped to find one with source
+                 * and destination matching the types of the source and
+                 * destination elements
+                 */
+                Iterator<Entry<FieldMap, Set<FieldMap>>> subfieldIter = subFields.entrySet().iterator();
+                while (subfieldIter.hasNext()) {
+                    Entry<FieldMap, Set<FieldMap>> entry = subfieldIter.next();
+                    if (elementType(entry.getKey().getSource().getType()).isAssignableFrom(srcRef.elementRef.type())
+                            && elementType(entry.getKey().getDestination().getType()).isAssignableFrom(destRef.elementRef.type())) {
+                        
+                        for (FieldMap subMap : entry.getValue()) {
+                            VariableRef src = ("".equals(subMap.getSource().getExpression()) ? srcRef.elementRef : new VariableRef(
+                                    subMap.getSource(), srcRef.elementRef));
+                            VariableRef dest = ("".equals(subMap.getDestination().getExpression()) ? destRef.elementRef : new VariableRef(
+                                    subMap.getDestination(), destRef.elementRef));
+                            mapFields(subMap, src, dest, destRef.elementRef.type(), logDetails);
+                            
+                        }
+                        
+                        subfieldIter.remove();
+                    }
+                }
+                
+            }
+            // add the new destination elements to their respective collections
+            statement(destRef.newDestination.add(destRef.elementRef));
+        }
+        
+        append("}");
+        
+        for (IterableRef destRef : destinations.values()) {
+            statement(destRef.multiOccurrenceVar.assign(destRef.newDestination));
+        }
+        
+        return this;
+    }
+    
+    @SuppressWarnings("unchecked")
+    private Type<?> elementType(Type<?> multiOccurrenceType) {
+        if (multiOccurrenceType.isArray()) {
+            return multiOccurrenceType.getComponentType();
+        } else if (multiOccurrenceType.isMap()) {
+            return MapEntry.entryType((Type<Map<Object, Object>>) multiOccurrenceType);
+        } else if (multiOccurrenceType.isCollection()) {
+            return multiOccurrenceType.getNestedType(0);
+        } else {
+            throw new IllegalArgumentException(multiOccurrenceType + " is not a supported multi-occurrence type");
+        }
+    }
+    
+    /**
+     * Finds all field maps out of the provided set which are associated with
+     * the map passed in ( including that map itself)
+     * 
+     * @param fieldMaps
+     *            the set of all field maps
+     * @param map
+     *            the field map from which to start searching for reference
+     * @return a Set of FieldMaps which are associated; they must be mapped in
+     *         parallel
+     */
+    public Set<FieldMap> getAssociatedMappings(Collection<FieldMap> fieldMaps, FieldMap map) {
+        
+        Set<FieldMap> associated = new LinkedHashSet<FieldMap>();
+        associated.add(map);
+        Set<FieldMap> unprocessed = new LinkedHashSet<FieldMap>(fieldMaps);
+        unprocessed.remove(map);
+        
+        Set<String> nextRoundSources = new LinkedHashSet<String>();
+        Set<String> nextRoundDestinations = new LinkedHashSet<String>();
+        Set<String> thisRoundSources = Collections.singleton(map.getSource().getName());
+        Set<String> thisRoundDestinations = Collections.singleton(map.getDestination().getName());
+        
+        while (!unprocessed.isEmpty() && !(thisRoundSources.isEmpty() && thisRoundDestinations.isEmpty())) {
+            
+            Iterator<FieldMap> iter = unprocessed.iterator();
+            while (iter.hasNext()) {
+                FieldMap f = iter.next();
+                boolean containsSource = thisRoundSources.contains(f.getSource().getName());
+                boolean containsDestination = thisRoundDestinations.contains(f.getDestination().getName());
+                if (containsSource && containsDestination) {
+                    associated.add(f);
+                    iter.remove();
+                } else if (containsSource) {
+                    associated.add(f);
+                    iter.remove();
+                    nextRoundDestinations.add(f.getDestination().getName());
+                } else if (containsDestination) {
+                    associated.add(f);
+                    iter.remove();
+                    nextRoundSources.add(f.getSource().getName());
+                }
+            }
+            
+            thisRoundSources = nextRoundSources;
+            thisRoundDestinations = nextRoundDestinations;
+            nextRoundSources = new LinkedHashSet<String>();
+            nextRoundDestinations = new LinkedHashSet<String>();
+        }
+        
+        return associated;
+    }
+    
+    /**
+     * Generates the source code to convert from a Map type to an Array type
+     * 
+     * @param d
+     *            a reference to the destination
+     * @param s
+     *            a reference to the source
+     * @param inverse
+     *            the destination's inverse property
+     * @param destinationType
+     * @return a reference to <code>this</code> CodeSourceBuilder
+     */
+    private CodeSourceBuilder fromMapToArray(VariableRef d, VariableRef s, Property inverse, Type<?> destinationType) {
+        
+        return fromArrayOrCollectionToArray(d, entrySetRef(s));
+    }
+    
+    /**
+     * Generate the code to map from a java.util.Map to a Collection
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @param inverse
+     *            the inverse property
+     * @param destinationType
+     * @return
+     */
+    private CodeSourceBuilder fromMapToCollection(VariableRef d, VariableRef s, Property inverse, Type<?> destinationType) {
+        
+        return fromArrayOrCollectionToCollection(d, entrySetRef(s), inverse, destinationType);
+    }
+    
+    private VariableRef entrySetRef(VariableRef s) {
+        @SuppressWarnings("unchecked")
+        Type<?> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
+        return new VariableRef(sourceEntryType, s + ".entrySet()");
+    }
+    
+    /**
+     * Generate the code necessary to process the provided FieldMap.
+     * 
+     * @param fieldMap
+     *            the FieldMap describing fields to be mapped
+     * @param sourceProperty
+     *            a variable referece to the source property
+     * @param destinationProperty
+     *            a variable reference to the destination property
+     * @param destinationType
+     *            the destination's type
+     * @param logDetails
+     *            a StringBuilder to contain the debug output
+     * @return a reference to <code>this</code> CodeSourceBuilder
+     */
+    public CodeSourceBuilder mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty,
+            Type<?> destinationType, StringBuilder logDetails) {
+        
+        if (sourceProperty.isNestedProperty()) {
+            ifPathNotNull(sourceProperty).then();
+        }
+        
+        if (destinationProperty.isNestedProperty()) {
+            if (!sourceProperty.isPrimitive()) {
+                ifNotNull(sourceProperty).then();
+            }
+            assureInstanceExists(destinationProperty);
+        }
+        
+        // Generate mapping code for every case
+        Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
+        if (converter != null) {
+            if (logDetails != null) {
+                logDetails.append("using converter " + converter);
+            }
+            convert(destinationProperty, sourceProperty, converter);
+        } else if (mapperFactory.existsRegisteredMapper(fieldMap.getSource().getType(), fieldMap.getDestination().getType(), true)) {
+            if (logDetails != null) {
+                logDetails.append("using registered mapper");
+            }
+            fromObjectToObject(destinationProperty, sourceProperty, fieldMap.getInverse());
+        } else if (fieldMap.is(toAnEnumeration())) {
+            if (logDetails != null) {
+                logDetails.append("mapping from String or enum to enum");
+            }
+            fromStringOrEnumToEnum(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(immutable())) {
+            if (logDetails != null) {
+                logDetails.append("treating as immutable (using copy-by-reference)");
+            }
+            copyByReference(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(anArray())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Array or Collection to Array");
+            }
+            fromArrayOrCollectionToArray(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aCollection())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Array or Collection to Collection");
+            }
+            fromArrayOrCollectionToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+        } else if (fieldMap.is(aWrapperToPrimitive())) {
+            if (logDetails != null) {
+                logDetails.append("mapping primitive wrapper to primitive");
+            }
+            fromPrimitiveOrWrapperToPrimitive(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aMapToMap())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Map to Map");
+            }
+            fromMapToMap(destinationProperty, sourceProperty, destinationType);
+        } else if (fieldMap.is(aMapToArray())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Map to Array");
+            }
+            fromMapToArray(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+        } else if (fieldMap.is(aMapToCollection())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Map to Collection");
+            }
+            fromMapToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+        } else if (fieldMap.is(anArrayOrCollectionToMap())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Map to Array");
+            }
+            fromArrayOrCollectionToMap(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aPrimitiveToWrapper())) {
+            if (logDetails != null) {
+                logDetails.append("mapping primitive to primitive wrapper");
+            }
+            fromPrimitiveToWrapper(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aStringToPrimitiveOrWrapper())) {
+            if (logDetails != null) {
+                logDetails.append("mapping String to \"String-convertable\"");
+            }
+            fromStringToStringConvertable(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aConversionToString())) {
+            if (logDetails != null) {
+                logDetails.append("mapping Object to String");
+            }
+            fromAnyTypeToString(destinationProperty, sourceProperty);
+        } else {
+            /**/
+            
+            if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive()) {
+                if (logDetails != null) {
+                    logDetails.append("ignoring { Object to primitive or primitive to Object}");
+                }
+                newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
+                
+            } else {
+                if (logDetails != null) {
+                    logDetails.append("mapping Object to Object");
+                }
+                fromObjectToObject(destinationProperty, sourceProperty, fieldMap.getInverse());
+            }
+        }
+        if (destinationProperty.isNestedProperty()) {
+            if (!sourceProperty.isPrimitive()) {
+                end();
+            }
+        }
+        // Close up, and set null to destination
+        if (sourceProperty.isNestedProperty()) {
             end();
         }
         
         return this;
     }
     
-    public CodeSourceBuilder assignObjectVar(String var, Property sp, Class<?> targetClass) {
-        String sourceType = getUsedType(sp);
-        String targetType = getUsedType(TypeFactory.valueOf(targetClass));
-        append("%s = (%s) mapperFacade.map(%s, %s, %s);", var, targetClass.getCanonicalName(), getGetter(sp, "source"), sourceType,
-                targetType);
-        return this;
-    }
-    
-    public CodeSourceBuilder assignCollectionVar(String var, Property sp, Property dp) {
-        
-        String destinationCollection = "List";
-        String sourceType = getUsedElementType(sp);
-        String destinationType = getUsedElementType(dp);
-        
-        if (dp.isList()) {
-            destinationCollection = "List";
-        } else if (dp.isSet()) {
-            destinationCollection = "Set";
+    private Converter<Object, Object> getConverter(FieldMap fieldMap, String converterId) {
+        Converter<Object, Object> converter = null;
+        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
+        if (converterId != null) {
+            converter = converterFactory.getConverter(converterId);
+        } else {
+            converter = converterFactory.getConverter(fieldMap.getSource().getType(), fieldMap.getDestination().getType());
         }
-        
-        final String sourceGetter = getGetter(sp, "source");
-        
-        append("%s = mapperFacade.mapAs%s(%s, %s, %s, mappingContext);", var, destinationCollection, sourceGetter, sourceType,
-                destinationType);
-        return this;
-    }
-    
-    public CodeSourceBuilder assignArrayVar(String var, Property sp, Class<?> targetClass) {
-        String getter = getGetter(sp, "source");
-        final String getSizeCode = sp.getRawType().isArray() ? "length" : "size()";
-        final String castSource = sp.getRawType().isArray() ? "Object[]" : "";
-        final String sourceType = getUsedComponentType(sp);
-        final String targetType = getUsedType(TypeFactory.valueOf(targetClass));
-        
-        append("%s[] %s = new %s[%s.%s];", targetClass, var, targetClass.getCanonicalName(), getter, getSizeCode).append(
-                "mapperFacade.mapAsArray((Object[])%s, (%s)%s, %s, %s, mappingContext);", var, castSource, getter, sourceType, targetType);
-        return this;
-    }
-    
-    public CodeSourceBuilder assignPrimitiveToWrapperVar(String var, Property sp, Class<?> targetClass) {
-        final String getter = getGetter(sp, "source");
-        
-        append("%s = %s.valueOf((%s) %s);\n", var, targetClass.getCanonicalName(), getPrimitiveType(targetClass), getter);
-        return this;
-    }
-    
-    public CodeSourceBuilder assignWrapperToPrimitiveVar(String var, Property sp, Class<?> targetClass) {
-        String getter = getGetter(sp, "source");
-        append("%s = %s.%sValue();\n", var, getter, getPrimitiveType(targetClass));
-        return this;
-    }
-    
-    public CodeSourceBuilder assignConvertedVar(String var, Property source, Class<?> targetClass, String converterId) {
-        final String getter = getGetter(source, "source");
-        converterId = getConverterId(converterId);
-        append("%s = ((%s)mapperFacade.convert(%s, %s.class, %s)); \n", var, targetClass.getCanonicalName(), getter,
-                targetClass.getCanonicalName(), converterId);
-        return this;
-        
-    }
-    
-    private String getDefaultPrimtiveValue(Class<?> clazz) {
-        if (Boolean.TYPE.equals(clazz))
-            return "false";
-        else if (Character.TYPE.equals(clazz))
-            return "'\\u0000'";
-        else
-            return "0";
+        return converter;
     }
     
 }

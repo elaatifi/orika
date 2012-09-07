@@ -3,6 +3,8 @@ package ma.glasnost.orika.test.constructor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.net.URL;
+import java.net.URLStreamHandler;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -11,11 +13,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
+import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.converter.builtin.DateToStringConverter;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.Author;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.AuthorDTO;
@@ -57,8 +59,8 @@ public class ConstructorMappingTestCase {
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(PersonVO.class, Person.class)
-                .constructorA()
+        factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
+                //.constructorA()
                 .fieldMap("dateOfBirth", "date")
                 .converter(DATE_CONVERTER)
                 .add()
@@ -88,7 +90,7 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(PersonVO3.class, Person.class)
+        factory.registerClassMap(factory.classMap(PersonVO3.class, Person.class)
                 .fieldMap("dateOfBirth", "date").converter(DATE_CONVERTER).add()
                 .byDefault()
                 .toClassMap());
@@ -119,10 +121,10 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(PersonVO3.class, Person.class)
+        factory.registerClassMap(factory.classMap(PersonVO3.class, Person.class)
                 .field("firstName", "firstName")
                 .field("lastName", "lastName")
-        		.field("dateOfBirth", "date").toClassMap());
+        		.field("dateOfBirth", "date"));
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
         Person person = new Person();
@@ -151,9 +153,10 @@ public class ConstructorMappingTestCase {
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerMappingHint(new MappingHint() {
+        factory.registerDefaultFieldMapper(new DefaultFieldMapper() {
 
-				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+        	public String suggestMappedField(String fromProperty,
+					Type<?> fromPropertyType) {
 					if ("dateOfBirth".equals(fromProperty)) {
 						return "date";
 					} else if("date".equals(fromProperty)) {
@@ -161,12 +164,10 @@ public class ConstructorMappingTestCase {
 					}
 					return null;
 				}
-	        	
 	        });
 
         factory.getConverterFactory().registerConverter(new DateToStringConverter(DATE_PATTERN));
         
-        factory.build();
         
         Person person = new Person();
         person.setFirstName("Abdelkrim");
@@ -263,9 +264,10 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerMappingHint(new MappingHint() {
+        factory.registerDefaultFieldMapper(new DefaultFieldMapper() {
 
-				public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+        	public String suggestMappedField(String fromProperty,
+					Type<?> fromPropertyType) {
 					if ("dateOfBirth".equals(fromProperty)) {
 						return "date";
 					} else if("date".equals(fromProperty)) {
@@ -273,12 +275,9 @@ public class ConstructorMappingTestCase {
 					}
 					return null;
 				}
-	        	
 	        });
 
         factory.getConverterFactory().registerConverter(new DateToStringConverter(DATE_PATTERN));
-        
-        factory.build();
         
         Person person = new Person();
         person.setFirstName("Abdelkrim");
@@ -340,9 +339,9 @@ public class ConstructorMappingTestCase {
     	
     	MapperFactory factory = MappingUtil.getMapperFactory();
     	factory.registerClassMap(
-    			ClassMapBuilder.map(AuthorNested.class, AuthorDTO.class)
+    			factory.classMap(AuthorNested.class, AuthorDTO.class)
     				.field("name.fullName", "name").byDefault().toClassMap());
-    	factory.build();
+    
     	MapperFacade mapper = factory.getMapperFacade();
     	
     	LibraryDTO mapped = mapper.map(library, LibraryDTO.class);
@@ -379,7 +378,7 @@ public class ConstructorMappingTestCase {
     	
     	MapperFactory factory = MappingUtil.getMapperFactory();
     	factory.registerClassMap(
-    			ClassMapBuilder.map(NestedPrimitiveHolder.class, PrimitiveWrapperHolder.class)
+    			factory.classMap(NestedPrimitiveHolder.class, PrimitiveWrapperHolder.class)
     				.field("numbers.shortValue", "shortValue")
     				.field("numbers.intValue", "intValue")
     				.field("numbers.longValue", "longValue")
@@ -392,6 +391,58 @@ public class ConstructorMappingTestCase {
     	assertValidMapping(holder, wrapper);
 	
     } 
+    
+    
+    public static class URLDto1 {
+    	public String protocolX;
+    	public String hostX; 
+    	public int portX;
+    	public String fileX;
+    }
+    
+    public static class URLDto2 {
+    	public String protocol;
+    	public String host; 
+    	public String file;
+    }
+    
+    public static class URLDto3 {
+    	public String protocol;
+    	public String host; 
+    	public int port;
+    	public String file;
+    	public URLStreamHandler handler;
+    }
+    
+    public static class URLDto4 {
+    	public URL context;
+    	public String spec;
+    }
+    
+    @Test
+    public void testConstructorsWithoutDebugInfo() {
+    	MapperFactory factory = MappingUtil.getMapperFactory();
+    	factory.registerClassMap(
+    			factory.classMap(URLDto1.class, URL.class)
+		    		.field("protocolX", "protocol")
+		    		.field("hostX", "host")
+		    		.field("portX", "port")
+		    		.field("fileX", "file"));
+    	MapperFacade mapper = factory.getMapperFacade();
+    	
+    	URLDto1 dto1 = new URLDto1();
+    	dto1.protocolX = "http";
+    	dto1.hostX = "somewhere.com";
+    	dto1.portX = 8080;
+    	dto1.fileX = "index.html";
+    	
+    	URL url = mapper.map(dto1, URL.class);
+    	Assert.assertNotNull(url);
+    	Assert.assertEquals(dto1.protocolX, url.getProtocol());
+    	Assert.assertEquals(dto1.hostX, url.getHost());
+    	Assert.assertEquals(dto1.portX, url.getPort());
+    	
+    }
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     // Common mapping validations

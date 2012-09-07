@@ -21,6 +21,7 @@ package ma.glasnost.orika.impl.generator;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.Map;
 import java.util.Random;
@@ -69,7 +70,8 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     public JavassistCompilerStrategy() {
         super(WRITE_SOURCE_FILES_BY_DEFAULT, WRITE_CLASS_FILES_BY_DEFAULT);
         
-        this.classPool = ClassPool.getDefault();
+        this.classPool = new ClassPool();
+        this.classPool.appendSystemPath();
     }
     
     /**
@@ -141,6 +143,22 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     public void assureTypeIsAccessible(Class<?> type) throws SourceCodeGenerationException {
         
         if (!type.isPrimitive() && type.getClassLoader() != null) {
+            
+            if (!Modifier.isPublic(type.getModifiers())) {
+                throw new SourceCodeGenerationException(type + " is not accessible");
+            } else if (type.isMemberClass()) {
+                /*
+                 * The type needs to be publicly accessible (including it's
+                 * enclosing classes if any)
+                 */
+                Class<?> currentType = type;
+                while (currentType != null) {
+                    if (!Modifier.isPublic(type.getModifiers())) {
+                        throw new SourceCodeGenerationException(type + " is not accessible");
+                    }
+                    currentType = currentType.getEnclosingClass();
+                }
+            }
             
             String resourceName = type.getName();
             if (type.isArray()) {

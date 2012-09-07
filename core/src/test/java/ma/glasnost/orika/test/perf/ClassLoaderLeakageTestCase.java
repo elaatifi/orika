@@ -2,21 +2,24 @@ package ma.glasnost.orika.test.perf;
 
 import java.io.File;
 import java.lang.ref.SoftReference;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
+import ma.glasnost.orika.impl.generator.EclipseJdtCompiler;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
+import ma.glasnost.orika.test.MavenProjectUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Book;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Library;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.LibraryMyDTO;
 
-import org.codehaus.janino.DebuggingInformation;
-import org.codehaus.janino.JavaSourceClassLoader;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -35,7 +38,6 @@ import org.junit.Test;
  *
  */
 public class ClassLoaderLeakageTestCase {
-
 	
 	/**
 	 * This initial test is to verify our own sanity
@@ -45,17 +47,13 @@ public class ClassLoaderLeakageTestCase {
 	@Test
 	public void testControl() throws Throwable {
 		
-		File testClassPathRoot = new File(getClass().getResource("/").getFile());
-		File projectRoot = testClassPathRoot.getParentFile().getParentFile();
+		File projectRoot = MavenProjectUtil.findProjectRoot();
 		
 		ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 		
-		ClassLoader childLoader = new JavaSourceClassLoader(     
-				threadContextLoader,    
-				new File[] { new File(projectRoot,"src/test/java-hidden") },      
-				"UTF-8",                     
-				DebuggingInformation.ALL         
-				); 
+		EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
+		ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
+		
 		
 		@SuppressWarnings("unchecked")
 		Class<? extends Author> hiddenAuthorType = (Class<? extends Author>)childLoader.loadClass("types.AuthorHidden");
@@ -116,7 +114,6 @@ public class ClassLoaderLeakageTestCase {
 	 * which extends some super-type (or implements an interface) which is accessible.<br>
 	 * This type of scenario might occur in web-module to ejb jar interactions...
 	 *  
-	 * 
 	 * @throws Exception
 	 */
 	@Test
@@ -146,17 +143,12 @@ public class ClassLoaderLeakageTestCase {
 		MapperFacade mapper = factory.getMapperFacade();
 		LibraryMyDTO mappedLib;
 		{
-			File testClassPathRoot = new File(getClass().getResource("/").getFile());
-			File projectRoot = testClassPathRoot.getParentFile().getParentFile();
+			File projectRoot = MavenProjectUtil.findProjectRoot();
 			
 			ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 			
-			ClassLoader childLoader = new JavaSourceClassLoader(     
-					threadContextLoader,    
-					new File[] { new File(projectRoot,"src/test/java-hidden") },      
-					"UTF-8",                     
-					DebuggingInformation.ALL         
-					); 
+			EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
+			ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
 			
 			@SuppressWarnings("unchecked")
 			Class<? extends Author> hiddenAuthorType = (Class<? extends Author>)childLoader.loadClass("types.AuthorHidden");
@@ -221,6 +213,82 @@ public class ClassLoaderLeakageTestCase {
 		
 	}
 	
+	
+	/**
+	 * This test attempts to have a child class-loader register a class-mapping
+	 * using a class which is only visible to this child loader; currently,
+	 * this fails because Orika throws exception on finding a class which is not
+	 * accessible to it.
+	 *  
+	 * @throws Exception
+	 */
+	@Test(expected=MappingException.class)
+	public void testLeak_registerMapChildClasses() throws Throwable {
+		
+		final ClassLoader originalTccl = Thread.currentThread().getContextClassLoader();
+		
+		SoftReference<ClassLoader> childLoaderRef = null;
+		
+		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		
+		try {
+			File projectRoot = MavenProjectUtil.findProjectRoot();
+			
+			ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
+			
+			EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
+			ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
+			
+			@SuppressWarnings("unchecked")
+			Class<?> runnerType = (Class<? extends Library>)childLoader.loadClass("types.Runner");
+			
+			
+			try {
+				threadContextLoader.loadClass("types.Runner");
+				Assert.fail("types.Runner should not be accessible to the thread context class loader");
+			} catch (ClassNotFoundException e0) {
+				try {
+					threadContextLoader.loadClass("types.AuthorHidden");
+					Assert.fail("types.AuthorHidden should not be accessible to the thread context class loader");
+				} catch (ClassNotFoundException e1) {
+					try {
+						threadContextLoader.loadClass("types.BookHidden");
+						Assert.fail("types.BookHidden should not be accessible to the thread context class loader");
+					} catch (ClassNotFoundException e2) {
+						/* good: all of these types should be inaccessible */
+					}
+				}
+			}
+			
+			/*
+			 * Run the mapping request for the child-loaded Runner class;
+			 */
+			try {
+				Thread.currentThread().setContextClassLoader(childLoader);
+				runnerType.getMethod("run", MapperFactory.class).invoke(null, factory);
+			} catch (InvocationTargetException e) {
+				throw e.getTargetException();
+			} 
+			
+			// Now, set the soft reference before our hard references go out of scope
+			childLoaderRef = new SoftReference<ClassLoader>(childLoader);
+			
+			runnerType = null;
+			childLoader = null;
+		} finally {
+			Thread.currentThread().setContextClassLoader(originalTccl);
+		}
+		
+		Assert.assertNotNull(factory);
+		Assert.assertNotNull(childLoaderRef.get());
+		
+		// Force GC to reclaim the soft reference
+		forceClearSoftAndWeakReferences();
+
+		// Test the target group
+		Assert.assertNull(childLoaderRef.get());
+		
+	}
 	
 	/**
 	 * Since the contract for SoftReference states that all soft references

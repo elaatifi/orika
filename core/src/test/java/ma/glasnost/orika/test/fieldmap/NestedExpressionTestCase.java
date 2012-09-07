@@ -34,8 +34,6 @@ public class NestedExpressionTestCase {
         factory.registerClassMap(ClassMapBuilder.map(Order.class, OrderDTO.class).field("product.state.type.label", "stateLabel")
                 .field("product.name", "productName").toClassMap());
         
-        factory.build();
-        
         StateType type = new StateType();
         type.setLabel("Open");
         

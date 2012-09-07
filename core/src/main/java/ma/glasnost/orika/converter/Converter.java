@@ -17,6 +17,7 @@
  */
 package ma.glasnost.orika.converter;
 
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.Type;
 
 @Deprecated
@@ -53,6 +54,16 @@ public interface Converter<S, D> {
             
             return delegate.convert(source, destinationType.getRawType());
         }
+
+		public void setMapperFacade(MapperFacade mapper) {
+			if (delegate instanceof CustomConverterBase) {
+				((CustomConverterBase<?,?>)delegate).setMapperFacade(mapper);
+			}
+		}
+		
+		public String toString() {
+	    	return LegacyConverter.class.getSimpleName() + "(" + delegate.toString() + ")";
+	    }
         
     }
 }

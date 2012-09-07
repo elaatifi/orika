@@ -19,7 +19,7 @@
 package ma.glasnost.orika.metadata;
 
 
-public class MapperKey {
+public class MapperKey implements Comparable<MapperKey>{
 
 	private Type<?> aType;
 	private Type<?> bType;
@@ -74,5 +74,19 @@ public class MapperKey {
 
 	public void setBType(Type<?> bType) {
 		this.bType = bType;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	public int compareTo(MapperKey other) {
+		if (this.equals(other)) {
+			return 0;
+		} else if ((other.getAType().isAssignableFrom(this.getAType()) && other.getBType().isAssignableFrom(this.getBType()))
+				|| (other.getAType().isAssignableFrom(other.getBType()) && other.getBType().isAssignableFrom(this.getAType()))) {
+			return -1;
+		} else {
+			return 1;
+		}
 	}
 }

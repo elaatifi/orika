@@ -23,6 +23,12 @@ import java.util.Set;
 
 import ma.glasnost.orika.Mapper;
 
+/**
+ * ClassMap represents a mapping association from one type to another.
+ *
+ * @param <A>
+ * @param <B>
+ */
 public class ClassMap<A, B> {
     
     private final Type<A> aType;
@@ -35,6 +41,17 @@ public class ClassMap<A, B> {
     private final String[] constructorA;
     private final String[] constructorB;
     
+    /**
+     * Constructs a new ClassMap
+     * 
+     * @param aType the 'A' type
+     * @param bType the 'B' type
+     * @param fieldsMapping the specific mapping of the fields from type 'A' to type 'B' and vise-versa
+     * @param customizedMapper the customized mapper that should be used
+     * @param usedMappers the set of mappers used by this mapper to map ancestors' fields
+     * @param constructorA a description of the parameter names of the constructor to use for type 'A'
+     * @param constructorB a description of the parameter names of the constructor to use for type 'B'
+     */
     public ClassMap(Type<A> aType, Type<B> bType, Set<FieldMap> fieldsMapping, Mapper<A, B> customizedMapper, Set<MapperKey> usedMappers,
             String[] constructorA, String[] constructorB) {
         this.aType = aType;
@@ -58,45 +75,72 @@ public class ClassMap<A, B> {
         }
     }
     
+    /**
+     * @param fieldMap
+     */
     public void addFieldMap(FieldMap fieldMap) {
         fieldsMapping.add(fieldMap);
     }
     
+    /**
+     * @return the 'A' type for the mapping
+     */
     public Type<?> getAType() {
         return aType;
     }
     
+    /**
+     * @return the 'B' type for the mapping
+     */
     public Type<?> getBType() {
         return bType;
     }
     
+    /**
+     * @return the mapping of fields between the two types of this mapping
+     */
     public Set<FieldMap> getFieldsMapping() {
         return fieldsMapping;
     }
     
+    /**
+     * @return the name of the 'A' type
+     */
     public String getATypeName() {
         return aType.getSimpleName();
     }
     
+    /**
+     * @return the name of the 'B' type
+     */
     public String getBTypeName() {
         return bType.getSimpleName();
     }
     
+    /**
+     * @return the customized Mapper to be used for this mapping
+     */
     public Mapper<A, B> getCustomizedMapper() {
         return customizedMapper;
     }
     
+    /**
+     * @return
+     */
     public String getMapperClassName() {
-        // TODO This should be a strategy defined at the MapperGenerator level,
-        // something like mapperClassNameStrategy.getMapperClassName(ClassMap
-        // classMap)
-        return "Orika" + bType.getSimpleName() + getATypeName() + "Mapper" + System.identityHashCode(this);
+        return "Orika_" + bType.getSimpleName() + "_" + getATypeName() + "_Mapper";
     }
     
+    /**
+     * @return
+     */
     public String[] getConstructorA() {
         return constructorA;
     }
     
+    /**
+     * @return
+     */
     public String[] getConstructorB() {
         return constructorB;
     }

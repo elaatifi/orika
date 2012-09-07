@@ -20,7 +20,12 @@ package ma.glasnost.orika.converter.builtin;
 import ma.glasnost.orika.converter.Converter;
 
 
+/**
+ * 
+ * @deprecated use {@link FromStringConverter} instead
+ */
 @SuppressWarnings("rawtypes")
+@Deprecated
 public class StringToEnumConverter implements Converter<String, Enum> {
     
     @SuppressWarnings("unchecked")

@@ -18,7 +18,9 @@
 
 package ma.glasnost.orika;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.metadata.Type;
@@ -219,8 +221,47 @@ public interface MapperFacade {
     
     <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context);
     
+    /**
+     * Map an iterable onto an existing collection
+     * 
+     * @param source the source iterable
+     * @param destination the destination collection
+     * @param destinationClass the type of elements in the destination
+     */
+    <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass);
+    
+    
+    /**
+     * Map an iterable onto an existing collection
+     * 
+     * @param source the source iterable
+     * @param destination the destination collection
+     * @param destinationClass the type of elements in the destination
+     * @param context the current mapping context
+     */
+    <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass, MappingContext context);
+    
+    /**
+     * Map an array onto an existing collection
+     * 
+     * @param source the source array
+     * @param destination the destination collection
+     * @param destinationClass the type of elements in the destination
+     */
+    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationCollection);
+    
+    /**
+     * Map an array onto an existing collection
+     * 
+     * @param source the source array
+     * @param destination the destination collection
+     * @param destinationClass the type of elements in the destination
+     * @param context the current mapping context
+     */
+    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationCollection, MappingContext context);
+    
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // New method sigantures to support generics mapping
+    // New method signatures to support generics mapping
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType);
     
@@ -250,9 +291,113 @@ public interface MapperFacade {
     
     <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Map an iterable onto an existing collection
+     * 
+     * @param source the source iterable
+     * @param destination the destination collection
+     * @param sourceType the type of elements in the source
+     * @param destinationType the type of elements in the destination
+     */
+    <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType);
+    
+    /**
+     * Map an iterable onto an existing collection
+     * 
+     * @param source the source iterable
+     * @param destination the destination collection
+     * @param sourceType the type of elements in the source
+     * @param destinationType the type of elements in the destination
+     * @param context the current mapping context
+     */
+    <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType, MappingContext context);
+    
+    /**
+     * Map an array onto an existing collection
+     * 
+     * @param source the source array
+     * @param destination the destination collection
+     * @param sourceType the type of elements in the source
+     * @param destinationType the type of elements in the destination
+     */
+    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType);
+    
+    
+    /**
+     * Map an array onto an existing collection
+     * 
+     * @param source the source array
+     * @param destination the destination collection
+     * @param sourceType the type of elements in the source
+     * @param destinationType the type of elements in the destination
+     * @param context the current mapping context
+     */
+    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType, MappingContext context);
+    
+    
+    /**
+     * Convert the source object into the appropriate destination type
+     * 
+     * @param source the source object to map
+     * @param sourceType the type of the source object
+     * @param destinationType the type of the destination object to produce
+     * @param converterId the specific converter to use; if null, the first compatible global converter is used
+     * @return
+     */
     <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId);
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // New method signatures to support java.util.Map types
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
+    /**
+     * Map from one instance of java.util.Map to another.
+     * 
+     * @param source the source Map
+     * @param sourceType the parameterized type of the source Map object
+     * @param destinationType the parameterized type of the destination Map object
+     * @return a new Map instance, with key and value types as defined by destinationType
+     */
+    <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType);
+    
+    /**
+     * Map from one instance of java.util.Map to another.
+     * 
+     * @param source
+     * @param sourceType
+     * @param destinationType
+     * @param context context the context from the current mapping request
+     * @return a new Map instance, with key and value types as defined by destinationType
+     */
+    <Sk, Sv, Dk, Dv> Map<Dk,Dv> mapAsMap(Map<Sk,Sv> source, Type<? extends Map<Sk,Sv>> sourceType, Type<? extends Map<Dk,Dv>> destinationType, MappingContext context);
+    
+    /*
+     * New mapping type: Iterable or Array to Map
+     */
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType);
+    
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context);
+    
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType);
+    
+    <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context);
+    
+    /*
+     * New mapping type: Map to List, Set or Array
+     */
+    <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
+    
+    <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
+    
+    <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
+    
+    <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
+    
+    <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
+    
+    <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
+     
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     <S, D> D convert(S source, Class<D> destinationClass, String converterId);
     

@@ -15,22 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ma.glasnost.orika.converter.builtin;
 
-package ma.glasnost.orika.impl.util;
+import ma.glasnost.orika.CustomConverter;
+import ma.glasnost.orika.metadata.Type;
 
-final class CollectionUtil {
 
-	private CollectionUtil() {
+public class ToStringConverter extends CustomConverter<Object, String> {
 
+	public String convert(Object source, Type<? extends String> destinationType) {
+		return source.toString();
 	}
-
-	public static boolean equalsAny(Object obj, Object... objects) {
-		for (final Object o : objects) {
-			if (obj.equals(o)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
 }

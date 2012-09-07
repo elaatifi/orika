@@ -31,6 +31,7 @@ import org.junit.Test;
 public class Issue18TestCase {
 
 	
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testMappingEmptyArray() {
 		

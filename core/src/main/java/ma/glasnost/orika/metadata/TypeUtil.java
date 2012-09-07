@@ -32,12 +32,16 @@ import java.util.Set;
 abstract class TypeUtil {
     
     @SuppressWarnings("unchecked")
-    static final Set<Type<?>> IGNORED_TYPES = new HashSet<Type<?>>(Arrays.asList(TypeFactory.valueOf(Cloneable.class),
-            TypeFactory.valueOf(Serializable.class), TypeFactory.valueOf(Externalizable.class)));
+    static final Set<Type<?>> IGNORED_TYPES = 
+            new HashSet<Type<?>>(Arrays.asList(
+                    TypeFactory.valueOf(Cloneable.class), 
+                    TypeFactory.valueOf(Serializable.class),
+                    TypeFactory.valueOf(Externalizable.class)));
+    
     
     static java.lang.reflect.Type[] resolveActualTypeArguments(ParameterizedType type, Type<?> reference) {
-        
-        return resolveActualTypeArguments(((Class<?>) type.getRawType()).getTypeParameters(), type.getActualTypeArguments(), reference);
+          
+        return resolveActualTypeArguments(((Class<?>)type.getRawType()).getTypeParameters(), type.getActualTypeArguments(), reference);
     }
     
     /**
@@ -49,19 +53,17 @@ abstract class TypeUtil {
      * @param reference
      * @return
      */
-    static java.lang.reflect.Type[] resolveActualTypeArguments(TypeVariable<?>[] vars, java.lang.reflect.Type[] typeArguments,
-            Type<?> reference) {
-        
-        java.lang.reflect.Type[] actualTypeArguments = new java.lang.reflect.Type[typeArguments.length];
-        for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
+    static java.lang.reflect.Type[] resolveActualTypeArguments(TypeVariable<?>[] vars, java.lang.reflect.Type[] typeArguments, Type<?> reference) {
+    	
+		java.lang.reflect.Type[] actualTypeArguments = new java.lang.reflect.Type[typeArguments.length];
+        for (int i=0, len=actualTypeArguments.length; i < len; ++i) {
             java.lang.reflect.Type typeArg = typeArguments[i];
             TypeVariable<?> var = vars[i];
             // TODO: need to clean up this section:
-            // we should loop through the types provided by the reference type,
-            // and if they are more specific than the existing type, use the
-            // reference instead
+            // we should loop through the types provided by the reference type, 
+            // and if they are more specific than the existing type, use the reference instead
             if (typeArg instanceof TypeVariable) {
-                var = (TypeVariable<?>) typeArg;
+                var = (TypeVariable<?>)typeArg;
             }
             Type<?> typeFromReference = (Type<?>) reference.getTypeByVariable(var);
             if (typeFromReference != null && typeArg.equals(var)) {
@@ -72,26 +74,27 @@ abstract class TypeUtil {
             }
         }
         return actualTypeArguments;
-        
+	
     }
     
     /**
-     * Attempts to determine the more specific type out of the two provided
-     * types.<br>
+     * Attempts to determine the more specific type out of the two
+     * provided types.<br>
      * 
      * @param type0
      * @param type1
-     */
+     */ 
     static Type<?> getMostSpecificType(Type<?> type0, Type<?> type1) {
         return getMostSpecificType(type0, type1, IGNORED_TYPES);
     }
     
+    
     /**
-     * Attempts to determine the more specific type out of the two provided
-     * types.<br>
+     * Attempts to determine the more specific type out of the two
+     * provided types.<br>
      * Allows a provided list of types to ignore (which are basically considered
-     * the same as Object's type in terms of their specificity); this is to
-     * allow ignoring types that are not a useful part of the hierarchy
+     * the same as Object's type in terms of their specificity); this is
+     * to allow ignoring types that are not a useful part of the hierarchy
      * comparison.
      * 
      * @param type0
@@ -148,7 +151,7 @@ abstract class TypeUtil {
             throw new IllegalArgumentException("Must provide all type-arguments or none");
         } else {
             
-            for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
+            for (int i=0, len=actualTypeArguments.length; i < len; ++i) {
                 java.lang.reflect.Type t = actualTypeArguments[i];
                 recursiveBounds.add(rawType);
                 resultTypeArguments[i] = TypeFactory.limitedValueOf(t, recursiveBounds);

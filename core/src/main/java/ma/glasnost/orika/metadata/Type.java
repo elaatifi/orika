@@ -5,6 +5,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Collection;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 
@@ -24,15 +25,15 @@ import ma.glasnost.orika.impl.util.ClassUtil;
  *
  * @param <T>
  */
-public final class Type<T> implements ParameterizedType {
+public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
     private final Class<T> rawType;
     //private java.lang.reflect.Type ownerType;
     private final Type<?>[] actualTypeArguments;
     private final boolean isParameterized;
-    private Map<TypeVariable<?>, Type<?>> typesByVariable;
-    private Type<?> superType;
-    private Type<?>[] interfaces;
+    private Map<String, Type<?>> typesByVariable;
+    private volatile Type<?> superType;
+    private volatile Type<?>[] interfaces;
     private Type<?> componentType;
     private final TypeKey key;
 
@@ -41,7 +42,7 @@ public final class Type<T> implements ParameterizedType {
      * @param actualTypeArguments
      */
     @SuppressWarnings("unchecked")
-    Type(TypeKey key, Class<?> rawType, Map<TypeVariable<?>, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
+    Type(TypeKey key, Class<?> rawType, Map<String, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
         this.key = key;
         this.rawType = (Class<T>)rawType;
         this.actualTypeArguments = actualTypeArguments;
@@ -124,13 +125,13 @@ public final class Type<T> implements ParameterizedType {
         return actualTypeArguments;
     }
     
-    public Map<TypeVariable<?>, Type<?>> getTypesByVariable() {
+    public Map<String, Type<?>> getTypesByVariable() {
     	return Collections.unmodifiableMap(typesByVariable);
     }
     
     public java.lang.reflect.Type getTypeByVariable(TypeVariable<?> typeVariable) {
         if (isParameterized) {
-            return typesByVariable.get(typeVariable);
+            return typesByVariable.get(typeVariable.getName());
         } else {
             return null;
         }
@@ -227,6 +228,18 @@ public final class Type<T> implements ParameterizedType {
     	return getRawType().isEnum();
     }
    
+    public boolean isArray() {
+    	return getRawType().isArray();
+    }
+    
+    public boolean isCollection() {
+    	return Collection.class.isAssignableFrom(getRawType());
+    }
+    
+    public boolean isMap() {
+    	return Map.class.isAssignableFrom(getRawType());
+    }
+    
     public boolean isPrimitive() {
     	return getRawType().isPrimitive();
     }
@@ -241,7 +254,11 @@ public final class Type<T> implements ParameterizedType {
     
     public String toString() {
     	StringBuilder stringValue = new StringBuilder();
-    	stringValue.append(rawType.getSimpleName());
+    	if (rawType.isAnonymousClass()) {
+    		rawType.getName();
+    	} else {	
+    		stringValue.append(rawType.getSimpleName());
+    	}
     	if (actualTypeArguments.length > 0) {
     		stringValue.append("<");
     		for (java.lang.reflect.Type arg: actualTypeArguments) {
@@ -252,6 +269,21 @@ public final class Type<T> implements ParameterizedType {
     	}
     	
     	return stringValue.toString();
+    }
+    
+    public String toFullyQualifiedString() {
+        StringBuilder stringValue = new StringBuilder();
+        stringValue.append(rawType.getCanonicalName());
+        if (actualTypeArguments.length > 0) {
+            stringValue.append("<");
+            for (java.lang.reflect.Type arg: actualTypeArguments) {
+                stringValue.append(""+arg + ", ");
+            }
+            stringValue.setLength(stringValue.length()-2);
+            stringValue.append(">");
+        }
+        
+        return stringValue.toString();
     }
     
     @Override
@@ -274,23 +306,17 @@ public final class Type<T> implements ParameterizedType {
         Type<?> other = (Type<?>) obj;
         
         return this.key.equals(other.key);
-//        if (!this.key.equals(other.key)) {
-//            // shortcut
-//            return false;
-//        }
-//        
-//        if (rawType == null) {
-//            if (other.rawType != null) {
-//                return false;
-//            }
-//        } else if (!rawType.equals(other.rawType)) {
-//            return false;
-//        }
-//        
-//        if (!Arrays.equals(actualTypeArguments, other.actualTypeArguments)) {
-//            return false;
-//        }
-//        
-//        return true;
     }
+
+    
+    public int compareTo(Type<?> other) {
+        if (this.equals(other)) {
+            return 0;
+        } else if (this.isAssignableFrom(other)) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
 }

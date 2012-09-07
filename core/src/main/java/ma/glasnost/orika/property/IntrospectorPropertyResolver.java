@@ -30,7 +30,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +60,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
 	        	properties = propertiesCache.get(theType);
 	        	if (properties == null) {
 	        		
-			        properties = new HashMap<String, Property>();
+			        properties = new LinkedHashMap<String, Property>();
 			        Type<?> typeHolder;
 			        
 			        if (theType instanceof Type) {
@@ -183,7 +183,6 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
 			                    types.add(type.getSuperclass());
 			                }
 			                
-			                @SuppressWarnings("unchecked")
 			                List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
 			                types.addAll(interfaces);
 			            }
@@ -295,7 +294,7 @@ public class IntrospectorPropertyResolver implements PropertyResolverStrategy {
             while (i < ps.length) {
                 if (!properties.containsKey(ps[i])) {
                     throw new RuntimeException("could not resolve nested property [" + p + "] on " + type + ", because "
-                            + property.getType() + " does not contain property [" + ps[i] + "]");
+                            + type + " does not contain property [" + ps[i] + "]");
                 }
                 property = properties.get(ps[i]);
                 properties = getProperties(property.getType());

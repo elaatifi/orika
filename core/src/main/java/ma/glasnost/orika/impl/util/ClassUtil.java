@@ -21,8 +21,10 @@ package ma.glasnost.orika.impl.util;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import ma.glasnost.orika.metadata.Type;
@@ -52,7 +54,7 @@ public final class ClassUtil {
     }
     
     public static boolean isImmutable(Class<?> clazz) {
-        return IMMUTABLES_TYPES.contains(clazz) || clazz.isEnum();
+        return clazz.isPrimitive() || IMMUTABLES_TYPES.contains(clazz) || clazz.isEnum();
     }
     
     public static boolean isImmutable(Type<?> type) {
@@ -65,7 +67,7 @@ public final class ClassUtil {
      * @return true if the passed type is not abstract and not an interface; false otherwise.
      */
     public static boolean isConcrete(Class<?> type) {
-    	return !type.isInterface() && !Modifier.isAbstract(type.getModifiers());
+    	return !type.isInterface() && (type.isPrimitive() || !Modifier.isAbstract(type.getModifiers()));
     }
     
     /**
@@ -139,6 +141,108 @@ public final class ClassUtil {
 		} else {
 			return null;
 		}
+    }
+    
+    /**
+     * Returns the corresponding primitive type for the given primitive wrapper,
+     * or null if the type is not a primitive wrapper.
+     * 
+     * @param wrapperType
+     * @return the corresponding primitive type
+     */
+    public static Class<?> getPrimitiveType(Class<?> wrapperType) {
+		if (Boolean.class.equals(wrapperType)) {
+			return Boolean.TYPE;
+		} else if (Byte.class.equals(wrapperType)) {
+			return Byte.TYPE;
+		} else if (Character.class.equals(wrapperType)) {
+			return Character.TYPE;
+		} else if (Short.class.equals(wrapperType)) {
+			return Short.TYPE;
+		} else if (Integer.class.equals(wrapperType)) {
+			return Integer.TYPE;
+		} else if (Long.class.equals(wrapperType)) {
+			return Long.TYPE;
+		} else if (Float.class.equals(wrapperType)) {
+			return Float.TYPE;
+		} else if (Double.class.equals(wrapperType)) {
+			return Double.TYPE;
+		} else {
+			return null;
+		}
+    }
+    
+    public static boolean[] booleanArray(Collection<Boolean> collection) {
+    	boolean[] primitives = new boolean[collection.size()];
+    	int index = -1;
+    	Iterator<Boolean> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next();
+    	}
+    	return primitives;
+    }
+    public static byte[] byteArray(Collection<Byte> collection) {
+    	byte[] primitives = new byte[collection.size()];
+    	int index = -1;
+    	Iterator<Byte> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().byteValue();
+    	}
+    	return primitives;
+    }
+    public static char[] charArray(Collection<Character> collection) {
+    	char[] primitives = new char[collection.size()];
+    	int index = -1;
+    	Iterator<Character> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().charValue();
+    	}
+    	return primitives;
+    }
+    public static short[] shortArray(Collection<Short> collection) {
+    	short[] primitives = new short[collection.size()];
+    	int index = -1;
+    	Iterator<Short> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().shortValue();
+    	}
+    	return primitives;
+    }
+    public static int[] intArray(Collection<Integer> collection) {
+    	int[] primitives = new int[collection.size()];
+    	int index = -1;
+    	Iterator<Integer> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().intValue();
+    	}
+    	return primitives;
+    }
+    public static long[] longArray(Collection<Long> collection) {
+    	long[] primitives = new long[collection.size()];
+    	int index = -1;
+    	Iterator<Long> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().longValue();
+    	}
+    	return primitives;
+    }
+    public static float[] floatArray(Collection<Float> collection) {
+    	float[] primitives = new float[collection.size()];
+    	int index = -1;
+    	Iterator<Float> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().floatValue();
+    	}
+    	return primitives;
+    }
+    public static double[] doubleArray(Collection<Double> collection) {
+    	double[] primitives = new double[collection.size()];
+    	int index = -1;
+    	Iterator<Double> iter = collection.iterator();
+    	while (iter.hasNext()) {
+    		primitives[++index] = iter.next().doubleValue();
+    	}
+    	return primitives;
     }
     
     public static boolean isProxy(Class<?> clazz) {

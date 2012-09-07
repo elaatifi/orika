@@ -79,7 +79,7 @@ public class GenericCollectionsTestCase {
         
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         
-        ClassMapBuilder<?, ?> builder = ClassMapBuilder.map(TaskLayer1.class, TaskLayer2.class).byDefault();
+        ClassMapBuilder<?, ?> builder = factory.classMap(TaskLayer1.class, TaskLayer2.class).byDefault();
         ClassMap<?, ?> classMap = builder.toClassMap();
         factory.registerClassMap(classMap);
         
@@ -119,7 +119,7 @@ public class GenericCollectionsTestCase {
         Type<TaskLayer2<Employee>> targetType = new TypeBuilder<TaskLayer2<Employee>>(){}.build();
         
         factory.registerClassMap(
-                ClassMapBuilder.map(sourceType, targetType).byDefault().toClassMap());
+                factory.classMap(sourceType, targetType).byDefault());
         
         TaskLayer2<Employee> t2 = factory.getMapperFacade().map(t1, sourceType, targetType);
         Assert.assertNotNull(t2);

@@ -24,12 +24,12 @@ import java.util.Map;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
-import ma.glasnost.orika.property.PropertyResolver;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Assert;
@@ -74,7 +74,7 @@ public class GenericsTestCase {
              * Note that the normal lookup of nested property doesn't work,
              * since EntityGeneric doesn't have actualized type arguments
              */
-            ClassMapBuilder.map(EntityGeneric.class, EntityLong.class).field("id.key", "id").toClassMap();
+            factory.classMap(EntityGeneric.class, EntityLong.class).field("id.key", "id").toClassMap();
             Assert.fail("should throw exception for unresolvable nested property");
         } catch (Exception e) {
             Assert.assertTrue(e.getLocalizedMessage().contains("could not resolve nested property [id.key]"));
@@ -83,7 +83,7 @@ public class GenericsTestCase {
         // If we explicitly declare the generic type for the source object,
         // we can successfully register the class map
         Type<EntityGeneric<NestedKey<Long>>> sourceType = new TypeBuilder<EntityGeneric<NestedKey<Long>>>() {}.build();
-        factory.registerClassMap(ClassMapBuilder.map(sourceType, EntityLong.class).field("id.key", "id").toClassMap());
+        factory.registerClassMap(factory.classMap(sourceType, EntityLong.class).field("id.key", "id").toClassMap());
         
         MapperFacade mapperFacade = factory.getMapperFacade();
         
@@ -103,12 +103,12 @@ public class GenericsTestCase {
     public void testParameterizedPropertyUtil() {
         
         Type<?> t = new TypeBuilder<TestEntry<Holder<Long>, Holder<String>>>() {}.build();
-        
-        Property p = PropertyResolver.getInstance().getNestedProperty(t, "key.held");
+        PropertyResolverStrategy propertyResolver = UtilityResolver.getDefaultPropertyResolverStrategy();
+        Property p = propertyResolver.getNestedProperty(t, "key.held");
         Assert.assertEquals(p.getType().getRawType(), Long.class);
         Assert.assertEquals(p.getType(), TypeFactory.valueOf(Long.class));
         
-        Map<String, Property> properties = PropertyResolver.getInstance().getProperties(t);
+        Map<String, Property> properties = propertyResolver.getProperties(t);
         Assert.assertTrue(properties.containsKey("key"));
         Assert.assertEquals(properties.get("key").getType(), new TypeBuilder<Holder<Long>>() {}.build());
     }
@@ -128,13 +128,13 @@ public class GenericsTestCase {
         fromObject.getValue().setHeld("What is the meaning of life?");
         
         factory.registerClassMap(
-                ClassMapBuilder.map(
+                factory.classMap(
                         new TypeBuilder<Holder<String>>(){}.build(), 
                         new TypeBuilder<Container<String>>(){}.build())
                         .field("held", "contained").byDefault().toClassMap());
         
         factory.registerClassMap(
-                ClassMapBuilder.map(
+                factory.classMap(
                         new TypeBuilder<Holder<Long>>(){}.build(), 
                         new TypeBuilder<Container<String>>(){}.build())
                         .field("held", "contained").byDefault().toClassMap());
@@ -174,7 +174,7 @@ public class GenericsTestCase {
         fromObject.setValue(envelope);
         
         factory.registerClassMap(
-                ClassMapBuilder.map(fromType, toType)
+                factory.classMap(fromType, toType)
                 .field("key.contained.held", "key.held")
                 .field("value.contents.contained", "value.contained")
                 /*.byDefault()*/.toClassMap());
@@ -216,15 +216,15 @@ public class GenericsTestCase {
         /*
          * We map the field types explicitly for the separate type mappings
          */
-        factory.registerClassMap(ClassMapBuilder.map(_Holder_String, _Container_String)
+        factory.registerClassMap(factory.classMap(_Holder_String, _Container_String)
                 .field("held", "contained")
                 .byDefault()
                 .toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(_Holder_Long, _Container_String)
+        factory.registerClassMap(factory.classMap(_Holder_Long, _Container_String)
                 .field("held", "contained")
                 .byDefault()
                 .toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(_Holder_Long, _Container_Long)
+        factory.registerClassMap(factory.classMap(_Holder_Long, _Container_Long)
                 .field("held", "secondaryContained")
                 .byDefault()
                 .toClassMap());

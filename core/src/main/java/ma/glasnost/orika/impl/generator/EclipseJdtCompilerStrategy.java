@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import java.lang.reflect.Modifier;
+
 /**
  * Uses Eclipse JDT to format and compile the source for the specified
  * GeneratedSourceCode objects.<br><br>
@@ -43,7 +45,7 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
     private final Object compiler;
     private final Method formatSource;
     private final Method compile;
-    private final Method assertTypeAccessible;
+    private final Method assertTypeAccessible; 
     private final Method load;
     
     public EclipseJdtCompilerStrategy() {
@@ -115,6 +117,22 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
     
     public void assureTypeIsAccessible(Class<?> type) throws SourceCodeGenerationException {
         try {
+            if (!Modifier.isPublic(type.getModifiers())) {
+                throw new SourceCodeGenerationException(type + " is not accessible");
+            } else if (type.isMemberClass()) {
+                /*
+                 * The type needs to be publicly accessible (including it's
+                 * enclosing classes if any)
+                 */
+                Class<?> currentType = type;
+                while (currentType != null) {
+                    if (!Modifier.isPublic(type.getModifiers())) {
+                        throw new SourceCodeGenerationException(type + " is not accessible");
+                    }
+                    currentType = currentType.getEnclosingClass();
+                }
+            }
+            
             assertTypeAccessible.invoke(compiler, type);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

@@ -21,6 +21,7 @@ package ma.glasnost.orika.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingContext;
@@ -29,10 +30,12 @@ import ma.glasnost.orika.metadata.Type;
 public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
     
     protected Mapper<Object, Object> customMapper;
-    protected Type<Object>[] usedTypes;
+    protected Type<?>[] usedTypes;
+    protected Converter<Object, Object>[] usedConverters;
     private Mapper<Object, Object>[] usedMappers;
     private Type<Object> aType;
     private Type<Object> bType;
+    private boolean fromAutoMapping;
     
     public Type<Object> getAType() {
         return aType;
@@ -50,6 +53,14 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
     @SuppressWarnings("unchecked")
     public void setBType(Type<?> bType) {
         this.bType = (Type<Object>) bType;
+    }
+    
+    public boolean isFromAutoMapping() {
+        return fromAutoMapping;
+    }
+    
+    public void setFromAutoMapping(boolean fromAutoMapping) {
+        this.fromAutoMapping = fromAutoMapping;
     }
     
     public void setCustomMapper(Mapper<Object, Object> customMapper) {
@@ -70,6 +81,10 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         this.usedTypes = types;
     }
     
+    public void setUsedConverters(Converter<Object, Object>[] usedConverters) {
+        this.usedConverters = usedConverters;
+    }
+    
     @Override
     public void mapAtoB(Object a, Object b, MappingContext context) {
         if (usedMappers == null) {
@@ -88,6 +103,17 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         for (Mapper<Object, Object> mapper : usedMappers) {
             mapper.mapBtoA(b, a, context);
         }
+    }
+    
+    protected int min(int... sizes) {
+        
+        int min = Integer.MAX_VALUE;
+        for (int size : sizes) {
+            if (size < min) {
+                min = size;
+            }
+        }
+        return min;
     }
     
     protected static <T> List<T> asList(Iterable<T> iterable) {

@@ -18,16 +18,8 @@
 
 package ma.glasnost.orika.impl.generator;
 
-import static ma.glasnost.orika.impl.Specifications.aCollection;
-import static ma.glasnost.orika.impl.Specifications.aConversionFromString;
-import static ma.glasnost.orika.impl.Specifications.aConversionToString;
-import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
-import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
-import static ma.glasnost.orika.impl.Specifications.anArray;
-import static ma.glasnost.orika.impl.Specifications.immutable;
-import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
-
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -35,12 +27,10 @@ import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.GeneratedMapperBase;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 
 import org.slf4j.Logger;
@@ -48,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 public final class MapperGenerator {
     
-    private static Logger LOG = LoggerFactory.getLogger(MapperGenerator.class);
+    private static Logger LOGGER = LoggerFactory.getLogger(MapperGenerator.class);
     
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
@@ -64,18 +54,45 @@ public final class MapperGenerator {
             compilerStrategy.assureTypeIsAccessible(classMap.getAType().getRawType());
             compilerStrategy.assureTypeIsAccessible(classMap.getBType().getRawType());
             
-            final UsedTypesContext usedTypes = new UsedTypesContext();
-            
-            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(classMap.getMapperClassName(), GeneratedMapperBase.class,
+            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(
+                    classMap.getMapperClassName(), GeneratedMapperBase.class,
                     compilerStrategy);
             
-            addMapMethod(mapperCode, true, classMap, usedTypes);
-            addMapMethod(mapperCode, false, classMap, usedTypes);
+            UsedTypesContext usedTypes = new UsedTypesContext();
+            UsedConvertersContext usedConverters = new UsedConvertersContext();
+            
+            StringBuilder logDetails;
+            if (LOGGER.isDebugEnabled()) {
+            	logDetails = new StringBuilder();
+            	logDetails.append("Generating new mapper for (" + classMap.getAType()+", " + classMap.getBTypeName() +")");
+            } else {
+            	logDetails = null;
+            }
+            
+            
+            addMapMethod(mapperCode, true, classMap, usedTypes, usedConverters, logDetails);
+            addMapMethod(mapperCode, false, classMap, usedTypes, usedConverters, logDetails);
             
             GeneratedMapperBase instance = mapperCode.getInstance();
             instance.setAType(classMap.getAType());
             instance.setBType(classMap.getBType());
-            instance.setUsedTypes(usedTypes.getUsedTypesArray());
+            
+            Type<Object>[] usedTypesArray = usedTypes.toArray();
+            Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
+            if (logDetails != null) {
+            	if (usedTypesArray.length > 0) {
+            		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));
+            	}
+            	if (usedConvertersArray.length > 0) {
+            		logDetails.append("\n\tConverters used: " + Arrays.toString(usedConvertersArray));
+            	}
+            	// TODO: what about doing the same thing for custom mappers?
+            } 
+            instance.setUsedTypes(usedTypesArray);
+            instance.setUsedConverters(usedConvertersArray);
+            if (logDetails != null) {
+            	LOGGER.debug(logDetails.toString());
+            }
             
             return instance;
             
@@ -84,64 +101,108 @@ public final class MapperGenerator {
         }
     }
     
-    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes) throws CannotCompileException {
+    private String getFieldTag(FieldMap fieldMap) {
+    	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
+    }
+    
+    private void addMapMethod(GeneratedSourceCode context, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes, UsedConvertersContext usedConverters, StringBuilder logDetails) throws CannotCompileException {
         
-        final CodeSourceBuilder out = new CodeSourceBuilder(2, usedTypes);
+    	if (logDetails != null) {
+        	if (aToB) {
+        		logDetails.append("\n\t" +context.getClassSimpleName() + ".mapAToB("+ classMap.getAType()+", " + classMap.getBTypeName() +") {");
+        	} else {
+        		logDetails.append("\n\t" +context.getClassSimpleName() + ".mapBToA("+ classMap.getBType()+", " + classMap.getATypeName() +") {");
+        	}
+        }
+    	
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory);
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ")
                 .append(mapMethod)
                 .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {\n\n", MappingContext.class.getCanonicalName());
         
-        Class<?> sourceClass;
-        Type<?> destinationType;
-        if (aToB) {
-            sourceClass = classMap.getAType().getRawType();
-            destinationType = classMap.getBType();
-        } else {
-            sourceClass = classMap.getBType().getRawType();
-            destinationType = classMap.getAType();
-        }
-        
         // out.assertType("a", sourceClass);
         // out.assertType("b", destinationClass);
-        out.append("\n\t\tsuper.").append(mapMethod).append("(a,b, mappingContext);\n\n");
-        out.append("\t\t" + sourceClass.getCanonicalName())
-                .append(" source = \n\t\t\t\t (")
-                .append(sourceClass.getCanonicalName())
-                .append(") a; \n");
-        out.append("\t\t" + destinationType.getCanonicalName())
-                .append(" destination = \n\t\t\t\t (")
-                .append(destinationType.getCanonicalName())
-                .append(") b; \n\n");
+        VariableRef source;
+        VariableRef destination;
+        if (aToB) {
+            source = new VariableRef(classMap.getAType(), "source");
+            destination = new VariableRef(classMap.getBType(), "destination"); 
+        } else {
+            source = new VariableRef(classMap.getBType(), "source");
+            destination = new VariableRef(classMap.getAType(), "destination");
+        }
+         
+        out.statement("super.%s(a, b, mappingContext);", mapMethod);
+        out.statement(source.declare("a"));
+        out.statement(destination.declare("b"));
+        LinkedList<FieldMap> nestedFieldMaps = new LinkedList<FieldMap>();
         
         for (FieldMap fieldMap : classMap.getFieldsMapping()) {
             
+        	
             if (fieldMap.isExcluded()) {
+            	if (logDetails != null) {
+            		logDetails.append(getFieldTag(fieldMap) + "excuding (explicitly)");
+            	}
                 continue;
             }
             
             if (isAlreadyExistsInUsedMappers(fieldMap, classMap)) {
-                continue;
+            	if (logDetails != null) {
+            		logDetails.append(getFieldTag(fieldMap) + "excluding because it is already handled by another mapper in this hierarchy");
+            		
+            	}
+            	continue;
             }
             
             if (!aToB) {
                 fieldMap = fieldMap.flip();
             }
+            
+            if (fieldMap.getElementMap() != null) {
+            	nestedFieldMaps.add(fieldMap);
+            	continue;
+            }
+            
+            if (logDetails != null) {
+        		logDetails.append(getFieldTag(fieldMap));
+        	}
+            
             if (!fieldMap.isIgnored()) {
                 try {
-                    generateFieldMapCode(out, fieldMap, destinationType);
+                    generateFieldMapCode(out, fieldMap, destination.type(), logDetails);
                 } catch (final Exception e) {
-                    throw new MappingException(e);
+                    MappingException me = new MappingException(e);
+                    me.setSourceProperty(fieldMap.getSource());
+                    me.setDestinationProperty(fieldMap.getDestination());
+                    me.setSourceType(source.type());
+                    me.setDestinationType(destination.type());
+                    throw me;
                 }
+            } else if (logDetails !=null) {
+            	logDetails.append("ignored for this mapping direction");
             }
         }
+        
+        while (!nestedFieldMaps.isEmpty()) {
+        	Set<FieldMap> associated = out.getAssociatedMappings(nestedFieldMaps, nestedFieldMaps.getFirst());
+        	nestedFieldMaps.removeAll(associated);
+        	out.fromMultiOccurrenceToMultiOccurrence(associated, logDetails);
+        }
+        
         out.append("\n\t\tif(customMapper != null) { \n\t\t\t customMapper.")
                 .append(mapMethod)
                 .append("(source, destination, mappingContext);\n\t\t}");
         
         out.append("\n\t}");
         
+        if (logDetails != null) {
+        	logDetails.append("\n\t}");
+        }
+        
         context.addMethod(out.toString());
+        
     }
     
     private boolean isAlreadyExistsInUsedMappers(FieldMap fieldMap, ClassMap<?, ?> classMap) {
@@ -160,93 +221,30 @@ public final class MapperGenerator {
         return exists;
     }
     
-    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType) throws Exception {
-        final Property sp = fieldMap.getSource(), dp = fieldMap.getDestination();
+    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType, StringBuilder logDetails) throws Exception {
         
-        if (sp.getGetter() == null || ((dp.getSetter() == null) && !Collection.class.isAssignableFrom(dp.getRawType()))) {
-            return;
+        final VariableRef sourceProperty = new VariableRef(fieldMap.getSource(), "source");
+        final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
+        
+        if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection())) {
+            if (logDetails != null) {
+            	logDetails.append("excluding because ");
+    			if (!sourceProperty.isReadable()) {
+    				logDetails.append(fieldMap.getSource().getType() + "." + fieldMap.getSource().getName() + " is not readable");
+    			} else {
+    				// TODO: this brings up an important case: sometimes the destination is not assignable, 
+    				// but it's properties can still be mapped in-place. Should we handle it?
+    				logDetails.append(fieldMap.getDestination().getType() + "." + fieldMap.getDestination().getName() + " is neither assignable nor a collection");
+    			}		
+            }
+        	return;
         }
         
-        // Make sure the source and destination types are accessible to the
-        // builder
-        
-        compilerStrategy.assureTypeIsAccessible(sp.getRawType());
-        compilerStrategy.assureTypeIsAccessible(dp.getRawType());
-        
-        try {
-            
-            //
-            // Ensure that there we will not cause a NPE
-            //
-            if (sp.hasPath()) {
-                code.avoidSourceNPE(sp).then();
-            }
-            
-            if (dp.hasPath()) {
-            	if(!sp.isPrimitive()) code.ifSourceNotNull(sp).then();
-                code.ifDestinationNull(dp);
-                
-            }
-            
-            
-            // Generate mapping code for every case
-            
-            Converter<Object, Object> converter = getConverter(fieldMap);
-            if (converter != null) {
-                code.convert(dp, sp, fieldMap.getConverterId());
-            } else if (fieldMap.is(toAnEnumeration())) {
-                code.setToEnumeration(dp, sp);
-            } else if (fieldMap.is(immutable())) {
-                code.set(dp, sp);
-            } else if (fieldMap.is(anArray())) {
-                code.setArray(dp, sp);
-            } else if (fieldMap.is(aCollection())) {
-                code.setCollection(dp, sp, fieldMap.getInverse(), destinationType);
-            } else if (fieldMap.is(aWrapperToPrimitive())) {
-                code.setPrimitive(dp, sp);
-            } else if (fieldMap.is(aPrimitiveToWrapper())) {
-                code.setWrapper(dp, sp);
-            } else if (fieldMap.is(aConversionFromString())) {
-                code.setFromStringConversion(dp, sp);
-            } else if (fieldMap.is(aConversionToString())) {
-                code.setToStringConversion(dp, sp);
-            } else {
-                /**/
-                
-                if (sp.isPrimitive() || dp.isPrimitive())
-                    code.newLine().append("/* Ignore field map : %s:%s -> %s:%s */", sp.getExpression(), sp.getType().getSimpleName(),
-                            dp.getExpression(), dp.getType().getSimpleName());
-                
-                else {
-                    code.setObject(dp, sp, fieldMap.getInverse());
-                }
-            }
-            
-            if (dp.hasPath()) {
-                if(!sp.isPrimitive()) code.end();
-            }
-            // Close up, and set null to destination
-            if (sp.hasPath()) {
-                code.end();
-            }
-            
-        } catch (final Exception e) {
-            if (fieldMap.isConfigured()) {
-                throw e;
-                // elsewise ignore
-            }
-        }
-    }
-    
-    private Converter<Object, Object> getConverter(FieldMap fieldMap) {
-        Converter<Object, Object> converter = null;
-        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-        if (fieldMap.getConverterId() != null) {
-            converter = converterFactory.getConverter(fieldMap.getConverterId());
-        } else {
-            converter = converterFactory.getConverter(fieldMap.getSource().getType(), fieldMap.getDestination().getType());
-        }
-        return converter;
+        // Make sure the source and destination types are accessible to the builder
+        compilerStrategy.assureTypeIsAccessible(sourceProperty.rawType());
+        compilerStrategy.assureTypeIsAccessible(destinationProperty.rawType());
+
+        code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType, logDetails);
     }
     
 }

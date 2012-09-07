@@ -34,7 +34,7 @@ public class UsedTypesContext {
     private int usedTypeIndex = 0;
     
     @SuppressWarnings("unchecked")
-    public int getUsedTypeIndex(Type<?> type) {
+    public int getIndex(Type<?> type) {
         if (type==null) {
             throw new NullPointerException("type must not be null");
         }
@@ -46,7 +46,7 @@ public class UsedTypesContext {
         return index;
     }
     
-    public Type<Object>[] getUsedTypesArray() {
+    public Type<Object>[] toArray() {
         @SuppressWarnings("unchecked")
         Type<Object>[] types = new Type[usedTypes.size()];
         for (Entry<Type<Object>, Integer> entry: usedTypes.entrySet()) {

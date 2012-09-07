@@ -3,7 +3,7 @@ package ma.glasnost.orika.converter.builtin;
 import java.util.HashSet;
 import java.util.Set;
 
-import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
@@ -17,7 +17,7 @@ import ma.glasnost.orika.metadata.TypeFactory;
  * @author matt.deboer@gmail.com
  *
  */
-public class PassThroughConverter implements Converter<Object, Object> {
+public class PassThroughConverter extends CustomConverter<Object, Object> {
 
 	private final Set<Type<?>> passThroughTypes = new HashSet<Type<?>>();
 	
@@ -52,5 +52,4 @@ public class PassThroughConverter implements Converter<Object, Object> {
 	public Object convert(Object source, Type<? extends Object> destinationType) {
 	    return source;
     }
-
 }

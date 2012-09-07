@@ -15,40 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package ma.glasnost.orika.test.community.issue25.modelB;
 
-package ma.glasnost.orika.impl.util;
+import java.io.Serializable;
 
-abstract class StringUtil {
 
-	public static String toString(String s) {
-		return s;
+public class  ManufacturingFacilityDTO implements Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4949602104392727453L;
+	
+	private String description;
+	private Long idNumber;
+	
+	public ManufacturingFacilityDTO(){
+		
+	}
+	
+	public String getDescription() {
+		return description;
 	}
 
-	public static String toString(float f) {
-		return Float.toString(f);
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
-	public static String toString(long l) {
-		return Long.toString(l);
+	public Long getIdNumber() {
+		return idNumber;
 	}
 
-	public static String toString(byte b) {
-		return Byte.toString(b);
+	public void setIdNumber(Long idNumber) {
+		this.idNumber = idNumber;
 	}
-
-	public static String toString(char c) {
-		return Character.toString(c);
-	}
-
-	public static String toString(double d) {
-		return Double.toString(d);
-	}
-
-	public static String toString(short s) {
-		return Short.toString(s);
-	}
-
-	public static String toString(Object object) {
-		return object.toString();
-	}
+	
 }

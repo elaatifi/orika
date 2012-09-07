@@ -1,12 +1,12 @@
 package ma.glasnost.orika.test.array;
 
+import java.util.Arrays;
+
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.test.MappingUtil;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
 
-import java.util.Arrays;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class ArrayTestCase {
 

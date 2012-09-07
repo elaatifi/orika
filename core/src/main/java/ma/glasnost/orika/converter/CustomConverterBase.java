@@ -19,6 +19,7 @@ package ma.glasnost.orika.converter;
 
 import java.lang.reflect.ParameterizedType;
 
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
@@ -32,11 +33,14 @@ import ma.glasnost.orika.metadata.TypeFactory;
  *
  * @param <S> the source type
  * @param <D> the destination type
+ * @deprecated use {@link ma.glasnost.orika.CustomConverter} instead
  */
+@Deprecated
 public abstract class CustomConverterBase<S, D> implements ma.glasnost.orika.Converter<S, D> {
     
     protected final Type<S> sourceType;
     protected final Type<D> destinationType;
+    protected MapperFacade mapperFacade;
     
     public CustomConverterBase() {
         java.lang.reflect.Type genericSuperclass = getClass().getGenericSuperclass();
@@ -51,5 +55,9 @@ public abstract class CustomConverterBase<S, D> implements ma.glasnost.orika.Con
     
     public boolean canConvert(Type<?> sourceClass, Type<?> destinationClass) {
         return this.sourceType.equals(sourceClass) && this.destinationType.equals(destinationClass);
+    }
+    
+    public void setMapperFacade(MapperFacade mapperFacade) {
+    	this.mapperFacade = mapperFacade;
     }
 }

@@ -21,28 +21,55 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import ma.glasnost.orika.converter.BidirectionConverter;
+import ma.glasnost.orika.converter.BidirectionalConverter;
+import ma.glasnost.orika.metadata.Type;
 
-public class DateToStringConverter extends BidirectionConverter<Date, String> {
+/**
+ * DateToStringConverter provides custom conversion from String values
+ * to and from Date instances, based on a provided date format pattern.<br><br>
+ * 
+ * The format is applied based on the rules defined in {@link java.text.SimpleDateFormat}.
+ *
+ */
+public class DateToStringConverter extends BidirectionalConverter<Date, String> {
     
     private final String pattern;
+    private final ThreadLocal<SimpleDateFormat> dateFormats = new ThreadLocal<SimpleDateFormat>();			
     
-    public DateToStringConverter(String format) {
+    /**
+     * @return a SimpleDateFormat instance safe for use in the current thread
+     */
+    private SimpleDateFormat getDateFormat() {
+    	SimpleDateFormat formatter = dateFormats.get();
+    	if (formatter == null) {
+    		formatter = new SimpleDateFormat(pattern);
+    		dateFormats.set(formatter);
+    	}
+    	return formatter;
+    }
+    
+    /**
+     * Constructs a new instance of DateToStringConverter capable of
+     * parsing and constructing Date strings according to the provided format. 
+     * 
+     * @param format the format descriptor, processed according to the rules
+     * defined in {@link java.text.SimpleDateFormat}
+     */
+    public DateToStringConverter(final String format) {
         this.pattern = format;
     }
     
     @Override
-    public String convertTo(Date source, Class<String> destinationClass) {
-        return new SimpleDateFormat(pattern).format(source);
+	public String convertTo(Date source, Type<String> destinationType) {
+        return getDateFormat().format(source);
     }
     
     @Override
-    public Date convertFrom(String source, Class<Date> destinationClass) {
+	public Date convertFrom(String source, Type<Date> destinationType) {
         try {
-            return new SimpleDateFormat(pattern).parse(source);
+            return getDateFormat().parse(source);
         } catch (ParseException e) {
             return null;
         }
-    }
-    
+    }    
 }

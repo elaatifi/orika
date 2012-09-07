@@ -37,6 +37,7 @@ public abstract class CustomConverter<S, D> implements ma.glasnost.orika.Convert
     
     protected final Type<S> sourceType;
     protected final Type<D> destinationType;
+    protected MapperFacade mapperFacade;
     
     public CustomConverter() {
         java.lang.reflect.Type genericSuperclass = getClass().getGenericSuperclass();
@@ -51,5 +52,14 @@ public abstract class CustomConverter<S, D> implements ma.glasnost.orika.Convert
     
     public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
         return this.sourceType.isAssignableFrom(sourceType) && this.destinationType.equals(destinationType);
+    }
+    
+    public void setMapperFacade(MapperFacade mapper) {
+        this.mapperFacade = mapper;
+    }
+    
+    public String toString() {
+    	String subClass = getClass().equals(CustomConverter.class) ? "" : "("+getClass().getSimpleName()+")";
+    	return CustomConverter.class.getSimpleName()+subClass+"<"+sourceType + ", " + destinationType+">";
     }
 }
