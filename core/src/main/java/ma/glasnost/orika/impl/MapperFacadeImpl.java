@@ -145,11 +145,6 @@ public class MapperFacadeImpl implements MapperFacade {
              * avoid repeating the if-then checks and the individual hash
              * lookups at each stage; we resolve them only once and then save
              * the "path" we took by using one of the defined strategies
-             * 
-             * We use a thread-local for the strategy key so that we don't have
-             * to instantiate a new key every time we perform a lookup; this
-             * approach relies on the assumption that resolving the thread local
-             * is faster than instantiating a new strategy key
              */
             MappingStrategyKey key = null;
             if (useStrategyCache) {
