@@ -1,6 +1,16 @@
-*.class
+# /
+/.settings
+/target
+/.idea
+/orika-parent.iml
 
-# Package Files #
-*.jar
-*.war
-*.ear
+# /core/
+/core/.*
+/core/target
+/core/orika-core.iml
+
+# /eclipse-tools/
+/eclipse-tools/.project
+/eclipse-tools/.classpath
+/eclipse-tools/.settings
+/eclipse-tools/target
