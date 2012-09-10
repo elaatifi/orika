@@ -67,7 +67,7 @@ public class MappingContext {
         return (D) cache.get(hashMappedObject(source, destinationType));
     }
     
-    private static Integer hashMappedObject(Object source, Type<?> destinationType) {
-        return System.identityHashCode(source) * 31 + System.identityHashCode(destinationType);
+    private static Long hashMappedObject(Object source, Type<?> destinationType) {
+        return (System.identityHashCode(source) + System.identityHashCode(destinationType) * 31L);
     }
 }
