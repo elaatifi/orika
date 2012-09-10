@@ -50,24 +50,78 @@ public class MappingContext {
     
     @Deprecated
     public <S, D> void cacheMappedObject(S source, D destination) {
-        cache.put(hashMappedObject(source, TypeFactory.typeOf(destination)), destination);
+        cache.put(new CacheKey(source, TypeFactory.typeOf(destination)), destination);
     }
     
     public <S, D> void cacheMappedObject(S source, Type<D> destinationType, D destination) {
-        cache.put(hashMappedObject(source, destinationType), destination);
+        cache.put(new CacheKey(source, destinationType), destination);
     }
     
-    public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationClass) {
-        return cache.containsKey(hashMappedObject(source, destinationClass));
+    /**
+     * @param source
+     * @param destinationType
+     * @return
+     * @deprecated use {@link #getMappedObject(Object, Type)} instead 
+     */
+    @Deprecated
+    public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationType) {
+        return cache.containsKey(new CacheKey(source, destinationType));
     }
     
     @SuppressWarnings("unchecked")
     public <D> D getMappedObject(Object source, Type<D> destinationType) {
-        
-        return (D) cache.get(hashMappedObject(source, destinationType));
+        return (D) cache.get(new CacheKey(source, destinationType));
     }
     
-    private static Integer hashMappedObject(Object source, Type<?> destinationType) {
-        return System.identityHashCode(source) * 31 + System.identityHashCode(destinationType);
+    
+    /**
+     * CacheKey is used to identify existing mappings of a given
+     * source object to a destination type within the current mapping context
+     * 
+     */
+    private static class CacheKey {
+    	
+    	private Type<?> destinationType;
+    	private Object sourceObject;
+		
+    	public CacheKey(Object sourceObject, Type<?> destinationType) {
+    		this.sourceObject = sourceObject;
+    		this.destinationType = destinationType;
+    	}
+    	
+    	@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime
+					* result
+					+ ((destinationType == null) ? 0 : destinationType
+							.hashCode());
+			result = prime * result
+					+ ((sourceObject == null) ? 0 : sourceObject.hashCode());
+			return result;
+		}
+		
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			CacheKey other = (CacheKey) obj;
+			if (destinationType == null) {
+				if (other.destinationType != null)
+					return false;
+			} else if (!destinationType.equals(other.destinationType))
+				return false;
+			
+			if (sourceObject != other.sourceObject) 
+				return false;
+			
+			return true;
+		}
     }
+
 }
