@@ -17,7 +17,6 @@
  */
 package ma.glasnost.orika.test.community;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,114 +33,111 @@ public class Issue46TestCase {
         public List<Two> getTwos() {
             return twos;
         }
-
+        
         public void setTwos(List<Two> twos) {
             this.twos = twos;
         }
-
+        
         List<Two> twos = new ArrayList<Two>();
-
+        
         public One(String name) {
             this.name = name;
             twos.add(new Two(name));
         }
-
+        
         public One() {
         }
-
-
+        
         public String getName() {
             return name;
         }
-
+        
         public void setName(String name) {
             this.name = name;
         }
-
+        
         String name;
-
+        
     }
-
+    
     public static class Two {
         public Two() {
         }
-
+        
         public Two(String name) {
             this.name = name;
         }
-
+        
         public String getName() {
             return name;
         }
-
+        
         public void setName(String name) {
             this.name = name;
         }
-
+        
         String name;
     }
-
+    
     public static class Parent {
         public List<One> getOneList() {
             return oneList;
         }
-
+        
         public void setOneList(List<One> oneList) {
             this.oneList = oneList;
         }
-
+        
         List<One> oneList = new ArrayList<One>();
-
+        
         public List<Two> getTwoList() {
             return twoList;
         }
-
+        
         public void setTwoList(List<Two> twoList) {
             this.twoList = twoList;
         }
-
+        
         List<Two> twoList = new ArrayList<Two>();
     }
-
+    
     @Test
     public void test() {
         System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, "true");
-
+        
         MapperFactory factory = MappingUtil.getMapperFactory(true);
         MapperFacade facade = factory.getMapperFacade();
-
-
+        
         List<Parent> parents = new ArrayList<Parent>();
         for (int i = 0; i < 100; i++) {
             Parent parent = new Parent();
             List<One> ones = new ArrayList<One>();
             List<Two> twos = new ArrayList<Two>();
-            for (int j = 0; j < 10000; j++) {
+            for (int j = 0; j < 1000; j++) {
                 ones.add(new One(Integer.toString(j)));
                 twos.add(new Two(Integer.toString(j)));
             }
-
+            
             parent.oneList = ones;
             parent.twoList = twos;
             parents.add(parent);
         }
-
+        
         int transforms = 0;
         try {
             for (Parent parent : parents) {
                 transforms++;
-
+                
                 Parent result = facade.map(parent, Parent.class);
-
+                
                 for (One one : result.oneList)
                     for (Two two : one.twos)
-                       Assert.assertNotNull(two.getName());
-
+                        Assert.assertNotNull(two.getName());
+                
             }
         } catch (Exception e) {
-            throw new AssertionError("Failed to process graph. failed after " + transforms + " transforms, exception = "+e);
+            throw new AssertionError("Failed to process graph. failed after " + transforms + " transforms, exception = " + e);
         }
     }
-
+    
 }
-

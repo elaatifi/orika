@@ -19,7 +19,18 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
+import static ma.glasnost.orika.impl.Specifications.aMapToArray;
+import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
+import static ma.glasnost.orika.impl.Specifications.aMapToMap;
+import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
+import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
+import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
+import static ma.glasnost.orika.impl.Specifications.anArray;
+import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
+import static ma.glasnost.orika.impl.Specifications.immutable;
+import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -137,7 +148,7 @@ public class CodeSourceBuilder {
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
     public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef dest, VariableRef src, Property ip, Type<?> destinationType) {
-               
+        
         MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
         MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
         
@@ -395,9 +406,26 @@ public class CodeSourceBuilder {
      *            the source variable
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromStringOrEnumToEnum(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromStringToEnum(VariableRef d, VariableRef s) {
         
         String assignEnum = d.assign("Enum.valueOf(%s.class, \"\"+%s)", d.typeName(), s);
+        statement("%s { %s; } else { %s; }", s.ifNotNull(), assignEnum, d.assign("null"));
+        
+        return this;
+    }
+    
+    /**
+     * Generate code to map from an enum to another enum
+     * 
+     * @param d
+     *            the destination variable
+     * @param s
+     *            the source variable
+     * @return a reference to <code>this</code> SourceCodeBuilder
+     */
+    public CodeSourceBuilder fromEnumToEnum(VariableRef d, VariableRef s) {
+        
+        String assignEnum = d.assign("Enum.valueOf(%s.class, %s.name())", d.typeName(), s);
         statement("%s { %s; } else { %s; }", s.ifNotNull(), assignEnum, d.assign("null"));
         
         return this;
@@ -426,7 +454,7 @@ public class CodeSourceBuilder {
             VariableRef inverse = new VariableRef(ip, d);
             
             if (inverse.isCollection()) {
-            	MultiOccurrenceVariableRef inverseCollection = MultiOccurrenceVariableRef.from(inverse);
+                MultiOccurrenceVariableRef inverseCollection = MultiOccurrenceVariableRef.from(inverse);
                 ipStmt += inverse.ifNull() + inverse.assign(inverseCollection.newCollection()) + ";";
                 ipStmt += format("%s.add(%s);", inverse, d.owner());
             } else if (inverse.isArray()) {
@@ -444,7 +472,8 @@ public class CodeSourceBuilder {
     /**
      * Generate code for testing that the given variable reference is not null
      * 
-     * @param ref the variable reference for which to check for non-null
+     * @param ref
+     *            the variable reference for which to check for non-null
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
     public CodeSourceBuilder ifNotNull(VariableRef ref) {
@@ -454,7 +483,8 @@ public class CodeSourceBuilder {
     /**
      * Append an 'if' statement checking whether the provided variable is null
      * 
-     * @param ref the variable reference for which to check for null
+     * @param ref
+     *            the variable reference for which to check for null
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
     public CodeSourceBuilder ifNull(VariableRef ref) {
@@ -466,7 +496,8 @@ public class CodeSourceBuilder {
      * leading to this variable are all not null
      * 
      * @param ref
-     *            the nested variable reference for which to check for non-null path
+     *            the nested variable reference for which to check for non-null
+     *            path
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
     public CodeSourceBuilder ifPathNotNull(VariableRef ref) {
@@ -525,9 +556,9 @@ public class CodeSourceBuilder {
      */
     public CodeSourceBuilder fromMapToMap(VariableRef dest, VariableRef src, Type<?> destinationType) {
         
-    	MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
-    	MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
-    	
+        MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
+        MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+        
         ifNotNull(s).then();
         
         if (d.isAssignable()) {
@@ -575,9 +606,9 @@ public class CodeSourceBuilder {
      */
     public CodeSourceBuilder fromArrayOrCollectionToMap(VariableRef dest, VariableRef src) {
         
-    	MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
-    	MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
-    	
+        MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
+        MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
+        
         ifNotNull(s).then();
         
         if (d.isAssignable()) {
@@ -951,7 +982,15 @@ public class CodeSourceBuilder {
             if (logDetails != null) {
                 logDetails.append("mapping from String or enum to enum");
             }
-            fromStringOrEnumToEnum(destinationProperty, sourceProperty);
+            if (TypeFactory.valueOf(Enum.class).isAssignableFrom(sourceProperty.type()))
+                fromEnumToEnum(destinationProperty, sourceProperty);
+            else if (sourceProperty.type().equals(TypeFactory.valueOf(String.class)))
+                fromStringToEnum(destinationProperty, sourceProperty);
+            else {
+                if (logDetails != null) {
+                    logDetails.append("mapping to enumaration has been skipped.");
+                }
+            }
         } else if (fieldMap.is(immutable())) {
             if (logDetails != null) {
                 logDetails.append("treating as immutable (using copy-by-reference)");
