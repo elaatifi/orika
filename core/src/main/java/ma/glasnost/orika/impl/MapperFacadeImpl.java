@@ -134,9 +134,9 @@ public class MapperFacadeImpl implements MapperFacade {
                 return null;
             }
             
-            if (context.isAlreadyMapped(sourceObject, destinationType)) {
-                D result = context.getMappedObject(sourceObject, destinationType);
-                return result;
+            D existingResult = context.getMappedObject(sourceObject, destinationType);
+            if (existingResult != null) {
+                return existingResult;
             }
             
             /*
@@ -293,7 +293,8 @@ public class MapperFacadeImpl implements MapperFacade {
                 throw new MappingException("[sourceObject] can not be null.");
             }
             
-            if (context.isAlreadyMapped(sourceObject, destinationType)) {
+            D existingResult = context.getMappedObject(sourceObject, destinationType);
+            if (existingResult != null) {
                 return;
             }
             

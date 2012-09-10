@@ -57,17 +57,24 @@ public class MappingContext {
         cache.put(hashMappedObject(source, destinationType), destination);
     }
     
-    public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationClass) {
-        return cache.containsKey(hashMappedObject(source, destinationClass));
+    /**
+     * @param source
+     * @param destinationType
+     * @return
+     * @deprecated use {@link #getMappedObject(Object, Type)} instead
+     */
+    @Deprecated
+    public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationType) {
+        return cache.containsKey(hashMappedObject(source, destinationType));
     }
     
     @SuppressWarnings("unchecked")
     public <D> D getMappedObject(Object source, Type<D> destinationType) {
-        
         return (D) cache.get(hashMappedObject(source, destinationType));
     }
     
     private static Long hashMappedObject(Object source, Type<?> destinationType) {
         return (System.identityHashCode(source) + System.identityHashCode(destinationType) * 31L);
     }
+    
 }
