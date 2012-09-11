@@ -46,9 +46,9 @@
 		</developer>
 	</developers>
 	<scm>
-		<url>https://orika.googlecode.com/svn/trunk</url>
-		<connection>scm:svn:https://orika.googlecode.com/svn/trunk</connection>
-		<developerConnection>scm:svn:https://orika.googlecode.com/svn/trunk</developerConnection>
+		<url>git@github.com:elaatifi/orika.git</url>
+		<connection>scm:git:git@github.com:elaatifi/orika.git</connection>
+		<developerConnection>scm:git:git@github.com:elaatifi/orika.git</developerConnection>
 	</scm>
 
 	<properties>
