@@ -43,9 +43,11 @@ public class FieldMapBuilder<A, B> {
     
     private FieldMap elementMap;
     
-    FieldMapBuilder(final ClassMapBuilder<A, B> classMapBuilder, final String a, final String b) {
+    private boolean byDefault;
+    
+    FieldMapBuilder(final ClassMapBuilder<A, B> classMapBuilder, final String a, final String b, boolean byDefault) {
 
-    	this(classMapBuilder, a, b, classMapBuilder.getAType(), classMapBuilder.getBType());
+    	this(classMapBuilder, a, b, classMapBuilder.getAType(), classMapBuilder.getBType(), byDefault);
     }
     
     /**
@@ -58,9 +60,9 @@ public class FieldMapBuilder<A, B> {
      * @param bType
      */
     FieldMapBuilder(final ClassMapBuilder<A, B> classMapBuilder, final String a, final String b, 
-    		final Type<?> aType, final Type<?> bType) {
+    		final Type<?> aType, final Type<?> bType, boolean byDefault) {
         this.classMapBuilder = classMapBuilder;
-        
+        this.byDefault = byDefault;
         String[] aParts = splitAtRootProperty(a);
         String[] bParts = splitAtRootProperty(b);
         
@@ -73,9 +75,8 @@ public class FieldMapBuilder<A, B> {
         	Type<?> elementTypeA = getElementType(aProperty.getType());
         	Type<?> elementTypeB = getElementType(bProperty.getType());
         	
-        	this.elementMap = new FieldMapBuilder<A, B>(classMapBuilder, elementA, elementB, elementTypeA, elementTypeB).toFieldMap();
-        }
-        
+        	this.elementMap = new FieldMapBuilder<A, B>(classMapBuilder, elementA, elementB, elementTypeA, elementTypeB, byDefault).toFieldMap();
+        } 
     }
     
     private Type<?> getElementType(final Type<?> type) {
@@ -131,7 +132,7 @@ public class FieldMapBuilder<A, B> {
     
     private FieldMap toFieldMap() {
     	return new FieldMap(aProperty, bProperty, aInverseProperty, bInverseProperty, mappingDirection, excluded,
-                converterId, elementMap);
+                converterId, elementMap, byDefault);
     }
     
     /**
@@ -191,7 +192,7 @@ public class FieldMapBuilder<A, B> {
     	Property bProperty = aProperty.copy();
     	bProperty.setType(bType);
     	
-    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null);
+    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null, false);
     }
     
     public static FieldMap mapValues(Type<?> aType, Type<?> bType) {
@@ -205,6 +206,6 @@ public class FieldMapBuilder<A, B> {
     	Property bProperty = aProperty.copy();
     	bProperty.setType(bType);
     	
-    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null);
+    	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null, false);
     }
 }

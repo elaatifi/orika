@@ -29,12 +29,13 @@ public class FieldMap {
     private final MappingDirection mappingDirection;
     private final boolean excluded;
     private final String converterId;
+    private final boolean byDefault;
     private FieldMap elementMap;
     
     private FieldMap base;
     
     public FieldMap(Property a, Property b, Property aInverse, Property bInverse, MappingDirection mappingDirection,
-            boolean excluded, String converterId, FieldMap elementMap) {
+            boolean excluded, String converterId, FieldMap elementMap, boolean byDefault) {
         this.source = a;
         this.destination = b;
         this.aInverse = aInverse;
@@ -43,12 +44,13 @@ public class FieldMap {
         this.converterId = converterId;
         this.excluded = excluded;
         this.elementMap = elementMap;
+        this.byDefault = byDefault;
     }
     
     public FieldMap copy() {
         
         return new FieldMap(copy(source), copy(destination), copy(aInverse), copy(bInverse), 
-        		mappingDirection, excluded, converterId, copy(elementMap));
+        		mappingDirection, excluded, converterId, copy(elementMap), byDefault);
     }
     
     private Property copy(Property property) {
@@ -85,7 +87,7 @@ public class FieldMap {
     
     public FieldMap flip() {
         return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), excluded, converterId, 
-        		elementMap != null ? elementMap.flip() : null);
+        		elementMap != null ? elementMap.flip() : null, byDefault);
     }
     
     public boolean is(Specification specification) {
@@ -98,6 +100,10 @@ public class FieldMap {
     
     public String getConverterId() {
         return converterId;
+    }
+    
+    public boolean isByDefault() {
+    	return byDefault;
     }
     
     public boolean isExcluded() {
@@ -114,7 +120,7 @@ public class FieldMap {
     			base = this;
     		} else {
     			base = new FieldMap(source, destination, aInverse, bInverse, 
-    	        		mappingDirection, excluded, converterId, null);
+    	        		mappingDirection, excluded, converterId, null, byDefault);
     		}
     	}
     	return base;

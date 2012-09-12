@@ -24,6 +24,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +40,7 @@ import javassist.CtConstructor;
 import javassist.CtField;
 import javassist.CtMethod;
 
+import org.junit.Test;
 import org.junit.internal.builders.AllDefaultPossibilitiesBuilder;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
@@ -156,6 +159,24 @@ public class DynamicSuite extends ParentRunner<Runner> {
 		return findTestCases(classFolder, testCaseRegex);
 	}
 
+	private static boolean containsTests(Class<?> testClass) {
+		boolean containsTests = false;
+		for (Method m: testClass.getMethods()) {
+			Test test = m.getAnnotation(Test.class);
+			if (test != null) {
+				containsTests = true;
+				break;
+			}
+			if (m.getName().startsWith("test") 
+					&& Modifier.isPublic(m.getModifiers()) 
+					&& !Modifier.isStatic(m.getModifiers())) {
+				containsTests = true;
+				break;
+			}
+		}
+		return containsTests;
+	}
+	
 	/**
 	 * Resolves the test classes that are matched by the specified test pattern.
 	 * 
@@ -204,8 +225,10 @@ public class DynamicSuite extends ParentRunner<Runner> {
 								currentPackage = currentPackage.replaceAll(
 										"[\\/]", ".");
 							}
-							testCases
-									.add(Class.forName(className, false, tccl));
+							Class<?> theClass = Class.forName(className, false, tccl);
+							if (containsTests(theClass)) {
+								testCases.add(theClass);
+							}
 						}
 					}
 				}

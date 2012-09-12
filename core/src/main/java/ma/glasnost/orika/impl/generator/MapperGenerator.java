@@ -210,15 +210,20 @@ public final class MapperGenerator {
         Set<ClassMap<Object, Object>> usedClassMapSet = mapperFactory.lookupUsedClassMap(new MapperKey(classMap.getAType(),
                 classMap.getBType()));
         
-        boolean exists = false;
-        
-        for (ClassMap<Object, Object> usedClassMap : usedClassMapSet) {
-            if (usedClassMap.getFieldsMapping().contains(fieldMap))
-                exists = true;
-            break;
+        if (!fieldMap.isByDefault()) {
+        	return false;
         }
         
-        return exists;
+        for (ClassMap<Object, Object> usedClassMap : usedClassMapSet) {
+            for(FieldMap usedFieldMap: usedClassMap.getFieldsMapping()) {
+            	if (usedFieldMap.getSource().equals(fieldMap.getSource())
+            			&& usedFieldMap.getDestination().equals(fieldMap.getDestination())) {
+            		return true;
+            	}
+            }
+        }
+        
+        return false;
     }
     
     private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType, StringBuilder logDetails) throws Exception {

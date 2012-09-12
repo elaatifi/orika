@@ -86,7 +86,7 @@ public abstract class UtilityResolver {
      * @return
      */
     public static ClassMapBuilderFactory getDefaultClassMapBuilderFactory() {
-        return resolveUtility(OrikaSystemProperties.CLASSMAP_BUILDER_FACTORY, ClassMapBuilderFactory.class);
+        return resolveUtility(OrikaSystemProperties.CLASSMAP_BUILDER_FACTORY, ma.glasnost.orika.metadata.ClassMapBuilder.Factory.class);
     }
     
     /**

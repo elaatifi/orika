@@ -966,9 +966,15 @@ public class CodeSourceBuilder {
             assureInstanceExists(destinationProperty);
         }
         
-        // Generate mapping code for every case
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
-        if (converter != null) {
+        
+        // Generate mapping code for every case
+        if (fieldMap.is(immutable())) {
+            if (logDetails != null) {
+                logDetails.append("treating as immutable (using copy-by-reference)");
+            }
+            copyByReference(destinationProperty, sourceProperty);
+        } else if (converter != null) {
             if (logDetails != null) {
                 logDetails.append("using converter " + converter);
             }
@@ -991,11 +997,6 @@ public class CodeSourceBuilder {
                     logDetails.append("mapping to enumaration has been skipped.");
                 }
             }
-        } else if (fieldMap.is(immutable())) {
-            if (logDetails != null) {
-                logDetails.append("treating as immutable (using copy-by-reference)");
-            }
-            copyByReference(destinationProperty, sourceProperty);
         } else if (fieldMap.is(anArray())) {
             if (logDetails != null) {
                 logDetails.append("mapping Array or Collection to Array");

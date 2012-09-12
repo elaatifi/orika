@@ -110,6 +110,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         for (Constructor<T> constructor: constructors) {
         	ConstructorMapping<T> constructorMapping = new ConstructorMapping<T>();
         	constructorMapping.setDeclaredParameters(declaredParameterNames);
+        	boolean byDefault = declaredParameterNames == null;
         	
         	try {
         		/*
@@ -125,7 +126,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         				String parameterName = parameterNames[i];
         				Type<?> parameterType = TypeFactory.valueOf(parameterTypes[i]);
         				FieldMap existingField = targetParameters.get(parameterName);
-        				FieldMap argumentMap = mapConstructorArgument(existingField, parameterType);
+        				FieldMap argumentMap = mapConstructorArgument(existingField, parameterType, byDefault);
         				constructorMapping.getMappedFields().add(argumentMap);
         			}
         			constructorsByMatchedParams.put(parameterNames.length*1000, constructorMapping);
@@ -151,7 +152,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
     	    				
     	    				String parameterName = fieldMap.getDestination().getName();
             				FieldMap existingField = targetParameters.get(parameterName);
-            				FieldMap argumentMap = mapConstructorArgument(existingField, type);
+            				FieldMap argumentMap = mapConstructorArgument(existingField, type, byDefault);
             				constructorMapping.getMappedFields().add(argumentMap);
     	    				
     	    				iter.remove();
@@ -187,13 +188,14 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         }
     }
     
-	private FieldMap mapConstructorArgument(FieldMap existing, Type<?> argumentType) {
+	private FieldMap mapConstructorArgument(FieldMap existing, Type<?> argumentType, boolean byDefault) {
 		Property destProp = new Property();
 		destProp.setName(existing.getDestination().getName());
 		destProp.setExpression(existing.getDestination().getExpression());
 		destProp.setType(argumentType);
 		FieldMap fieldMap = new FieldMap(existing.getSource(), destProp, null,
-				null, MappingDirection.A_TO_B, false, existing.getConverterId(), null);
+				null, MappingDirection.A_TO_B, false, existing.getConverterId(), 
+				null, byDefault);
 		return fieldMap;
 	}
 }

@@ -29,10 +29,10 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
  * @author matt.deboer@gmail.com
  *
  */
-public class ClassMapBuilderFactory {
+public abstract class ClassMapBuilderFactory {
 
-	private PropertyResolverStrategy propertyResolver;
-	private DefaultFieldMapper[] defaults;
+	protected PropertyResolverStrategy propertyResolver;
+	protected DefaultFieldMapper[] defaults;
 	
 	/**
 	 * @param propertyResolver the PropertyResolverStrategy instance to use when resolving properties
@@ -65,8 +65,17 @@ public class ClassMapBuilderFactory {
 	 * @param bType
 	 * @return a new ClassMapBuilder for the provided types
 	 */
-	protected <A,B> ClassMapBuilder<A, B> newClassMapBuilder(Type<A> aType, Type<B> bType) {
-	    return new ClassMapBuilder<A, B>(aType, bType, propertyResolver, defaults);
+	protected abstract <A,B> ClassMapBuilder<A, B> newClassMapBuilder(Type<A> aType, Type<B> bType, PropertyResolverStrategy propertyResolver,
+			DefaultFieldMapper[] defaults);
+	    
+	
+	/**
+	 * @param aType
+	 * @param bType
+	 * @return
+	 */
+	private final <A,B> ClassMapBuilder<A, B> getNewClassMapBuilder(Type<A> aType, Type<B> bType) {
+		return newClassMapBuilder(aType, bType, propertyResolver, defaults);
 	}
 	
 	/**
@@ -77,7 +86,7 @@ public class ClassMapBuilderFactory {
      * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Type<B> bType) {
-        return newClassMapBuilder(aType, bType);
+        return getNewClassMapBuilder(aType, bType);
     }
     
     /**
@@ -88,7 +97,7 @@ public class ClassMapBuilderFactory {
      * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Type<B> bType) {
-        return newClassMapBuilder(TypeFactory.<A> valueOf(aType), bType);
+        return getNewClassMapBuilder(TypeFactory.<A> valueOf(aType), bType);
     }
     
     /**
@@ -99,7 +108,7 @@ public class ClassMapBuilderFactory {
      * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Class<B> bType) {
-        return newClassMapBuilder(aType, TypeFactory.<B> valueOf(bType));
+        return getNewClassMapBuilder(aType, TypeFactory.<B> valueOf(bType));
     }
 	
     /**
@@ -110,7 +119,7 @@ public class ClassMapBuilderFactory {
      * @return a new ClassMapBuilder instance for the specified types
      */
     public <A, B> ClassMapBuilder<A, B> map(Class<A> aType, Class<B> bType) {
-        return newClassMapBuilder(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType));
+        return getNewClassMapBuilder(TypeFactory.<A> valueOf(aType), TypeFactory.<B> valueOf(bType));
     }
     
 }
