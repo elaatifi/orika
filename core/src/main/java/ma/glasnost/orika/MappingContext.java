@@ -25,98 +25,64 @@ import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
 public class MappingContext {
-    
-    private final Map<Type<?>, Type<?>> mapping;
-    private final Map<Object, Object> cache;
-    
-    public MappingContext() {
-        mapping = new HashMap<Type<?>, Type<?>>();
-        cache = new HashMap<Object, Object>();
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType, Type<D> destinationType) {
-        
-        final Type<?> type = mapping.get(sourceType);
-        if (type != null && destinationType.isAssignableFrom(type)) {
-            return (Type<? extends D>) type;
-        }
-        return null;
-    }
-    
-    public void registerConcreteClass(Type<?> subjectClass, Type<?> concreteClass) {
-        mapping.put(subjectClass, concreteClass);
-    }
-    
-    @Deprecated
-    public <S, D> void cacheMappedObject(S source, D destination) {
-        cache.put(new CacheKey(source, TypeFactory.typeOf(destination)), destination);
-    }
-    
-    public <S, D> void cacheMappedObject(S source, Type<D> destinationType, D destination) {
-        cache.put(new CacheKey(source, destinationType), destination);
-    }
-    
-    /**
-     * @param source
-     * @param destinationType
-     * @return
-     * @deprecated use {@link #getMappedObject(Object, Type)} instead
-     */
-    @Deprecated
-    public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationType) {
-        return cache.containsKey(new CacheKey(source, destinationType));
-    }
-    
-    @SuppressWarnings("unchecked")
-    public <D> D getMappedObject(Object source, Type<D> destinationType) {
-        return (D) cache.get(new CacheKey(source, destinationType));
-    }
-    
-    /**
-     * CacheKey is used to identify existing mappings of a given source object
-     * to a destination type within the current mapping context
-     * 
-     */
-    private static class CacheKey {
-        
-        private Type<?> destinationType;
-        private Object sourceObject;
-        
-        public CacheKey(Object sourceObject, Type<?> destinationType) {
-            this.sourceObject = sourceObject;
-            this.destinationType = destinationType;
-        }
-        
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ((destinationType == null) ? 0 : destinationType.hashCode());
-            result = prime * result + ((sourceObject == null) ? 0 : sourceObject.hashCode());
-            return result;
-        }
-        
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            CacheKey other = (CacheKey) obj;
-            if (destinationType == null) {
-                if (other.destinationType != null)
-                    return false;
-            } else if (!destinationType.equals(other.destinationType))
-                return false;
-            
-            if (sourceObject != other.sourceObject)
-                return false;
-            
-            return true;
-        }
-    }
-    
+
+	private final Map<Type<?>, Type<?>> mapping;
+	private final Map<Type<?>, Map<Object, Object>> cache;
+
+	public MappingContext() {
+		mapping = new HashMap<Type<?>, Type<?>>();
+		cache = new HashMap<Type<?>, Map<Object, Object>>();
+	}
+
+	@SuppressWarnings("unchecked")
+	public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType,
+			Type<D> destinationType) {
+
+		final Type<?> type = mapping.get(sourceType);
+		if (type != null && destinationType.isAssignableFrom(type)) {
+			return (Type<? extends D>) type;
+		}
+		return null;
+	}
+
+	public void registerConcreteClass(Type<?> subjectClass,
+			Type<?> concreteClass) {
+		mapping.put(subjectClass, concreteClass);
+	}
+
+	@Deprecated
+	public <S, D> void cacheMappedObject(S source, D destination) {
+		cacheMappedObject(source, TypeFactory.typeOf(destination), destination);
+	}
+
+	public <S, D> void cacheMappedObject(S source, Type<D> destinationType,
+			D destination) {
+
+		Map<Object, Object> localCache = cache.get(destinationType);
+		if (localCache == null) {
+			localCache = new HashMap<Object, Object>();
+			cache.put(destinationType, localCache);
+		}
+		localCache.put(source, destination);
+	}
+
+	/**
+	 * @param source
+	 * @param destinationType
+	 * @return
+	 * @deprecated use {@link #getMappedObject(Object, Type)} instead
+	 */
+	@Deprecated
+	public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationType) {
+		
+		Map<Object, Object> localCache = cache.get(destinationType);
+		return (localCache != null && localCache.get(source) != null);
+	}
+
+	@SuppressWarnings("unchecked")
+	public <D> D getMappedObject(Object source, Type<D> destinationType) {
+		Map<Object, Object> localCache = cache.get(destinationType);
+		return (D) (localCache == null ? null : localCache.get(source));
+	}
+	
 }
