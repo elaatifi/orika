@@ -2,10 +2,9 @@ package ma.glasnost.orika.metadata;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Collection;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 
@@ -36,6 +35,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     private volatile Type<?>[] interfaces;
     private Type<?> componentType;
     private final TypeKey key;
+    private final int hashCode;
 
     /**
      * @param rawType
@@ -44,6 +44,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     @SuppressWarnings("unchecked")
     Type(TypeKey key, Class<?> rawType, Map<String, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
         this.key = key;
+        this.hashCode = key.hashCode();
         this.rawType = (Class<T>)rawType;
         this.actualTypeArguments = actualTypeArguments;
         this.typesByVariable = typesByVariable;
@@ -288,11 +289,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + Arrays.hashCode(actualTypeArguments);
-        result = prime * result + ((rawType == null) ? 0 : rawType.hashCode());
-        return result;
+        return hashCode;
     }
     
     @Override
