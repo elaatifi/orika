@@ -27,44 +27,50 @@ import ma.glasnost.orika.metadata.Type;
  * @author matt.deboer@gmail.com
  *
  */
-public class MappingStrategyKey {
+public final class MappingStrategyKey {
     
-    protected final Class<?> immutableRawSourceType;
-    protected final Type<?> immutableSourceType;
-    protected final Type<?> immutableDestinationType;
-    protected final boolean immutableDestinationProvided;
+	private final Class<?> rawSourceType;
+	private final Type<?> sourceType;
+	private final Type<?> destinationType;
+	private final boolean destinationProvided;
+    private final int hashCode;
     
     public MappingStrategyKey(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
-        this.immutableRawSourceType = rawSourceType;
-        this.immutableSourceType = sourceType;
-        this.immutableDestinationType = destinationType;
-        this.immutableDestinationProvided = destinationProvided;
+        this.rawSourceType = rawSourceType;
+        this.sourceType = sourceType;
+        this.destinationType = destinationType;
+        this.destinationProvided = destinationProvided;
+        this.hashCode = computeHashCode();
     }
     
     protected Class<?> getRawSourceType() {
-        return immutableRawSourceType;
+        return rawSourceType;
     }
 
     protected Type<?> getSourceType() {
-        return immutableSourceType;
+        return sourceType;
     }
 
     protected Type<?> getDestinationType() {
-        return immutableDestinationType;
+        return destinationType;
     }
     
     protected boolean isDestinationProvided() {
-    	return immutableDestinationProvided;
+    	return destinationProvided;
     }
     
     @Override
     public int hashCode() {
+        return hashCode;
+    }
+    
+    private int computeHashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + (isDestinationProvided() ? 1231 : 1237);
-        result = prime * result + ((getDestinationType() == null) ? 0 : getDestinationType().hashCode());
-        result = prime * result + ((getRawSourceType() == null) ? 0 : getRawSourceType().hashCode());
-        result = prime * result + ((getSourceType() == null) ? 0 : getSourceType().hashCode());
+        result = prime * result + (destinationProvided ? 1231 : 1237);
+        result = prime * result + ((destinationType == null) ? 0 : destinationType.hashCode());
+        result = prime * result + ((rawSourceType == null) ? 0 : rawSourceType.hashCode());
+        result = prime * result + ((sourceType == null) ? 0 : sourceType.hashCode());
         return result;
     }
 
@@ -77,22 +83,22 @@ public class MappingStrategyKey {
         if (getClass() != obj.getClass())
             return false;
         MappingStrategyKey other = (MappingStrategyKey) obj;
-        if (isDestinationProvided() != other.isDestinationProvided())
+        if (destinationProvided != other.destinationProvided)
         	return false;
         if (getDestinationType() == null) {
-            if (other.getDestinationType() != null)
+            if (other.destinationType != null)
                 return false;
-        } else if (!getDestinationType().equals(other.getDestinationType()))
+        } else if (!destinationType.equals(other.destinationType))
             return false;
         if (getRawSourceType() == null) {
-            if (other.getRawSourceType() != null)
+            if (other.rawSourceType != null)
                 return false;
-        } else if (!getRawSourceType().equals(other.getRawSourceType()))
+        } else if (!rawSourceType.equals(other.rawSourceType))
             return false;
         if (getSourceType() == null) {
-            if (other.getSourceType() != null)
+            if (other.sourceType != null)
                 return false;
-        } else if (!getSourceType().equals(other.getSourceType()))
+        } else if (!sourceType.equals(other.sourceType))
             return false;
         
         
@@ -100,6 +106,6 @@ public class MappingStrategyKey {
     }
     
     public String toString() {
-    	return "[" + getRawSourceType().getSimpleName() + ", " + getSourceType() + ", " + getDestinationType() +"]";
+    	return "[" + rawSourceType.getSimpleName() + ", " + sourceType + ", " + destinationType +"]";
     }
 }
