@@ -160,7 +160,7 @@ public class CodeSourceBuilder {
         }
         
         if (d.isAssignable()) {
-            statement("if (%s == null) %s", d, d.assign(d.newCollection()));
+            statement("if (%s == null) %s", d, d.assign(d.newInstance(src.size())));
         }
         
         // Start check if source property ! = null
@@ -169,7 +169,7 @@ public class CodeSourceBuilder {
             if (s.elementType().isPrimitive())
                 newLine().append("%s.addAll(asList(%s));", d, s);
             else
-                newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class));", d, s, d.typeName());
+                newLine().append("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class, mappingContext));", d, s, d.typeName());
         } else {
             
             newLine().append("%s.clear();", d);
