@@ -61,7 +61,7 @@ public class MappingContext {
 
 		Map<Object, Object> localCache = cache.get(destinationType);
 		if (localCache == null) {
-			localCache = new IdentityHashMap<Object, Object>();
+			localCache = new IdentityHashMap<Object, Object>(2);
 			cache.put(destinationType, localCache);
 		}
 		localCache.put(source, destination);
