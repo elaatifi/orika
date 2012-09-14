@@ -19,13 +19,14 @@
 package ma.glasnost.orika;
 
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
 
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
 public class MappingContext {
-
+	
 	private final Map<Type<?>, Type<?>> mapping;
 	private final Map<Type<?>, Map<Object, Object>> cache;
 
@@ -60,7 +61,7 @@ public class MappingContext {
 
 		Map<Object, Object> localCache = cache.get(destinationType);
 		if (localCache == null) {
-			localCache = new HashMap<Object, Object>();
+			localCache = new IdentityHashMap<Object, Object>();
 			cache.put(destinationType, localCache);
 		}
 		localCache.put(source, destination);
