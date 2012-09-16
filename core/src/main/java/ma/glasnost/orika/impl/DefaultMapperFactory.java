@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -839,21 +838,7 @@ public class DefaultMapperFactory implements MapperFactory {
             registerObjectFactory(objectFactory, (Type<Object>) bType);
         }
     }
-    
-    private static final Comparator<MapperKey> MAPPER_COMPARATOR = new Comparator<MapperKey>() {
-        
-        public int compare(MapperKey key1, MapperKey key2) {
-            if (key1.getAType().isAssignableFrom(key2.getAType()) && key1.getBType().isAssignableFrom(key2.getBType())) {
-                return 1;
-            } else if (key2.getAType().isAssignableFrom(key1.getAType()) && key2.getBType().isAssignableFrom(key1.getBType())) {
-                return -1;
-            } else if (key1.getAType().equals(key2.getAType()) && key1.getBType().equals(key2.getBType())) {
-                return 0;
-            } else {
-                throw new IllegalArgumentException("keys " + key1 + " and " + key2 + " are unrelated");
-            }
-        }
-    };
+   
     
     @SuppressWarnings("unchecked")
     private void initializeUsedMappers(ClassMap<?, ?> classMap) {
@@ -873,7 +858,7 @@ public class DefaultMapperFactory implements MapperFactory {
              * mappers to avoid calling the same mapper multiple times during a
              * single map request
              */
-            Set<MapperKey> usedMappers = new TreeSet<MapperKey>(MAPPER_COMPARATOR);
+            Set<MapperKey> usedMappers = new TreeSet<MapperKey>();
             for (MapperKey key : this.classMapRegistry.keySet()) {
                 if (!key.getAType().equals(classMap.getAType()) || !key.getBType().equals(classMap.getBType())) {
                     if (key.getAType().isAssignableFrom(classMap.getAType()) && key.getBType().isAssignableFrom(classMap.getBType())) {
@@ -891,7 +876,19 @@ public class DefaultMapperFactory implements MapperFactory {
             }
         }
         
-        mapper.setUsedMappers(parentMappers.toArray(new Mapper[parentMappers.size()]));
+        /*
+         * Flip any used mappers which are specified in the wrong direction 
+         */
+        Mapper<Object,Object>[] usedMappers = parentMappers.toArray(new Mapper[parentMappers.size()]);
+        for (int i=0; i < usedMappers.length; ++i) {
+            Mapper<Object,Object> usedMapper = usedMappers[i];
+            if (usedMapper.getAType().isAssignableFrom(classMap.getBType())
+                    && usedMapper.getBType().isAssignableFrom(classMap.getAType())) {
+                usedMappers[i] = ReversedMapper.reverse(usedMapper);
+            }
+        }
+        
+        mapper.setUsedMappers(usedMappers);
     }
     
     private void collectUsedMappers(ClassMap<?, ?> classMap, List<Mapper<Object, Object>> parentMappers, MapperKey parentMapperKey) {
