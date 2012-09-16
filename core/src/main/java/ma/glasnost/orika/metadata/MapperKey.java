@@ -83,7 +83,7 @@ public class MapperKey implements Comparable<MapperKey>{
 		if (this.equals(other)) {
 			return 0;
 		} else if ((other.getAType().isAssignableFrom(this.getAType()) && other.getBType().isAssignableFrom(this.getBType()))
-				|| (other.getAType().isAssignableFrom(other.getBType()) && other.getBType().isAssignableFrom(this.getAType()))) {
+				|| (other.getAType().isAssignableFrom(this.getBType()) && other.getBType().isAssignableFrom(this.getAType()))) {
 			return -1;
 		} else {
 			return 1;
