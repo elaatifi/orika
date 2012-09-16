@@ -1,7 +1,7 @@
 Orika
 -------
 
-*NEW* We are pleased to announce the release of Orika *1.2.0*! _This version is available on Maven central repository_ 
+*NEW* We are pleased to announce the release of Orika *1.2.1*! _This version is available on Maven central repository_ 
 
 _see ReleaseNotes for more details_
 
