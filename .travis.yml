@@ -2,7 +2,8 @@ language: java
 jdk:
   - oraclejdk7
   - openjdk6
-script: mvn -q clean install
+install: mvn -q install -DskipTests=true
+script: mvn -e test
 # whitelist
 branches:
   only:
