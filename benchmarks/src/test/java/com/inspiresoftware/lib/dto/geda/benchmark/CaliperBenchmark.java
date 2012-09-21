@@ -23,6 +23,7 @@ import com.inspiresoftware.lib.dto.geda.benchmark.support.geda.GeDABasicMapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.manual.ManualBasicMapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.modelmapper.ModelMapperMapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.orika.OrikaMapper;
+import com.inspiresoftware.lib.dto.geda.benchmark.support.orika.OrikaNonCyclicMapper;;
 
 /**
  * Caliper powered benchmark.
@@ -38,9 +39,10 @@ public class CaliperBenchmark extends SimpleBenchmark {
 
         JAVA_MANUAL(new ManualBasicMapper()),
         GEDA(new GeDABasicMapper()),
-        ORIKA(new OrikaMapper()); //,
-        //MODELMAPPER(new ModelMapperMapper()),
-        //DOZER(new DozerBasicMapper());
+        ORIKA(new OrikaMapper()),
+        ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
+        MODELMAPPER(new ModelMapperMapper()),
+        DOZER(new DozerBasicMapper());
 
         private Mapper mapper;
 
