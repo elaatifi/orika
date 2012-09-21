@@ -11,12 +11,15 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.test.benchmarks.TestClasses.One;
+import ma.glasnost.orika.test.benchmarks.TestClasses.Parent;
+import ma.glasnost.orika.test.benchmarks.TestClasses.Two;
 import ma.glasnost.orika.test.benchmarks.util.BenchmarkAssert;
 import ma.glasnost.orika.test.benchmarks.util.BenchmarkAssert.MetricType;
 
 import org.dozer.DozerBeanMapper;
 import org.dozer.Mapper;
+import org.eclipse.core.internal.runtime.Product;
 import org.junit.Test;
 
 import com.google.caliper.Param;
@@ -24,71 +27,11 @@ import com.google.caliper.Result;
 import com.google.caliper.ResultsReader;
 import com.google.caliper.Runner;
 import com.google.caliper.SimpleBenchmark;
+import com.inspiresoftware.lib.dto.geda.adapter.BeanFactory;
+import com.inspiresoftware.lib.dto.geda.assembler.Assembler;
+import com.inspiresoftware.lib.dto.geda.assembler.DTOAssembler;
 
 public class MapperComparisonTestCase {
-    
-	public static class Product {
-		private String productName;
-	    private String productDescription;
-	    private Double price;
-	    private Boolean availability;
-		public String getProductName() {
-			return productName;
-		}
-		public void setProductName(String productName) {
-			this.productName = productName;
-		}
-		public String getProductDescription() {
-			return productDescription;
-		}
-		public void setProductDescription(String productDescription) {
-			this.productDescription = productDescription;
-		}
-		public Double getPrice() {
-			return price;
-		}
-		public void setPrice(Double price) {
-			this.price = price;
-		}
-		public Boolean getAvailability() {
-			return availability;
-		}
-		public void setAvailability(Boolean availability) {
-			this.availability = availability;
-		} 
-	}
-	
-	
-	public static class ProductDto {
-		private String productName;
-	    private String productDescription;
-	    private Double price;
-	    private Boolean availability;
-		public String getProductName() {
-			return productName;
-		}
-		public void setProductName(String productName) {
-			this.productName = productName;
-		}
-		public String getProductDescription() {
-			return productDescription;
-		}
-		public void setProductDescription(String productDescription) {
-			this.productDescription = productDescription;
-		}
-		public Double getPrice() {
-			return price;
-		}
-		public void setPrice(Double price) {
-			this.price = price;
-		}
-		public Boolean getAvailability() {
-			return availability;
-		}
-		public void setAvailability(Boolean availability) {
-			this.availability = availability;
-		}   
-	}
 
 	protected Result runBenchmark(Class<? extends com.google.caliper.Benchmark> benchmark) throws IOException {
 		
@@ -112,10 +55,10 @@ public class MapperComparisonTestCase {
 		
 		Result result = runBenchmark(Benchmark.class);
 		
-		double meanRatio_Orika_vs_ByHand = BenchmarkAssert.getMetricRatio(result, "SameObjectInstance", 
+		double meanRatio_Orika_vs_ByHand = BenchmarkAssert.getMetricRatio(result, "DeepObjectGraphInstance", 
 				"strategy", "ORIKA", "BY_HAND", MetricType.MEAN);
 		
-		double meanRatio_Dozer_vs_Orika = BenchmarkAssert.getMetricRatio(result, "SameObjectInstance", 
+		double meanRatio_Dozer_vs_Orika = BenchmarkAssert.getMetricRatio(result, "DeepObjectGraphInstance", 
 				"strategy", "DOZER", "ORIKA", MetricType.MEAN);
 		
 		/*
@@ -133,23 +76,14 @@ public class MapperComparisonTestCase {
 		// assertThat(benchmark("strategy=ORIKA"), isFasterThan(benchmark("strategy=DOZER")).byMinFactorOf(5));
 	}
 	
-	private static Product createProduct() {
-		Product product = new Product();
-	    product.setAvailability(true);
-	    product.setPrice(123d);
-	    product.setProductDescription("desc");
-	    product.setProductName("name");
-	    
-	    return product;
-	}
 	
 	public enum Strategy {
 		DOZER {
 			private Mapper mapper = new DozerBeanMapper();
 			
 			@Override
-			ProductDto map(Product product) {
-				return mapper.map(product, ProductDto.class);
+			Parent map(Parent product) {
+				return mapper.map(product, Parent.class);
 			}
 		},
 		ORIKA {
@@ -157,74 +91,154 @@ public class MapperComparisonTestCase {
 			{   
 				System.setProperty(OrikaSystemProperties.WRITE_CLASS_FILES, ""+false);
 				System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, ""+false);
-		        MapperFactory mapperFactory = new
+		        MapperFactory factory = new
 		                DefaultMapperFactory.Builder().build();
-		        mapperFactory.registerClassMap(ClassMapBuilder.map(Product.class,
-		                ProductDto.class).byDefault().toClassMap());
-		        mapperFactory.build();
-		        facade = mapperFactory.getMapperFacade();
-			}
-			@Override
-			ProductDto map(Product product) {
-				return facade.map(product, ProductDto.class);
-			}
-		},
-		ORIKA_ECLIPSE_JDT {
-
-			private MapperFacade facade;
-			{   
-				System.setProperty(OrikaSystemProperties.WRITE_CLASS_FILES, ""+false);
-				System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, ""+false);
-		        MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
-		        		.compilerStrategy(new EclipseJdtCompilerStrategy())
-		        		.build();
-		        
-		        mapperFactory.registerClassMap(ClassMapBuilder.map(Product.class,
-		                ProductDto.class).byDefault().toClassMap());
-		        mapperFactory.build();
-		        facade = mapperFactory.getMapperFacade();
-			}
-			@Override
-			ProductDto map(Product product) {
-				return facade.map(product, ProductDto.class);
+		        factory.registerClassMap(factory.classMap(Parent.class,
+		        		Parent.class).byDefault().toClassMap());
+		        factory.registerClassMap(factory.classMap(One.class,
+		        		One.class).byDefault().toClassMap());
+		        factory.registerClassMap(factory.classMap(Two.class,
+		        		Two.class).byDefault().toClassMap());
+		        facade = factory.getMapperFacade();
 			}
 			
+			@Override
+			Parent map(Parent product) {
+				return facade.map(product, Parent.class);
+			}
+		},
+//		ORIKA_NON_CYCLIC {
+//			private MapperFacade facade;
+//			{   
+//				System.setProperty(OrikaSystemProperties.WRITE_CLASS_FILES, ""+false);
+//				System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, ""+false);
+//		        MapperFactory factory = new
+//		                DefaultMapperFactory.Builder()
+//		        			.mappingContextFactory(new NonCyclicMappingContext.Factory())
+//		        			.build();
+//		        factory.registerClassMap(factory.classMap(Parent.class,
+//		        		Parent.class).byDefault().toClassMap());
+//		        factory.registerClassMap(factory.classMap(One.class,
+//		        		One.class).byDefault().toClassMap());
+//		        factory.registerClassMap(factory.classMap(Two.class,
+//		        		Two.class).byDefault().toClassMap());
+//		        facade = factory.getMapperFacade();
+//			}
+//			
+//			@Override
+//			Parent map(Parent product) {
+//				return facade.map(product, Parent.class);
+//			}
+//		},
+//		ORIKA_ECLIPSE_JDT {
+//
+//			private MapperFacade facade;
+//			{   
+//				System.setProperty(OrikaSystemProperties.WRITE_CLASS_FILES, ""+false);
+//				System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, ""+false);
+//		        MapperFactory factory = new DefaultMapperFactory.Builder()
+//		        		.compilerStrategy(new EclipseJdtCompilerStrategy())
+//		        		.build();
+//		        
+//		        factory.registerClassMap(factory.classMap(Parent.class,
+//		        		Parent.class).byDefault().toClassMap());
+//		        factory.registerClassMap(factory.classMap(One.class,
+//		        		One.class).byDefault().toClassMap());
+//		        factory.registerClassMap(factory.classMap(Two.class,
+//		        		Two.class).byDefault().toClassMap());
+//		        facade = factory.getMapperFacade();
+//			}
+//			@Override
+//			Parent map(Parent product) {
+//				return facade.map(product, Parent.class);
+//			}
+//			
+//		},
+		GEDA {
+		    
+		    final Assembler asm = DTOAssembler.newAssembler(Parent.class, Parent.class);
+		    final BeanFactory beanFactory = new BeanFactory() {
+
+                @Override
+                public Object get(String key) {
+                    if ("Parent".equals(key)) {
+                        return new Parent();
+                    } else if ("One".equals(key)) {
+                        return new One();
+                    } else if ("Two".equals(key)) {
+                        return new Two();
+                    }
+                    return null;
+                }
+		        
+		    };
+		    
+		    
+		    Parent map(Parent product) {
+		        
+		        Parent result = (Parent) beanFactory.get("Parent");
+		        asm.assembleDto(product, result, null, beanFactory);
+		        return result;
+		    }
 		},
 		BY_HAND {
 			@Override
-			ProductDto map(Product product) {
-				ProductDto dto = new ProductDto();
-		        dto.setAvailability(product.getAvailability());
-		        dto.setProductDescription(product.getProductDescription());
-		        dto.setPrice(product.getPrice());
-		        dto.setProductName(product.getProductName());
-		        return dto;
+			Parent map(Parent parent) {
+				Parent newParent = new Parent();
+				newParent.availability = parent.availability;
+				newParent.price = parent.price;
+				newParent.productDescription = parent.productDescription;
+				newParent.productName = parent.productName;
+				for (One one: parent.oneList) {
+					One newOne = new One();
+					newOne.setName(one.name);
+					newParent.oneList.add(newOne);
+					for (Two two: one.twos) {
+						Two newTwo = new Two();
+						newTwo.setName(two.name);
+						newOne.twos.add(newTwo);
+					}
+				}
+				for (Two two: parent.twoList) {
+					Two newTwo = new Two();
+					newTwo.setName(two.name);
+					newParent.twoList.add(newTwo);
+				}
+		        return newParent;
 			}
 		};
 		
-		abstract ProductDto map(Product product);
+		abstract Parent map(Parent product);
 	}
 	
 	public static class Benchmark extends SimpleBenchmark {
 	
+	    
+	    private Parent[] objectsToMap;
+	    
+	    public void setUp() {
+	        objectsToMap = new Parent[100];
+	        for (int i =0; i < objectsToMap.length; ++i) {
+	           objectsToMap[i]= TestClasses.createParentWithChildren();
+	        }
+	    }
+	    
 		@Param
 		Strategy strategy;
-		
-		public int timeSameObjectInstance(int reps) {
-	
-		    Product product = createProduct();
-		    int dummy = 0;
-		    for (int i = 0; i < reps; i++) {
-		        dummy += strategy.map(product).hashCode();
-		    }
-		    return dummy;
-		}
 
 		public int timeNewObjectInstance(int reps) {
 		
 		    int dummy = 0;
 		    for (int i = 0; i < reps; i++) {
-		        dummy += strategy.map(createProduct()).hashCode();
+		        dummy += strategy.map(TestClasses.createParent()).hashCode();
+		    }
+		    return dummy;
+		}
+		
+		public int timeDeepObjectGraphInstance(int reps) {
+			int dummy = 0;
+		    for (int i = 0; i < reps; i++) {
+		        dummy += strategy.map(objectsToMap[(reps % 100)]).hashCode();
 		    }
 		    return dummy;
 		}

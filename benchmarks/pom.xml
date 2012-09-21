@@ -4,7 +4,7 @@
     <parent>
         <artifactId>orika-parent</artifactId>
         <groupId>ma.glasnost.orika</groupId>
-        <version>1.1.2-SNAPSHOT</version>
+        <version>1.2.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>orika-benchmarks</artifactId>
@@ -46,14 +46,32 @@
             <groupId>net.sf.dozer</groupId>
             <artifactId>dozer</artifactId>
         </dependency>
-        
+
+        <dependency>
+            <groupId>com.inspire-software.lib.dto.geda</groupId>
+            <artifactId>geda.core</artifactId>
+            <version>2.0.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.inspire-software.lib.dto.geda</groupId>
+            <artifactId>geda.core-btest</artifactId>
+            <version>2.0.3</version>
+        </dependency>
+
         <dependency>
             <groupId>com.google.caliper</groupId>
             <artifactId>caliper</artifactId>
         </dependency>
-        
+
+        <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
     </dependencies>
-    
+
     <build>
         <plugins>
             <plugin>
