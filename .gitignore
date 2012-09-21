@@ -1,22 +1,22 @@
 # /
-/.settings
-/target
-/.idea
-/orika-parent.iml
+.settings
+target
+.idea
+orika-parent.iml
 
 # /core/
-/core/.*
-/core/target
-/core/orika-core.iml
+core/.*
+core/target
+core/orika-core.iml
 
 # /eclipse-tools/
-/eclipse-tools/.project
-/eclipse-tools/.classpath
-/eclipse-tools/.settings
-/eclipse-tools/target
+eclipse-tools/.project
+eclipse-tools/.classpath
+eclipse-tools/.settings
+eclipse-tools/target
 
-/benchmarks/target
-/benchmarks/.settings
-/benchmarks/.project
-/benchmarks/.classpath
+benchmarks/target
+benchmarks/.settings
+benchmarks/.project
+benchmarks/.classpath
 
