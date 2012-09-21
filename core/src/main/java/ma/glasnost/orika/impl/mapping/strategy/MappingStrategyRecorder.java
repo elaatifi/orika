@@ -175,6 +175,9 @@ public class MappingStrategyRecorder {
      * @return
      */
     public String describeDetails() {
+        if (resolvedStrategy == null) {
+            throw new IllegalStateException("Strategy recording not complete");
+        }
         StringBuilder details = new StringBuilder();
         details
             .append("MappingStrategy resolved and cached:")

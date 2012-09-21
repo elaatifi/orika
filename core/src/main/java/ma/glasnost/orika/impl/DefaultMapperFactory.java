@@ -707,7 +707,7 @@ public class DefaultMapperFactory implements MapperFactory {
     @SuppressWarnings("unchecked")
     public <S, D> Type<? extends D> lookupConcreteDestinationType(Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         
-        Type<? extends D> concreteType = context.getConcreteClass(sourceType, destinationType);
+        Type<? extends D> concreteType = context == null ? null : context.getConcreteClass(sourceType, destinationType);
         
         if (concreteType != null) {
             return concreteType;

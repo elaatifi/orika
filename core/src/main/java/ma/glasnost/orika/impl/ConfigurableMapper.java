@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
@@ -363,5 +364,13 @@ public class ConfigurableMapper implements MapperFacade {
             MappingContext context) {
         return facade.mapAsArray(destination, source, sourceType, destinationType, context);
     }
-    
+
+    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
+        return facade.dedicatedMapperFor(sourceType, destinationType);
+    }
+
+    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
+        return facade.dedicatedMapperFor(sourceType, destinationType, containsCycles);
+    }
+
 }

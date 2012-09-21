@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.impl.mapping.strategy;
 
-import ma.glasnost.orika.metadata.Type;
 
 /**
  * MappingStrategyKey defines the minimum information necessary to cache a
@@ -30,12 +29,12 @@ import ma.glasnost.orika.metadata.Type;
 public final class MappingStrategyKey {
     
 	private final Class<?> rawSourceType;
-	private final Type<?> sourceType;
-	private final Type<?> destinationType;
+	private final java.lang.reflect.Type sourceType;
+	private final java.lang.reflect.Type destinationType;
 	private final boolean destinationProvided;
     private final int hashCode;
     
-    public MappingStrategyKey(Class<?> rawSourceType, Type<?> sourceType, Type<?> destinationType, boolean destinationProvided) {
+    public MappingStrategyKey(Class<?> rawSourceType, java.lang.reflect.Type sourceType, java.lang.reflect.Type destinationType, boolean destinationProvided) {
         this.rawSourceType = rawSourceType;
         this.sourceType = sourceType;
         this.destinationType = destinationType;
@@ -47,11 +46,11 @@ public final class MappingStrategyKey {
         return rawSourceType;
     }
 
-    protected Type<?> getSourceType() {
+    protected java.lang.reflect.Type getSourceType() {
         return sourceType;
     }
 
-    protected Type<?> getDestinationType() {
+    protected java.lang.reflect.Type getDestinationType() {
         return destinationType;
     }
     

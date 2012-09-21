@@ -18,23 +18,33 @@
 
 package ma.glasnost.orika;
 
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import javolution.util.FastMap;
+import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
 public class MappingContext {
 	
 	private final Map<Type<?>, Type<?>> mapping;
-	private final Map<Type<?>, Map<Object, Object>> cache;
+	private final Map<java.lang.reflect.Type, Map<Object, Object>> cache;
+	private MappingStrategy strategy;
 
 	public MappingContext() {
-		mapping = new HashMap<Type<?>, Type<?>>();
-		cache = new HashMap<Type<?>, Map<Object, Object>>();
+		mapping = new FastMap<Type<?>, Type<?>>();
+		cache = new FastMap<java.lang.reflect.Type, Map<Object, Object>>();
 	}
 
+	public void setResolvedMappingStrategy(MappingStrategy strategy) {
+	    this.strategy = strategy;
+	}
+	
+	public MappingStrategy getResolvedMappingStrategy() {
+	    return this.strategy;
+	}
+	
 	@SuppressWarnings("unchecked")
 	public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType,
 			Type<D> destinationType) {
@@ -56,7 +66,7 @@ public class MappingContext {
 		cacheMappedObject(source, TypeFactory.typeOf(destination), destination);
 	}
 
-	public <S, D> void cacheMappedObject(S source, Type<D> destinationType,
+	public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType,
 			D destination) {
 
 		Map<Object, Object> localCache = cache.get(destinationType);
@@ -74,14 +84,14 @@ public class MappingContext {
 	 * @deprecated use {@link #getMappedObject(Object, Type)} instead
 	 */
 	@Deprecated
-	public <S, D> boolean isAlreadyMapped(S source, Type<D> destinationType) {
+	public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
 		
 		Map<Object, Object> localCache = cache.get(destinationType);
 		return (localCache != null && localCache.get(source) != null);
 	}
 
 	@SuppressWarnings("unchecked")
-	public <D> D getMappedObject(Object source, Type<D> destinationType) {
+	public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
 		Map<Object, Object> localCache = cache.get(destinationType);
 		return (D) (localCache == null ? null : localCache.get(source));
 	}

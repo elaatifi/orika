@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import javolution.util.FastMap;
 import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
@@ -35,7 +37,6 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
-import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategyKey;
@@ -45,7 +46,6 @@ import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
-import ma.glasnost.orika.util.CacheLRULinkedHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,18 +54,15 @@ public class MapperFacadeImpl implements MapperFacade {
     
     private final MapperFactory mapperFactory;
     private final UnenhanceStrategy unenhanceStrategy;
-    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(
-            500);
-    private final boolean useStrategyCache;
+    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new FastMap<MappingStrategyKey, MappingStrategy>();
     
     private final Logger log = LoggerFactory.getLogger(getClass());
     
     public MapperFacadeImpl(MapperFactory mapperFactory, UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
         this.unenhanceStrategy = unenhanceStrategy;
-        this.useStrategyCache = Boolean.valueOf(System.getProperty(OrikaSystemProperties.USE_STRATEGY_CACHE, "true"));
     }
-    
+
     /**
      * Normalize the source type based on the registered converters, mappers and
      * accessible super types, as well as available unenhancers
@@ -125,7 +122,96 @@ public class MapperFacadeImpl implements MapperFacade {
         return map(sourceObject, sourceType, destinationClass, new MappingContext());
     }
     
+    
+    /**
+     * Resolves a reusable MappingStrategy for the given set of inputs.
+     * 
+     * @param sourceObject
+     * @param sourceType
+     * @param destinationType
+     * @param context
+     * @return
+     */
+    <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType, final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
+        
+        Type<D> destinationType = TypeFactory.valueOf(initialDestinationType);
+        
+        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), initialSourceType, destinationType, mapInPlace);
+        MappingStrategy strategy = strategyCache.get(key);
+        
+        if (strategy == null) {
+            
+            @SuppressWarnings("unchecked")
+            Type<S> sourceType = (Type<S>) (initialSourceType != null ? TypeFactory.valueOf(initialSourceType) : TypeFactory.typeOf(sourceObject));
+            
+            MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
+        
+            final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
+            final S resolvedSourceObject;
+            
+            if (mapInPlace) {
+                resolvedSourceObject = sourceObject;
+            } else {
+                resolvedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
+            } 
+        
+            strategyRecorder.setResolvedSourceType(resolvedSourceType);
+            strategyRecorder.setResolvedDestinationType(destinationType);
+            if (sourceObject != resolvedSourceObject) {
+                strategyRecorder.setUnenhance(true);
+            }
+            
+            if (!mapInPlace && canCopyByReference(destinationType, resolvedSourceType)) {
+                /*
+                 * We can copy by reference when source and destination types
+                 * are the same and immutable.
+                 */
+                strategyRecorder.setCopyByReference(true);
+            } else if (!mapInPlace && canConvert(resolvedSourceType, destinationType)) {
+                strategyRecorder.setResolvedConverter(mapperFactory.getConverterFactory().getConverter(resolvedSourceType,
+                            destinationType));
+                
+            } else {
+                Type<? extends D> resolvedDestinationType;
+                if (mapInPlace) {
+                    resolvedDestinationType = destinationType;
+                } else {
+                    strategyRecorder.setInstantiate(true);
+                    resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
+                            context);
+                    if (resolvedDestinationType == null) {
+                        if (!ClassUtil.isConcrete(destinationType)) {
+                            MappingException e = new MappingException("No concrete class mapping defined for source class "
+                                    + resolvedSourceType.getName());
+                            e.setDestinationType(destinationType);
+                            e.setSourceType(resolvedSourceType);
+                            throw e;
+                        } else {
+                            resolvedDestinationType = destinationType;
+                        }
+                    }
+                }
+                strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
+                strategyRecorder.setResolvedMapper(resolveMapper(resolvedSourceType, resolvedDestinationType)); 
+                if (!mapInPlace) {
+                    strategyRecorder.setResolvedObjectFactory(mapperFactory.lookupObjectFactory(resolvedDestinationType));
+                }
+            }
+            strategy = strategyRecorder.playback();
+            if (log.isDebugEnabled()) {
+                log.debug(strategyRecorder.describeDetails());
+            }
+            strategyCache.put(key, strategy);
+            //strategyCache.putStrategy(sourceClass, resolvedSourceType, initialDestinationType, mapInPlace, strategy);
+        }
+        return strategy;
+    }
+    
+    
+    
+    @SuppressWarnings("unchecked")
     public <S, D> D map(final S sourceObject, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
+        
         try {
             if (destinationType == null) {
                 throw new MappingException("Can not map to a null class.");
@@ -134,116 +220,14 @@ public class MapperFacadeImpl implements MapperFacade {
                 return null;
             }
             
-            D existingResult = context.getMappedObject(sourceObject, destinationType);
-            if (existingResult != null) {
-                return existingResult;
+            D existingResult = (D) context.getMappedObject(sourceObject, destinationType);
+            if (existingResult == null) {
+                MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, false, context);
+                existingResult = (D) strategy.map(sourceObject, null, context);
+                context.setResolvedMappingStrategy(strategy);    
             }
+            return existingResult;
             
-            /*
-             * Note: we cache a MappingStrategy as one of the possible
-             * combinations of paths through the below code; this allows us to
-             * avoid repeating the if-then checks and the individual hash
-             * lookups at each stage; we resolve them only once and then save
-             * the "path" we took by using one of the defined strategies
-             */
-            MappingStrategyKey key = null;
-            if (useStrategyCache) {
-                
-                key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, false);
-                
-                MappingStrategy strategy = strategyCache.get(key);
-                if (strategy != null) {
-                    @SuppressWarnings("unchecked")
-                    D result = (D) strategy.map(sourceObject, null, context);
-                    return result;
-                }
-            }
-            
-            MappingStrategyRecorder strategyRecorder = null;
-            if (useStrategyCache) {
-                strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
-            }
-            
-            final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
-            final S resolvedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
-            
-            if (useStrategyCache) {
-                strategyRecorder.setResolvedSourceType(resolvedSourceType);
-                strategyRecorder.setResolvedDestinationType(destinationType);
-                if (sourceObject != resolvedSourceObject) {
-                    strategyRecorder.setUnenhance(true);
-                }
-                strategyRecorder.setInstantiate(true);
-            }
-            
-            if (canCopyByReference(destinationType, resolvedSourceType)) {
-                /*
-                 * We can copy by reference when source and destination types
-                 * are the same and immutable.
-                 */
-                if (useStrategyCache) {
-                    strategyRecorder.setCopyByReference(true);
-                    strategyCache.put(key, strategyRecorder.playback());
-                    if (log.isDebugEnabled()) {
-                        log.debug(strategyRecorder.describeDetails());
-                    }
-                }
-                @SuppressWarnings("unchecked")
-                D result = (D) resolvedSourceObject;
-                return result;
-            }
-            
-            // Check if we have a converter
-            if (canConvert(resolvedSourceType, destinationType)) {
-                if (useStrategyCache) {
-                    strategyRecorder.setResolvedConverter(mapperFactory.getConverterFactory().getConverter(resolvedSourceType,
-                            destinationType));
-                    strategyCache.put(key, strategyRecorder.playback());
-                    if (log.isDebugEnabled()) {
-                        log.debug(strategyRecorder.describeDetails());
-                    }
-                }
-                return convert(resolvedSourceObject, sourceType, destinationType, null);
-            }
-            
-            Type<? extends D> resolvedDestinationType = mapperFactory.lookupConcreteDestinationType(resolvedSourceType, destinationType,
-                    context);
-            if (resolvedDestinationType == null) {
-                if (!ClassUtil.isConcrete(destinationType)) {
-                    MappingException e = new MappingException("No concrete class mapping defined for source class "
-                            + resolvedSourceType.getName());
-                    e.setDestinationType(destinationType);
-                    e.setSourceType(resolvedSourceType);
-                    throw e;
-                } else {
-                    resolvedDestinationType = destinationType;
-                }
-            }
-            
-            if (useStrategyCache) {
-                strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
-            }
-            
-            final Mapper<Object, Object> mapper = prepareMapper(resolvedSourceType, resolvedDestinationType);
-            
-            if (useStrategyCache) {
-                strategyRecorder.setResolvedMapper(mapper);
-            }
-            
-            final D destinationObject = newObject(resolvedSourceObject, resolvedDestinationType, context, strategyRecorder);
-            
-            context.cacheMappedObject(sourceObject, destinationType, destinationObject);
-            
-            mapDeclaredProperties(resolvedSourceObject, destinationObject, resolvedSourceType, resolvedDestinationType, context, mapper,
-                    strategyRecorder);
-            
-            if (useStrategyCache) {
-                strategyCache.put(key, strategyRecorder.playback());
-                if (log.isDebugEnabled()) {
-                    log.debug(strategyRecorder.describeDetails());
-                }
-            }
-            return destinationObject;
         } catch (MappingException e) {
             /* don't wrap our own exceptions */
             throw e;
@@ -289,39 +273,21 @@ public class MapperFacadeImpl implements MapperFacade {
             if (destinationObject == null) {
                 throw new MappingException("[destinationObject] can not be null.");
             }
+            
+            if (destinationType == null) {
+                throw new MappingException("[destinationType] can not be null.");
+            }
+            
             if (sourceObject == null) {
                 throw new MappingException("[sourceObject] can not be null.");
             }
             
-            D existingResult = context.getMappedObject(sourceObject, destinationType);
-            if (existingResult != null) {
-                return;
-            }
-            
-            MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), sourceType, destinationType, true);
-            
-            MappingStrategy strategy = strategyCache.get(key);
-            if (strategy != null) {
+            if (context.getMappedObject(sourceObject, destinationType) == null) {
+                MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, true, context);
                 strategy.map(sourceObject, destinationObject, context);
-            } else {
-                MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
-                
-                final Type<S> theSourceType = normalizeSourceType(sourceObject,
-                        sourceType != null ? sourceType : TypeFactory.typeOf(sourceObject), destinationType);
-                final Type<D> theDestinationType = destinationType != null ? destinationType : TypeFactory.typeOf(destinationObject);
-                
-                final Mapper<Object, Object> mapper = prepareMapper(theSourceType, theDestinationType);
-                
-                strategyRecorder.setResolvedSourceType(theSourceType);
-                strategyRecorder.setResolvedDestinationType(theDestinationType);
-                strategyRecorder.setResolvedMapper(mapper);
-                
-                context.cacheMappedObject(sourceObject, destinationType, destinationObject);
-                
-                mapDeclaredProperties(sourceObject, destinationObject, theSourceType, theDestinationType, context, mapper, strategyRecorder);
-                
-                strategyCache.put(key, strategyRecorder.playback());
+                context.setResolvedMappingStrategy(strategy);
             }
+
         } catch (MappingException e) {
             /* don't wrap our own exceptions */
             throw e;
@@ -339,7 +305,32 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
-        map(sourceObject, destinationObject, null, null, context);
+        //map(sourceObject, destinationObject, TypeFactory.typeOf(sourceObject), TypeFactory.typeOf(destinationObject), context);
+        try {
+            if (destinationObject == null) {
+                throw new MappingException("[destinationObject] can not be null.");
+            }
+            
+            if (sourceObject == null) {
+                throw new MappingException("[sourceObject] can not be null.");
+            }
+            
+            if (context.getMappedObject(sourceObject, TypeFactory.typeOf(destinationObject)) == null) {
+                //MappingStrategy strategy = resolveMappingStrategy(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.typeOf(destinationObject), true, context);
+                MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
+                strategy.map(sourceObject, destinationObject, context);
+                context.setResolvedMappingStrategy(strategy);
+            }
+
+        } catch (MappingException e) {
+            /* don't wrap our own exceptions */
+            throw e;
+        } catch (Exception e) {
+            throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
+                    + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) 
+                    + "\nrawDestination=" + destinationObject + "\ndestinationClass="
+                    + (destinationObject != null ? destinationObject.getClass() : null), e);
+        }
     }
     
     public <S, D> void map(S sourceObject, D destinationObject) {
@@ -467,13 +458,18 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    Mapper<Object, Object> prepareMapper(Type<?> sourceType, Type<?> destinationType) {
+    Mapper<Object, Object> resolveMapper(Type<?> sourceType, Type<?> destinationType) {
         final MapperKey mapperKey = new MapperKey(sourceType, destinationType);
-        final Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
+        Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
         
         if (mapper == null) {
             throw new IllegalStateException(String.format("Cannot create a mapper for classes : %s, %s", destinationType, sourceType));
         }
+        
+        if ((!mapper.getAType().equals(sourceType) && mapper.getAType().equals(destinationType))
+                || (!mapper.getAType().isAssignableFrom(sourceType) && mapper.getAType().isAssignableFrom(destinationType))) {
+            mapper = ReversedMapper.reverse(mapper);
+        } 
         return mapper;
     }
     
@@ -593,11 +589,36 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D map(S sourceObject, Class<D> destinationClass) {
-        return map(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.<D> valueOf(destinationClass));
+        return map(sourceObject, destinationClass, new MappingContext());
     }
     
+    @SuppressWarnings("unchecked")
     public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
-        return map(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.<D> valueOf(destinationClass), context);
+        
+        try {
+            if (destinationClass == null) {
+                throw new MappingException("Can not map to a null class.");
+            }
+            if (sourceObject == null) {
+                return null;
+            }
+            
+            D result = (D) context.getMappedObject(sourceObject, destinationClass);
+            if (result == null) {
+                MappingStrategy strategy = resolveMappingStrategy(sourceObject, null /*TypeFactory.typeOf(sourceObject)*/, destinationClass /*TypeFactory.valueOf(destinationClass)*/, false, context);
+                result = (D) strategy.map(sourceObject, null, context); 
+                context.setResolvedMappingStrategy(strategy);
+            }
+            return result;
+            
+        } catch (MappingException e) {
+            /* don't wrap our own exceptions */
+            throw e;
+        } catch (Exception e) {
+            throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
+                    + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) 
+                    + "\ndestinationClass=" + destinationClass, e);
+        }
     }
     
     public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass) {
@@ -781,4 +802,15 @@ public class MapperFacadeImpl implements MapperFacade {
         mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
     }
     
+    public <S,D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
+        return new DefaultDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
+    }
+    
+    public <S,D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
+        if (!containsCycles) {
+            return new NonCyclicDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
+        } else {
+            return dedicatedMapperFor(sourceType, destinationType);
+        }
+    } 
 }
