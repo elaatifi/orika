@@ -53,50 +53,20 @@ public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapper
         this.nonCyclicContext = new NonCyclicMappingContext();
     }
     
-    @SuppressWarnings("unchecked")
     public B mapAtoB(A source) {
-        if (aToB == null) {
-            synchronized(this) {
-                if (aToB == null) {
-                    aToB = mapperFacade.resolveMappingStrategy(source, sourceType, destinationType, false, nonCyclicContext);
-                }
-            }
-        }
-        return (B) aToB.map(source, null, nonCyclicContext);
+        return super.mapAtoB(source, nonCyclicContext);
     }
      
-    @SuppressWarnings("unchecked")
     public A mapBtoA(B source) {
-        if (bToA == null) {
-            synchronized(this) {
-                if (bToA == null) {
-                    bToA = mapperFacade.resolveMappingStrategy(source, destinationType, sourceType, false, nonCyclicContext);
-                }
-            }
-        }
-        return (A) bToA.map(source, null, nonCyclicContext);
+        return super.mapBtoA(source, nonCyclicContext);
     }
      
     public void mapAtoB(A source, B destination) {
-        if (aToBInPlace == null) {
-            synchronized(this) {
-                if (aToBInPlace == null) {
-                    aToBInPlace = mapperFacade.resolveMappingStrategy(source, sourceType, destinationType, true, nonCyclicContext);
-                }
-            }
-        }
-        aToBInPlace.map(source, destination, nonCyclicContext);
+        super.mapAtoB(source, destination, nonCyclicContext);
     }
     
     public void mapBtoA(B destination, A source) {
-        if (bToAInPlace == null) {
-            synchronized(this) {
-                if (bToAInPlace == null) {
-                    bToAInPlace = mapperFacade.resolveMappingStrategy(source, destinationType, sourceType, false, nonCyclicContext);
-                }
-            }
-        }
-        bToAInPlace.map(destination, source, nonCyclicContext);
+        super.mapBtoA(destination, source, nonCyclicContext);
     }
  }
     

@@ -9,13 +9,19 @@
 
 package com.inspiresoftware.lib.dto.geda.benchmark;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import com.google.caliper.Param;
 import com.google.caliper.Runner;
 import com.google.caliper.SimpleBenchmark;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Address;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Country;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Graph;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Name;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Point;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Segment;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.AddressDTO;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.dozer.DozerBasicMapper;
@@ -23,7 +29,7 @@ import com.inspiresoftware.lib.dto.geda.benchmark.support.geda.GeDABasicMapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.manual.ManualBasicMapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.modelmapper.ModelMapperMapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.support.orika.OrikaMapper;
-import com.inspiresoftware.lib.dto.geda.benchmark.support.orika.OrikaNonCyclicMapper;;
+import com.inspiresoftware.lib.dto.geda.benchmark.support.orika.OrikaNonCyclicMapper;
 
 /**
  * Caliper powered benchmark.
@@ -35,9 +41,9 @@ import com.inspiresoftware.lib.dto.geda.benchmark.support.orika.OrikaNonCyclicMa
 public class CaliperBenchmark extends SimpleBenchmark {
 
 
-    public enum Lib {
+    public enum Library {
 
-        JAVA_MANUAL(new ManualBasicMapper()),
+        //JAVA_MANUAL(new ManualBasicMapper()),
         GEDA(new GeDABasicMapper()),
         ORIKA(new OrikaMapper()),
         ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
@@ -46,18 +52,20 @@ public class CaliperBenchmark extends SimpleBenchmark {
 
         private Mapper mapper;
 
-        Lib(final Mapper mapper) {
+        Library(final Mapper mapper) {
             this.mapper = mapper;
         }
     }
 
     @Param
-    private Lib lib;
-    @Param({ "1", "100", "10000"/*, "25000" */})
+    private Library lib;
+    
+    @Param({ /*"1",*/ "100"/*, "10000"/*, "25000" */})
     private int length;
 
     private Person personLoaded;
     private PersonDTO personDTOLoaded;
+    private Graph graphLoaded;
 
     private Mapper mapper;
 
@@ -83,6 +91,40 @@ public class CaliperBenchmark extends SimpleBenchmark {
 
         personDTOLoaded = dto;
 
+        
+        final Graph graph = new Graph();
+        Set<Segment> segments = new HashSet<Segment>();
+        Set<Point> points = new HashSet<Point>();
+        Point point1 = null;
+        Point point2 = null;
+        for (int i=0; i < 20; ++i) {
+            for (int j=0; j < 20; ++j) {
+                for (int k=0; k < 20; ++k) {
+                    Point point = new Point();
+                    point.setX(i);
+                    point.setY(j);
+                    point.setZ(k);
+                    if (k % 2 == 0) {
+                        point1 = point;
+                    } else {
+                        point2 = point;
+                    }
+                    points.add(point);
+                    if (point1 != null && point2 != null) {
+                        Segment segment = new Segment();
+                        segment.setPoint1(point1);
+                        segment.setPoint2(point2);
+                        segments.add(segment);
+                    }
+                }
+            }
+        }
+        graph.setPoints(points);
+        graph.setSegments(segments);
+        
+        graphLoaded = graph;
+        
+        
         mapper = lib.mapper;
     }
 
@@ -102,6 +144,13 @@ public class CaliperBenchmark extends SimpleBenchmark {
         }
     }
 
+    public void timeNestedEntityToDTO(int reps) {
+        for (int i = 0; i < reps; i++) {
+            for (int ii = 0; ii < length; ii++) {
+                mapper.fromEntity(personLoaded);
+            }
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         Runner.main(CaliperBenchmark.class, args);

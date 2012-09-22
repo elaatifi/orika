@@ -23,72 +23,109 @@ import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 
 /**
  * @author matt.deboer@gmail.com
- *
+ * 
  */
-class DefaultDedicatedMapperFacade<S, D> implements DedicatedMapperFacade<S, D> {
+class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> {
     
-   protected volatile MappingStrategy aToB;
-   protected volatile MappingStrategy bToA;
-   protected volatile MappingStrategy aToBInPlace;
-   protected volatile MappingStrategy bToAInPlace;
-   
-   protected final java.lang.reflect.Type sourceType;
-   protected final java.lang.reflect.Type destinationType;
-   protected final MapperFacadeImpl mapperFacade;
-   
-   DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, java.lang.reflect.Type sourceType, java.lang.reflect.Type destinationType) {
-       this.mapperFacade = mapperFacade;
-       this.sourceType = sourceType;
-       this.destinationType = destinationType;
-   }
-   
-   @SuppressWarnings("unchecked")
-   public D mapAtoB(S source) {
-       MappingContext context = new MappingContext();
-       if (aToB == null) {
-           synchronized(this) {
-               if (aToB == null) {
-                   aToB = mapperFacade.resolveMappingStrategy(source, sourceType, destinationType, false, context);
-               }
-           }
-       }
-       return (D) aToB.map(source, null, context);
-   }
+    protected volatile MappingStrategy aToB;
+    protected volatile MappingStrategy bToA;
+    protected volatile MappingStrategy aToBInPlace;
+    protected volatile MappingStrategy bToAInPlace;
     
-   @SuppressWarnings("unchecked")
-   public S mapBtoA(D source) {
-       MappingContext context = new MappingContext();
-       if (bToA == null) {
-           synchronized(this) {
-               if (bToA == null) {
-                   bToA = mapperFacade.resolveMappingStrategy(source, destinationType, sourceType, false, context);
-               }
-           }
-       }
-       return (S) bToA.map(source, null, context);
-   }
+    protected final java.lang.reflect.Type sourceType;
+    protected final java.lang.reflect.Type destinationType;
+    protected final MapperFacadeImpl mapperFacade;
     
-   public void mapAtoB(S source, D destination) {
-       MappingContext context = new MappingContext();
-       if (aToBInPlace == null) {
-           synchronized(this) {
-               if (aToBInPlace == null) {
-                   aToBInPlace = mapperFacade.resolveMappingStrategy(source, sourceType, destinationType, true, context);
-               }
-           }
-       }
-       aToBInPlace.map(source, destination, context);
-   }
-   
-   public void mapBtoA(D destination, S source) {
-       MappingContext context = new MappingContext();
-       if (bToAInPlace == null) {
-           synchronized(this) {
-               if (bToAInPlace == null) {
-                   bToAInPlace = mapperFacade.resolveMappingStrategy(source, destinationType, sourceType, false, context);
-               }
-           }
-       }
-       bToAInPlace.map(destination, source, context);
-   }
+    DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, java.lang.reflect.Type sourceType, java.lang.reflect.Type destinationType) {
+        this.mapperFacade = mapperFacade;
+        this.sourceType = sourceType;
+        this.destinationType = destinationType;
+    }
+    
+    public B mapAtoB(A instanceA) {
+        return mapAtoB(instanceA, new MappingContext());
+    }
+    
+    public A mapBtoA(B source) {
+        return mapBtoA(source, new MappingContext());
+    }
+    
+    public void mapAtoB(A instanceA, B instanceB) {
+        mapAtoB(instanceA, instanceB, new MappingContext());
+    }
+    
+    public void mapBtoA(B instanceB, A instanceA) {
+        mapBtoA(instanceB, instanceA, new MappingContext());
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.DedicatedMapperFacade#mapAtoB(java.lang.Object,
+     * ma.glasnost.orika.MappingContext)
+     */
+    @SuppressWarnings("unchecked")
+    public B mapAtoB(A instanceA, MappingContext context) {
+        
+        if (aToB == null) {
+            synchronized (this) {
+                if (aToB == null) {
+                    aToB = mapperFacade.resolveMappingStrategy(instanceA, sourceType, destinationType, false, context);
+                }
+            }
+        }
+        return (B) aToB.map(instanceA, null, context);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.DedicatedMapperFacade#mapBtoA(java.lang.Object,
+     * ma.glasnost.orika.MappingContext)
+     */
+    @SuppressWarnings("unchecked")
+    public A mapBtoA(B instanceB, MappingContext context) {
+        if (bToA == null) {
+            synchronized (this) {
+                if (bToA == null) {
+                    bToA = mapperFacade.resolveMappingStrategy(instanceB, destinationType, sourceType, false, context);
+                }
+            }
+        }
+        return (A) bToA.map(instanceB, null, context);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.DedicatedMapperFacade#mapAtoB(java.lang.Object,
+     * java.lang.Object, ma.glasnost.orika.MappingContext)
+     */
+    public void mapAtoB(A instanceA, B instanceB, MappingContext context) {
+        if (aToBInPlace == null) {
+            synchronized (this) {
+                if (aToBInPlace == null) {
+                    aToBInPlace = mapperFacade.resolveMappingStrategy(instanceA, sourceType, destinationType, true, context);
+                }
+            }
+        }
+        aToBInPlace.map(instanceA, instanceB, context);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.DedicatedMapperFacade#mapBtoA(java.lang.Object,
+     * java.lang.Object, ma.glasnost.orika.MappingContext)
+     */
+    public void mapBtoA(B instanceB, A instanceA, MappingContext context) {
+        if (bToAInPlace == null) {
+            synchronized (this) {
+                if (bToAInPlace == null) {
+                    bToAInPlace = mapperFacade.resolveMappingStrategy(instanceB, destinationType, sourceType, false, context);
+                }
+            }
+        }
+        bToAInPlace.map(instanceB, instanceA, context);
+    }
 }

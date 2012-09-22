@@ -13,7 +13,9 @@ import com.inspiresoftware.lib.dto.geda.adapter.BeanFactory;
 import com.inspiresoftware.lib.dto.geda.assembler.Assembler;
 import com.inspiresoftware.lib.dto.geda.assembler.DTOAssembler;
 import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Graph;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.GraphDTO;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
 
 /**
@@ -27,7 +29,7 @@ public class GeDABasicMapper implements Mapper {
 
     private final BeanFactory bf = new GeDABeanFactory();
     private final Assembler asm = DTOAssembler.newAssembler(PersonDTO.class, Person.class);
-
+    private final Assembler graphAsm = DTOAssembler.newAssembler(GraphDTO.class, Graph.class);
 
     public Object fromEntity(final Object entity) {
         final PersonDTO person = new PersonDTO();
@@ -40,4 +42,10 @@ public class GeDABasicMapper implements Mapper {
         asm.assembleEntity(dto, person, null, bf);
         return person;
     }
+    
+    public Object fromEntityNested(Object entity) {
+        GraphDTO graphDto = new GraphDTO();
+        graphAsm.assembleEntity((Graph)entity, graphDto, null, bf);
+        return graphDto;
+     }
 }

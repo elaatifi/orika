@@ -373,4 +373,12 @@ public class ConfigurableMapper implements MapperFacade {
         return facade.dedicatedMapperFor(sourceType, destinationType, containsCycles);
     }
 
+    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
+        return facade.dedicatedMapperFor(aType, bType);
+    }
+
+    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
+        return facade.dedicatedMapperFor(aType, bType, containsCycles);
+    }
+    
 }

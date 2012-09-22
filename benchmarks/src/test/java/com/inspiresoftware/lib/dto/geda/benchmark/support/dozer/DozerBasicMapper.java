@@ -9,12 +9,15 @@
 
 package com.inspiresoftware.lib.dto.geda.benchmark.support.dozer;
 
-import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
-import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
-import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
+import java.util.Arrays;
+
 import org.dozer.DozerBeanMapper;
 
-import java.util.Arrays;
+import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Graph;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.GraphDTO;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
 
 /**
  * .
@@ -37,5 +40,11 @@ public class DozerBasicMapper implements Mapper {
         Person entity = new Person();
         mapper.map(dto, entity);
         return entity;
+    }
+
+    public Object fromEntityNested(Object entity) {
+       GraphDTO graphDto = new GraphDTO();
+       mapper.map((Graph)entity, graphDto);
+       return graphDto;
     }
 }

@@ -13,7 +13,9 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.PropertyMap;
 
 import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Graph;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.GraphDTO;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
 
 /**
@@ -27,6 +29,7 @@ public class ModelMapperMapper implements Mapper {
 
     private ModelMapper mapperFromDto;
     private ModelMapper mapperFromEntity;
+    private ModelMapper mapperFromGraph;
 
     public ModelMapperMapper() {
         mapperFromDto = new ModelMapper();
@@ -45,13 +48,35 @@ public class ModelMapperMapper implements Mapper {
                 map().setLastName(source.getName().getSurname());
             }
         });
+        mapperFromGraph = new ModelMapper();
+        mapperFromGraph.addMappings(new PropertyMap<Graph, GraphDTO>() {
+            @Override
+            protected void configure() {
+               /* no special mappings here */
+            }
+        });
+        
     }
 
     public Object fromEntity(final Object entity) {
-        return mapperFromEntity.map(entity, PersonDTO.class);
+        PersonDTO dto = new PersonDTO();
+        mapperFromEntity.map(entity, dto);
+        return dto;
     }
 
     public Object fromDto(final Object dto) {
-        return mapperFromDto.map(dto, Person.class);
+        Person entity = new Person();
+        mapperFromDto.map(dto, entity);
+        return entity;
+    }
+
+    /* (non-Javadoc)
+     * @see com.inspiresoftware.lib.dto.geda.benchmark.Mapper#fromEntityNested(java.lang.Object)
+     */
+    @Override
+    public Object fromEntityNested(Object entity) {
+        GraphDTO dto = new GraphDTO();
+        mapperFromDto.map(dto, entity);
+        return entity;
     }
 }

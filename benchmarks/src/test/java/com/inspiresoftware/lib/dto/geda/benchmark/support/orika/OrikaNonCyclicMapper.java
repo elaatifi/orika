@@ -17,21 +17,20 @@ import ma.glasnost.orika.metadata.TypeFactory;
 
 import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Address;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Graph;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.AddressDTO;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.GraphDTO;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
 
 /**
- * .
- * <p/>
- * User: denispavlov
- * Date: Sep 17, 2012
- * Time: 12:04:50 PM
+ * 
  */
 public class OrikaNonCyclicMapper implements Mapper {
 
     private MapperFacade mapperFacade;
     private DedicatedMapperFacade<Person, PersonDTO> mapper;
+    private DedicatedMapperFacade<Graph, GraphDTO> graphMapper;
     
     public OrikaNonCyclicMapper() {
         final MapperFactory factory = new DefaultMapperFactory.Builder().build();
@@ -49,10 +48,10 @@ public class OrikaNonCyclicMapper implements Mapper {
             field("currentAddress", "currentAddress").
             toClassMap()
         );
+        factory.registerClassMap(factory.classMap(Graph.class, GraphDTO.class));
         this.mapperFacade = factory.getMapperFacade();
-        this.mapper = mapperFacade.dedicatedMapperFor(
-                TypeFactory.valueOf(Person.class), 
-                TypeFactory.valueOf(PersonDTO.class), false);
+        this.mapper = mapperFacade.dedicatedMapperFor(Person.class, PersonDTO.class, false);
+        this.graphMapper = mapperFacade.dedicatedMapperFor(Graph.class, GraphDTO.class, false);
     }
 
     public Object fromEntity(final Object entity) {
@@ -65,5 +64,11 @@ public class OrikaNonCyclicMapper implements Mapper {
         Person entity = new Person();
         mapper.mapBtoA((PersonDTO) dto, entity);
         return entity;
+    }
+
+    public Object fromEntityNested(Object entity) {
+        GraphDTO dto = new GraphDTO();
+        graphMapper.mapAtoB((Graph) entity, dto);
+        return dto;
     }
 }

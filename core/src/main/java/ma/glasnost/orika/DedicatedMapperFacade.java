@@ -36,6 +36,16 @@ public interface DedicatedMapperFacade<A, B> {
     public B mapAtoB(A instanceA);
     
     /**
+     * Generates a new instance of the 'B' type based on the specified
+     * instance of 'A' 
+     * 
+     * @param source
+     * @param context
+     * @return
+     */
+    public B mapAtoB(A instanceA, MappingContext context);
+    
+    /**
      * Generates a new instance of the 'A' type based on the specified
      * instance of 'B' 
      * 
@@ -43,6 +53,16 @@ public interface DedicatedMapperFacade<A, B> {
      * @return
      */
     public A mapBtoA(B instanceB);
+    
+    /**
+     * Generates a new instance of the 'A' type based on the specified
+     * instance of 'B' 
+     * 
+     * @param source
+     * @param context
+     * @return
+     */
+    public A mapBtoA(B instanceB, MappingContext context);
     
     /**
      * 
@@ -55,6 +75,17 @@ public interface DedicatedMapperFacade<A, B> {
     public void mapAtoB(A instanceA, B instanceB);
     
     /**
+     * 
+     * Maps properties (in place) from the instance of 'A' to the provided
+     * instance of 'B' 
+     * 
+     * @param source
+     * @param context
+     * @param destination
+     */
+    public void mapAtoB(A instanceA, B instanceB, MappingContext context);
+    
+    /**
      * Maps properties (in place) from the instance of 'B' to the provided
      * instance of 'A'
      * 
@@ -62,5 +93,15 @@ public interface DedicatedMapperFacade<A, B> {
      * @param source
      */
     public void mapBtoA(B instanceB, A instanceA);
+    
+    /**
+     * Maps properties (in place) from the instance of 'B' to the provided
+     * instance of 'A'
+     * 
+     * @param destination
+     * @param context
+     * @param source
+     */
+    public void mapBtoA(B instanceB, A instanceA, MappingContext context);
     
 }

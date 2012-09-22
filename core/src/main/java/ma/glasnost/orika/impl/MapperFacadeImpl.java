@@ -802,15 +802,37 @@ public class MapperFacadeImpl implements MapperFacade {
         mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
     }
     
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata.Type, ma.glasnost.orika.metadata.Type)
+     */
     public <S,D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
-        return new DefaultDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
+        return dedicatedMapperFor(sourceType, destinationType, true);
     }
     
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata.Type, ma.glasnost.orika.metadata.Type, boolean)
+     */
     public <S,D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
         if (!containsCycles) {
             return new NonCyclicDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
         } else {
-            return dedicatedMapperFor(sourceType, destinationType);
+            return new DefaultDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
         }
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class, java.lang.Class)
+     */
+    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
+        return dedicatedMapperFor(aType, bType, true);
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class, java.lang.Class, boolean)
+     */
+    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
+        return dedicatedMapperFor(TypeFactory.valueOf(aType),TypeFactory.valueOf(bType), containsCycles);
     } 
+    
+    
 }

@@ -33,5 +33,13 @@ public interface Mapper {
      * @return entity with data
      */
     Object fromDto(Object dto);
+    
+    /**
+     * Convert the nested entity to DTO.
+     * 
+     * @param dto
+     * @return
+     */
+    Object fromEntityNested(Object entity);
 
 }

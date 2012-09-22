@@ -9,13 +9,20 @@
 
 package com.inspiresoftware.lib.dto.geda.benchmark.support.manual;
 
+import java.util.HashSet;
+
 import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Address;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Country;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Graph;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Name;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Person;
+import com.inspiresoftware.lib.dto.geda.benchmark.domain.Segment;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.AddressDTO;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.GraphDTO;
 import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.PointDTO;
+import com.inspiresoftware.lib.dto.geda.benchmark.dto.SegmentDTO;
 
 /**
  * .
@@ -70,4 +77,30 @@ public class ManualBasicMapper implements Mapper {
         }
         return person;
     }
+
+    
+    public Object fromEntityNested(Object entity) {
+        GraphDTO graphDto = new GraphDTO();
+        graphDto.setPoints(new HashSet<PointDTO>());
+        graphDto.setSegments(new HashSet<SegmentDTO>());
+        Graph source = (Graph)entity;
+        for (Segment segment: source.getSegments()) {
+            SegmentDTO s = new SegmentDTO();
+            PointDTO p1 = new PointDTO();
+            p1.setX(segment.getPoint1().getX());
+            p1.setY(segment.getPoint1().getY());
+            p1.setZ(segment.getPoint1().getZ());
+            PointDTO p2 = new PointDTO();
+            p2.setX(segment.getPoint2().getX());
+            p2.setY(segment.getPoint2().getY());
+            p2.setZ(segment.getPoint2().getZ());
+            s.setPoint1(p1);
+            s.setPoint2(p2);
+            
+            graphDto.getSegments().add(s);
+            graphDto.getPoints().add(p1);
+            graphDto.getPoints().add(p2);
+        }
+        return graphDto;
+     }
 }
