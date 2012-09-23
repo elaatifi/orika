@@ -23,6 +23,7 @@ import java.util.List;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.CustomMapper;
+import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
@@ -32,6 +33,7 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
     protected Mapper<Object, Object> customMapper;
     protected Type<?>[] usedTypes;
     protected Converter<Object, Object>[] usedConverters;
+    protected DedicatedMapperFacade<Object, Object>[] usedMapperFacades;
     private Mapper<Object, Object>[] usedMappers;
     private Type<Object> aType;
     private Type<Object> bType;
@@ -83,6 +85,10 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
     
     public void setUsedConverters(Converter<Object, Object>[] usedConverters) {
         this.usedConverters = usedConverters;
+    }
+    
+    public void setUsedMapperFacades(DedicatedMapperFacade<Object, Object>[] usedMapperFacades) {
+        this.usedMapperFacades = usedMapperFacades;
     }
     
     @Override

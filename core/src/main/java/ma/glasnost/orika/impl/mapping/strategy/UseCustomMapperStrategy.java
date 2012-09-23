@@ -39,6 +39,8 @@ public abstract class UseCustomMapperStrategy implements MappingStrategy {
 
     public Object map(final Object sourceObject, final Object destinationObject, final MappingContext context) {
         
+        context.beginMapping();
+        
     	Object resolvedSourceObject = unenhancer.unenhanceObject(sourceObject, sourceType);
         
         Object newInstance = getInstance(resolvedSourceObject, destinationObject, context);
@@ -46,6 +48,8 @@ public abstract class UseCustomMapperStrategy implements MappingStrategy {
         context.cacheMappedObject(sourceObject, destinationType, newInstance);
         
         customMapper.map(resolvedSourceObject, newInstance, context);
+        
+        context.endMapping();
         
         return newInstance;
     }
@@ -69,6 +73,10 @@ public abstract class UseCustomMapperStrategy implements MappingStrategy {
 				Object destinationObject, MappingContext context) {
 			customMapper.mapAtoB(sourceObject, destinationObject, context);
 		}
+		
+		public String toString() {
+		    return customMapper.getClass().getSimpleName() + ".mapAtoB";
+		}
     }
     
     public static class ReverseMapperReference extends ForwardMapperReference {
@@ -82,6 +90,9 @@ public abstract class UseCustomMapperStrategy implements MappingStrategy {
 				Object destinationObject, MappingContext context) {
 			customMapper.mapBtoA(sourceObject, destinationObject, context);
 		}
+    	
+    	public String toString() {
+            return customMapper.getClass().getSimpleName() + ".mapBtoA";
+        }
     }
-    
 }

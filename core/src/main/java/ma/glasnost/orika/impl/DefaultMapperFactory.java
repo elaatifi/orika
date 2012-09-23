@@ -35,12 +35,14 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.MappingContextFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
@@ -78,12 +80,13 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMapperFactory.class);
     
-    private final MapperFacade mapperFacade;
+    private final MapperFacadeImpl mapperFacade;
     private final MapperGenerator mapperGenerator;
     private final ObjectFactoryGenerator objectFactoryGenerator;
     
     private final Map<MapperKey, ClassMap<Object, Object>> classMapRegistry;
-    private final SortedCollection<Mapper<?,?>> mappersRegistry;
+    private final SortedCollection<Mapper<?, ?>> mappersRegistry;
+    private final MappingContextFactory contextFactory;
     private final ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> objectFactoryRegistry;
     private final Map<Type<?>, Set<Type<?>>> aToBRegistry;
     private final List<DefaultFieldMapper> defaultFieldMappers;
@@ -119,13 +122,14 @@ public class DefaultMapperFactory implements MapperFactory {
         this.converterFactory = builder.converterFactory;
         this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
-        this.mappersRegistry = new SortedCollection<Mapper<?,?>>(MAPPER_COMPARATOR);
+        this.mappersRegistry = new SortedCollection<Mapper<?, ?>>(MAPPER_COMPARATOR);
         this.aToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
         this.unenhanceStrategy = buildUnenhanceStrategy(builder.unenhanceStrategy, builder.superTypeStrategy);
-        this.mapperFacade = new MapperFacadeImpl(this, unenhanceStrategy);
+        this.contextFactory = new MappingContext.Factory();
+        this.mapperFacade = new MapperFacadeImpl(this, contextFactory, unenhanceStrategy);
         this.concreteTypeRegistry = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
         
         if (builder.classMaps != null) {
@@ -146,8 +150,8 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         /*
-         * Register default concrete types for common collection types;
-         * these can be overridden as needed by user code.
+         * Register default concrete types for common collection types; these
+         * can be overridden as needed by user code.
          */
         this.registerConcreteType(Collection.class, ArrayList.class);
         this.registerConcreteType(List.class, ArrayList.class);
@@ -157,9 +161,8 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     private static final int compare(Type<?> aType1, Type<?> bType1, Type<?> aType2, Type<?> bType2) {
-            
-        if ((aType1.equals(aType2) && bType1.equals(bType2))
-                || (aType1.equals(bType2) && aType2.equals(bType1)) ) {
+        
+        if ((aType1.equals(aType2) && bType1.equals(bType2)) || (aType1.equals(bType2) && aType2.equals(bType1))) {
             return 0;
         } else if ((aType1.isAssignableFrom(aType2) && bType1.isAssignableFrom(bType2))
                 || (aType1.isAssignableFrom(bType2) && bType1.isAssignableFrom(aType2))) {
@@ -169,7 +172,8 @@ public class DefaultMapperFactory implements MapperFactory {
             return -1;
         } else {
             /*
-             * Unrelated, thus they should be considered "equal" in regards to sorting
+             * Unrelated, thus they should be considered "equal" in regards to
+             * sorting
              */
             return 0;
         }
@@ -181,10 +185,10 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     };
     
-    private static final Comparator<Mapper<?,?>> MAPPER_COMPARATOR = new Comparator<Mapper<?,?>>() {
+    private static final Comparator<Mapper<?, ?>> MAPPER_COMPARATOR = new Comparator<Mapper<?, ?>>() {
         public int compare(Mapper<?, ?> mapper1, Mapper<?, ?> mapper2) {
             return DefaultMapperFactory.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType());
-        } 
+        }
     };
     
     /**
@@ -524,8 +528,25 @@ public class DefaultMapperFactory implements MapperFactory {
         
     }
     
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.MapperFactory#lookupMapper(ma.glasnost.orika.metadata
+     * .MapperKey)
+     */
     @SuppressWarnings("unchecked")
-    public Mapper<Object, Object> lookupMapper(MapperKey mapperKey) {
+    public <A, B> Mapper<A, B> lookupMapper(MapperKey mapperKey) {
+        MappingContext context = contextFactory.getContext();
+        try {
+            return (Mapper<A, B>) lookupMapper(mapperKey, context);
+        } finally {
+            contextFactory.release(context);
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public Mapper<Object, Object> lookupMapper(MapperKey mapperKey, MappingContext context) {
         
         Mapper<?, ?> mapper = getRegisteredMapper(mapperKey.getAType(), mapperKey.getBType(), true);
         if (mapper == null && useAutoMapping) {
@@ -533,26 +554,25 @@ public class DefaultMapperFactory implements MapperFactory {
                 try {
                     /*
                      * We shouldn't create a mapper for an immutable type;
-                     * although it will succeed in generating an empty
-                     * mapper, it won't actually result in a valid mapping,
-                     * so it's better to throw an exception to indicate more
-                     * clearly that something went wrong. However, there is
-                     * a possibility that a custom ObjectFactory was
-                     * registered for the immutable type, which would be
-                     * valid.
+                     * although it will succeed in generating an empty mapper,
+                     * it won't actually result in a valid mapping, so it's
+                     * better to throw an exception to indicate more clearly
+                     * that something went wrong. However, there is a
+                     * possibility that a custom ObjectFactory was registered
+                     * for the immutable type, which would be valid.
                      */
                     if (ClassUtil.isImmutable(mapperKey.getBType()) && !objectFactoryRegistry.containsKey(mapperKey.getBType())) {
                         throw new MappingException("No converter registered for conversion from " + mapperKey.getAType() + " to "
-                                + mapperKey.getBType() + ", nor any ObjectFactory which can generate " + mapperKey.getBType()
-                                + " from " + mapperKey.getAType());
+                                + mapperKey.getBType() + ", nor any ObjectFactory which can generate " + mapperKey.getBType() + " from "
+                                + mapperKey.getAType());
                     }
                     
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug("No mapper registered for " + mapperKey + ": attempting to generate");
                     }
                     final ClassMap<?, ?> classMap = classMap(mapperKey.getAType(), mapperKey.getBType()).byDefault().toClassMap();
-                    buildObjectFactories(classMap);
-                    mapper = buildMapper(classMap, true);
+                    buildObjectFactories(classMap, context);
+                    mapper = buildMapper(classMap, true, context);
                     initializeUsedMappers(classMap);
                 } catch (MappingException e) {
                     e.setSourceType(mapperKey.getAType());
@@ -581,14 +601,16 @@ public class DefaultMapperFactory implements MapperFactory {
     /**
      * @param typeA
      * @param typeB
-     * @param includeAutoGeneratedMappers whether auto-generated mappers should be included in the lookup
+     * @param includeAutoGeneratedMappers
+     *            whether auto-generated mappers should be included in the
+     *            lookup
      * 
      * @return a registered Mapper which is able to map the specified types
      */
     @SuppressWarnings("unchecked")
     protected <A, B> Mapper<A, B> getRegisteredMapper(Type<A> typeA, Type<B> typeB, boolean includeAutoGeneratedMappers) {
-
-        for (Mapper<?,?> mapper : mappersRegistry) {
+        
+        for (Mapper<?, ?> mapper : mappersRegistry) {
             if ((mapper.getAType().isAssignableFrom(typeA) && mapper.getBType().isAssignableFrom(typeB))
                     || (mapper.getAType().isAssignableFrom(typeB) && mapper.getBType().isAssignableFrom(typeA))) {
                 if (includeAutoGeneratedMappers || !(mapper instanceof GeneratedMapperBase)) {
@@ -647,8 +669,24 @@ public class DefaultMapperFactory implements MapperFactory {
         this.concreteTypeRegistry.put(abstractType, TypeFactory.valueOf(concreteType));
     }
     
-    @SuppressWarnings("unchecked")
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.MapperFactory#lookupObjectFactory(ma.glasnost.orika
+     * .metadata.Type)
+     */
     public <T> ObjectFactory<T> lookupObjectFactory(Type<T> targetType) {
+        MappingContext context = contextFactory.getContext();
+        try {
+            return lookupObjectFactory(targetType, context);
+        } finally {
+            contextFactory.release(context);
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public <T> ObjectFactory<T> lookupObjectFactory(Type<T> targetType, MappingContext context) {
         if (targetType == null) {
             return null;
         }
@@ -667,7 +705,7 @@ public class DefaultMapperFactory implements MapperFactory {
                         result = (ObjectFactory<T>) USE_DEFAULT_CONSTRUCTOR;
                     } else {
                         try {
-                            result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType);
+                            result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType, context);
                         } catch (MappingException e) {
                             for (Constructor<?> c : constructors) {
                                 if (c.getParameterTypes().length == 0) {
@@ -784,9 +822,11 @@ public class DefaultMapperFactory implements MapperFactory {
     public <A, B> void registerClassMap(ClassMap<A, B> classMap) {
         classMapRegistry.put(new MapperKey(classMap.getAType(), classMap.getBType()), (ClassMap<Object, Object>) classMap);
         if (isBuilding || isBuilt) {
-            buildMapper(classMap, /* isAutoGenerated== */isBuilding);
+            MappingContext context = new MappingContext();
             
-            buildObjectFactories(classMap);
+            buildMapper(classMap, /* isAutoGenerated== */isBuilding, context);
+            
+            buildObjectFactories(classMap, context);
             initializeUsedMappers(classMap);
         }
     }
@@ -800,16 +840,18 @@ public class DefaultMapperFactory implements MapperFactory {
         if (!isBuilding) {
             isBuilding = true;
             
+            MappingContext context = new MappingContext();
+            
             converterFactory.setMapperFacade(mapperFacade);
             
             buildClassMapRegistry();
             
             for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
-                buildMapper(classMap, false);
+                buildMapper(classMap, false, context);
             }
             
             for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
-                buildObjectFactories(classMap);
+                buildObjectFactories(classMap, context);
                 initializeUsedMappers(classMap);
             }
             
@@ -855,20 +897,20 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     @SuppressWarnings({ "unchecked" })
-    private <S, D> void buildObjectFactories(ClassMap<S, D> classMap) {
+    private <S, D> void buildObjectFactories(ClassMap<S, D> classMap, MappingContext context) {
         Type<?> aType = classMap.getAType();
         Type<?> bType = classMap.getBType();
+        
         if (classMap.getConstructorA() != null && lookupObjectFactory(aType) == null) {
-            GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(aType);
+            GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(aType, context);
             registerObjectFactory(objectFactory, (Type<Object>) aType);
         }
         
         if (classMap.getConstructorB() != null && lookupObjectFactory(bType) == null) {
-            GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(bType);
+            GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(bType, context);
             registerObjectFactory(objectFactory, (Type<Object>) bType);
         }
     }
-   
     
     @SuppressWarnings("unchecked")
     private void initializeUsedMappers(ClassMap<?, ?> classMap) {
@@ -886,7 +928,7 @@ public class DefaultMapperFactory implements MapperFactory {
              * Attempt to auto-determine used mappers for this classmap;
              * however, we should only add the most-specific of the available
              * mappers to avoid calling the same mapper multiple times during a
-             * single map request; 
+             * single map request;
              */
             SortedCollection<MapperKey> usedMappers = new SortedCollection<MapperKey>(MAPPER_KEY_COMPARATOR);
             for (MapperKey key : this.classMapRegistry.keySet()) {
@@ -903,13 +945,12 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         /*
-         * Flip any used mappers which are specified in the wrong direction 
+         * Flip any used mappers which are specified in the wrong direction
          */
-        Mapper<Object,Object>[] usedMappers = parentMappers.toArray(new Mapper[parentMappers.size()]);
-        for (int i=0; i < usedMappers.length; ++i) {
-            Mapper<Object,Object> usedMapper = usedMappers[i];
-            if (usedMapper.getAType().isAssignableFrom(classMap.getBType())
-                    && usedMapper.getBType().isAssignableFrom(classMap.getAType())) {
+        Mapper<Object, Object>[] usedMappers = parentMappers.toArray(new Mapper[parentMappers.size()]);
+        for (int i = 0; i < usedMappers.length; ++i) {
+            Mapper<Object, Object> usedMapper = usedMappers[i];
+            if (usedMapper.getAType().isAssignableFrom(classMap.getBType()) && usedMapper.getBType().isAssignableFrom(classMap.getAType())) {
                 usedMappers[i] = ReversedMapper.reverse(usedMapper);
             }
         }
@@ -933,12 +974,12 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     @SuppressWarnings("unchecked")
-    private GeneratedMapperBase buildMapper(ClassMap<?, ?> classMap, boolean isAutoGenerated) {
+    private GeneratedMapperBase buildMapper(ClassMap<?, ?> classMap, boolean isAutoGenerated, MappingContext context) {
         register(classMap.getAType(), classMap.getBType());
         register(classMap.getBType(), classMap.getAType());
         
         final MapperKey mapperKey = new MapperKey(classMap.getAType(), classMap.getBType());
-        final GeneratedMapperBase mapper = this.mapperGenerator.build(classMap);
+        final GeneratedMapperBase mapper = this.mapperGenerator.build(classMap, context);
         mapper.setMapperFacade(mapperFacade);
         mapper.setFromAutoMapping(isAutoGenerated);
         if (classMap.getCustomizedMapper() != null) {
@@ -1019,12 +1060,55 @@ public class DefaultMapperFactory implements MapperFactory {
      */
     public <A, B> void registerMapper(Mapper<A, B> mapper) {
         synchronized (this) {
-            this.mappersRegistry.add(mapper); 
+            this.mappersRegistry.add(mapper);
             mapper.setMapperFacade(this.mapperFacade);
             register(mapper.getAType(), mapper.getBType());
             register(mapper.getBType(), mapper.getAType());
         }
         
+    }
+    
+    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
+        return dedicatedMapperFor(sourceType, destinationType, true);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata
+     * .Type, ma.glasnost.orika.metadata.Type, boolean)
+     */
+    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
+        if (!isBuilt && !isBuilding) {
+            build();
+        }
+        
+        if (!containsCycles) {
+            return new NonCyclicDedicatedMapperFacade<S, D>(mapperFacade, contextFactory, sourceType, destinationType);
+        } else {
+            return new DefaultDedicatedMapperFacade<S, D>(mapperFacade, contextFactory, sourceType, destinationType);
+        }
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class,
+     * java.lang.Class)
+     */
+    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
+        return dedicatedMapperFor(aType, bType, true);
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class,
+     * java.lang.Class, boolean)
+     */
+    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
+        return dedicatedMapperFor(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
     }
     
 }

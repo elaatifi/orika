@@ -28,7 +28,6 @@ import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
  */
 public class OrikaNonCyclicMapper implements Mapper {
 
-    private MapperFacade mapperFacade;
     private DedicatedMapperFacade<Person, PersonDTO> mapper;
     private DedicatedMapperFacade<Graph, GraphDTO> graphMapper;
     
@@ -49,9 +48,9 @@ public class OrikaNonCyclicMapper implements Mapper {
             toClassMap()
         );
         factory.registerClassMap(factory.classMap(Graph.class, GraphDTO.class));
-        this.mapperFacade = factory.getMapperFacade();
-        this.mapper = mapperFacade.dedicatedMapperFor(Person.class, PersonDTO.class, false);
-        this.graphMapper = mapperFacade.dedicatedMapperFor(Graph.class, GraphDTO.class, false);
+       
+        this.mapper = factory.dedicatedMapperFor(Person.class, PersonDTO.class, false);
+        this.graphMapper = factory.dedicatedMapperFor(Graph.class, GraphDTO.class, false);
     }
 
     public Object fromEntity(final Object entity) {

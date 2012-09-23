@@ -18,15 +18,18 @@
 
 package ma.glasnost.orika.metadata;
 
+import ma.glasnost.orika.MappedTypePair;
 
-public class MapperKey {
 
-	private Type<?> aType;
-	private Type<?> bType;
+public class MapperKey implements MappedTypePair<Object,Object>{
 
-	public MapperKey(Type<?> aType, Type<?> bType) {
-		this.aType = aType;
-		this.bType = bType;
+	private Type<Object> aType;
+	private Type<Object> bType;
+
+	@SuppressWarnings("unchecked")
+    public MapperKey(Type<?> aType, Type<?> bType) {
+		this.aType = (Type<Object>) aType;
+		this.bType = (Type<Object>) bType;
 	}
 
 	@Override
@@ -60,19 +63,21 @@ public class MapperKey {
 		return result;
 	}
 
-	public Type<?> getAType() {
+	public Type<Object> getAType() {
 		return aType;
 	}
 
-	public void setAType(Type<?> aType) {
-		this.aType = aType;
+	@SuppressWarnings("unchecked")
+    public void setAType(Type<? super Object> aType) {
+		this.aType = (Type<Object>) aType;
 	}
 
-	public Type<?> getBType() {
+	public Type<Object> getBType() {
 		return bType;
 	}
 
-	public void setBType(Type<?> bType) {
-		this.bType = bType;
+	@SuppressWarnings("unchecked")
+    public void setBType(Type<?> bType) {
+		this.bType = (Type<Object>) bType;
 	}
 }

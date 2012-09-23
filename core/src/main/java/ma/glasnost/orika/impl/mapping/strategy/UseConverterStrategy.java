@@ -39,6 +39,9 @@ public class UseConverterStrategy implements MappingStrategy {
     }
 
     public Object map(Object sourceObject, Object destinationObject, MappingContext context) {
+        // TODO: mappingContext is not passed to converters, which could 
+        //       be a problem with converters now (recently) having access
+        //       to the MapperFacade; 
         return converter.convert(unenhancer.unenhanceObject(sourceObject, sourceType), destinationType);
     }
 }

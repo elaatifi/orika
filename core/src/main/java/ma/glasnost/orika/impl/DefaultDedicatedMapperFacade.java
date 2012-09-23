@@ -19,7 +19,10 @@ package ma.glasnost.orika.impl;
 
 import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.MappingContextFactory;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
+import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
 
 /**
  * @author matt.deboer@gmail.com
@@ -32,30 +35,65 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
     protected volatile MappingStrategy aToBInPlace;
     protected volatile MappingStrategy bToAInPlace;
     
-    protected final java.lang.reflect.Type sourceType;
-    protected final java.lang.reflect.Type destinationType;
-    protected final MapperFacadeImpl mapperFacade;
     
-    DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, java.lang.reflect.Type sourceType, java.lang.reflect.Type destinationType) {
+    protected final java.lang.reflect.Type rawAType;
+    protected final java.lang.reflect.Type rawBType;
+    protected final Type<A> aType;
+    protected final Type<B> bType;
+    protected final MapperFacadeImpl mapperFacade;
+    protected final MappingContextFactory contextFactory;
+    
+    DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MappingContextFactory contextFactory,  java.lang.reflect.Type typeOfA, java.lang.reflect.Type typeOfB) {
         this.mapperFacade = mapperFacade;
-        this.sourceType = sourceType;
-        this.destinationType = destinationType;
+        this.contextFactory = contextFactory;
+        this.rawAType = typeOfA;
+        this.rawBType = typeOfB;
+        this.aType = TypeFactory.valueOf(typeOfA);
+        this.bType = TypeFactory.valueOf(typeOfB);
+    }
+    
+    public Type<A> getAType() {
+        return aType;
+    }
+    
+    public Type<B> getBType() {
+        return bType;
     }
     
     public B mapAtoB(A instanceA) {
-        return mapAtoB(instanceA, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAtoB(instanceA, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public A mapBtoA(B source) {
-        return mapBtoA(source, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapBtoA(source, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public void mapAtoB(A instanceA, B instanceB) {
-        mapAtoB(instanceA, instanceB, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            mapAtoB(instanceA, instanceB, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public void mapBtoA(B instanceB, A instanceA) {
-        mapBtoA(instanceB, instanceA, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            mapBtoA(instanceB, instanceA, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     /*
@@ -66,15 +104,18 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
      */
     @SuppressWarnings("unchecked")
     public B mapAtoB(A instanceA, MappingContext context) {
-        
-        if (aToB == null) {
-            synchronized (this) {
-                if (aToB == null) {
-                    aToB = mapperFacade.resolveMappingStrategy(instanceA, sourceType, destinationType, false, context);
+        B result = (B) context.getMappedObject(instanceA, bType);
+        if (result == null) {
+            if (aToB == null) {
+                synchronized (this) {
+                    if (aToB == null) {
+                        aToB = mapperFacade.resolveMappingStrategy(instanceA, rawAType, rawBType, false, context);
+                    }
                 }
             }
+            result = (B) aToB.map(instanceA, null, context);
         }
-        return (B) aToB.map(instanceA, null, context);
+        return result;
     }
     
     /*
@@ -85,14 +126,18 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
      */
     @SuppressWarnings("unchecked")
     public A mapBtoA(B instanceB, MappingContext context) {
-        if (bToA == null) {
-            synchronized (this) {
-                if (bToA == null) {
-                    bToA = mapperFacade.resolveMappingStrategy(instanceB, destinationType, sourceType, false, context);
+        A result = (A) context.getMappedObject(instanceB, aType);
+        if (result == null) {
+            if (bToA == null) {
+                synchronized (this) {
+                    if (bToA == null) {
+                        bToA = mapperFacade.resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
+                    }
                 }
             }
+            result = (A) bToA.map(instanceB, null, context);
         }
-        return (A) bToA.map(instanceB, null, context);
+        return result;
     }
     
     /*
@@ -102,14 +147,16 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
     public void mapAtoB(A instanceA, B instanceB, MappingContext context) {
-        if (aToBInPlace == null) {
-            synchronized (this) {
-                if (aToBInPlace == null) {
-                    aToBInPlace = mapperFacade.resolveMappingStrategy(instanceA, sourceType, destinationType, true, context);
+        if (context.getMappedObject(instanceA, bType) == null) {
+            if (aToBInPlace == null) {
+                synchronized (this) {
+                    if (aToBInPlace == null) {
+                        aToBInPlace = mapperFacade.resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
+                    }
                 }
             }
+            aToBInPlace.map(instanceA, instanceB, context);
         }
-        aToBInPlace.map(instanceA, instanceB, context);
     }
     
     /*
@@ -119,13 +166,19 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
     public void mapBtoA(B instanceB, A instanceA, MappingContext context) {
-        if (bToAInPlace == null) {
-            synchronized (this) {
-                if (bToAInPlace == null) {
-                    bToAInPlace = mapperFacade.resolveMappingStrategy(instanceB, destinationType, sourceType, false, context);
+        if (context.getMappedObject(instanceB, aType) == null) {
+            if (bToAInPlace == null) {
+                synchronized (this) {
+                    if (bToAInPlace == null) {
+                        bToAInPlace = mapperFacade.resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
+                    }
                 }
             }
+            bToAInPlace.map(instanceB, instanceA, context);
         }
-        bToAInPlace.map(instanceB, instanceA, context);
+    }
+    
+    public String toString() {
+        return getClass().getSimpleName() + "(" + aType +", " + bType + ")";
     }
 }

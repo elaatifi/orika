@@ -21,22 +21,48 @@ package ma.glasnost.orika;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import javolution.context.ObjectFactory;
+import javolution.lang.Reusable;
+import javolution.util.FastList;
 import javolution.util.FastMap;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
+import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
-public class MappingContext {
+public class MappingContext implements Reusable {
 	
 	private final Map<Type<?>, Type<?>> mapping;
 	private final Map<java.lang.reflect.Type, Map<Object, Object>> cache;
+	private final FastList<FastList<ClassMap<?,?>>> mappersSeen;
 	private MappingStrategy strategy;
+	private boolean isNew = true;
+	private int depth;
+	
+	public static class Factory extends ObjectFactory<MappingContext> implements MappingContextFactory {
+
+        @Override
+        protected MappingContext create() {
+            return new MappingContext();
+        }
+        
+        public MappingContext getContext() {
+            return object();
+        }
+        
+        public void release(MappingContext context) {
+            recycle(context);
+        }
+	    
+	}
+	
 
 	public MappingContext() {
 		mapping = new FastMap<Type<?>, Type<?>>();
 		cache = new FastMap<java.lang.reflect.Type, Map<Object, Object>>();
+		mappersSeen = new FastList<FastList<ClassMap<?,?>>>();
 	}
-
+	
 	public void setResolvedMappingStrategy(MappingStrategy strategy) {
 	    this.strategy = strategy;
 	}
@@ -48,7 +74,9 @@ public class MappingContext {
 	@SuppressWarnings("unchecked")
 	public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType,
 			Type<D> destinationType) {
-
+	    if (isNew) {
+	        return null;
+	    }
 		final Type<?> type = mapping.get(sourceType);
 		if (type != null && destinationType.isAssignableFrom(type)) {
 			return (Type<? extends D>) type;
@@ -59,6 +87,7 @@ public class MappingContext {
 	public void registerConcreteClass(Type<?> subjectClass,
 			Type<?> concreteClass) {
 		mapping.put(subjectClass, concreteClass);
+		isNew = false;
 	}
 
 	@Deprecated
@@ -68,13 +97,13 @@ public class MappingContext {
 
 	public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType,
 			D destination) {
-
 		Map<Object, Object> localCache = cache.get(destinationType);
 		if (localCache == null) {
 			localCache = new IdentityHashMap<Object, Object>(2);
 			cache.put(destinationType, localCache);
 		}
 		localCache.put(source, destination);
+		isNew = false;
 	}
 
 	/**
@@ -85,15 +114,49 @@ public class MappingContext {
 	 */
 	@Deprecated
 	public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
-		
+		if (isNew) {
+		    return false;
+		}
 		Map<Object, Object> localCache = cache.get(destinationType);
 		return (localCache != null && localCache.get(source) != null);
 	}
 
 	@SuppressWarnings("unchecked")
 	public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
-		Map<Object, Object> localCache = cache.get(destinationType);
+		
+	    if (isNew) {
+	        return null;
+	    }
+	    Map<Object, Object> localCache = cache.get(destinationType);
 		return (D) (localCache == null ? null : localCache.get(source));
 	}
+
+	public void mapped(ClassMap<?,?> classMap) {
+	    FastList<ClassMap<?,?>> list = mappersSeen.isEmpty() ? null : this.mappersSeen.get(depth-1);
+	    if (list == null) {
+	        list = new FastList<ClassMap<?,?>>();
+	    }
+	    list.add(classMap);
+	}
+	
+	public void beginMapping() {
+	    ++depth;
+	}
+	
+	public void endMapping() {
+	    --depth;
+	}
+	
+    /* (non-Javadoc)
+     * @see javolution.lang.Reusable#reset()
+     */
+    public void reset() {
+        cache.clear();
+        mapping.clear();
+        mappersSeen.clear();
+        strategy = null;
+        isNew = true;
+        depth = 0;
+    }
 	
 }

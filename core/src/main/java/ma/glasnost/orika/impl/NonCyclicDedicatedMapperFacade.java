@@ -18,10 +18,11 @@
 package ma.glasnost.orika.impl;
 
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.MappingContextFactory;
 
 /**
  * @author matt.deboer@gmail.com
- *
+ * 
  */
 public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapperFacade<A, B> {
     
@@ -30,37 +31,36 @@ public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapper
         public <S, D> void cacheMappedObject(S source, D destination) {
             // No-op
         }
-
-        public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType,
-                D destination) {
-         // No-op
+        
+        public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType, D destination) {
+            // No-op
         }
-
+        
         public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
             return false;
         }
-
+        
         public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
             return null;
         }
     }
     
-
     private final MappingContext nonCyclicContext;
     
-    NonCyclicDedicatedMapperFacade(MapperFacadeImpl mapperFacade, java.lang.reflect.Type sourceType, java.lang.reflect.Type destinationType) {
-        super(mapperFacade, sourceType, destinationType);
+    NonCyclicDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MappingContextFactory contextFactory, java.lang.reflect.Type sourceType,
+            java.lang.reflect.Type destinationType) {
+        super(mapperFacade, contextFactory, sourceType, destinationType);
         this.nonCyclicContext = new NonCyclicMappingContext();
     }
     
     public B mapAtoB(A source) {
         return super.mapAtoB(source, nonCyclicContext);
     }
-     
+    
     public A mapBtoA(B source) {
         return super.mapBtoA(source, nonCyclicContext);
     }
-     
+    
     public void mapAtoB(A source, B destination) {
         super.mapAtoB(source, destination, nonCyclicContext);
     }
@@ -68,6 +68,4 @@ public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapper
     public void mapBtoA(B destination, A source) {
         super.mapBtoA(destination, source, nonCyclicContext);
     }
- }
-    
-
+}

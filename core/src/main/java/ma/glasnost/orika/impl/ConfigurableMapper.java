@@ -84,6 +84,7 @@ import ma.glasnost.orika.metadata.Type;
 public class ConfigurableMapper implements MapperFacade {
 
     private final MapperFacade facade;
+    private final DefaultMapperFactory factory;
     
     protected ConfigurableMapper() {
         
@@ -93,7 +94,7 @@ public class ConfigurableMapper implements MapperFacade {
          */
         configureFactoryBuilder(factoryBuilder);
         
-        MapperFactory factory = factoryBuilder.build();
+        factory = factoryBuilder.build();
         
         /*
          * Apply customizations/configurations
@@ -366,19 +367,20 @@ public class ConfigurableMapper implements MapperFacade {
     }
 
     public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
-        return facade.dedicatedMapperFor(sourceType, destinationType);
+        return factory.dedicatedMapperFor(sourceType, destinationType);
     }
 
     public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
-        return facade.dedicatedMapperFor(sourceType, destinationType, containsCycles);
+        return factory.dedicatedMapperFor(sourceType, destinationType, containsCycles);
     }
 
     public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
-        return facade.dedicatedMapperFor(aType, bType);
+        return factory.dedicatedMapperFor(aType, bType);
     }
 
     public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
-        return facade.dedicatedMapperFor(aType, bType, containsCycles);
+        return factory.dedicatedMapperFor(aType, bType, containsCycles);
     }
+
     
 }

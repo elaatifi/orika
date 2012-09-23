@@ -41,7 +41,7 @@ public class LaunchTestsForProfiler {
     public static void main(String[] args) throws IOException {
         
         File classFolder = new File(LaunchTestsForProfiler.class.getResource("/").getFile());
-        Class<?>[] testClasses = DynamicSuite.findTestCases(classFolder, ".*TestCase.class").toArray(new Class<?>[0]);
+        Class<?>[] testClasses = DynamicSuite.findTestCases(classFolder, ".*TestCase").toArray(new Class<?>[0]);
         
         
         System.out.println("Press enter when ready to start...");

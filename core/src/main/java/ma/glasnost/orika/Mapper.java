@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika;
 
-import ma.glasnost.orika.metadata.Type;
 
 /**
  * Defines a contract between internal parts of Orika such as
@@ -29,7 +28,7 @@ import ma.glasnost.orika.metadata.Type;
  * 
  * @see MapperFacade
  */
-public interface Mapper<A, B> {
+public interface Mapper<A, B> extends MappedTypePair<A, B> {
     
     /**
      * Maps the properties of an instance of type A to the properties
@@ -64,15 +63,5 @@ public interface Mapper<A, B> {
      * @param mapper
      */
     void setUsedMappers(Mapper<Object, Object>[] mapper);
-    
-    /**
-     * @return the 'A' type for this mapper
-     */
-    Type<A> getAType();
-    
-    /**
-     * @return the 'B' type for this mapper
-     */
-    Type<B> getBType();
     
 }

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.DefaultFieldMapper;
+import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.UtilityResolver;
@@ -40,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * @param <A>
  * @param <B>
  */
-public class ClassMapBuilder<A, B> {
+public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     
 	
 	public static class Factory extends ClassMapBuilderFactory {
@@ -579,14 +580,14 @@ public class ClassMapBuilder<A, B> {
     /**
      * @return the 'A' type for this builder
      */
-    protected Type<?> getAType() {
+    public Type<A> getAType() {
     	return aType;
     }
     
     /**
      * @return the 'B' type for this builder
      */
-    protected Type<?> getBType() {
+    public Type<B> getBType() {
     	return bType;
     }
     

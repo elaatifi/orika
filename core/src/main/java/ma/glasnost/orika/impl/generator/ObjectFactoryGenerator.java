@@ -25,6 +25,7 @@ import java.util.Set;
 
 import javassist.CannotCompileException;
 import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
@@ -58,7 +59,7 @@ public class ObjectFactoryGenerator {
         this.constructorResolverStrategy = constructorResolverStrategy;
     }
     
-    public GeneratedObjectFactory build(Type<?> type) {
+    public GeneratedObjectFactory build(Type<?> type, MappingContext context) {
         
         final String className = type.getSimpleName() + "_ObjectFactory" + nameSuffix;
         
@@ -76,14 +77,16 @@ public class ObjectFactoryGenerator {
             
             UsedTypesContext usedTypes = new UsedTypesContext();
             UsedConvertersContext usedConverters = new UsedConvertersContext();
+            UsedMapperFacadesContext usedMapperFacades = new UsedMapperFacadesContext();
             
-            addCreateMethod(factoryCode, usedTypes, usedConverters, type, logDetails);
+            addCreateMethod(factoryCode, usedTypes, usedConverters, usedMapperFacades, type, logDetails);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
             
             Type<Object>[] usedTypesArray = usedTypes.toArray();
             Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
+            DedicatedMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
             if (logDetails != null) {
             	if (usedTypesArray.length > 0) {
             		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));
@@ -91,10 +94,13 @@ public class ObjectFactoryGenerator {
             	if (usedConvertersArray.length > 0) {
             		logDetails.append("\n\tConverters used: " + Arrays.toString(usedConvertersArray));
             	}
-            	// TODO: what about doing the same thing for custom mappers?
+            	if (usedMapperFacadesArray.length > 0) {
+                    logDetails.append("\n\tDedicatedMapperFacades used: " + Arrays.toString(usedMapperFacadesArray));
+                }
             } 
             objectFactory.setUsedTypes(usedTypesArray);
             objectFactory.setUsedConverters(usedConvertersArray);
+            objectFactory.setUsedMapperFacades(usedMapperFacadesArray);
             
             if (logDetails != null) {
             	LOGGER.debug(logDetails.toString());
@@ -107,10 +113,11 @@ public class ObjectFactoryGenerator {
         } 
     }
     
-    private void addCreateMethod(GeneratedSourceCode context, UsedTypesContext usedTypes, 
-    		UsedConvertersContext usedConverters, Type<?> clazz, StringBuilder logDetails) throws CannotCompileException {
+    private void addCreateMethod(GeneratedSourceCode code, UsedTypesContext usedTypes, 
+    		UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, 
+    		Type<?> clazz, StringBuilder logDetails) throws CannotCompileException {
     	
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, mapperFactory);
+        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, usedMappers, mapperFactory);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
@@ -131,7 +138,7 @@ public class ObjectFactoryGenerator {
                 IllegalArgumentException.class.getCanonicalName());
         out.append("\n}");
         
-        context.addMethod(out.toString());
+        code.addMethod(out.toString());
     }
     
     private void addSourceClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceClass, StringBuilder logDetails) {

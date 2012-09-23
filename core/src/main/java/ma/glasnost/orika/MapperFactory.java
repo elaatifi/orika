@@ -210,6 +210,76 @@ public interface MapperFactory {
      */
     MapperFacade getMapperFacade();
     
+    
+    /**
+     * Returns a DedicatedMapperFacade for the specified source and destination
+     * types; this mapper is bidirectional by default, and provides signatures for
+     * mapping in place, or with instantiation, as needed.
+     * 
+     * @param aType
+     *            the 'A' type for the returned DedicatedMapperFacade
+     * @param bType
+     *            the 'B' type for the returned DedicatedMapperFacade
+     * 
+     */
+    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Type<A> aType, Type<B> bType);
+    
+    /**
+     * Returns a DedicatedMapperFacade for the specified source and destination
+     * types; this mapper is bidirectional by default, and provides signatures for
+     * mapping in place, or with instantiation, as needed.
+     * 
+     * @param aType
+     *            the 'A' type for the returned DedicatedMapperFacade
+     * @param bType
+     *            the 'B' type for the returned DedicatedMapperFacade
+     * 
+     */
+    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType);
+    
+    /**
+     * Returns a DedicatedMapperFacade for the specified source and destination
+     * types; this mapper is bidirectional by default, and provides signatures for
+     * mapping in place, or with instantiation, as needed.<br>
+     * In the case that <code>false</code> is provided for the 'containsCycles' parameter,
+     * an optimized mapper instance will be provided.
+     * 
+     * 
+     * @param aType
+     *            the 'A' type for the returned DedicatedMapperFacade
+     * @param bType
+     *            the 'B' type for the returned DedicatedMapperFacade
+     * @param containsCycles
+     *            true if the object graph for the source and destination types
+     *            may contain cycles in it's graph; if 'false', an optimized
+     *            DedicatedMapperFacade instance can be provided.
+     * 
+     * @return
+     */
+    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Type<A> aType, Type<B> bType, boolean containsCycles);
+    
+    /**
+     * Returns a DedicatedMapperFacade for the specified source and destination
+     * types; this mapper is bidirectional by default, and provides signatures for
+     * mapping in place, or with instantiation, as needed.<br>
+     * In the case that <code>false</code> is provided for the 'containsCycles' parameter,
+     * an optimized mapper instance will be provided.
+     * 
+     * 
+     * @param aType
+     *            the 'A' type for the returned DedicatedMapperFacade
+     * @param bType
+     *            the 'B' type for the returned DedicatedMapperFacade
+     * @param containsCycles
+     *            true if the object graph for the source and destination types
+     *            may contain cycles in it's graph; if 'false', an optimized
+     *            DedicatedMapperFacade instance can be provided.
+     * 
+     * @return
+     */
+    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles);
+    
+    
     /**
      * Get an instance of the ConverterFactory associated with this
      * MapperFactory; it may be used to register Converter instances to be used

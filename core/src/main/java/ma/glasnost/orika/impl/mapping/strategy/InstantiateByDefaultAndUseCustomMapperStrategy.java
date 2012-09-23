@@ -37,4 +37,12 @@ public class InstantiateByDefaultAndUseCustomMapperStrategy extends UseCustomMap
             throw new RuntimeException(e);
         }
     }
+    
+    public String toString() {
+        StringBuilder description = new StringBuilder();
+        description.append(getClass().getSimpleName() + "(");
+        description.append(this.customMapper);
+        description.append(")");
+        return description.toString();
+    }
 }

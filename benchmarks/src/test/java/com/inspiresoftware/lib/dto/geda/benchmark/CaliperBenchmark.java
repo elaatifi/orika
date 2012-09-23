@@ -44,12 +44,14 @@ public class CaliperBenchmark extends SimpleBenchmark {
     public enum Library {
 
         //JAVA_MANUAL(new ManualBasicMapper()),
-        GEDA(new GeDABasicMapper()),
+        
         ORIKA(new OrikaMapper()),
-        ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
-        MODELMAPPER(new ModelMapperMapper()),
-        DOZER(new DozerBasicMapper());
-
+//        ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
+        GEDA(new GeDABasicMapper()),
+//        MODELMAPPER(new ModelMapperMapper()),
+//        DOZER(new DozerBasicMapper());
+;
+        
         private Mapper mapper;
 
         Library(final Mapper mapper) {
@@ -134,8 +136,8 @@ public class CaliperBenchmark extends SimpleBenchmark {
                 mapper.fromDto(personDTOLoaded);
             }
         }
-    }
-
+    } 
+    
     public void timeFromEntityToDTO(int reps) {
         for (int i = 0; i < reps; i++) {
             for (int ii = 0; ii < length; ii++) {
@@ -143,7 +145,7 @@ public class CaliperBenchmark extends SimpleBenchmark {
             }
         }
     }
-
+    
     public void timeNestedEntityToDTO(int reps) {
         for (int i = 0; i < reps; i++) {
             for (int ii = 0; ii < length; ii++) {
@@ -153,7 +155,39 @@ public class CaliperBenchmark extends SimpleBenchmark {
     }
 
     public static void main(String[] args) throws Exception {
-        Runner.main(CaliperBenchmark.class, args);
+        String mode = System.getenv("mode");
+        if ("profile1".equals(mode)) {
+            
+            CaliperBenchmark bm = new CaliperBenchmark();
+            bm.length = 1000;
+            bm.lib = Library.ORIKA;
+            bm.setUp();
+            
+            System.out.println("Press any key when ready");
+            System.in.read();
+            
+            //Runner.main(CaliperBenchmark.class, args);
+            bm.timeFromEntityToDTO(10000);
+            
+            System.out.println("Finished; Press any key when ready");
+            System.in.read();
+        } else if ("profile2".equals(mode)) {
+            CaliperBenchmark bm = new CaliperBenchmark();
+            bm.length = 1000;
+            bm.lib = Library.ORIKA;
+            bm.setUp();
+            
+            System.out.println("Press any key when ready");
+            System.in.read();
+            
+            //Runner.main(CaliperBenchmark.class, args);
+            bm.timeFromDTOToEntity(10000);
+            
+            System.out.println("Finished; Press any key when ready");
+            System.in.read();
+        } else {
+            Runner.main(CaliperBenchmark.class, args);
+        }
     }
 
 }

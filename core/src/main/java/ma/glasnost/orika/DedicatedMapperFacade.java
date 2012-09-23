@@ -17,6 +17,8 @@
  */
 package ma.glasnost.orika;
 
+import ma.glasnost.orika.metadata.Type;
+
 /**
  * DedicatedMapperFacade represents a caching mapper configuration
  * which is dedicated to mapping a particular pair of types.
@@ -103,5 +105,16 @@ public interface DedicatedMapperFacade<A, B> {
      * @param source
      */
     public void mapBtoA(B instanceB, A instanceA, MappingContext context);
+    
+    
+    /**
+     * @return the 'A' type for this DedicatedMapperFacade
+     */
+    public Type<A> getAType();
+    
+    /**
+     * @return the 'B' type for this DedicatedMapperFacade
+     */
+    public Type<B> getBType();
     
 }

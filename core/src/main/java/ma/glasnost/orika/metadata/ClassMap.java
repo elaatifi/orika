@@ -21,6 +21,7 @@ package ma.glasnost.orika.metadata;
 import java.util.Collections;
 import java.util.Set;
 
+import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.Mapper;
 
 /**
@@ -29,7 +30,7 @@ import ma.glasnost.orika.Mapper;
  * @param <A>
  * @param <B>
  */
-public class ClassMap<A, B> {
+public class ClassMap<A, B> implements MappedTypePair<A, B>{
     
     private final Type<A> aType;
     private final Type<B> bType;
@@ -85,14 +86,14 @@ public class ClassMap<A, B> {
     /**
      * @return the 'A' type for the mapping
      */
-    public Type<?> getAType() {
+    public Type<A> getAType() {
         return aType;
     }
     
     /**
      * @return the 'B' type for the mapping
      */
-    public Type<?> getBType() {
+    public Type<B> getBType() {
         return bType;
     }
     

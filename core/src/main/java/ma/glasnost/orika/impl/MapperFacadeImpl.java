@@ -29,12 +29,12 @@ import java.util.Set;
 
 import javolution.util.FastMap;
 import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.MappingContextFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.converter.ConverterFactory;
@@ -53,14 +53,16 @@ import org.slf4j.LoggerFactory;
 public class MapperFacadeImpl implements MapperFacade {
     
     private final MapperFactory mapperFactory;
+    private final MappingContextFactory contextFactory;
     private final UnenhanceStrategy unenhanceStrategy;
     private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new FastMap<MappingStrategyKey, MappingStrategy>();
     
     private final Logger log = LoggerFactory.getLogger(getClass());
     
-    public MapperFacadeImpl(MapperFactory mapperFactory, UnenhanceStrategy unenhanceStrategy) {
+    public MapperFacadeImpl(MapperFactory mapperFactory, MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
         this.unenhanceStrategy = unenhanceStrategy;
+        this.contextFactory = contextFactory;
     }
 
     /**
@@ -119,7 +121,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationClass) {
-        return map(sourceObject, sourceType, destinationClass, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return map(sourceObject, sourceType, destinationClass, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     
@@ -127,8 +134,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * Resolves a reusable MappingStrategy for the given set of inputs.
      * 
      * @param sourceObject
-     * @param sourceType
-     * @param destinationType
+     * @param rawAType
+     * @param rawBType
      * @param context
      * @return
      */
@@ -202,7 +209,6 @@ public class MapperFacadeImpl implements MapperFacade {
                 log.debug(strategyRecorder.describeDetails());
             }
             strategyCache.put(key, strategy);
-            //strategyCache.putStrategy(sourceClass, resolvedSourceType, initialDestinationType, mapInPlace, strategy);
         }
         return strategy;
     }
@@ -301,7 +307,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType) {
-        map(sourceObject, destinationObject, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            map(sourceObject, destinationObject, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        } 
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
@@ -316,7 +327,6 @@ public class MapperFacadeImpl implements MapperFacade {
             }
             
             if (context.getMappedObject(sourceObject, TypeFactory.typeOf(destinationObject)) == null) {
-                //MappingStrategy strategy = resolveMappingStrategy(sourceObject, TypeFactory.typeOf(sourceObject), TypeFactory.typeOf(destinationObject), true, context);
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
                 strategy.map(sourceObject, destinationObject, context);
                 context.setResolvedMappingStrategy(strategy);
@@ -334,11 +344,21 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void map(S sourceObject, D destinationObject) {
-        map(sourceObject, destinationObject, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            map(sourceObject, destinationObject, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public final <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
-        return mapAsSet(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsSet(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }  
     }
     
     public final <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
@@ -346,7 +366,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public final <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
-        return (List<D>) mapAsCollection(source, sourceType, destinationType, new ArrayList<D>(), new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return (List<D>) mapAsCollection(source, sourceType, destinationType, new ArrayList<D>(), context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public final <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
@@ -354,11 +379,21 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
-        return mapAsArray(destination, source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsArray(destination, source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType) {
-        return mapAsArray(destination, source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsArray(destination, source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        } 
     }
     
     public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
@@ -388,7 +423,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType) {
-        return mapAsList(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsList(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        } 
     }
     
     public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
@@ -400,7 +440,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType) {
-        return mapAsSet(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsSet(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        } 
     }
     
     public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
@@ -589,7 +634,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> D map(S sourceObject, Class<D> destinationClass) {
-        return map(sourceObject, destinationClass, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return map(sourceObject, destinationClass, context);
+        } finally {
+            contextFactory.release(context);
+        } 
     }
     
     @SuppressWarnings("unchecked")
@@ -678,7 +728,12 @@ public class MapperFacadeImpl implements MapperFacade {
      */
     public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
             Type<? extends Map<Dk, Dv>> destinationType) {
-        return mapAsMap(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsMap(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }  
     }
     
     public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
@@ -693,7 +748,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
-        return mapAsMap(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsMap(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        } 
     }
     
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
@@ -712,7 +772,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
-        return mapAsMap(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsMap(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
@@ -733,7 +798,12 @@ public class MapperFacadeImpl implements MapperFacade {
      * New mapping type: Map to List, Set or Array
      */
     public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
-        return mapAsList(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsList(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
@@ -750,7 +820,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
-        return mapAsSet(source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsSet(source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
@@ -765,7 +840,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
-        return mapAsArray(destination, source, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            return mapAsArray(destination, source, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
@@ -777,7 +857,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass) {
-        mapAsCollection(source, destination, destinationClass, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            mapAsCollection(source, destination, destinationClass, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
@@ -785,7 +870,12 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass) {
-        mapAsCollection(source, destination, destinationClass, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            mapAsCollection(source, destination, destinationClass, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -795,44 +885,20 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
-        mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
+        MappingContext context = contextFactory.getContext();
+        try {
+            mapAsCollection(source, destination, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
+        }
     }
     
     public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
-        mapAsCollection(source, destination, sourceType, destinationType, new MappingContext());
-    }
-    
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata.Type, ma.glasnost.orika.metadata.Type)
-     */
-    public <S,D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
-        return dedicatedMapperFor(sourceType, destinationType, true);
-    }
-    
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata.Type, ma.glasnost.orika.metadata.Type, boolean)
-     */
-    public <S,D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
-        if (!containsCycles) {
-            return new NonCyclicDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
-        } else {
-            return new DefaultDedicatedMapperFacade<S, D>(this, sourceType, destinationType);
+        MappingContext context = contextFactory.getContext();
+        try {
+            mapAsCollection(source, destination, sourceType, destinationType, context);
+        } finally {
+            contextFactory.release(context);
         }
-    }
-
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class, java.lang.Class)
-     */
-    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
-        return dedicatedMapperFor(aType, bType, true);
-    }
-
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class, java.lang.Class, boolean)
-     */
-    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
-        return dedicatedMapperFor(TypeFactory.valueOf(aType),TypeFactory.valueOf(bType), containsCycles);
     } 
-    
-    
 }

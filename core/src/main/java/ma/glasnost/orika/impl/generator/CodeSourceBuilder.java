@@ -19,18 +19,7 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.aCollection;
-import static ma.glasnost.orika.impl.Specifications.aConversionToString;
-import static ma.glasnost.orika.impl.Specifications.aMapToArray;
-import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
-import static ma.glasnost.orika.impl.Specifications.aMapToMap;
-import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
-import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
-import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
-import static ma.glasnost.orika.impl.Specifications.anArray;
-import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
-import static ma.glasnost.orika.impl.Specifications.immutable;
-import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
+import static ma.glasnost.orika.impl.Specifications.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -44,11 +33,13 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import ma.glasnost.orika.Converter;
+import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
+import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -67,6 +58,7 @@ public class CodeSourceBuilder {
     private final StringBuilder out = new StringBuilder();
     private final UsedTypesContext usedTypes;
     private final UsedConvertersContext usedConverters;
+    private final UsedMapperFacadesContext usedMapperFacades;
     private final MapperFactory mapperFactory;
     
     /**
@@ -80,10 +72,11 @@ public class CodeSourceBuilder {
      * @param mapperFactory
      *            the mapper factory for which the mapper is being generated
      */
-    public CodeSourceBuilder(UsedTypesContext usedTypes, UsedConvertersContext usedConverters, MapperFactory mapperFactory) {
+    public CodeSourceBuilder(UsedTypesContext usedTypes, UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, MapperFactory mapperFactory) {
         this.usedTypes = usedTypes;
         this.usedConverters = usedConverters;
         this.mapperFactory = mapperFactory;
+        this.usedMapperFacades = usedMappers;
     }
     
     private String usedConverter(Converter<?, ?> converter) {
@@ -94,6 +87,16 @@ public class CodeSourceBuilder {
     private String usedType(Type<?> type) {
         int index = usedTypes.getIndex(type);
         return "((" + Type.class.getCanonicalName() + ")usedTypes[" + index + "])";
+    }
+    
+    private String usedMapperFacadeCall(VariableRef source, VariableRef destination) {
+        return usedMapperFacadeCall(source.type(), destination.type());
+    }
+    
+    private String usedMapperFacadeCall(Type<?> sourceType, Type<?> destinationType) {
+        UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
+        String mapInDirection = usedFacade.isReversed ? "mapBtoA" : "mapAtoB";
+        return "((" + DedicatedMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
     }
     
     private String usedType(VariableRef r) {
@@ -445,8 +448,10 @@ public class CodeSourceBuilder {
      */
     public CodeSourceBuilder fromObjectToObject(VariableRef d, VariableRef s, Property ip) {
         
-        String mapNewObject = d.assign(format("(%s)mapperFacade.map(%s, %s, %s, mappingContext)", d.typeName(), s, usedType(s), usedType(d)));
-        String mapExistingObject = format("mapperFacade.map(%s, %s, %s, %s, mappingContext)", s, d, usedType(s), usedType(d));
+        String mapNewObject = d.assign(format("(%s)%s(%s, mappingContext)", d.typeName(), usedMapperFacadeCall(s, d), s));
+        //String mapNewObject = d.assign(format("(%s)mapperFacade.map(%s, %s, %s, mappingContext)", d.typeName(), s, usedType(s), usedType(d)));
+        //String mapExistingObject = format("mapperFacade.map(%s, %s, %s, %s, mappingContext)", s, d, usedType(s), usedType(d));
+        String mapExistingObject = format("%s(%s, %s, mappingContext)", usedMapperFacadeCall(s, d), s, d);
         String mapStmt = format(" %s { %s; } else { %s; }", d.ifNull(), mapNewObject, mapExistingObject);
         
         String ipStmt = "";
@@ -943,7 +948,7 @@ public class CodeSourceBuilder {
      * @param fieldMap
      *            the FieldMap describing fields to be mapped
      * @param sourceProperty
-     *            a variable referece to the source property
+     *            a variable reference to the source property
      * @param destinationProperty
      *            a variable reference to the destination property
      * @param destinationType
