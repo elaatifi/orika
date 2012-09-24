@@ -156,7 +156,7 @@ public class GenericsTestCase {
         Type<Entry<Holder<String>, Container<String>>> toType = 
                 new TypeBuilder<Entry<Holder<String>, Container<String>>>() {}.build();
         
-        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
         
         // Construct our elaborate 'fromObject'
         Entry<Container<Holder<Long>>, Envelope<Container<String>>> fromObject = 

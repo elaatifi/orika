@@ -564,21 +564,12 @@ public class MapperFacadeImpl implements MapperFacade {
     private <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context,
             MappingStrategyRecorder strategyBuilder) {
         
-        try {
-            final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType);
-            if (objectFactory != null) {
-                if (strategyBuilder != null) {
-                    strategyBuilder.setResolvedObjectFactory(objectFactory);
-                }
-                return objectFactory.create(sourceObject, context);
-            } else {
-                return destinationType.getRawType().newInstance();
-            }
-        } catch (final InstantiationException e) {
-            throw new MappingException(e);
-        } catch (final IllegalAccessException e) {
-            throw new MappingException(e);
+        final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType);
+        
+        if (strategyBuilder != null) {
+            strategyBuilder.setResolvedObjectFactory(objectFactory);
         }
+        return objectFactory.create(sourceObject, context);   
     }
     
     /*

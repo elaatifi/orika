@@ -702,14 +702,14 @@ public class DefaultMapperFactory implements MapperFactory {
                          * Use the default constructor in the case where it is
                          * the only option
                          */
-                        result = (ObjectFactory<T>) USE_DEFAULT_CONSTRUCTOR;
+                        result = new DefaultConstructorObjectFactory<T>(targetType.getRawType());
                     } else {
                         try {
                             result = (ObjectFactory<T>) objectFactoryGenerator.build(targetType, context);
                         } catch (MappingException e) {
                             for (Constructor<?> c : constructors) {
                                 if (c.getParameterTypes().length == 0) {
-                                    result = (ObjectFactory<T>) USE_DEFAULT_CONSTRUCTOR;
+                                    result = new DefaultConstructorObjectFactory<T>(targetType.getRawType());
                                     break;
                                 }
                             }
@@ -726,7 +726,7 @@ public class DefaultMapperFactory implements MapperFactory {
                 } else {
                     for (Constructor<?> constructor : constructors) {
                         if (constructor.getParameterTypes().length == 0) {
-                            result = (ObjectFactory<T>) USE_DEFAULT_CONSTRUCTOR;
+                            result = new DefaultConstructorObjectFactory<T>(targetType.getRawType());
                             break;
                         }
                     }
@@ -734,11 +734,6 @@ public class DefaultMapperFactory implements MapperFactory {
                 
             }
         }
-        
-        if (USE_DEFAULT_CONSTRUCTOR.equals(result)) {
-            result = null;
-        }
-        
         return result;
     }
     
@@ -1085,9 +1080,9 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         if (!containsCycles) {
-            return new NonCyclicDedicatedMapperFacade<S, D>(mapperFacade, contextFactory, sourceType, destinationType);
+            return new NonCyclicDedicatedMapperFacade<S, D>(mapperFacade, this, contextFactory, sourceType, destinationType);
         } else {
-            return new DefaultDedicatedMapperFacade<S, D>(mapperFacade, contextFactory, sourceType, destinationType);
+            return new DefaultDedicatedMapperFacade<S, D>(mapperFacade, this, contextFactory, sourceType, destinationType);
         }
     }
     

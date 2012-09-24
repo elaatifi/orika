@@ -17,6 +17,7 @@
  */
 package ma.glasnost.orika.impl;
 
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingContextFactory;
 
@@ -47,9 +48,9 @@ public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapper
     
     private final MappingContext nonCyclicContext;
     
-    NonCyclicDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MappingContextFactory contextFactory, java.lang.reflect.Type sourceType,
+    NonCyclicDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MapperFactory mapperFactory, MappingContextFactory contextFactory, java.lang.reflect.Type sourceType,
             java.lang.reflect.Type destinationType) {
-        super(mapperFacade, contextFactory, sourceType, destinationType);
+        super(mapperFacade, mapperFactory, contextFactory, sourceType, destinationType);
         this.nonCyclicContext = new NonCyclicMappingContext();
     }
     

@@ -10,10 +10,9 @@
 package com.inspiresoftware.lib.dto.geda.benchmark.support.orika;
 
 import ma.glasnost.orika.DedicatedMapperFacade;
-import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
 
 import com.inspiresoftware.lib.dto.geda.benchmark.Mapper;
 import com.inspiresoftware.lib.dto.geda.benchmark.domain.Address;
@@ -36,7 +35,8 @@ public class OrikaMapper implements Mapper {
     private DedicatedMapperFacade<Graph, GraphDTO> graphMapper;
     
     public OrikaMapper() {
-        final MapperFactory factory = new DefaultMapperFactory.Builder().build();
+        final MapperFactory factory = new DefaultMapperFactory.Builder().compilerStrategy(new EclipseJdtCompilerStrategy())
+                .build();
         factory.registerClassMap(factory.classMap(Address.class, AddressDTO.class).
             field("addressLine1", "addressLine1").
             field("addressLine2", "addressLine2").

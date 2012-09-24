@@ -18,8 +18,10 @@
 package ma.glasnost.orika.impl;
 
 import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingContextFactory;
+import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -34,17 +36,20 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
     protected volatile MappingStrategy bToA;
     protected volatile MappingStrategy aToBInPlace;
     protected volatile MappingStrategy bToAInPlace;
-    
+    protected volatile ObjectFactory<A> objectFactoryA;
+    protected volatile ObjectFactory<B> objectFactoryB;
     
     protected final java.lang.reflect.Type rawAType;
     protected final java.lang.reflect.Type rawBType;
     protected final Type<A> aType;
     protected final Type<B> bType;
     protected final MapperFacadeImpl mapperFacade;
+    protected final MapperFactory mapperFactory;
     protected final MappingContextFactory contextFactory;
     
-    DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MappingContextFactory contextFactory,  java.lang.reflect.Type typeOfA, java.lang.reflect.Type typeOfB) {
+    DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MapperFactory mapperFactory, MappingContextFactory contextFactory,  java.lang.reflect.Type typeOfA, java.lang.reflect.Type typeOfB) {
         this.mapperFacade = mapperFacade;
+        this.mapperFactory = mapperFactory;
         this.contextFactory = contextFactory;
         this.rawAType = typeOfA;
         this.rawBType = typeOfB;
@@ -170,7 +175,7 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
             if (bToAInPlace == null) {
                 synchronized (this) {
                     if (bToAInPlace == null) {
-                        bToAInPlace = mapperFacade.resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
+                        bToAInPlace = mapperFacade.resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
                     }
                 }
             }
@@ -180,5 +185,33 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
     
     public String toString() {
         return getClass().getSimpleName() + "(" + aType +", " + bType + ")";
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.DedicatedMapperFacade#newObjectB(java.lang.Object, ma.glasnost.orika.MappingContext)
+     */
+    public B newObjectB(A source, MappingContext context) {
+        if (objectFactoryB == null) {
+            synchronized(this) {
+                if (objectFactoryB == null) {
+                    objectFactoryB = mapperFactory.lookupObjectFactory(bType);
+                }
+            }
+        }
+        return objectFactoryB.create(source, context);
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.DedicatedMapperFacade#newObjectA(java.lang.Object, ma.glasnost.orika.MappingContext)
+     */
+    public A newObjectA(B source, MappingContext context) {
+        if (objectFactoryA == null) {
+            synchronized(this) {
+                if (objectFactoryA == null) {
+                    objectFactoryA = mapperFactory.lookupObjectFactory(aType);
+                }
+            }
+        }
+        return objectFactoryA.create(source, context);
     }
 }

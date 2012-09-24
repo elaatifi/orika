@@ -99,6 +99,16 @@ public class CodeSourceBuilder {
         return "((" + DedicatedMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
     }
     
+    private String usedMapperFacadeNewObjectCall(VariableRef source, VariableRef destination) {
+        return usedMapperFacadeNewObjectCall(source.type(), destination.type());
+    }
+    
+    private String usedMapperFacadeNewObjectCall(Type<?> sourceType, Type<?> destinationType) {
+        UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
+        String instantiateMethod = usedFacade.isReversed ? "newObjectB" : "newObjectA";
+        return "((" + DedicatedMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
+    }
+    
     private String usedType(VariableRef r) {
         return usedType(r.type());
     }
@@ -519,15 +529,17 @@ public class CodeSourceBuilder {
      *            instance
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder assureInstanceExists(VariableRef propertyRef) {
+    public CodeSourceBuilder assureInstanceExists(VariableRef propertyRef, VariableRef source) {
         
         for (final VariableRef ref : propertyRef.getPath()) {
             
             if (!ClassUtil.isConcrete(ref.type())) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
+//            statement("if(%s == null) %s", ref,
+//                    ref.assign("(%s)mapperFacade.newObject(source, %s, mappingContext)", ref.typeName(), usedType(ref)));
             statement("if(%s == null) %s", ref,
-                    ref.assign("(%s)mapperFacade.newObject(source, %s, mappingContext)", ref.typeName(), usedType(ref)));
+                    ref.assign("(%s)%s(source, mappingContext)", ref.typeName(), usedMapperFacadeNewObjectCall(ref,source)));
         }
         
         return this;
@@ -792,8 +804,10 @@ public class CodeSourceBuilder {
             if (ClassUtil.isImmutable(destRef.elementRef.type())) {
                 statement(destRef.elementRef.declare());
             } else {
-                statement(destRef.elementRef.declare("mapperFacade.newObject(%s, %s, mappingContext)", destRef.associations.iterator()
-                        .next().elementRef, usedType(destRef.elementRef.type())));
+//                statement(destRef.elementRef.declare("mapperFacade.newObject(%s, %s, mappingContext)", destRef.associations.iterator()
+//                        .next().elementRef, usedType(destRef.elementRef.type())));
+                VariableRef sourceRef = destRef.associations.iterator().next().elementRef;
+                statement(destRef.elementRef.declare("%s(%s, mappingContext)", usedMapperFacadeNewObjectCall(destRef.elementRef,sourceRef),sourceRef));
             }
             
             for (IterableRef srcRef : destRef.associations) {
@@ -968,7 +982,7 @@ public class CodeSourceBuilder {
             if (!sourceProperty.isPrimitive()) {
                 ifNotNull(sourceProperty).then();
             }
-            assureInstanceExists(destinationProperty);
+            assureInstanceExists(destinationProperty, sourceProperty);
         }
         
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());

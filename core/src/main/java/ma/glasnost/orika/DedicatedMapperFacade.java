@@ -17,7 +17,6 @@
  */
 package ma.glasnost.orika;
 
-import ma.glasnost.orika.metadata.Type;
 
 /**
  * DedicatedMapperFacade represents a caching mapper configuration
@@ -26,7 +25,7 @@ import ma.glasnost.orika.metadata.Type;
  * @author matt.deboer@gmail.com
  * 
  */
-public interface DedicatedMapperFacade<A, B> {
+public interface DedicatedMapperFacade<A, B> extends MappedTypePair<A, B> {
     
     /**
      * Generates a new instance of the 'B' type based on the specified
@@ -35,7 +34,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param source
      * @return
      */
-    public B mapAtoB(A instanceA);
+    B mapAtoB(A instanceA);
     
     /**
      * Generates a new instance of the 'B' type based on the specified
@@ -45,7 +44,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param context
      * @return
      */
-    public B mapAtoB(A instanceA, MappingContext context);
+    B mapAtoB(A instanceA, MappingContext context);
     
     /**
      * Generates a new instance of the 'A' type based on the specified
@@ -54,7 +53,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param source
      * @return
      */
-    public A mapBtoA(B instanceB);
+    A mapBtoA(B instanceB);
     
     /**
      * Generates a new instance of the 'A' type based on the specified
@@ -64,7 +63,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param context
      * @return
      */
-    public A mapBtoA(B instanceB, MappingContext context);
+    A mapBtoA(B instanceB, MappingContext context);
     
     /**
      * 
@@ -74,7 +73,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param source
      * @param destination
      */
-    public void mapAtoB(A instanceA, B instanceB);
+    void mapAtoB(A instanceA, B instanceB);
     
     /**
      * 
@@ -85,7 +84,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param context
      * @param destination
      */
-    public void mapAtoB(A instanceA, B instanceB, MappingContext context);
+    void mapAtoB(A instanceA, B instanceB, MappingContext context);
     
     /**
      * Maps properties (in place) from the instance of 'B' to the provided
@@ -94,7 +93,7 @@ public interface DedicatedMapperFacade<A, B> {
      * @param destination
      * @param source
      */
-    public void mapBtoA(B instanceB, A instanceA);
+    void mapBtoA(B instanceB, A instanceA);
     
     /**
      * Maps properties (in place) from the instance of 'B' to the provided
@@ -104,17 +103,24 @@ public interface DedicatedMapperFacade<A, B> {
      * @param context
      * @param source
      */
-    public void mapBtoA(B instanceB, A instanceA, MappingContext context);
+    void mapBtoA(B instanceB, A instanceA, MappingContext context);
     
     
     /**
-     * @return the 'A' type for this DedicatedMapperFacade
+     * Returns a new instance of type B, using source instance of A for context
+     * 
+     * @param source
+     * @param context
+     * @return
      */
-    public Type<A> getAType();
-    
+    B newObjectB(A source, MappingContext context);
+     
     /**
-     * @return the 'B' type for this DedicatedMapperFacade
+     * Returns a new instance of type A, using source instance of B for context
+     * 
+     * @param source
+     * @param context
+     * @return
      */
-    public Type<B> getBType();
-    
+    A newObjectA(B source, MappingContext context);
 }
