@@ -43,13 +43,12 @@ public class CaliperBenchmark extends SimpleBenchmark {
 
     public enum Library {
 
-        //JAVA_MANUAL(new ManualBasicMapper()),
-        
+        JAVA_MANUAL(new ManualBasicMapper()),
         ORIKA(new OrikaMapper()),
-//        ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
+        //ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
         GEDA(new GeDABasicMapper()),
-//        MODELMAPPER(new ModelMapperMapper()),
-//        DOZER(new DozerBasicMapper());
+        MODELMAPPER(new ModelMapperMapper()),
+        DOZER(new DozerBasicMapper())
 ;
         
         private Mapper mapper;
@@ -62,7 +61,7 @@ public class CaliperBenchmark extends SimpleBenchmark {
     @Param
     private Library lib;
     
-    @Param({ /*"1",*/ "100"/*, "10000"/*, "25000" */})
+    @Param({ "1","100","10000"/*, "25000" */})
     private int length;
 
     private Person personLoaded;
@@ -99,9 +98,9 @@ public class CaliperBenchmark extends SimpleBenchmark {
         Set<Point> points = new HashSet<Point>();
         Point point1 = null;
         Point point2 = null;
-        for (int i=0; i < 20; ++i) {
-            for (int j=0; j < 20; ++j) {
-                for (int k=0; k < 20; ++k) {
+        for (int i=0; i < 5; ++i) {
+            for (int j=0; j < 5; ++j) {
+                for (int k=0; k < 5; ++k) {
                     Point point = new Point();
                     point.setX(i);
                     point.setY(j);
@@ -146,13 +145,13 @@ public class CaliperBenchmark extends SimpleBenchmark {
         }
     }
     
-    public void timeNestedEntityToDTO(int reps) {
-        for (int i = 0; i < reps; i++) {
-            for (int ii = 0; ii < length; ii++) {
-                mapper.fromEntity(personLoaded);
-            }
-        }
-    }
+//    public void timeNestedEntityToDTO(int reps) {
+//        for (int i = 0; i < reps; i++) {
+//            for (int ii = 0; ii < length; ii++) {
+//                mapper.fromEntityNested(graphLoaded);
+//            }
+//        }
+//    }
 
     public static void main(String[] args) throws Exception {
         String mode = System.getenv("mode");

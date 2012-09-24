@@ -45,7 +45,7 @@ public class GeDABasicMapper implements Mapper {
     
     public Object fromEntityNested(Object entity) {
         GraphDTO graphDto = new GraphDTO();
-        graphAsm.assembleEntity((Graph)entity, graphDto, null, bf);
+        graphAsm.assembleDto(graphDto, entity, null, bf);
         return graphDto;
-     }
+    }
 }
