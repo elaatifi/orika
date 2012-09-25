@@ -45,7 +45,7 @@ public class CaliperBenchmark extends SimpleBenchmark {
 
         JAVA_MANUAL(new ManualBasicMapper()),
         ORIKA(new OrikaMapper()),
-        //ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
+        ORIKA_NOCYCLES(new OrikaNonCyclicMapper()),
         GEDA(new GeDABasicMapper()),
         MODELMAPPER(new ModelMapperMapper()),
         DOZER(new DozerBasicMapper())

@@ -9,7 +9,7 @@
 
 package com.inspiresoftware.lib.dto.geda.benchmark.support.orika;
 
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
@@ -31,8 +31,8 @@ import com.inspiresoftware.lib.dto.geda.benchmark.dto.PersonDTO;
  */
 public class OrikaMapper implements Mapper {
 
-    private DedicatedMapperFacade<Person, PersonDTO> mapper;
-    private DedicatedMapperFacade<Graph, GraphDTO> graphMapper;
+    private BoundMapperFacade<Person, PersonDTO> mapper;
+    private BoundMapperFacade<Graph, GraphDTO> graphMapper;
     
     public OrikaMapper() {
         final MapperFactory factory = new DefaultMapperFactory.Builder().compilerStrategy(new EclipseJdtCompilerStrategy())
@@ -53,25 +53,25 @@ public class OrikaMapper implements Mapper {
         );
         factory.registerClassMap(factory.classMap(Graph.class, GraphDTO.class));
         
-        this.mapper = factory.dedicatedMapperFor(Person.class, PersonDTO.class, true);
-        this.graphMapper = factory.dedicatedMapperFor(Graph.class, GraphDTO.class);
+        this.mapper = factory.getMapperFacade(Person.class, PersonDTO.class, true);
+        this.graphMapper = factory.getMapperFacade(Graph.class, GraphDTO.class);
     }
 
     public Object fromEntity(final Object entity) {
         PersonDTO dto = new PersonDTO();
-        mapper.mapAtoB((Person) entity, dto);
+        mapper.map((Person) entity, dto);
         return dto;
     }
 
     public Object fromDto(final Object dto) {
         Person entity = new Person();
-        mapper.mapBtoA((PersonDTO) dto, entity);
+        mapper.mapReverse((PersonDTO) dto, entity);
         return entity;
     }
 
     public Object fromEntityNested(Object entity) {
         GraphDTO dto = new GraphDTO();
-        graphMapper.mapAtoB((Graph) entity, dto);
+        graphMapper.map((Graph) entity, dto);
         return dto;
     }
 }
