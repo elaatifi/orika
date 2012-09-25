@@ -53,7 +53,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     private final boolean includePublicFields;
     
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
-    private final Map<java.lang.reflect.Type, Map<String, Property>> dynamicPropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
+    private final Map<java.lang.reflect.Type, Map<String, Property>> adHocPropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     
     public PropertyResolver(boolean includePublicFields) {
         this.includePublicFields = includePublicFields;
@@ -363,22 +363,25 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         if (isNestedPropertyExpression(expr)) {
             property = getNestedProperty(type, expr);
         } else {
-            Map<String, Property> dynamicProperties = dynamicPropertiesCache.get(type);
-            if (dynamicProperties != null) {
-                property = dynamicProperties.get(expr);
+            // TODO: perhaps ad-hoc properties should be isolated to a given
+            // ClassMapBuilder, rather than made available for other mappings
+            // of the class; can this cause problems?
+            Map<String, Property> adHocPoperties = adHocPropertiesCache.get(type);
+            if (adHocPoperties != null) {
+                property = adHocPoperties.get(expr);
             }
             if (property == null) {
                 if (properties.containsKey(expr)) {
                     property = properties.get(expr);
-                } else if (ADHOC_PROPERTY_PATTERN.matcher(expr).matches()) {
+                } else if (isAdHocPropertyExpression(expr)) {
                     property = resolveAdHocProperty(type, expr);
                     if (property != null) {
                         synchronized(type) {
-                            if (dynamicProperties == null) {
-                                dynamicProperties = new HashMap<String, Property>(1);
-                                dynamicPropertiesCache.put(type, dynamicProperties);
+                            if (adHocPoperties == null) {
+                                adHocPoperties = new HashMap<String, Property>(1);
+                                adHocPropertiesCache.put(type, adHocPoperties);
                             }
-                            dynamicProperties.put(property.getName(), property);
+                            adHocPoperties.put(property.getName(), property);
                         }
                     }
                 } else {
@@ -399,9 +402,8 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return
      */
     protected boolean isAdHocPropertyExpression(String expression) {
-        return expression.indexOf('.') != -1;
-    }
-    
+        return ADHOC_PROPERTY_PATTERN.matcher(expression).matches(); 
+    } 
     
     /**
      * Resolves ad-hoc properties, which are defined in-line with the following format:<br>

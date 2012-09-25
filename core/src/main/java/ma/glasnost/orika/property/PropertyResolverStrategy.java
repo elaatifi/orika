@@ -49,7 +49,9 @@ public interface PropertyResolverStrategy {
      * @param type
      * @param propertyExpression
      * @return
+     * @deprecated use {@link #getProperty(java.lang.reflect.Type, String)} instead
      */
+    @Deprecated
     NestedProperty getNestedProperty(java.lang.reflect.Type type, String propertyExpression);
     
     /**
