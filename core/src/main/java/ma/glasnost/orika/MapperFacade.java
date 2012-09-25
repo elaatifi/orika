@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.Type;
 
 /**
@@ -522,5 +523,17 @@ public interface MapperFacade {
      */
     // TODO Utilité d'avoir cette méthode publique?
     <S, D> D newObject(S source, Type<? extends D> destinationClass, MappingContext context);
+    
+    /**
+     * Resolves a reusable MappingStrategy for the given set of inputs.
+     * 
+     * @param sourceObject the source object to map
+     * @param rawAType the source type
+     * @param rawBType the destination type
+     * @param context the current MappingContext
+     * @return
+     */
+    <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type rawAType,
+            final java.lang.reflect.Type rawBType, boolean mapInPlace, final MappingContext context);
     
 }

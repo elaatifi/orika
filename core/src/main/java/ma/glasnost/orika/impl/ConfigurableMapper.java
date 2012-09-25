@@ -23,10 +23,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.Type;
 
 /**
@@ -366,21 +367,24 @@ public class ConfigurableMapper implements MapperFacade {
         return facade.mapAsArray(destination, source, sourceType, destinationType, context);
     }
 
-    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
-        return factory.dedicatedMapperFor(sourceType, destinationType);
+    public <S, D> MappingStrategy resolveMappingStrategy(S sourceObject, java.lang.reflect.Type rawAType, java.lang.reflect.Type rawBType,
+            boolean mapInPlace, MappingContext context) {
+        return facade.resolveMappingStrategy(sourceObject, rawAType, rawBType, mapInPlace, context);
     }
 
-    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
-        return factory.dedicatedMapperFor(sourceType, destinationType, containsCycles);
+    public <S, D> BoundMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
+        return factory.getBoundMapperFacade(sourceType, destinationType);
     }
 
-    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
-        return factory.dedicatedMapperFor(aType, bType);
+    public <S, D> BoundMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
+        return factory.getBoundMapperFacade(sourceType, destinationType, containsCycles);
     }
 
-    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
-        return factory.dedicatedMapperFor(aType, bType, containsCycles);
+    public <A, B> BoundMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
+        return factory.getBoundMapperFacade(aType, bType);
     }
 
-    
+    public <A, B> BoundMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
+        return factory.getBoundMapperFacade(aType, bType, containsCycles);
+    }
 }

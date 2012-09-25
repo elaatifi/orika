@@ -25,7 +25,7 @@ import java.util.Set;
 
 import javassist.CannotCompileException;
 import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
@@ -86,7 +86,7 @@ public class ObjectFactoryGenerator {
             
             Type<Object>[] usedTypesArray = usedTypes.toArray();
             Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
-            DedicatedMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
+            BoundMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
             if (logDetails != null) {
             	if (usedTypesArray.length > 0) {
             		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));

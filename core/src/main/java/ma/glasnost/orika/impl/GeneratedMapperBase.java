@@ -21,11 +21,12 @@ package ma.glasnost.orika.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.CustomMapper;
-import ma.glasnost.orika.DedicatedMapperFacade;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.Type;
 
 public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
@@ -33,7 +34,7 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
     protected Mapper<Object, Object> customMapper;
     protected Type<?>[] usedTypes;
     protected Converter<Object, Object>[] usedConverters;
-    protected DedicatedMapperFacade<Object, Object>[] usedMapperFacades;
+    protected BoundMapperFacade<Object, Object>[] usedMapperFacades;
     private Mapper<Object, Object>[] usedMappers;
     private Type<Object> aType;
     private Type<Object> bType;
@@ -87,7 +88,7 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         this.usedConverters = usedConverters;
     }
     
-    public void setUsedMapperFacades(DedicatedMapperFacade<Object, Object>[] usedMapperFacades) {
+    public void setUsedMapperFacades(BoundMapperFacade<Object, Object>[] usedMapperFacades) {
         this.usedMapperFacades = usedMapperFacades;
     }
     
@@ -207,11 +208,16 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Byte) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Byte) strategy.map(s, null, mappingContext);
         }
-        
     }
     
     protected void mapArray(boolean[] destination, List<Object> source, Class<?> clazz, MappingContext mappingContext) {
@@ -219,9 +225,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Boolean) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Boolean) strategy.map(s, null, mappingContext);
         }
         
     }
@@ -231,9 +243,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Character) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Character) strategy.map(s, null, mappingContext);
         }
         
     }
@@ -243,9 +261,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Short) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Short) strategy.map(s, null, mappingContext);
         }
         
     }
@@ -255,9 +279,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Integer) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Integer) strategy.map(s, null, mappingContext);
         }
         
     }
@@ -267,9 +297,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Long) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Long) strategy.map(s, null, mappingContext);
         }
         
     }
@@ -279,9 +315,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Float) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Float) strategy.map(s, null, mappingContext);
         }
         
     }
@@ -291,9 +333,15 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
             return;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         int i = 0;
         for (final Object s : source) {
-            destination[i++] = (Double) mapperFacade.map(s, clazz, mappingContext);
+            if (strategy == null || !s.getClass().equals(entryClass)) {
+                strategy = mapperFacade.resolveMappingStrategy(s, null, clazz, false, mappingContext);
+                entryClass = s.getClass();
+            }
+            destination[i++] = (Double) strategy.map(s, null, mappingContext);
         }
         
     }

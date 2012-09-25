@@ -212,7 +212,7 @@ public interface MapperFactory {
     
     
     /**
-     * Returns a DedicatedMapperFacade for the specified source and destination
+     * Returns a BoundMapperFacade for the specified source and destination
      * types; this mapper is bidirectional by default, and provides signatures for
      * mapping in place, or with instantiation, as needed.
      * 
@@ -222,10 +222,10 @@ public interface MapperFactory {
      *            the 'B' type for the returned DedicatedMapperFacade
      * 
      */
-    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Type<A> aType, Type<B> bType);
+    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Type<A> aType, Type<B> bType);
     
     /**
-     * Returns a DedicatedMapperFacade for the specified source and destination
+     * Returns a BoundMapperFacade for the specified source and destination
      * types; this mapper is bidirectional by default, and provides signatures for
      * mapping in place, or with instantiation, as needed.
      * 
@@ -235,10 +235,10 @@ public interface MapperFactory {
      *            the 'B' type for the returned DedicatedMapperFacade
      * 
      */
-    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType);
+    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType);
     
     /**
-     * Returns a DedicatedMapperFacade for the specified source and destination
+     * Returns a BoundMapperFacade for the specified source and destination
      * types; this mapper is bidirectional by default, and provides signatures for
      * mapping in place, or with instantiation, as needed.<br>
      * In the case that <code>false</code> is provided for the 'containsCycles' parameter,
@@ -256,10 +256,10 @@ public interface MapperFactory {
      * 
      * @return
      */
-    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Type<A> aType, Type<B> bType, boolean containsCycles);
+    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Type<A> aType, Type<B> bType, boolean containsCycles);
     
     /**
-     * Returns a DedicatedMapperFacade for the specified source and destination
+     * Returns a BoundMapperFacade for the specified source and destination
      * types; this mapper is bidirectional by default, and provides signatures for
      * mapping in place, or with instantiation, as needed.<br>
      * In the case that <code>false</code> is provided for the 'containsCycles' parameter,
@@ -277,7 +277,7 @@ public interface MapperFactory {
      * 
      * @return
      */
-    <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles);
+    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles);
     
     
     /**

@@ -17,7 +17,7 @@
  */
 package ma.glasnost.orika.impl;
 
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingContextFactory;
@@ -27,10 +27,12 @@ import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
 /**
+ * DefaultBoundMapperFacade is the base implementation of BoundMapperFacade
+ * 
  * @author matt.deboer@gmail.com
  * 
  */
-class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> {
+class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     
     protected volatile MappingStrategy aToB;
     protected volatile MappingStrategy bToA;
@@ -43,12 +45,18 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
     protected final java.lang.reflect.Type rawBType;
     protected final Type<A> aType;
     protected final Type<B> bType;
-    protected final MapperFacadeImpl mapperFacade;
     protected final MapperFactory mapperFactory;
     protected final MappingContextFactory contextFactory;
     
-    DefaultDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MapperFactory mapperFactory, MappingContextFactory contextFactory,  java.lang.reflect.Type typeOfA, java.lang.reflect.Type typeOfB) {
-        this.mapperFacade = mapperFacade;
+    /**
+     * Constructs a new instance of DefaultBoundMapperFacade
+     * 
+     * @param mapperFactory
+     * @param contextFactory
+     * @param typeOfA
+     * @param typeOfB
+     */
+    DefaultBoundMapperFacade(MapperFactory mapperFactory, MappingContextFactory contextFactory,  java.lang.reflect.Type typeOfA, java.lang.reflect.Type typeOfB) {
         this.mapperFactory = mapperFactory;
         this.contextFactory = contextFactory;
         this.rawAType = typeOfA;
@@ -114,7 +122,7 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
             if (aToB == null) {
                 synchronized (this) {
                     if (aToB == null) {
-                        aToB = mapperFacade.resolveMappingStrategy(instanceA, rawAType, rawBType, false, context);
+                        aToB = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, false, context);
                     }
                 }
             }
@@ -136,7 +144,7 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
             if (bToA == null) {
                 synchronized (this) {
                     if (bToA == null) {
-                        bToA = mapperFacade.resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
+                        bToA = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
                     }
                 }
             }
@@ -156,7 +164,7 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
             if (aToBInPlace == null) {
                 synchronized (this) {
                     if (aToBInPlace == null) {
-                        aToBInPlace = mapperFacade.resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
+                        aToBInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
                     }
                 }
             }
@@ -175,7 +183,7 @@ class DefaultDedicatedMapperFacade<A, B> implements DedicatedMapperFacade<A, B> 
             if (bToAInPlace == null) {
                 synchronized (this) {
                     if (bToAInPlace == null) {
-                        bToAInPlace = mapperFacade.resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
+                        bToAInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
                     }
                 }
             }

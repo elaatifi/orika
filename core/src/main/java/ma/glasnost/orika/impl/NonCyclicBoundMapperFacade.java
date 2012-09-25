@@ -25,7 +25,7 @@ import ma.glasnost.orika.MappingContextFactory;
  * @author matt.deboer@gmail.com
  * 
  */
-public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapperFacade<A, B> {
+public class NonCyclicBoundMapperFacade<A, B> extends DefaultBoundMapperFacade<A, B> {
     
     private static final class NonCyclicMappingContext extends MappingContext {
         
@@ -48,9 +48,9 @@ public class NonCyclicDedicatedMapperFacade<A, B> extends DefaultDedicatedMapper
     
     private final MappingContext nonCyclicContext;
     
-    NonCyclicDedicatedMapperFacade(MapperFacadeImpl mapperFacade, MapperFactory mapperFactory, MappingContextFactory contextFactory, java.lang.reflect.Type sourceType,
+    NonCyclicBoundMapperFacade(MapperFactory mapperFactory, MappingContextFactory contextFactory, java.lang.reflect.Type sourceType,
             java.lang.reflect.Type destinationType) {
-        super(mapperFacade, mapperFactory, contextFactory, sourceType, destinationType);
+        super(mapperFactory, contextFactory, sourceType, destinationType);
         this.nonCyclicContext = new NonCyclicMappingContext();
     }
     

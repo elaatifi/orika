@@ -139,7 +139,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param context
      * @return
      */
-    <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType, final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
+    public <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType, final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
         
         Type<D> destinationType = TypeFactory.valueOf(initialDestinationType);
         
@@ -592,6 +592,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param context
      * @return
      */
+    @SuppressWarnings("unchecked")
     <S, D> Collection<D> mapAsCollection(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, Collection<D> destination,
             MappingContext context) {
         
@@ -599,8 +600,20 @@ public class MapperFacadeImpl implements MapperFacade {
             return null;
         }
         
+        MappingStrategy strategy = null;
+        Class<?> sourceClass = null;
         for (final S item : source) {
-            destination.add(map(item, sourceType, destinationType, context));
+            if (item == null) {
+                continue;
+            } else if (strategy == null || (!item.getClass().equals(sourceClass))) {
+                /*
+                 * Resolve the strategy and reuse; assuming this is a homogeneous collection,
+                 * this will save us (n-1) lookups; if not, we would have done those lookups anyway
+                 */
+                strategy = resolveMappingStrategy(item, sourceType, destinationType, false, context);
+                sourceClass = item.getClass();
+            }
+            destination.add((D) strategy.map(item, null, context));
         }
         return destination;
     }
@@ -727,12 +740,44 @@ public class MapperFacadeImpl implements MapperFacade {
         }  
     }
     
+    @SuppressWarnings("unchecked")
     public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
             Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
         Map<Dk, Dv> destination = new HashMap<Dk, Dv>(source.size());
+        
+        /*
+         * Resolve the strategy used for the key and value; only re-resolve
+         * a strategy if we encounter a different source class. This should allow
+         * us to process a homogeneous key/value typed map as quickly as possible
+         */
+        MappingStrategy keyStrategy = null;
+        MappingStrategy valueStrategy = null;
+        Class<?> keyClass = null;
+        Class<?> valueClass = null;
+
         for (Entry<Sk, Sv> entry : source.entrySet()) {
-            Dk key = map(entry.getKey(), sourceType.<Sk> getNestedType(0), destinationType.<Dk> getNestedType(0), context);
-            Dv value = map(entry.getValue(), sourceType.<Sv> getNestedType(1), destinationType.<Dv> getNestedType(1), context);
+            Dk key;
+            if (entry.getKey() == null) {
+                key = null;
+            } else {
+                if (keyStrategy == null || !entry.getKey().getClass().equals(keyClass)) {
+                    keyStrategy = resolveMappingStrategy(entry.getKey(), sourceType.<Sk> getNestedType(0), destinationType.<Dk> getNestedType(0), false, context);
+                    keyClass = entry.getKey().getClass();
+                }
+                key = (Dk) keyStrategy.map(entry.getKey(), null, context);
+            } 
+            
+            Dv value;
+            if (entry.getValue() == null) {
+                value = null;
+            } else {
+                if (valueStrategy == null || !entry.getValue().getClass().equals(valueClass)) {
+                    valueStrategy = resolveMappingStrategy(entry.getValue(), sourceType.<Sv> getNestedType(1), destinationType.<Dv> getNestedType(1), false, context);
+                    valueClass = entry.getValue().getClass();
+                }
+                value = (Dv) valueStrategy.map(entry.getValue(), null, context);
+            } 
+            
             destination.put(key, value);
         }
         return destination;
@@ -751,11 +796,18 @@ public class MapperFacadeImpl implements MapperFacade {
             MappingContext context) {
         
         Map<Dk, Dv> destination = new HashMap<Dk, Dv>();
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
+        
+        Type<?> entryType = TypeFactory.valueOf(Map.Entry.class, destinationType.getNestedType(0), destinationType.getNestedType(1));
         
         for (S element : source) {
-            Type<?> entryType = TypeFactory.valueOf(Map.Entry.class, destinationType.getNestedType(0), destinationType.getNestedType(1));
+            if (strategy == null || !element.getClass().equals(entryClass)) {
+                strategy = resolveMappingStrategy(element, sourceType, entryType, false, context);
+                entryClass = element.getClass();
+            }
             @SuppressWarnings("unchecked")
-            Map.Entry<Dk, Dv> entry = (Map.Entry<Dk, Dv>) map(element, sourceType, entryType, context);
+            Map.Entry<Dk, Dv> entry = (Map.Entry<Dk, Dv>) strategy.map(element, null, context);
             destination.put(entry.getKey(), entry.getValue());
         }
         
@@ -775,10 +827,17 @@ public class MapperFacadeImpl implements MapperFacade {
             MappingContext context) {
         
         Map<Dk, Dv> destination = new HashMap<Dk, Dv>();
+        Type<MapEntry<Dk, Dv>> entryType = MapEntry.concreteEntryType(destinationType);
+        MappingStrategy strategy = null;
+        Class<?> entryClass = null;
         
         for (S element : source) {
-            Type<MapEntry<Dk, Dv>> entryType = MapEntry.concreteEntryType(destinationType);
-            MapEntry<Dk, Dv> entry = (MapEntry<Dk, Dv>) map(element, sourceType, entryType, context);
+            if (strategy == null || !element.getClass().equals(entryClass)) {
+                strategy = resolveMappingStrategy(element, sourceType, entryType, false, context);
+                entryClass = element.getClass();
+            }
+            @SuppressWarnings("unchecked")
+            MapEntry<Dk, Dv> entry = (MapEntry<Dk, Dv>) strategy.map(element, null, context);
             destination.put(entry.getKey(), entry.getValue());
         }
         

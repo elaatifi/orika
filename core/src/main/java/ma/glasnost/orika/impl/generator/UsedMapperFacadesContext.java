@@ -20,7 +20,7 @@ package ma.glasnost.orika.impl.generator;
 import java.util.ArrayList;
 import java.util.List;
 
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.Type;
 
@@ -36,7 +36,7 @@ public class UsedMapperFacadesContext {
         public boolean isReversed;
     }
     
-    private List<DedicatedMapperFacade<Object,Object>> usedMapperFacades = new ArrayList<DedicatedMapperFacade<Object,Object>>();
+    private List<BoundMapperFacade<Object,Object>> usedMapperFacades = new ArrayList<BoundMapperFacade<Object,Object>>();
     private int usedTypeIndex = 0;
     
     /**
@@ -56,7 +56,7 @@ public class UsedMapperFacadesContext {
         }
         UsedMapperFacadesIndex result = new UsedMapperFacadesIndex();
         for (int i=0, len = usedMapperFacades.size(); i < len; ++i) {
-            DedicatedMapperFacade<Object,Object> dedicatedFacade = usedMapperFacades.get(i);
+            BoundMapperFacade<Object,Object> dedicatedFacade = usedMapperFacades.get(i);
             if (dedicatedFacade.getAType().equals(sourceType) && dedicatedFacade.getBType().equals(destinationType)) {
                 result.index = i;
                 break;
@@ -69,13 +69,13 @@ public class UsedMapperFacadesContext {
         
         if (result.index == null) {
             result.index = Integer.valueOf(usedTypeIndex++);
-            usedMapperFacades.add((DedicatedMapperFacade<Object, Object>)mapperFactory.dedicatedMapperFor(sourceType, destinationType));
+            usedMapperFacades.add((BoundMapperFacade<Object, Object>)mapperFactory.getBoundMapperFacade(sourceType, destinationType));
         }
         return result;
     }
     
     @SuppressWarnings("unchecked")
-    public DedicatedMapperFacade<Object,Object>[] toArray() {
-        return usedMapperFacades.toArray(new DedicatedMapperFacade[0]);
+    public BoundMapperFacade<Object,Object>[] toArray() {
+        return usedMapperFacades.toArray(new BoundMapperFacade[0]);
     }
 }

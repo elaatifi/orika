@@ -33,7 +33,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
@@ -96,7 +96,7 @@ public class CodeSourceBuilder {
     private String usedMapperFacadeCall(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
         String mapInDirection = usedFacade.isReversed ? "mapBtoA" : "mapAtoB";
-        return "((" + DedicatedMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
+        return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
     }
     
     private String usedMapperFacadeNewObjectCall(VariableRef source, VariableRef destination) {
@@ -106,7 +106,7 @@ public class CodeSourceBuilder {
     private String usedMapperFacadeNewObjectCall(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
         String instantiateMethod = usedFacade.isReversed ? "newObjectB" : "newObjectA";
-        return "((" + DedicatedMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
+        return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
     }
     
     private String usedType(VariableRef r) {

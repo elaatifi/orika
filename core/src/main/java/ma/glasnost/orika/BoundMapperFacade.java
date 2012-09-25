@@ -19,13 +19,13 @@ package ma.glasnost.orika;
 
 
 /**
- * DedicatedMapperFacade represents a caching mapper configuration
- * which is dedicated to mapping a particular pair of types.
+ * BoundMapperFacade represents a caching mapper configuration
+ * which is bound to a given pair of types.
  * 
  * @author matt.deboer@gmail.com
  * 
  */
-public interface DedicatedMapperFacade<A, B> extends MappedTypePair<A, B> {
+public interface BoundMapperFacade<A, B> extends MappedTypePair<A, B> {
     
     /**
      * Generates a new instance of the 'B' type based on the specified

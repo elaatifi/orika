@@ -35,7 +35,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import ma.glasnost.orika.DedicatedMapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
@@ -1053,8 +1053,8 @@ public class DefaultMapperFactory implements MapperFactory {
         
     }
     
-    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
-        return dedicatedMapperFor(sourceType, destinationType, true);
+    public <S, D> BoundMapperFacade<S, D> getBoundMapperFacade(Type<S> sourceType, Type<D> destinationType) {
+        return getBoundMapperFacade(sourceType, destinationType, true);
     }
     
     /*
@@ -1064,15 +1064,15 @@ public class DefaultMapperFactory implements MapperFactory {
      * ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata
      * .Type, ma.glasnost.orika.metadata.Type, boolean)
      */
-    public <S, D> DedicatedMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
+    public <S, D> BoundMapperFacade<S, D> getBoundMapperFacade(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
         if (!isBuilt && !isBuilding) {
             build();
         }
         
         if (!containsCycles) {
-            return new NonCyclicDedicatedMapperFacade<S, D>(mapperFacade, this, contextFactory, sourceType, destinationType);
+            return new NonCyclicBoundMapperFacade<S, D>(this, contextFactory, sourceType, destinationType);
         } else {
-            return new DefaultDedicatedMapperFacade<S, D>(mapperFacade, this, contextFactory, sourceType, destinationType);
+            return new DefaultBoundMapperFacade<S, D>(this, contextFactory, sourceType, destinationType);
         }
     }
     
@@ -1082,8 +1082,8 @@ public class DefaultMapperFactory implements MapperFactory {
      * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class,
      * java.lang.Class)
      */
-    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
-        return dedicatedMapperFor(aType, bType, true);
+    public <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType) {
+        return getBoundMapperFacade(aType, bType, true);
     }
     
     /*
@@ -1092,8 +1092,8 @@ public class DefaultMapperFactory implements MapperFactory {
      * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class,
      * java.lang.Class, boolean)
      */
-    public <A, B> DedicatedMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
-        return dedicatedMapperFor(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
+    public <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles) {
+        return getBoundMapperFacade(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
     }
     
 }

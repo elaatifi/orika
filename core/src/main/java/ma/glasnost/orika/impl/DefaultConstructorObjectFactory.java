@@ -21,6 +21,9 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.ObjectFactory;
 
 /**
+ * DefaultConstructorObjectFactory is used for types which should be instantiated
+ * using their default constructor.
+ * 
  * @author matt.deboer@gmail.com
  *
  */
