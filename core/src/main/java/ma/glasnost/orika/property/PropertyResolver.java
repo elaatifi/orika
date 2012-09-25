@@ -25,12 +25,16 @@ import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
@@ -49,13 +53,18 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     private final boolean includePublicFields;
     
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
+    private final Map<java.lang.reflect.Type, Map<String, Property>> dynamicPropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     
     public PropertyResolver(boolean includePublicFields) {
         this.includePublicFields = includePublicFields;
     }
     
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.property.PropertyResolverStrategy#getProperties(java.lang.reflect.Type)
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.property.PropertyResolverStrategy#getProperties(java
+     * .lang.reflect.Type)
      */
     public Map<String, Property> getProperties(java.lang.reflect.Type theType) {
         
@@ -94,15 +103,16 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                             types.add(type.getSuperclass());
                         }
                         
+                        @SuppressWarnings("unchecked")
                         List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                         types.addAll(interfaces);
                     }
                     
                     if (includePublicFields) {
-                        /* 
-                         * Call this outside of the loop because the fields returned 
-                         * are already inclusive of ancestors.
-                         */ 
+                        /*
+                         * Call this outside of the loop because the fields
+                         * returned are already inclusive of ancestors.
+                         */
                         collectPublicFieldProperties(referenceType, properties);
                     }
                     
@@ -164,43 +174,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         } catch (Exception e) {
             return rawType;
         }
-    }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * ma.glasnost.orika.property.PropertyResolverStrategy#getNestedProperty
-     * (java.lang.reflect.Type, java.lang.String)
-     */
-    public NestedProperty getNestedProperty(java.lang.reflect.Type type, String p) {
-        
-        String typeName = type.toString();
-        Map<String, Property> properties = getProperties(type);
-        Property property = null;
-        final List<Property> path = new ArrayList<Property>();
-        if (p.indexOf('.') != -1) {
-            final String[] ps = p.split("\\.");
-            int i = 0;
-            while (i < ps.length) {
-                if (!properties.containsKey(ps[i])) {
-                    throw new RuntimeException("could not resolve nested property [" + p + "] on " + type + ", because " + type
-                            + " does not contain property [" + ps[i] + "]");
-                }
-                property = properties.get(ps[i]);
-                properties = getProperties(property.getType());
-                i++;
-                if (i < ps.length) {
-                    path.add(property);
-                }
-            }
-        }
-        
-        if (property == null) {
-            throw new RuntimeException(typeName + " does not contain property [" + p + "]");
-        }
-        
-        return new NestedProperty(p, property, path.toArray(new Property[path.size()]));
     }
     
     /**
@@ -284,8 +257,10 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     /**
      * Add public non-static fields as properties
      * 
-     * @param referenceType the type for which to collect public field properties
-     * @param properties the collected properties for this type
+     * @param referenceType
+     *            the type for which to collect public field properties
+     * @param properties
+     *            the collected properties for this type
      */
     protected void collectPublicFieldProperties(Type<?> referenceType, Map<String, Property> properties) {
         
@@ -312,6 +287,148 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                     existing.setSetter(property.getName() + " = %s");
                 }
             }
+        }
+    }
+    
+    /**
+     * Determines whether the provided string is a valid nested property expression
+     * 
+     * @param expression
+     *            the expression to evaluate
+     * @return
+     */
+    protected boolean isNestedPropertyExpression(String expression) {
+        return expression.indexOf('.') != -1;
+    }
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.property.PropertyResolverStrategy#getNestedProperty
+     * (java.lang.reflect.Type, java.lang.String)
+     */
+    public NestedProperty getNestedProperty(java.lang.reflect.Type type, String p) {
+        
+        String typeName = type.toString();
+        Property property = null;
+        java.lang.reflect.Type propertyType = type;
+        final List<Property> path = new ArrayList<Property>();
+        if (p.indexOf('.') != -1) {
+            final String[] ps = p.split("\\.");
+            int i = 0;
+            while (i < ps.length) {
+                try {
+                    property = getProperty(propertyType, ps[i]);
+                    propertyType = property.getType();
+                } catch (MappingException e) {
+                    throw new MappingException("could not resolve nested property [" + p + "] on " + type + ", because " + e.getLocalizedMessage());
+                }
+                
+                i++;
+                if (i < ps.length) {
+                    path.add(property);
+                }
+            }
+        }
+        
+        if (property == null) {
+            throw new RuntimeException(typeName + " does not contain property [" + p + "]");
+        }
+        
+        return new NestedProperty(p, property, path.toArray(new Property[path.size()]));
+    }
+    
+    public Property getProperty(java.lang.reflect.Type type, String expr) {
+        
+        return getProperty(type, expr, getProperties(type));
+    }
+    
+    /**
+     * Resolves the specified property expression
+     * 
+     * @param type the property's owning type
+     * @param expr the property expression to resolve
+     * @param properties the known properties for the type
+     * @return the resolved Property
+     * @throws MappingException if the expression cannot be resolved to a property for the type
+     */
+    protected Property getProperty(java.lang.reflect.Type type, String expr, Map<String, Property> properties) throws MappingException {
+        Property property = null;
+        
+        if (isNestedPropertyExpression(expr)) {
+            property = getNestedProperty(type, expr);
+        } else {
+            Map<String, Property> dynamicProperties = dynamicPropertiesCache.get(type);
+            if (dynamicProperties != null) {
+                property = dynamicProperties.get(expr);
+            }
+            if (property == null) {
+                if (properties.containsKey(expr)) {
+                    property = properties.get(expr);
+                } else if (ADHOC_PROPERTY_PATTERN.matcher(expr).matches()) {
+                    property = resolveAdHocProperty(type, expr);
+                    if (property != null) {
+                        synchronized(type) {
+                            if (dynamicProperties == null) {
+                                dynamicProperties = new HashMap<String, Property>(1);
+                                dynamicPropertiesCache.put(type, dynamicProperties);
+                            }
+                            dynamicProperties.put(property.getName(), property);
+                        }
+                    }
+                } else {
+                    throw new MappingException(expr + " does not belong to " + type);
+                }
+            }
+        }
+        return property;
+    }
+    
+    private static final Pattern ADHOC_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\(\\s*([\\w]*)\\s*,\\s*([\\w]*)\\s*\\)");
+    
+    /**
+     * Determines whether the provided string is a valid ad-hoc property expression
+     * 
+     * @param expression
+     *            the expression to evaluate
+     * @return
+     */
+    protected boolean isAdHocPropertyExpression(String expression) {
+        return expression.indexOf('.') != -1;
+    }
+    
+    
+    /**
+     * Resolves ad-hoc properties, which are defined in-line with the following format:<br>
+     * "name(getterName,setterName)"
+     * 
+     * @param type
+     * @param expr
+     * @return
+     */
+    public Property resolveAdHocProperty(java.lang.reflect.Type type, String expr) {
+        Type<?> theType = TypeFactory.valueOf(type); 
+        Matcher matcher = ADHOC_PROPERTY_PATTERN.matcher(expr);
+        
+        if (matcher.matches()) {
+            DynamicPropertyBuilder builder = new DynamicPropertyBuilder(theType);
+            builder.setName(matcher.group(1));
+            String readMethod = matcher.group(2);
+            String writeMethod = matcher.group(3);
+            
+            if (!"".equals(readMethod) || !"".equals(writeMethod.trim())) {
+                for (Method m : theType.getRawType().getMethods()) {
+                    if (m.getName().equals(readMethod) && m.getParameterTypes().length == 0) {
+                        builder.setReadMethod(m);
+                    } else if (m.getName().endsWith(writeMethod) && m.getParameterTypes().length == 1) {
+                        builder.setWriteMethod(m);
+                    }
+                }
+            }
+            return builder.toProperty(); 
+        } else {
+            throw new IllegalArgumentException("'" + expr + "' is not a valid dynamic property expression");
         }
     }
     

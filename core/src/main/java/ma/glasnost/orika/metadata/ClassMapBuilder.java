@@ -533,15 +533,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
         	property.setGetter("");
         	property.setExpression("");
         	property.setType(TypeFactory.valueOf(type));
-        } else if (isNestedPropertyExpression(expr)) {
-            property = propertyResolver.getNestedProperty(type, expr);
         } else {
-            final Map<String, Property> properties = propertyResolver.getProperties(type);
-            if (properties.containsKey(expr)) {
-                property = properties.get(expr);
-            } else {
-                throw new MappingException(expr + " does not belong to " + type);
-            }
+            property = propertyResolver.getProperty(type, expr);
         }
         
         return property;

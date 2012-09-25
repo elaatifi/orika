@@ -25,11 +25,9 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
 
 /**
  * RegexPropertyResolver uses regular expressions to find properties based
@@ -55,7 +53,6 @@ import ma.glasnost.orika.metadata.Type;
  */
 public class RegexPropertyResolver extends IntrospectorPropertyResolver {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(RegexPropertyResolver.class);
     private final Pattern readPattern;
     private final Pattern writePattern;
     private final boolean includeJavaBeans;
@@ -78,24 +75,6 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
     }
     
     /**
-     * Data structure for collecting resolved property info
-     */
-    private static final class PropertyInfo {
-        /**
-         * The read method for a property
-         */
-        private Method readMethod;
-        /**
-         * The write method for a property
-         */
-        private Method writeMethod;
-        /**
-         * The type for a property
-         */
-        private Class<?> type;
-    }
-    
-    /**
      * Collects all properties for the specified type.
      * 
      * @param type the type for which to collect properties
@@ -104,7 +83,7 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
      */
     protected void collectProperties(Class<?> type, Type<?> referenceType, Map<String, Property> properties) {
         
-        Map<String, PropertyInfo> collectedMethods = new LinkedHashMap<String, PropertyInfo>();
+        Map<String, DynamicPropertyBuilder> collectedMethods = new LinkedHashMap<String, DynamicPropertyBuilder>();
         for (Method m: type.getMethods()) {
             
             if (m.getParameterTypes().length == 0 && m.getReturnType() != null && m.getReturnType() != Void.TYPE) {
@@ -113,33 +92,17 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                     String name = readMatcher.group(1);
                     if (name != null) {
                         name = uncapitalize(name);
-                        PropertyInfo info = collectedMethods.get(name);
-                        if (info != null && info.type != null && !m.getReturnType().isAssignableFrom(info.type)) {
-                            /*
-                             * If we've already parsed the write method, and the read method type is not
-                             * a sub-type of the write method's type, the two should not be considered to form
-                             * a 'property'.
-                             */
-                            LOGGER.warn("skipping write method for " + type.getCanonicalName() + "["+ name +"]" + 
-                                   " because it's type (" + info.type.getCanonicalName() + ") " +
-                                   "is not assignable from the corresponding read method's type (" + 
-                                   m.getReturnType().getCanonicalName() + ")");
-                            
-                        } else {
-                            if (info == null) {
-                                info = new PropertyInfo();
-                                collectedMethods.put(name, info);
-                            }
-                            if (info.type == null) {
-                                info.type = m.getReturnType();
-                            }
-                            info.readMethod = m;
+                        DynamicPropertyBuilder info = collectedMethods.get(name);
+                        if (info == null) {
+                            info = new DynamicPropertyBuilder(TypeFactory.resolveValueOf(type, referenceType));
+                            info.setName(name);
+                            collectedMethods.put(name, info);
                         }
+                        info.setReadMethod(m);
                     } else {
                         throw new IllegalStateException("the configured readMethod regex '" + readPattern + 
                                 "' does not define group (1) containing the property's name");
                     }
-    
                 } 
             } else if (m.getParameterTypes().length == 1) {
             
@@ -148,27 +111,13 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                     String name = writeMatcher.group(1);
                     if (name != null) {
                         name = uncapitalize(name);
-                        PropertyInfo info = collectedMethods.get(name);
-                        if (info != null && info.type != null && !info.type.isAssignableFrom(m.getParameterTypes()[0])) {
-                            /*
-                             * If we've already parsed the read method, and the read method type is not
-                             * a sub-type of the write method's type, the two should not be considered to form
-                             * a 'property'.
-                             */
-                            LOGGER.warn("skipping write method for " + type.getCanonicalName() + "["+ name +"]" + 
-                                   " because it's type (" + m.getParameterTypes()[0].getCanonicalName() + ") " +
-                                   "is not assignable from the corresponding read method's type (" + 
-                                   info.type.getCanonicalName() + ")");
-                            
-                        } else {
-                            if (info == null) {
-                                info = new PropertyInfo();
-                                collectedMethods.put(name, info);
-                            }
-                            
-                            info.type = m.getParameterTypes()[0]; 
-                            info.writeMethod = m;
+                        DynamicPropertyBuilder info = collectedMethods.get(name);
+                        if (info == null) {
+                            info = new DynamicPropertyBuilder(TypeFactory.resolveValueOf(type, referenceType));
+                            info.setName(name);
+                            collectedMethods.put(name, info);
                         }
+                        info.setWriteMethod(m);
                     } else {
                         throw new IllegalStateException("the configured writeMethod regex '" + writePattern + 
                                 "' does not define group (1) containing the property's name");
@@ -177,8 +126,9 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
             }
         }
            
-        for (Entry<String, PropertyInfo> entry: collectedMethods.entrySet()) {
-            processProperty(entry.getKey(), entry.getValue().type, entry.getValue().readMethod, entry.getValue().writeMethod, type, referenceType, properties);
+        for (Entry<String, DynamicPropertyBuilder> entry: collectedMethods.entrySet()) {
+            Property property = entry.getValue().toProperty();
+            processProperty(property.getName(), property.getType().getRawType(), entry.getValue().getReadMethod(), entry.getValue().getWriteMethod(), type, referenceType, properties);
         }
         
         if (includeJavaBeans) {

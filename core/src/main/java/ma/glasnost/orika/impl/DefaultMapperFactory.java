@@ -103,16 +103,6 @@ public class DefaultMapperFactory implements MapperFactory {
     private volatile boolean isBuilding = false;
     
     /**
-     * Place-holder object factory used to represent the default constructor in
-     * registry lookup; prevents repeated lookup of constructor
-     */
-    private static final ObjectFactory<Object> USE_DEFAULT_CONSTRUCTOR = new ObjectFactory<Object>() {
-        public Object create(Object source, MappingContext context) {
-            return null;
-        }
-    };
-    
-    /**
      * Constructs a new instance of DefaultMapperFactory
      * 
      * @param builder
