@@ -28,7 +28,7 @@ public class BidirectionalMappingTestCase {
 
 	@Test
 	public void testBidirectionalMapping() {
-		BoundMapperFacade<Book, BookDTO> mapper = MappingUtil.getMapperFactory().getBoundMapperFacade(Book.class, BookDTO.class);
+		BoundMapperFacade<Book, BookDTO> mapper = MappingUtil.getMapperFactory().getMapperFacade(Book.class, BookDTO.class);
 
 		Author author = new Author();
 		author.setFirstName("Khalil");
@@ -39,7 +39,7 @@ public class BidirectionalMappingTestCase {
 		book.setAuthor(author);
 		author.setBook(book);
 
-		BookDTO dto = mapper.mapAtoB(book);
+		BookDTO dto = mapper.map(book);
 
 		Assert.assertEquals(book.getTitle(), dto.getTitle());
 		Assert.assertEquals(book.getAuthor().getFirstName(), dto.getAuthor().getFirstName());

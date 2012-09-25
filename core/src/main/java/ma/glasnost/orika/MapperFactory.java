@@ -222,7 +222,7 @@ public interface MapperFactory {
      *            the 'B' type for the returned DedicatedMapperFacade
      * 
      */
-    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Type<A> aType, Type<B> bType);
+    <A, B> BoundMapperFacade<A, B> getMapperFacade(Type<A> aType, Type<B> bType);
     
     /**
      * Returns a BoundMapperFacade for the specified source and destination
@@ -235,7 +235,7 @@ public interface MapperFactory {
      *            the 'B' type for the returned DedicatedMapperFacade
      * 
      */
-    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType);
+    <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType);
     
     /**
      * Returns a BoundMapperFacade for the specified source and destination
@@ -256,7 +256,7 @@ public interface MapperFactory {
      * 
      * @return
      */
-    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Type<A> aType, Type<B> bType, boolean containsCycles);
+    <A, B> BoundMapperFacade<A, B> getMapperFacade(Type<A> aType, Type<B> bType, boolean containsCycles);
     
     /**
      * Returns a BoundMapperFacade for the specified source and destination
@@ -277,7 +277,7 @@ public interface MapperFactory {
      * 
      * @return
      */
-    <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles);
+    <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles);
     
     
     /**

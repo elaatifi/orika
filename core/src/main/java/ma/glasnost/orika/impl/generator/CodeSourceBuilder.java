@@ -95,7 +95,7 @@ public class CodeSourceBuilder {
     
     private String usedMapperFacadeCall(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
-        String mapInDirection = usedFacade.isReversed ? "mapBtoA" : "mapAtoB";
+        String mapInDirection = usedFacade.isReversed ? "mapReverse" : "map";
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
     }
     
@@ -105,7 +105,7 @@ public class CodeSourceBuilder {
     
     private String usedMapperFacadeNewObjectCall(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
-        String instantiateMethod = usedFacade.isReversed ? "newObjectB" : "newObjectA";
+        String instantiateMethod = usedFacade.isReversed ? "newObject" : "newObjectReverse";
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
     }
     

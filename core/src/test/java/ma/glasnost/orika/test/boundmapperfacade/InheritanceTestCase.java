@@ -34,13 +34,13 @@ public class InheritanceTestCase {
     @Test
     public void testSimpleInheritance() {
         
-        BoundMapperFacade<ChildEntity,ChildDTO> mapper = factory.getBoundMapperFacade(ChildEntity.class, ChildDTO.class);
+        BoundMapperFacade<ChildEntity,ChildDTO> mapper = factory.getMapperFacade(ChildEntity.class, ChildDTO.class);
         
         ChildEntity entity = new ChildEntity();
         entity.setId(1L);
         entity.setName("Khettabi");
         
-        ChildDTO dto = mapper.mapAtoB(entity);
+        ChildDTO dto = mapper.map(entity);
         
         Assert.assertEquals(entity.getId(), dto.getId());
         Assert.assertEquals(entity.getName(), dto.getName());
@@ -48,14 +48,14 @@ public class InheritanceTestCase {
     
     @Test
     public void resolveConcreteClass() {
-        BoundMapperFacade<ChildEntity,BaseDTO> mapper = factory.getBoundMapperFacade(ChildEntity.class, BaseDTO.class);
+        BoundMapperFacade<ChildEntity,BaseDTO> mapper = factory.getMapperFacade(ChildEntity.class, BaseDTO.class);
         factory.registerClassMap(factory.classMap(ChildEntity.class, ChildDTO.class).byDefault());
         
         ChildEntity entity = new ChildEntity();
         entity.setId(1L);
         entity.setName("Khettabi");
         
-        BaseDTO dto = mapper.mapAtoB(entity);
+        BaseDTO dto = mapper.map(entity);
         
         Assert.assertTrue(dto instanceof ChildDTO);
         Assert.assertEquals(entity.getName(), ((ChildDTO) dto).getName());
@@ -74,13 +74,13 @@ public class InheritanceTestCase {
                 }).byDefault());
    
         
-        BoundMapperFacade<ChildEntity,Child2DTO> mapper = factory.getBoundMapperFacade(ChildEntity.class, Child2DTO.class);
+        BoundMapperFacade<ChildEntity,Child2DTO> mapper = factory.getMapperFacade(ChildEntity.class, Child2DTO.class);
         
         ChildEntity entity = new ChildEntity();
         entity.setId(1L);
         entity.setName("Khettabi");
         
-        Child2DTO dto = mapper.mapAtoB(entity);
+        Child2DTO dto = mapper.map(entity);
         
         Assert.assertEquals(entity.getId(), dto.getId());
         Assert.assertEquals(entity.getName(), dto.getName());

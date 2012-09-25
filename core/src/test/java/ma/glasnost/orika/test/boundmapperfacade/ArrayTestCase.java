@@ -21,9 +21,9 @@ public class ArrayTestCase {
         byte[] buffer = new byte[]{1,2,3,4};
         source.setBuffer(buffer);
 
-        BoundMapperFacade<A,B> mapperFacade = MappingUtil.getMapperFactory().getBoundMapperFacade(ArrayTestCaseClasses.A.class, ArrayTestCaseClasses.B.class);
+        BoundMapperFacade<A,B> mapperFacade = MappingUtil.getMapperFactory().getMapperFacade(ArrayTestCaseClasses.A.class, ArrayTestCaseClasses.B.class);
 
-        ArrayTestCaseClasses.B destination = mapperFacade.mapAtoB(source);
+        ArrayTestCaseClasses.B destination = mapperFacade.map(source);
 
         Assert.assertArrayEquals(source.getBuffer(), destination.getBuffer());
         
@@ -35,23 +35,23 @@ public class ArrayTestCase {
         byte[] buffer = new byte[]{1,2,3,4};
         source.setBuffer(buffer);
 
-        BoundMapperFacade<A,C> mapperFacade = MappingUtil.getMapperFactory().getBoundMapperFacade(A.class, C.class);
+        BoundMapperFacade<A,C> mapperFacade = MappingUtil.getMapperFactory().getMapperFacade(A.class, C.class);
 
-        ArrayTestCaseClasses.C destination = mapperFacade.mapAtoB(source);
+        ArrayTestCaseClasses.C destination = mapperFacade.map(source);
 
         Assert.assertArrayEquals(new Byte[]{1,2,3,4}, destination.getBuffer());
     }
     
     @Test
     public void testArrayToList() {
-        BoundMapperFacade<A, D> mapperFacade = MappingUtil.getMapperFactory().getBoundMapperFacade(A.class, D.class);
+        BoundMapperFacade<A, D> mapperFacade = MappingUtil.getMapperFactory().getMapperFacade(A.class, D.class);
     	
     	ArrayTestCaseClasses.A source =  new ArrayTestCaseClasses.A();
         byte[] buffer = new byte[]{1,2,3,4};
         source.setBuffer(buffer);
 
 
-        D destination = mapperFacade.mapAtoB(source);
+        D destination = mapperFacade.map(source);
 
         Assert.assertEquals(Arrays.asList((byte)1,(byte)2,(byte)3,(byte)4), destination.getBuffer());
     	
@@ -59,13 +59,13 @@ public class ArrayTestCase {
     
     @Test
     public void testListToArray() {
-        BoundMapperFacade<A,D> mapperFacade = MappingUtil.getMapperFactory().getBoundMapperFacade(A.class, D.class);
+        BoundMapperFacade<A,D> mapperFacade = MappingUtil.getMapperFactory().getMapperFacade(A.class, D.class);
     	
     	D source =  new D();
         source.setBuffer(Arrays.asList((byte)1,(byte)2,(byte)3,(byte)4));
 
 
-        A destination = mapperFacade.mapBtoA(source);
+        A destination = mapperFacade.mapReverse(source);
 
         Assert.assertArrayEquals(new byte[] {(byte)1,(byte)2,(byte)3,(byte)4}, destination.getBuffer());
     	
@@ -77,7 +77,7 @@ public class ArrayTestCase {
         Product p = new Product();
         p.setTags(new String[] { "music", "sport" });
 
-        ProductDTO productDTO = MappingUtil.getMapperFactory().getBoundMapperFacade(Product.class, ProductDTO.class).mapAtoB(p);
+        ProductDTO productDTO = MappingUtil.getMapperFactory().getMapperFacade(Product.class, ProductDTO.class).map(p);
 
         Assert.assertArrayEquals(p.getTags(), productDTO.getTags());
     }

@@ -54,19 +54,19 @@ public class NonCyclicBoundMapperFacade<A, B> extends DefaultBoundMapperFacade<A
         this.nonCyclicContext = new NonCyclicMappingContext();
     }
     
-    public B mapAtoB(A source) {
-        return super.mapAtoB(source, nonCyclicContext);
+    public B map(A source) {
+        return super.map(source, nonCyclicContext);
     }
     
-    public A mapBtoA(B source) {
-        return super.mapBtoA(source, nonCyclicContext);
+    public A mapReverse(B source) {
+        return super.mapReverse(source, nonCyclicContext);
     }
     
-    public void mapAtoB(A source, B destination) {
-        super.mapAtoB(source, destination, nonCyclicContext);
+    public void map(A source, B destination) {
+        super.map(source, destination, nonCyclicContext);
     }
     
-    public void mapBtoA(B destination, A source) {
-        super.mapBtoA(destination, source, nonCyclicContext);
+    public void mapReverse(B destination, A source) {
+        super.mapReverse(destination, source, nonCyclicContext);
     }
 }

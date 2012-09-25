@@ -5,7 +5,6 @@ import java.util.Set;
 
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.crossfeatures.PolicyElementsTestCaseClasses.CustomerElement;
@@ -42,18 +41,18 @@ public class PolicyElementsTestCase {
         
         policy.setElements(elements);
         
-        PolicyDTO dto = factory.getMapperFacade().map(policy, PolicyDTO.class);
+        PolicyDTO dto = factory.getMapperFacade(Policy.class, PolicyDTO.class).map(policy);
         
         Assert.assertEquals(elements.size(), dto.getElements().size());
     }
     
     private void configureMapperFactory(MapperFactory factory) {
         
-        factory.registerClassMap(ClassMapBuilder.map(Policy.class, PolicyDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(CustomerElement.class, CustomerElementDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(ProductElement.class, ProductElementDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(OtherElement.class, OtherElementDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(OneOtherElement.class, OneOtherElementDTO.class).byDefault().toClassMap());
+        factory.registerClassMap(factory.classMap(Policy.class, PolicyDTO.class).byDefault());
+        factory.registerClassMap(factory.classMap(CustomerElement.class, CustomerElementDTO.class).byDefault());
+        factory.registerClassMap(factory.classMap(ProductElement.class, ProductElementDTO.class).byDefault());
+        factory.registerClassMap(factory.classMap(OtherElement.class, OtherElementDTO.class).byDefault());
+        factory.registerClassMap(factory.classMap(OneOtherElement.class, OneOtherElementDTO.class).byDefault());
     }
     
     @Test
@@ -87,7 +86,7 @@ public class PolicyElementsTestCase {
         
         policy.setElements(elements);
         
-        PolicyDTO dto = factory.getMapperFacade().map(policy, PolicyDTO.class);
+        PolicyDTO dto = factory.getMapperFacade(Policy.class, PolicyDTO.class).map(policy);
         
         Assert.assertEquals(elements.size(), dto.getElements().size());
         

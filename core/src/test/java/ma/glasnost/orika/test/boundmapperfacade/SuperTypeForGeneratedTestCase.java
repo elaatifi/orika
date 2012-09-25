@@ -80,7 +80,7 @@ public class SuperTypeForGeneratedTestCase {
 		Library lib = createLibrary();
 		Book book = lib.getBooks().get(0);
 		
-		LibraryDTO mappedLib = factory.getMapperFacade().map(lib, LibraryDTO.class);
+		LibraryDTO mappedLib = factory.getMapperFacade(Library.class, LibraryDTO.class).map(lib);
 		
 		Assert.assertNotNull(mappedLib);
 

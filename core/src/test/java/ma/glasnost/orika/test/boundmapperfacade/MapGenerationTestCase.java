@@ -7,9 +7,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import junit.framework.Assert;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapEntry;
-import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.Type;
@@ -28,8 +28,8 @@ public class MapGenerationTestCase {
 				factory.classMap(MapWithSetter.class, MapWithSetterDto.class)
 				.field("testScores", "scores").byDefault());
 		
-		MapperFacade mapper = factory.getMapperFacade();
-		
+		BoundMapperFacade<MapWithSetter, MapWithSetterDto> mapper = factory.getMapperFacade(MapWithSetter.class, MapWithSetterDto.class);
+        
 		MapWithSetter source = new MapWithSetter();
 		Map<String, Integer> testScores = new LinkedHashMap<String, Integer>();
 
@@ -39,7 +39,7 @@ public class MapGenerationTestCase {
 		source.setTestScores(testScores);
 		
 		
-		MapWithSetterDto result = mapper.map(source, MapWithSetterDto.class);
+		MapWithSetterDto result = mapper.map(source);
 		
 		Assert.assertNotNull(result);
 		Assert.assertNotNull(result.getScores());
@@ -58,8 +58,8 @@ public class MapGenerationTestCase {
 				factory.classMap(MapWithSetter.class, MapWithoutSetter.class)
 				.field("testScores", "scores").byDefault());
 		
-		MapperFacade mapper = factory.getMapperFacade();
-		
+		BoundMapperFacade<MapWithSetter, MapWithoutSetter> mapper = factory.getMapperFacade(MapWithSetter.class, MapWithoutSetter.class);
+        
 		MapWithSetter source = new MapWithSetter();
 		Map<String, Integer> testScores = new LinkedHashMap<String, Integer>();
 
@@ -69,7 +69,7 @@ public class MapGenerationTestCase {
 		source.setTestScores(testScores);
 		
 		
-		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		MapWithoutSetter result = mapper.map(source);
 		
 		Assert.assertNotNull(result);
 		Assert.assertNotNull(result.getScores());
@@ -98,8 +98,8 @@ public class MapGenerationTestCase {
 				return source.getKey();
 			}});
 		
-		MapperFacade mapper = factory.getMapperFacade();
-		
+        BoundMapperFacade<MapWithSetter, GenericDto> mapper = factory.getMapperFacade(MapWithSetter.class, GenericDto.class);
+        
 		MapWithSetter source = new MapWithSetter();
 		Map<String, Integer> testScores = new LinkedHashMap<String, Integer>();
 
@@ -110,7 +110,7 @@ public class MapGenerationTestCase {
 		
 		
 		
-		GenericDto result = mapper.map(source, GenericDto.class);
+		GenericDto result = mapper.map(source);
 		
 		Assert.assertNotNull(result.getStringArray());
 		
@@ -135,8 +135,8 @@ public class MapGenerationTestCase {
 				return source.getKey();
 			}});
 		
-		MapperFacade mapper = factory.getMapperFacade();
-		
+        BoundMapperFacade<MapWithSetter, GenericDto> mapper = factory.getMapperFacade(MapWithSetter.class, GenericDto.class);
+        
 		MapWithSetter source = new MapWithSetter();
 		Map<String, Integer> testScores = new LinkedHashMap<String, Integer>();
 
@@ -147,7 +147,7 @@ public class MapGenerationTestCase {
 		
 		
 		
-		GenericDto result = mapper.map(source, GenericDto.class);
+		GenericDto result = mapper.map(source);
 		
 		Assert.assertNotNull(result.getStringList());
 		
@@ -181,8 +181,8 @@ public class MapGenerationTestCase {
 				return testScores.get(source);
 			}});
 		
-		MapperFacade mapper = factory.getMapperFacade();
-		
+        BoundMapperFacade<GenericDto, MapWithoutSetter> mapper = factory.getMapperFacade(GenericDto.class, MapWithoutSetter.class);
+        
 		GenericDto source = new GenericDto();
 		List<String> testScores = new ArrayList<String>();
 
@@ -193,7 +193,7 @@ public class MapGenerationTestCase {
 
 		
 		
-		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		MapWithoutSetter result = mapper.map(source);
 		
 		Assert.assertNotNull(result.getScores());
 		
@@ -227,7 +227,7 @@ public class MapGenerationTestCase {
 				return testScores.get(source);
 			}});
 		
-		MapperFacade mapper = factory.getMapperFacade();
+		BoundMapperFacade<GenericDto, MapWithoutSetter> mapper = factory.getMapperFacade(GenericDto.class, MapWithoutSetter.class);
 		
 		GenericDto source = new GenericDto();
 		List<String> testScores = new ArrayList<String>();
@@ -238,7 +238,7 @@ public class MapGenerationTestCase {
 		source.setStringArray(testScores.toArray(new String[testScores.size()]));
 		
 		
-		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		MapWithoutSetter result = mapper.map(source);
 		
 		Assert.assertNotNull(result.getScores());
 		
@@ -257,8 +257,8 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the list element type to map entry
          */
-		MapperFacade mapper = factory.getMapperFacade();
-		
+		BoundMapperFacade<GenericDto, MapWithoutSetter> mapper = factory.getMapperFacade(GenericDto.class, MapWithoutSetter.class);
+        
 		GenericDto source = new GenericDto();
 		List<String> testScores = new ArrayList<String>();
 		List<Integer> numericScores = new ArrayList<Integer>();
@@ -271,7 +271,7 @@ public class MapGenerationTestCase {
 		source.setStringArray(testScores.toArray(new String[testScores.size()]));
 		source.setIntArray(ClassUtil.intArray(numericScores));
 		
-		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		MapWithoutSetter result = mapper.map(source);
 		
 		Assert.assertNotNull(result.getScores());
 		
@@ -291,8 +291,8 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the list element type to map entry
          */
-		MapperFacade mapper = factory.getMapperFacade();
-		
+		BoundMapperFacade<GenericDto, MapWithoutSetter> mapper = factory.getMapperFacade(GenericDto.class, MapWithoutSetter.class);
+        
 		GenericDto source = new GenericDto();
 		List<String> testScores = new ArrayList<String>();
 		List<Integer> numericScores = new ArrayList<Integer>();
@@ -305,7 +305,7 @@ public class MapGenerationTestCase {
 		source.setStringArray(testScores.toArray(new String[testScores.size()]));
 		source.setIntArray(ClassUtil.intArray(numericScores));
 		
-		MapWithoutSetter result = mapper.map(source, MapWithoutSetter.class);
+		MapWithoutSetter result = mapper.map(source);
 		
 		Assert.assertNotNull(result.getScores());
 		Assert.assertTrue("90".equals(result.getScores().get("A")));
@@ -346,9 +346,9 @@ public class MapGenerationTestCase {
         /*
          * Tell Orika how we should convert the list element type to map entry
          */
-		MapperFacade mapper = factory.getMapperFacade();
-		
-		GenericDto result = mapper.map(source, GenericDto.class);
+		BoundMapperFacade<GenericDto, MapWithoutSetter> mapper = factory.getMapperFacade(GenericDto.class, MapWithoutSetter.class);
+        
+		GenericDto result = mapper.mapReverse(source);
 		
 		Assert.assertNotNull(result.getGradeList());
 		Assert.assertEquals(source.getScores().size(), result.getGradeList().size());
@@ -357,7 +357,7 @@ public class MapGenerationTestCase {
 			Assert.assertTrue(source.getScores().get(""+g.getLetterGrade()).equals(""+g.getMinimumScore()));
 		}
 		
-		MapWithoutSetter mapBack = mapper.map(result, MapWithoutSetter.class);
+		MapWithoutSetter mapBack = mapper.map(result);
 		Assert.assertTrue(source.getScores().keySet().containsAll(mapBack.getScores().keySet()));
 		Assert.assertTrue(mapBack.getScores().keySet().containsAll(source.getScores().keySet()));
 	}

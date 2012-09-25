@@ -95,7 +95,7 @@ public class GenericCollectionsTestCase {
         t1.setWorkers(Arrays.asList(e));
         
        
-    	TaskLayer2<?> t2 = factory.getBoundMapperFacade(TaskLayer1.class, TaskLayer2.class).mapAtoB(t1);
+    	TaskLayer2<?> t2 = factory.getMapperFacade(TaskLayer1.class, TaskLayer2.class).map(t1);
     	Assert.assertNotNull(t2);
         Assert.assertTrue(t1.getWorkers().containsAll(t2.getWorkers()));
         Assert.assertTrue(t2.getWorkers().containsAll(t1.getWorkers())); 
@@ -121,7 +121,7 @@ public class GenericCollectionsTestCase {
         factory.registerClassMap(
                 factory.classMap(sourceType, targetType).byDefault());
         
-        TaskLayer2<Employee> t2 = factory.getBoundMapperFacade(sourceType, targetType).mapAtoB(t1);
+        TaskLayer2<Employee> t2 = factory.getMapperFacade(sourceType, targetType).map(t1);
         Assert.assertNotNull(t2);
         Assert.assertTrue(t1.getWorkers().containsAll(t2.getWorkers()));
         Assert.assertTrue(t2.getWorkers().containsAll(t1.getWorkers())); 

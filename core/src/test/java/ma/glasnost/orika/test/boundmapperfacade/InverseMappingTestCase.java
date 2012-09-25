@@ -21,7 +21,7 @@ package ma.glasnost.orika.test.boundmapperfacade;
 import java.util.HashSet;
 import java.util.Set;
 
-import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -33,13 +33,13 @@ public class InverseMappingTestCase {
     
     @Test
     public void testInverseOneToOneMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
         
-        ClassMapBuilder<PersonDTO, Person> classMapBuilder = ClassMapBuilder.map(PersonDTO.class, Person.class);
+        ClassMapBuilder<PersonDTO, Person> classMapBuilder = factory.classMap(PersonDTO.class, Person.class);
         classMapBuilder.fieldMap("address").bInverse("person").add();
-        mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+        factory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
-        MapperFacade mapper = mapperFactory.getMapperFacade();
+        BoundMapperFacade<Person,PersonDTO> mapper = factory.getMapperFacade(Person.class, PersonDTO.class);
         
         AddressDTO addressDTO = new AddressDTO();
         addressDTO.setLine1("5 rue Blida");
@@ -50,7 +50,7 @@ public class InverseMappingTestCase {
         personDTO.setLastName("Gibran");
         personDTO.setAddress(addressDTO);
         
-        Person person = mapper.map(personDTO, Person.class);
+        Person person = mapper.mapReverse(personDTO);
         
         Assert.assertEquals(personDTO.getFirstName(), person.getFirstName());
         Assert.assertEquals(personDTO.getAddress().getLine1(), person.getAddress().getLine1());
@@ -60,15 +60,14 @@ public class InverseMappingTestCase {
     
     @Test
     public void testInverseOneToManyMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
-        ClassMapBuilder<PublisherDTO, Publisher> classMapBuilder = ClassMapBuilder.map(PublisherDTO.class, Publisher.class);
+        ClassMapBuilder<PublisherDTO, Publisher> classMapBuilder = factory.classMap(PublisherDTO.class, Publisher.class);
         classMapBuilder.fieldMap("books").bInverse("publisher").add();
-        mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+        factory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
-        mapperFactory.build();
         
-        MapperFacade mapper = mapperFactory.getMapperFacade();
+        BoundMapperFacade<Publisher,PublisherDTO> mapper = factory.getMapperFacade(Publisher.class, PublisherDTO.class);
         
         BookDTO parisNoirDTO = new BookDTO();
         parisNoirDTO.setTitle("Paris Noir");
@@ -81,22 +80,24 @@ public class InverseMappingTestCase {
         publisherDTO.getBooks().add(parisNoirDTO);
         publisherDTO.getBooks().add(chiensFousDTO);
         
-        Publisher publisher = mapper.map(publisherDTO, Publisher.class);
+        Publisher publisher = mapper.mapReverse(publisherDTO);
         
         Assert.assertTrue(publisher == publisher.getBooks().iterator().next().getPublisher());
     }
     
     @Test
     public void testInverseManyToOneMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
-        ClassMapBuilder<BookDTO, Book> classMapBuilder = ClassMapBuilder.map(BookDTO.class, Book.class);
+        ClassMapBuilder<BookDTO, Book> classMapBuilder = factory.classMap(BookDTO.class, Book.class);
         classMapBuilder.fieldMap("author").bInverse("books").add();
-        mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+        factory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
-        mapperFactory.build();
-        
-        MapperFacade mapper = mapperFactory.getMapperFacade();
+        /*
+         * Doesn't matter which direction you ask for the bound mapper;
+         */
+        BoundMapperFacade<Book, BookDTO> mapper = factory.getMapperFacade(Book.class, BookDTO.class);
+        BoundMapperFacade<BookDTO, Book> mapper2 = factory.getMapperFacade(BookDTO.class, Book.class);
         
         AuthorDTO authorDTO = new AuthorDTO();
         authorDTO.setFirstName("Khalil");
@@ -106,22 +107,24 @@ public class InverseMappingTestCase {
         bookDTO.setTitle("The Prophet");
         bookDTO.setAuthor(authorDTO);
         
-        Book book = mapper.map(bookDTO, Book.class);
+        Book book = mapper.mapReverse(bookDTO);
+        Book book2 = mapper2.map(bookDTO);
         
         Assert.assertTrue(book.getAuthor().getBooks().contains(book));
+        
+        Assert.assertTrue(book2.getAuthor().getBooks().contains(book2));
     }
     
     @Test
     public void testInverseManyToManyMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
-        ClassMapBuilder<ReaderDTO, Reader> classMapBuilder = ClassMapBuilder.map(ReaderDTO.class, Reader.class);
+        ClassMapBuilder<ReaderDTO, Reader> classMapBuilder = factory.classMap(ReaderDTO.class, Reader.class);
         classMapBuilder.fieldMap("books").bInverse("readers").add();
-        mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+        factory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         
-        mapperFactory.build();
-        
-        MapperFacade mapper = mapperFactory.getMapperFacade();
+        BoundMapperFacade<Reader, ReaderDTO> mapper = factory.getMapperFacade(Reader.class, ReaderDTO.class);
+        BoundMapperFacade<ReaderDTO,Reader> mapper2 = factory.getMapperFacade(ReaderDTO.class, Reader.class);
         
         Set<BookDTO> bookDTOs = new HashSet<BookDTO>();
         BookDTO bookDTO = new BookDTO();
@@ -136,10 +139,15 @@ public class InverseMappingTestCase {
         readerDTO.setLastName("Lopez");
         readerDTO.setBooks(bookDTOs);
         
-        Reader reader = mapper.map(readerDTO, Reader.class);
+        Reader reader = mapper.mapReverse(readerDTO);
+        Reader reader2 = mapper2.map(readerDTO);
         
         for (Book book : reader.getBooks()) {
             Assert.assertTrue(book.getReaders().contains(reader));
+        }
+        
+        for (Book book : reader2.getBooks()) {
+            Assert.assertTrue(book.getReaders().contains(reader2));
         }
     }
     

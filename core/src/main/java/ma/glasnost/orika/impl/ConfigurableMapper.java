@@ -373,18 +373,18 @@ public class ConfigurableMapper implements MapperFacade {
     }
 
     public <S, D> BoundMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType) {
-        return factory.getBoundMapperFacade(sourceType, destinationType);
+        return factory.getMapperFacade(sourceType, destinationType);
     }
 
     public <S, D> BoundMapperFacade<S, D> dedicatedMapperFor(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
-        return factory.getBoundMapperFacade(sourceType, destinationType, containsCycles);
+        return factory.getMapperFacade(sourceType, destinationType, containsCycles);
     }
 
     public <A, B> BoundMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType) {
-        return factory.getBoundMapperFacade(aType, bType);
+        return factory.getMapperFacade(aType, bType);
     }
 
     public <A, B> BoundMapperFacade<A, B> dedicatedMapperFor(Class<A> aType, Class<B> bType, boolean containsCycles) {
-        return factory.getBoundMapperFacade(aType, bType, containsCycles);
+        return factory.getMapperFacade(aType, bType, containsCycles);
     }
 }

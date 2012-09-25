@@ -20,7 +20,6 @@ package ma.glasnost.orika.test.boundmapperfacade;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
@@ -31,11 +30,9 @@ public class NestedInheritanceTestCase {
     public void testNestedInheritance() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Person.class, PersonDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(Client.class, ClientDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(Subscription.class, SubscriptionDTO.class).field("client", "person").toClassMap());
-        
-        factory.build();
+        factory.registerClassMap(factory.classMap(Person.class, PersonDTO.class).byDefault());
+        factory.registerClassMap(factory.classMap(Client.class, ClientDTO.class).byDefault());
+        factory.registerClassMap(factory.classMap(Subscription.class, SubscriptionDTO.class).field("client", "person"));
         
         Client client = new Client();
         client.setName("Khalil Gebran");
@@ -43,7 +40,7 @@ public class NestedInheritanceTestCase {
         Subscription subscription = new Subscription();
         subscription.setClient(client);
         
-        SubscriptionDTO dto = factory.getMapperFacade().map(subscription, SubscriptionDTO.class);
+        SubscriptionDTO dto = factory.getMapperFacade(Subscription.class, SubscriptionDTO.class).map(subscription);
         
         Assert.assertNotNull(dto);
         Assert.assertNotNull(dto.getPerson());

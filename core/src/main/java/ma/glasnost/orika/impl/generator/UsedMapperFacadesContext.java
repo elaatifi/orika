@@ -69,7 +69,7 @@ public class UsedMapperFacadesContext {
         
         if (result.index == null) {
             result.index = Integer.valueOf(usedTypeIndex++);
-            usedMapperFacades.add((BoundMapperFacade<Object, Object>)mapperFactory.getBoundMapperFacade(sourceType, destinationType));
+            usedMapperFacades.add((BoundMapperFacade<Object, Object>)mapperFactory.getMapperFacade(sourceType, destinationType));
         }
         return result;
     }

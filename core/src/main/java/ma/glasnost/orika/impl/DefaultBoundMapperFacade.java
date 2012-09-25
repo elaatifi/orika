@@ -73,37 +73,37 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         return bType;
     }
     
-    public B mapAtoB(A instanceA) {
+    public B map(A instanceA) {
         MappingContext context = contextFactory.getContext();
         try {
-            return mapAtoB(instanceA, context);
+            return map(instanceA, context);
         } finally {
             contextFactory.release(context);
         }
     }
     
-    public A mapBtoA(B source) {
+    public A mapReverse(B source) {
         MappingContext context = contextFactory.getContext();
         try {
-            return mapBtoA(source, context);
+            return mapReverse(source, context);
         } finally {
             contextFactory.release(context);
         }
     }
     
-    public void mapAtoB(A instanceA, B instanceB) {
+    public void map(A instanceA, B instanceB) {
         MappingContext context = contextFactory.getContext();
         try {
-            mapAtoB(instanceA, instanceB, context);
+            map(instanceA, instanceB, context);
         } finally {
             contextFactory.release(context);
         }
     }
     
-    public void mapBtoA(B instanceB, A instanceA) {
+    public void mapReverse(B instanceB, A instanceA) {
         MappingContext context = contextFactory.getContext();
         try {
-            mapBtoA(instanceB, instanceA, context);
+            mapReverse(instanceB, instanceA, context);
         } finally {
             contextFactory.release(context);
         }
@@ -116,7 +116,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * ma.glasnost.orika.MappingContext)
      */
     @SuppressWarnings("unchecked")
-    public B mapAtoB(A instanceA, MappingContext context) {
+    public B map(A instanceA, MappingContext context) {
         B result = (B) context.getMappedObject(instanceA, bType);
         if (result == null) {
             if (aToB == null) {
@@ -138,7 +138,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * ma.glasnost.orika.MappingContext)
      */
     @SuppressWarnings("unchecked")
-    public A mapBtoA(B instanceB, MappingContext context) {
+    public A mapReverse(B instanceB, MappingContext context) {
         A result = (A) context.getMappedObject(instanceB, aType);
         if (result == null) {
             if (bToA == null) {
@@ -159,7 +159,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * @see ma.glasnost.orika.DedicatedMapperFacade#mapAtoB(java.lang.Object,
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
-    public void mapAtoB(A instanceA, B instanceB, MappingContext context) {
+    public void map(A instanceA, B instanceB, MappingContext context) {
         if (context.getMappedObject(instanceA, bType) == null) {
             if (aToBInPlace == null) {
                 synchronized (this) {
@@ -178,7 +178,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * @see ma.glasnost.orika.DedicatedMapperFacade#mapBtoA(java.lang.Object,
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
-    public void mapBtoA(B instanceB, A instanceA, MappingContext context) {
+    public void mapReverse(B instanceB, A instanceA, MappingContext context) {
         if (context.getMappedObject(instanceB, aType) == null) {
             if (bToAInPlace == null) {
                 synchronized (this) {
@@ -198,7 +198,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     /* (non-Javadoc)
      * @see ma.glasnost.orika.DedicatedMapperFacade#newObjectB(java.lang.Object, ma.glasnost.orika.MappingContext)
      */
-    public B newObjectB(A source, MappingContext context) {
+    public B newObject(A source, MappingContext context) {
         if (objectFactoryB == null) {
             synchronized(this) {
                 if (objectFactoryB == null) {
@@ -212,7 +212,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     /* (non-Javadoc)
      * @see ma.glasnost.orika.DedicatedMapperFacade#newObjectA(java.lang.Object, ma.glasnost.orika.MappingContext)
      */
-    public A newObjectA(B source, MappingContext context) {
+    public A newObjectReverse(B source, MappingContext context) {
         if (objectFactoryA == null) {
             synchronized(this) {
                 if (objectFactoryA == null) {

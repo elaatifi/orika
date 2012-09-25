@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 
@@ -23,7 +23,7 @@ public class ObjectCollectionTestCase {
         DefaultMapperFactory.Builder builder = new DefaultMapperFactory.Builder();
         MapperFactory factory = builder.build();
         
-        MapperFacade mapperFacade = factory.getMapperFacade();
+        BoundMapperFacade<DtoHolder, EntityHolder> mapperFacade = factory.getMapperFacade(DtoHolder.class, EntityHolder.class);
         
         List<Dto> dtos = new ArrayList<Dto>();
         
@@ -45,7 +45,7 @@ public class ObjectCollectionTestCase {
         DtoHolder source = new DtoHolder();
         source.setEntities(dtos);
         
-        final EntityHolder entities = mapperFacade.map(source, EntityHolder.class);
+        final EntityHolder entities = mapperFacade.map(source);
         
         Assert.assertNotNull(entities);
         Assert.assertEquals(3, entities.getEntities().size());

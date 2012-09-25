@@ -1,6 +1,6 @@
 package ma.glasnost.orika.test.boundmapperfacade;
 
-import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -16,34 +16,33 @@ public class ReuseMappersTestCase {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
         {
-            ClassMapBuilder<Location, LocationDTO> builder = ClassMapBuilder.map(Location.class, LocationDTO.class);
+            ClassMapBuilder<Location, LocationDTO> builder = factory.classMap(Location.class, LocationDTO.class);
             builder.field("x", "coordinateX").field("y", "coordinateY");
             factory.registerClassMap(builder.toClassMap());
             
         }
         
         {
-            ClassMapBuilder<NamedLocation, NamedLocationDTO> builder = ClassMapBuilder.map(NamedLocation.class, NamedLocationDTO.class);
+            ClassMapBuilder<NamedLocation, NamedLocationDTO> builder = factory.classMap(NamedLocation.class, NamedLocationDTO.class);
             builder.use(Location.class, LocationDTO.class).field("name", "label");
             factory.registerClassMap(builder.toClassMap());
         }
         
         {
-            ClassMapBuilder<City, CityDTO> builder = ClassMapBuilder.map(City.class, CityDTO.class);
+            ClassMapBuilder<City, CityDTO> builder = factory.classMap(City.class, CityDTO.class);
             builder.use(NamedLocation.class, NamedLocationDTO.class).byDefault();
             factory.registerClassMap(builder.toClassMap());
         }
         
-        factory.build();
         
-        MapperFacade mapper = factory.getMapperFacade();
+        BoundMapperFacade<City, CityDTO> mapper = factory.getMapperFacade(City.class, CityDTO.class);
         
         City city = new City();
         city.setX(5);
         city.setY(7);
         city.setZipCode("78951123");
         
-        CityDTO dto = mapper.map(city, CityDTO.class);
+        CityDTO dto = mapper.map(city);
         
         Assert.assertEquals(city.getX(), dto.getCoordinateX());
         Assert.assertEquals(city.getY(), dto.getCoordinateY());

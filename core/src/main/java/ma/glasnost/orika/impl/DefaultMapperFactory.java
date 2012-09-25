@@ -1053,8 +1053,8 @@ public class DefaultMapperFactory implements MapperFactory {
         
     }
     
-    public <S, D> BoundMapperFacade<S, D> getBoundMapperFacade(Type<S> sourceType, Type<D> destinationType) {
-        return getBoundMapperFacade(sourceType, destinationType, true);
+    public <S, D> BoundMapperFacade<S, D> getMapperFacade(Type<S> sourceType, Type<D> destinationType) {
+        return getMapperFacade(sourceType, destinationType, true);
     }
     
     /*
@@ -1064,7 +1064,7 @@ public class DefaultMapperFactory implements MapperFactory {
      * ma.glasnost.orika.MapperFacade#dedicatedMapperFor(ma.glasnost.orika.metadata
      * .Type, ma.glasnost.orika.metadata.Type, boolean)
      */
-    public <S, D> BoundMapperFacade<S, D> getBoundMapperFacade(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
+    public <S, D> BoundMapperFacade<S, D> getMapperFacade(Type<S> sourceType, Type<D> destinationType, boolean containsCycles) {
         if (!isBuilt && !isBuilding) {
             build();
         }
@@ -1082,8 +1082,8 @@ public class DefaultMapperFactory implements MapperFactory {
      * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class,
      * java.lang.Class)
      */
-    public <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType) {
-        return getBoundMapperFacade(aType, bType, true);
+    public <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType) {
+        return getMapperFacade(aType, bType, true);
     }
     
     /*
@@ -1092,8 +1092,8 @@ public class DefaultMapperFactory implements MapperFactory {
      * @see ma.glasnost.orika.MapperFacade#dedicatedMapperFor(java.lang.Class,
      * java.lang.Class, boolean)
      */
-    public <A, B> BoundMapperFacade<A, B> getBoundMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles) {
-        return getBoundMapperFacade(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
+    public <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles) {
+        return getMapperFacade(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
     }
     
 }

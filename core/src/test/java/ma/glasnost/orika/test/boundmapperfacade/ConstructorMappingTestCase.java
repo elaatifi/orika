@@ -76,7 +76,7 @@ public class ConstructorMappingTestCase {
         person.setDate(df.parse("01/01/1980"));
         person.setAge(31L);
         
-        PersonVO vo = factory.getBoundMapperFacade(Person.class, PersonVO.class).mapAtoB(person);
+        PersonVO vo = factory.getMapperFacade(Person.class, PersonVO.class).map(person);
         
         Assert.assertEquals(person.getFirstName(), vo.getFirstName());
         Assert.assertEquals(person.getLastName(), vo.getLastName());
@@ -103,7 +103,7 @@ public class ConstructorMappingTestCase {
         person.setDate(df.parse("01/01/1980"));
         person.setAge(31L);
         
-        PersonVO3 vo = factory.getBoundMapperFacade(Person.class, PersonVO3.class).mapAtoB(person);
+        PersonVO3 vo = factory.getMapperFacade(Person.class, PersonVO3.class).map(person);
         
         Assert.assertEquals(person.getFirstName(), vo.getFirstName());
         Assert.assertEquals(person.getLastName(), vo.getLastName());
@@ -139,7 +139,7 @@ public class ConstructorMappingTestCase {
         
         person.setAge(yearsDifference(c.getTime(), new Date()));
         
-        PersonVO3 vo = factory.getBoundMapperFacade(Person.class, PersonVO3.class).mapAtoB(person);
+        PersonVO3 vo = factory.getMapperFacade(Person.class, PersonVO3.class).map(person);
         
         Assert.assertEquals(person.getFirstName(), vo.getFirstName());
         Assert.assertEquals(person.getLastName(), vo.getLastName());

@@ -35,7 +35,7 @@ public class CollectionTestCase {
 		D source = new D();
 		source.setTags(Arrays.asList("soa", "java", "rest"));
 
-		A destination = MappingUtil.getMapperFactory().getBoundMapperFacade(D.class, A.class).mapAtoB(source);
+		A destination = MappingUtil.getMapperFactory().getMapperFacade(D.class, A.class).map(source);
 
 		Assert.assertNotNull(destination.getTags());
 		Assert.assertEquals(3, destination.getTags().size());
@@ -46,7 +46,7 @@ public class CollectionTestCase {
 		D source = new D();
 		source.setTags(Arrays.asList("soa", "java", "rest"));
 
-		B destination = MappingUtil.getMapperFactory().getBoundMapperFacade(D.class, B.class).mapAtoB(source);
+		B destination = MappingUtil.getMapperFactory().getMapperFacade(D.class, B.class).map(source);
 
 		Assert.assertNotNull(destination.getTags());
 		Assert.assertEquals(3, destination.getTags().size());

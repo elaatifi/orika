@@ -19,7 +19,7 @@
 package ma.glasnost.orika.test.boundmapperfacade;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
@@ -30,28 +30,26 @@ public class UsedMappersTestCase {
     
     @Test
     public void testReuseOfMapper() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory();
         {
-            ClassMapBuilder<A, C> classMapBuilder = ClassMapBuilder.map(A.class, C.class);
+            ClassMapBuilder<A, C> classMapBuilder = factory.classMap(A.class, C.class);
             classMapBuilder.field("name", "nom");
-            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+            factory.registerClassMap(classMapBuilder.toClassMap());
         }
         
         {
-            ClassMapBuilder<B, D> classMapBuilder = ClassMapBuilder.map(B.class, D.class);
+            ClassMapBuilder<B, D> classMapBuilder = factory.classMap(B.class, D.class);
             classMapBuilder.field("age", "ages").use(A.class, C.class);
-            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+            factory.registerClassMap(classMapBuilder.toClassMap());
         }
-        
-        mapperFactory.build();
-        
-        MapperFacade mapperFacade = mapperFactory.getMapperFacade();
+         
+        BoundMapperFacade<B,D> mapperFacade = factory.getMapperFacade(B.class, D.class);
         
         B source = new B();
         source.setName("Israfil");
         source.setAge(1000);
         
-        D target = mapperFacade.map(source, D.class);
+        D target = mapperFacade.map(source);
         
         Assert.assertEquals(source.getName(), target.getNom());
         Assert.assertEquals(source.getAge(), target.getAges());
@@ -60,26 +58,24 @@ public class UsedMappersTestCase {
     
     @Test
     public void testOneCallOfFieldMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory();
         {
-            ClassMapBuilder<A, E> classMapBuilder = ClassMapBuilder.map(A.class, E.class);
-            mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+            ClassMapBuilder<A, E> classMapBuilder = factory.classMap(A.class, E.class);
+            factory.registerClassMap(classMapBuilder.byDefault().toClassMap());
         }
         {
-            ClassMapBuilder<B, F> classMapBuilder = ClassMapBuilder.map(B.class, F.class);
+            ClassMapBuilder<B, F> classMapBuilder = factory.classMap(B.class, F.class);
             classMapBuilder.byDefault().use(A.class, E.class);
-            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+            factory.registerClassMap(classMapBuilder.toClassMap());
         }
         
-        mapperFactory.build();
-        
-        MapperFacade mapperFacade = mapperFactory.getMapperFacade();
+        BoundMapperFacade<B,F> mapperFacade = factory.getMapperFacade(B.class, F.class);
         
         B source = new B();
         source.setName("Israfil");
         source.setAge(1000);
         
-        F target = mapperFacade.map(source, F.class);
+        F target = mapperFacade.map(source);
         
         Assert.assertEquals(source.getName(), target.getName());
         Assert.assertEquals(source.getAge(), target.getAge());
