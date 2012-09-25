@@ -94,6 +94,7 @@ public class PropertyResolverTestCase {
 	    Assert.assertEquals(TypeFactory.valueOf(String.class), prop.getType());
 	}
 	
+	
 	/**
 	 * This test confirms that ad-hoc properties can be defined in-line within field mapping
 	 * expressions

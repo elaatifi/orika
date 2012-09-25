@@ -314,6 +314,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         Property property = null;
         java.lang.reflect.Type propertyType = type;
         final List<Property> path = new ArrayList<Property>();
+        final StringBuilder expression = new StringBuilder();
         if (p.indexOf('.') != -1) {
             final String[] ps = p.split("\\.");
             int i = 0;
@@ -328,6 +329,9 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                 i++;
                 if (i < ps.length) {
                     path.add(property);
+                    expression.append(property.getName() + ".");
+                } else {
+                    expression.append(property.getExpression());
                 }
             }
         }
@@ -336,7 +340,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
             throw new RuntimeException(typeName + " does not contain property [" + p + "]");
         }
         
-        return new NestedProperty(p, property, path.toArray(new Property[path.size()]));
+        return new NestedProperty(expression.toString(), property, path.toArray(new Property[path.size()]));
     }
     
     public Property getProperty(java.lang.reflect.Type type, String expr) {
