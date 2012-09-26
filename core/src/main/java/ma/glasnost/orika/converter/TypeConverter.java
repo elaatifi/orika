@@ -28,7 +28,7 @@ import java.lang.reflect.Type;
  * @deprecated use {@link ma.glasnost.orika.CustomConverter} instead
  */
 @Deprecated
-public abstract class TypeConverter<S, D> implements Converter<S, D> {
+public abstract class TypeConverter<S, D> extends CustomConverterBase<S, D> {
     
     protected final Class<S> sourceClass;
     protected final Class<D> destinationClass;

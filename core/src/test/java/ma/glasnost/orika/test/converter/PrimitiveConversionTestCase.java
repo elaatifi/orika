@@ -19,7 +19,7 @@ public class PrimitiveConversionTestCase {
 		factory.getConverterFactory().registerConverter(new CustomConverterBase<Double, BigDecimal>() {
 
 			public BigDecimal convert(Double source,
-					Type<? extends BigDecimal> destinationType) {
+			        Class<? extends BigDecimal> destinationType) {
 				return BigDecimal.valueOf(source);
 			}
 		});
@@ -27,10 +27,9 @@ public class PrimitiveConversionTestCase {
 		factory.getConverterFactory().registerConverter(new CustomConverterBase<BigDecimal, Double>() {
 
 			public Double convert(BigDecimal source,
-					Type<? extends Double> destinationType) {
+					Class<? extends Double> destinationType) {
 				return source.doubleValue();
 			}
-			
 		});
 		
 		factory.registerClassMap(ClassMapBuilder.map(A.class, B.class).byDefault().toClassMap());

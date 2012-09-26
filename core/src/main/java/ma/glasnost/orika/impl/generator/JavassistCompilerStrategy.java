@@ -217,7 +217,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
             	classPool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
             }
             
-            abstractMapperClass = classPool.getCtClass(sourceCode.getSuperClass().getCanonicalName());
+            abstractMapperClass = classPool.get(sourceCode.getSuperClass().getCanonicalName());
             byteCodeClass.setSuperclass(abstractMapperClass);
             
             for (String fieldDef : sourceCode.getFields()) {

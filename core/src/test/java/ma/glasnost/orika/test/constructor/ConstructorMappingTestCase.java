@@ -17,6 +17,7 @@ import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.builtin.DateToStringConverter;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.Author;
@@ -57,7 +58,8 @@ public class ConstructorMappingTestCase {
     public void testSimpleCase() throws Throwable {
     	
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
-        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFactory factory = new DefaultMapperFactory.Builder()
+            .useBuiltinConverters(true).build();
         
         factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
                 //.constructorA()

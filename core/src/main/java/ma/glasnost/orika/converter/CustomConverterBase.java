@@ -36,7 +36,7 @@ import ma.glasnost.orika.metadata.TypeFactory;
  * @deprecated use {@link ma.glasnost.orika.CustomConverter} instead
  */
 @Deprecated
-public abstract class CustomConverterBase<S, D> implements ma.glasnost.orika.Converter<S, D> {
+public abstract class CustomConverterBase<S, D> implements ma.glasnost.orika.converter.Converter<S, D> {
     
     protected final Type<S> sourceType;
     protected final Type<D> destinationType;
@@ -53,11 +53,24 @@ public abstract class CustomConverterBase<S, D> implements ma.glasnost.orika.Con
         }
     }
     
+    public boolean canConvert(Class<S> sourceClass, Class<? extends D> destinationClass) {
+        return this.sourceType.getRawType().equals(sourceClass) 
+                && this.destinationType.getRawType().equals(destinationClass);
+    }
+    
     public boolean canConvert(Type<?> sourceClass, Type<?> destinationClass) {
         return this.sourceType.equals(sourceClass) && this.destinationType.equals(destinationClass);
     }
     
     public void setMapperFacade(MapperFacade mapperFacade) {
     	this.mapperFacade = mapperFacade;
+    }
+    
+    public Type<S> getAType() {
+        return (Type<S>) sourceType;
+    }
+    
+    public Type<D> getBType() {
+        return (Type<D>) destinationType;
     }
 }

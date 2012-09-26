@@ -24,6 +24,7 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.converter.builtin.ToStringConverter;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class ToStringConverterTestCase {
 
 	@Test(expected=MappingException.class)
 	public void testToString_withoutConverter() {
-		MapperFactory factory = MappingUtil.getMapperFactory();
+		MapperFactory factory = new DefaultMapperFactory.Builder().useBuiltinConverters(false).build();
 		MapperFacade mapper = factory.getMapperFacade();
 		
 		Date now = new Date();

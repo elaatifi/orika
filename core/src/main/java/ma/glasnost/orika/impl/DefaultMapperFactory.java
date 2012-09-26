@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -64,6 +63,7 @@ import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 import ma.glasnost.orika.unenhance.BaseUnenhancer;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
+import ma.glasnost.orika.util.SortedCollection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +85,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final ObjectFactoryGenerator objectFactoryGenerator;
     
     private final Map<MapperKey, ClassMap<Object, Object>> classMapRegistry;
-    private final SortedCollection<Mapper<?, ?>> mappersRegistry;
+    private final SortedCollection<Mapper<Object, Object>> mappersRegistry;
     private final MappingContextFactory contextFactory;
     private final ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> objectFactoryRegistry;
     private final Map<Type<?>, Set<Type<?>>> aToBRegistry;
@@ -99,8 +99,10 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     private final boolean useAutoMapping;
+    private final boolean useBuiltinConverters;
     private volatile boolean isBuilt = false;
     private volatile boolean isBuilding = false;
+    
     
     /**
      * Constructs a new instance of DefaultMapperFactory
@@ -112,7 +114,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.converterFactory = builder.converterFactory;
         this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
-        this.mappersRegistry = new SortedCollection<Mapper<?, ?>>(MAPPER_COMPARATOR);
+        this.mappersRegistry = new SortedCollection<Mapper<Object, Object>>(Comparators.MAPPER);
         this.aToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
@@ -134,10 +136,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
         this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy);
         this.useAutoMapping = builder.useAutoMapping;
-        
-        if (builder.useBuiltinConverters) {
-            BuiltinConverters.register(converterFactory);
-        }
+        this.useBuiltinConverters = builder.useBuiltinConverters;
         
         /*
          * Register default concrete types for common collection types; these
@@ -149,37 +148,6 @@ public class DefaultMapperFactory implements MapperFactory {
         this.registerConcreteType(Map.class, LinkedHashMap.class);
         this.registerConcreteType(Map.Entry.class, MapEntry.class);
     }
-    
-    private static final int compare(Type<?> aType1, Type<?> bType1, Type<?> aType2, Type<?> bType2) {
-        
-        if ((aType1.equals(aType2) && bType1.equals(bType2)) || (aType1.equals(bType2) && aType2.equals(bType1))) {
-            return 0;
-        } else if ((aType1.isAssignableFrom(aType2) && bType1.isAssignableFrom(bType2))
-                || (aType1.isAssignableFrom(bType2) && bType1.isAssignableFrom(aType2))) {
-            return 1;
-        } else if ((aType2.isAssignableFrom(aType1) && bType2.isAssignableFrom(bType1))
-                || (aType2.isAssignableFrom(bType1) && bType2.isAssignableFrom(aType1))) {
-            return -1;
-        } else {
-            /*
-             * Unrelated, thus they should be considered "equal" in regards to
-             * sorting
-             */
-            return 0;
-        }
-    }
-    
-    private static final Comparator<MapperKey> MAPPER_KEY_COMPARATOR = new Comparator<MapperKey>() {
-        public int compare(MapperKey mapper1, MapperKey mapper2) {
-            return DefaultMapperFactory.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType());
-        }
-    };
-    
-    private static final Comparator<Mapper<?, ?>> MAPPER_COMPARATOR = new Comparator<Mapper<?, ?>>() {
-        public int compare(Mapper<?, ?> mapper1, Mapper<?, ?> mapper2) {
-            return DefaultMapperFactory.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType());
-        }
-    };
     
     /**
      * MapperFactoryBuilder provides an extensible Builder definition usable for
@@ -231,7 +199,7 @@ public class DefaultMapperFactory implements MapperFactory {
          * The configured value of whether or not to use built-in converters for
          * the MapperFactory
          */
-        protected boolean useBuiltinConverters = false;
+        protected boolean useBuiltinConverters = true;
         /**
          * The configured value of whether or not to use auto-mapping for the
          * MapperFactory
@@ -364,11 +332,24 @@ public class DefaultMapperFactory implements MapperFactory {
         
         /**
          * Configure whether to use built-in converters with the generated
-         * MapperFactory
+         * MapperFactory<br>
          * 
          * @param useBuiltinConverters
          * @return a reference to <code>this</code> MapperFactoryBuilder
          */
+        public B useBuiltinConverters(boolean useBuiltinConverters) {
+            this.useBuiltinConverters = useBuiltinConverters;
+            return self();
+        }
+        
+        /**
+         * Mis-spelled method signature
+         * 
+         * @param useBuiltinConverters
+         * @return
+         * @deprecated use {@link #useBuiltinConverters(boolean)} instead
+         */
+        @Deprecated
         public B usedBuiltinConverters(boolean useBuiltinConverters) {
             this.useBuiltinConverters = useBuiltinConverters;
             return self();
@@ -829,6 +810,10 @@ public class DefaultMapperFactory implements MapperFactory {
             
             converterFactory.setMapperFacade(mapperFacade);
             
+            if (useBuiltinConverters) {
+                BuiltinConverters.register(converterFactory);
+            }
+            
             buildClassMapRegistry();
             
             for (final ClassMap<?, ?> classMap : classMapRegistry.values()) {
@@ -839,7 +824,7 @@ public class DefaultMapperFactory implements MapperFactory {
                 buildObjectFactories(classMap, context);
                 initializeUsedMappers(classMap);
             }
-            
+
             isBuilt = true;
             isBuilding = false;
         }
@@ -915,7 +900,7 @@ public class DefaultMapperFactory implements MapperFactory {
              * mappers to avoid calling the same mapper multiple times during a
              * single map request;
              */
-            SortedCollection<MapperKey> usedMappers = new SortedCollection<MapperKey>(MAPPER_KEY_COMPARATOR);
+            SortedCollection<MapperKey> usedMappers = new SortedCollection<MapperKey>(Comparators.MAPPER_KEY);
             for (MapperKey key : this.classMapRegistry.keySet()) {
                 if (!key.getAType().equals(classMap.getAType()) || !key.getBType().equals(classMap.getBType())) {
                     if (key.getAType().isAssignableFrom(classMap.getAType()) && key.getBType().isAssignableFrom(classMap.getBType())) {
@@ -1043,9 +1028,10 @@ public class DefaultMapperFactory implements MapperFactory {
      * @see
      * ma.glasnost.orika.MapperFactory#registerMapper(ma.glasnost.orika.Mapper)
      */
+    @SuppressWarnings("unchecked")
     public <A, B> void registerMapper(Mapper<A, B> mapper) {
         synchronized (this) {
-            this.mappersRegistry.add(mapper);
+            this.mappersRegistry.add((Mapper<Object, Object>) mapper);
             mapper.setMapperFacade(this.mapperFacade);
             register(mapper.getAType(), mapper.getBType());
             register(mapper.getBType(), mapper.getAType());

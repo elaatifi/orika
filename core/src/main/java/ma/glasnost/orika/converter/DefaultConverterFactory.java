@@ -17,19 +17,21 @@
  */
 package ma.glasnost.orika.converter;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.impl.Comparators;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.util.Cache;
 import ma.glasnost.orika.util.CacheLRULinkedHashMap;
+import ma.glasnost.orika.util.SortedSet;
 
 public class DefaultConverterFactory implements ConverterFactory {
     
@@ -42,12 +44,12 @@ public class DefaultConverterFactory implements ConverterFactory {
     public DefaultConverterFactory(Cache<ConverterKey, Converter<Object, Object>> converterCache, Set<Converter<Object, Object>> converters) {
         super();
         this.converterCache = converterCache;
-        this.converters = converters;
+        this.converters = new SortedSet<Converter<Object,Object>>(converters, Comparators.CONVERTER);
         this.convertersMap = new ConcurrentHashMap<String, Converter<Object, Object>>();
     }
     
     public DefaultConverterFactory() {
-        this(new CacheLRULinkedHashMap<ConverterKey, Converter<Object, Object>>(CACHE_SIZE), new HashSet<Converter<Object, Object>>());
+        this(new CacheLRULinkedHashMap<ConverterKey, Converter<Object, Object>>(CACHE_SIZE), new LinkedHashSet<Converter<Object, Object>>());
     }
     
     public void setMapperFacade(MapperFacade mapperFacade) {
@@ -106,7 +108,7 @@ public class DefaultConverterFactory implements ConverterFactory {
             if (converter.canConvert(sourceType, destinationType)) {
                 converterCache.cache(key, converter);
                 canConvert = true;
-                // TODO: can't we break here?
+                break;
             }
         }
         return canConvert;

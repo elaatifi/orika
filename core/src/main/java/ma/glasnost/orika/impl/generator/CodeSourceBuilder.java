@@ -993,6 +993,16 @@ public class CodeSourceBuilder {
                 logDetails.append("treating as immutable (using copy-by-reference)");
             }
             copyByReference(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aWrapperToPrimitive())) {
+            if (logDetails != null) {
+                logDetails.append("mapping primitive wrapper to primitive");
+            }
+            fromPrimitiveOrWrapperToPrimitive(destinationProperty, sourceProperty);
+        } else if (fieldMap.is(aPrimitiveToWrapper())) {
+            if (logDetails != null) {
+                logDetails.append("mapping primitive to primitive wrapper");
+            }
+            fromPrimitiveToWrapper(destinationProperty, sourceProperty);
         } else if (converter != null) {
             if (logDetails != null) {
                 logDetails.append("using converter " + converter);
@@ -1026,11 +1036,6 @@ public class CodeSourceBuilder {
                 logDetails.append("mapping Array or Collection to Collection");
             }
             fromArrayOrCollectionToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
-        } else if (fieldMap.is(aWrapperToPrimitive())) {
-            if (logDetails != null) {
-                logDetails.append("mapping primitive wrapper to primitive");
-            }
-            fromPrimitiveOrWrapperToPrimitive(destinationProperty, sourceProperty);
         } else if (fieldMap.is(aMapToMap())) {
             if (logDetails != null) {
                 logDetails.append("mapping Map to Map");
@@ -1051,11 +1056,6 @@ public class CodeSourceBuilder {
                 logDetails.append("mapping Map to Array");
             }
             fromArrayOrCollectionToMap(destinationProperty, sourceProperty);
-        } else if (fieldMap.is(aPrimitiveToWrapper())) {
-            if (logDetails != null) {
-                logDetails.append("mapping primitive to primitive wrapper");
-            }
-            fromPrimitiveToWrapper(destinationProperty, sourceProperty);
         } else if (fieldMap.is(aStringToPrimitiveOrWrapper())) {
             if (logDetails != null) {
                 logDetails.append("mapping String to \"String-convertable\"");

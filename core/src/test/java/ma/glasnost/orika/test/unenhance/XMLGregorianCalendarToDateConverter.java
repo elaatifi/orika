@@ -21,9 +21,10 @@ import java.util.Date;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import ma.glasnost.orika.converter.Converter;
+import ma.glasnost.orika.converter.CustomConverterBase;
 
-public class XMLGregorianCalendarToDateConverter implements Converter<XMLGregorianCalendar, Date> {
+@SuppressWarnings("deprecation")
+public class XMLGregorianCalendarToDateConverter extends CustomConverterBase<XMLGregorianCalendar, Date> {
     
     public Date convert(XMLGregorianCalendar source, Class<? extends Date> destinationClass) {
         Date target = null;

@@ -141,15 +141,16 @@ public class MapperFacadeImpl implements MapperFacade {
      */
     public <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType, final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
         
-        Type<D> destinationType = TypeFactory.valueOf(initialDestinationType);
         
-        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), initialSourceType, destinationType, mapInPlace);
+        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), initialSourceType, initialDestinationType, mapInPlace);
         MappingStrategy strategy = strategyCache.get(key);
         
         if (strategy == null) {
             
             @SuppressWarnings("unchecked")
             Type<S> sourceType = (Type<S>) (initialSourceType != null ? TypeFactory.valueOf(initialSourceType) : TypeFactory.typeOf(sourceObject));
+            Type<D> destinationType = TypeFactory.valueOf(initialDestinationType);
+            
             
             MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
         
@@ -316,7 +317,7 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
-        //map(sourceObject, destinationObject, TypeFactory.typeOf(sourceObject), TypeFactory.typeOf(destinationObject), context);
+        
         try {
             if (destinationObject == null) {
                 throw new MappingException("[destinationObject] can not be null.");
@@ -326,7 +327,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 throw new MappingException("[sourceObject] can not be null.");
             }
             
-            if (context.getMappedObject(sourceObject, TypeFactory.typeOf(destinationObject)) == null) {
+            if (context.getMappedObject(sourceObject, destinationObject.getClass()) == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
                 strategy.map(sourceObject, destinationObject, context);
                 context.setResolvedMappingStrategy(strategy);

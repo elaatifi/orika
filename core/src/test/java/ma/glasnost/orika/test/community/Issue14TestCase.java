@@ -92,7 +92,7 @@ public class Issue14TestCase {
     @Test
     public void testMapDateToCalendar_usingBuiltinConverters() {
         MapperFactory factory = new DefaultMapperFactory.Builder()
-                .usedBuiltinConverters(true).build();
+                .useBuiltinConverters(true).build();
         MapperFacade mapper = factory.getMapperFacade();
         
         Product p = new Product();

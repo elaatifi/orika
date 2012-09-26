@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.impl;
+package ma.glasnost.orika.util;
 
 import java.util.Collection;
 import java.util.Comparator;
@@ -38,14 +38,22 @@ import java.util.LinkedList;
  */
 public class SortedCollection<V> implements Collection<V> {
     
-    private Comparator<V> comparator = null;
-    private LinkedList<V> sortedList = new LinkedList<V>();
+    protected final Comparator<V> comparator;
+    protected final LinkedList<V> sortedList = new LinkedList<V>();
     
     /**
      * 
      */
     public SortedCollection() {
-   
+        this.comparator = null;
+    }
+    
+    /**
+     * 
+     */
+    public SortedCollection(Collection<? extends V> c) {
+        this();
+        addAll(c);
     }
     
     /**
@@ -54,6 +62,16 @@ public class SortedCollection<V> implements Collection<V> {
     public SortedCollection(Comparator<V> comparator) {
         this.comparator = comparator;
     }
+    
+    /**
+     * @param c the collection from which to initialize this SortedCollection
+     * @param comparator the comparator used for sorting the elements
+     */
+    public SortedCollection(Collection<? extends V> c, Comparator<V> comparator) {
+        this(comparator);
+        addAll(c);
+    }
+    
     
     public boolean add(V value) {
         int i = -1;
@@ -78,7 +96,7 @@ public class SortedCollection<V> implements Collection<V> {
     }
     
     @SuppressWarnings({"unchecked" })
-    private static <V> Comparable<V> toComparable(V item) {
+    protected static <V> Comparable<V> toComparable(V item) {
         return (Comparable<V>)item;
     }
     /* (non-Javadoc)

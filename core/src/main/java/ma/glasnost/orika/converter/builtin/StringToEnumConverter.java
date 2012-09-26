@@ -18,15 +18,16 @@
 package ma.glasnost.orika.converter.builtin;
 
 import ma.glasnost.orika.converter.Converter;
+import ma.glasnost.orika.converter.CustomConverterBase;
 
 
 /**
  * 
  * @deprecated use {@link FromStringConverter} instead
  */
-@SuppressWarnings("rawtypes")
+@SuppressWarnings({ "rawtypes", "unused" })
 @Deprecated
-public class StringToEnumConverter implements Converter<String, Enum> {
+public class StringToEnumConverter extends CustomConverterBase<String, Enum> {
     
     @SuppressWarnings("unchecked")
     public Enum convert(String source, Class<? extends Enum> destinationClass) {

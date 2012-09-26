@@ -84,13 +84,13 @@ public final class MapperGenerator {
             BoundMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
             if (logDetails != null) {
             	if (usedTypesArray.length > 0) {
-            		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));
+            		logDetails.append("\n\t" + Type.class.getSimpleName() + "s used: " + Arrays.toString(usedTypesArray));
             	}
             	if (usedConvertersArray.length > 0) {
-            		logDetails.append("\n\tConverters used: " + Arrays.toString(usedConvertersArray));
+            		logDetails.append("\n\t" + Converter.class.getSimpleName() + "s used: " + Arrays.toString(usedConvertersArray));
             	}
             	if (usedMapperFacadesArray.length > 0) {
-            	    logDetails.append("\n\tDedicatedMapperFacades used: " + Arrays.toString(usedMapperFacadesArray));
+            	    logDetails.append("\n\t" + BoundMapperFacade.class.getSimpleName() + "s used: " + Arrays.toString(usedMapperFacadesArray));
             	}
             } 
             instance.setUsedTypes(usedTypesArray);
@@ -129,8 +129,6 @@ public final class MapperGenerator {
                 .append(mapMethod)
                 .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {\n\n", MappingContext.class.getCanonicalName());
         
-        // out.assertType("a", sourceClass);
-        // out.assertType("b", destinationClass);
         VariableRef source;
         VariableRef destination;
         if (aToB) {
@@ -179,7 +177,7 @@ public final class MapperGenerator {
             
             if (!fieldMap.isIgnored()) {
                 try {
-                    generateFieldMapCode(out, fieldMap, destination.type(), logDetails);
+                    generateFieldMapCode(out, fieldMap, classMap, destination.type(), logDetails);
                 } catch (final Exception e) {
                     MappingException me = new MappingException(e);
                     me.setSourceProperty(fieldMap.getSource());
@@ -234,20 +232,23 @@ public final class MapperGenerator {
         return false;
     }
     
-    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, Type<?> destinationType, StringBuilder logDetails) throws Exception {
+    private void generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, ClassMap<?, ?> classMap, Type<?> destinationType, StringBuilder logDetails) throws Exception {
         
         final VariableRef sourceProperty = new VariableRef(fieldMap.getSource(), "source");
         final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
         
-        if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection())) {
+        if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection() && !destinationProperty.isArray() && !destinationProperty.isMap())) {
             if (logDetails != null) {
+                
             	logDetails.append("excluding because ");
     			if (!sourceProperty.isReadable()) {
-    				logDetails.append(fieldMap.getSource().getType() + "." + fieldMap.getSource().getName() + " is not readable");
+    			    Type<?> sourceType = classMap.getAType().equals(destinationType) ? classMap.getBType() : classMap.getAType();
+    				logDetails.append(sourceType + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is not readable");
     			} else {
     				// TODO: this brings up an important case: sometimes the destination is not assignable, 
     				// but it's properties can still be mapped in-place. Should we handle it?
-    				logDetails.append(fieldMap.getDestination().getType() + "." + fieldMap.getDestination().getName() + " is neither assignable nor a collection");
+    			    
+    				logDetails.append(destinationType + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is neither assignable nor an array, collection, or map");
     			}		
             }
         	return;

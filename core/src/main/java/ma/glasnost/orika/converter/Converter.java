@@ -17,11 +17,12 @@
  */
 package ma.glasnost.orika.converter;
 
+import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.Type;
 
 @Deprecated
-public interface Converter<S, D> {
+public interface Converter<S, D> extends MappedTypePair<S, D> {
     
     boolean canConvert(Class<S> sourceClass, Class<? extends D> destinationClass);
     
@@ -64,6 +65,20 @@ public interface Converter<S, D> {
 		public String toString() {
 	    	return LegacyConverter.class.getSimpleName() + "(" + delegate.toString() + ")";
 	    }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.MappedTypePair#getAType()
+         */
+        public Type<S> getAType() {
+            return delegate.getAType();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.MappedTypePair#getBType()
+         */
+        public Type<D> getBType() {
+            return delegate.getBType();
+        }
         
     }
 }

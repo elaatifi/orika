@@ -24,14 +24,13 @@ import java.util.List;
 import java.util.Set;
 
 import javassist.CannotCompileException;
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.BoundMapperFacade;
+import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy.ConstructorMapping;
-import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.GeneratedObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -88,14 +87,14 @@ public class ObjectFactoryGenerator {
             Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
             BoundMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
             if (logDetails != null) {
-            	if (usedTypesArray.length > 0) {
-            		logDetails.append("\n\tTypes used: " + Arrays.toString(usedTypesArray));
-            	}
-            	if (usedConvertersArray.length > 0) {
-            		logDetails.append("\n\tConverters used: " + Arrays.toString(usedConvertersArray));
-            	}
-            	if (usedMapperFacadesArray.length > 0) {
-                    logDetails.append("\n\tDedicatedMapperFacades used: " + Arrays.toString(usedMapperFacadesArray));
+                if (usedTypesArray.length > 0) {
+                    logDetails.append("\n\t" + Type.class.getSimpleName() + "s used: " + Arrays.toString(usedTypesArray));
+                }
+                if (usedConvertersArray.length > 0) {
+                    logDetails.append("\n\t" + Converter.class.getSimpleName() + "s used: " + Arrays.toString(usedConvertersArray));
+                }
+                if (usedMapperFacadesArray.length > 0) {
+                    logDetails.append("\n\t" + BoundMapperFacade.class.getSimpleName() + "s used: " + Arrays.toString(usedMapperFacadesArray));
                 }
             } 
             objectFactory.setUsedTypes(usedTypesArray);
@@ -172,10 +171,6 @@ public class ObjectFactoryGenerator {
             VariableRef s = new VariableRef(fieldMap.getSource(), "source");
            
             out.statement(v.declare());
-            
-            if (generateConverterCode(out, v, fieldMap)) {
-                continue;
-            }
                         
             out.mapFields(fieldMap, s, v, fieldMap.getDestination().getType(), logDetails);
         }
@@ -198,26 +193,5 @@ public class ObjectFactoryGenerator {
         		" instance\", e); \n}");
         out.end();
         
-    }
-    
-    private boolean generateConverterCode(final CodeSourceBuilder code, VariableRef v, FieldMap fieldMap) {
-        
-        VariableRef s = new VariableRef(fieldMap.getSource(), "source");
-        final Type<?> destinationType = fieldMap.getDestination().getType();
-        
-        Converter<Object, Object> converter = null;
-        ConverterFactory converterFactory = mapperFactory.getConverterFactory();
-        if (fieldMap.getConverterId() != null) {
-            converter = converterFactory.getConverter(fieldMap.getConverterId());
-        } else {
-            converter = converterFactory.getConverter(s.type(), destinationType);
-        }
-        
-        if (converter != null) {
-            code.ifNotNull(s).then().convert(v, s, converter).end();
-            return true;
-        } else {
-            return false;
-        }
     }
 }

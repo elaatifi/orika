@@ -35,7 +35,7 @@ import ma.glasnost.orika.metadata.Type;
  * @param <S>
  * @param <D>
  */
-public interface Converter<S, D> {
+public interface Converter<S, D> extends MappedTypePair<S, D> {
     
     /**
      * Answers whether this converter can be used to handle the conversion of <code>sourceType</code>

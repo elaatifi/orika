@@ -37,7 +37,8 @@ public abstract class BidirectionalConverter<S, D> extends CustomConverter<Objec
     
     @SuppressWarnings("unchecked")
     public Object convert(Object source, Type<? extends Object> destinationType) {
-        if (destinationType.equals(this.destinationType)) {
+        //if (destinationType.equals(this.destinationType)) {
+        if (this.destinationType.isAssignableFrom(destinationType) || this.destinationType.isWrapperFor(destinationType) || this.destinationType.isPrimitiveFor(destinationType)) {
             return convertTo((S) source, (Type<D>) destinationType);
         } else {
             return convertFrom((D) source, (Type<S>) destinationType);
@@ -55,5 +56,5 @@ public abstract class BidirectionalConverter<S, D> extends CustomConverter<Objec
     	String subClass = getClass().equals(BidirectionalConverter.class) ? "" : "("+getClass().getSimpleName()+")";
     	return "BidirectionalConverter"+subClass+"<"+sourceType + ", " + destinationType+">";
     }
-    
+
 }

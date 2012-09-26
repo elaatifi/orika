@@ -22,9 +22,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.impl.SortedCollection;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.util.SortedCollection;
 
 import org.junit.Test;
 

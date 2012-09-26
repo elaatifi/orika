@@ -159,8 +159,6 @@ public class MappingStrategyRecorder {
         	DirectionalCustomMapperReference directionalMapper = (mapReverse ? new ReverseMapperReference(resolvedMapper) : new ForwardMapperReference(resolvedMapper));
         	if (resolvedObjectFactory != null) {
         		resolvedStrategy = new InstantiateAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, resolvedObjectFactory, unenhanceStrategy);
-        	//} else if (instantiate) {
-        	//	resolvedStrategy = new InstantiateByDefaultAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
         	} else {
         		resolvedStrategy = new MapExistingAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
         	}
@@ -197,7 +195,7 @@ public class MappingStrategyRecorder {
         
         if (getResolvedMapper() != null) {
             details.append(", mapper: " + getResolvedMapper());
-            details.append(", mapInverse?: " + mapReverse);
+            details.append(", mapReverse?: " + mapReverse);
         }
         details.append("]");
         
