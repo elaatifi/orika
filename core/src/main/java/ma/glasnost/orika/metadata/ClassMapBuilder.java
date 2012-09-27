@@ -27,6 +27,7 @@ import java.util.Set;
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.Mapper;
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
@@ -52,10 +53,11 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
 		@Override
 		protected <A, B> ClassMapBuilder<A, B> newClassMapBuilder(
 				Type<A> aType, Type<B> bType,
+				MapperFactory mapperFactory,
 				PropertyResolverStrategy propertyResolver,
 				DefaultFieldMapper[] defaults) {
 			
-			return new ClassMapBuilder<A,B>(aType, bType, propertyResolver, defaults);
+			return new ClassMapBuilder<A,B>(aType, bType, mapperFactory, propertyResolver, defaults);
 		}
 	}
 	
@@ -72,7 +74,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     private String[] constructorA;
     private String[] constructorB;
     private final PropertyResolverStrategy propertyResolver;
-    private DefaultFieldMapper[] defaults;
+    private final MapperFactory mapperFactory;
+    private final DefaultFieldMapper[] defaults;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ClassMapBuilder.class);
     
@@ -88,7 +91,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @param propertyResolver
      * @param defaults
      */
-    protected ClassMapBuilder(Type<A> aType, Type<B> bType, PropertyResolverStrategy propertyResolver, DefaultFieldMapper... defaults) {
+    protected ClassMapBuilder(Type<A> aType, Type<B> bType, MapperFactory mapperFactory, PropertyResolverStrategy propertyResolver, DefaultFieldMapper... defaults) {
 	    
     	if (aType == null) {
 	        throw new MappingException("[aType] is required");
@@ -98,6 +101,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
 	        throw new MappingException("[bType] is required");
 	    }
 	    
+	    this.mapperFactory = mapperFactory;
 	    this.propertyResolver = propertyResolver;
 	    this.defaults = defaults;
 	    
@@ -123,7 +127,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     @Deprecated
 	private ClassMapBuilder(Type<A> aType, Type<B> bType) {
         
-    	this(aType, bType, getDefaultPropertyResolver());
+    	this(aType, bType, null, getDefaultPropertyResolver());
     }
     
     private static PropertyResolverStrategy getDefaultPropertyResolver() {
@@ -428,6 +432,16 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
         }
     	
         return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
+    }
+    
+    /**
+     * Registers the ClassMap defined by this builder with it's initiating MapperFactory
+     */
+    public void register() {
+        if (this.mapperFactory == null) {
+            throw new IllegalStateException("register() is not supported from deprecated static ClassMapBuilder.map(..) instances");
+        }
+        mapperFactory.registerClassMap(this);
     }
     
     /**

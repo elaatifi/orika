@@ -179,11 +179,12 @@ public class ClassMapBuilderExtensibilityTestCase {
 			@Override
 			protected <A, B> ClassMapBuilder<A, B> newClassMapBuilder(
 					Type<A> aType, Type<B> bType,
+					MapperFactory mapperFactory,
 					PropertyResolverStrategy propertyResolver,
 					DefaultFieldMapper[] defaults) {
 
 				return new ScoringClassMapBuilder<A, B>(aType, bType,
-						propertyResolver, defaults);
+						mapperFactory, propertyResolver, defaults);
 			}
 
 		}
@@ -195,9 +196,9 @@ public class ClassMapBuilderExtensibilityTestCase {
 		 * @param defaults
 		 */
 		protected ScoringClassMapBuilder(Type<A> aType, Type<B> bType,
-				PropertyResolverStrategy propertyResolver,
+		        MapperFactory mapperFactory, PropertyResolverStrategy propertyResolver,
 				DefaultFieldMapper[] defaults) {
-			super(aType, bType, propertyResolver, defaults);
+			super(aType, bType, mapperFactory, propertyResolver, defaults);
 		}
 
 		public Map<String, Property> getPropertyExpressions(Type<?> type) {

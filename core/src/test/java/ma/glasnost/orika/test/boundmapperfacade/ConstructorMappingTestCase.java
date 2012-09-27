@@ -59,13 +59,13 @@ public class ConstructorMappingTestCase {
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
+        factory.classMap(PersonVO.class, Person.class)
                 //.constructorA()
                 .fieldMap("dateOfBirth", "date")
                 .converter(DATE_CONVERTER)
                 .add()
                 .byDefault()
-                .toClassMap());
+                .register();
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
         
@@ -90,10 +90,10 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(PersonVO3.class, Person.class)
+        factory.classMap(PersonVO3.class, Person.class)
                 .fieldMap("dateOfBirth", "date").converter(DATE_CONVERTER).add()
                 .byDefault()
-                .toClassMap());
+                .register();
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
       
@@ -121,10 +121,11 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(PersonVO3.class, Person.class)
+        factory.classMap(PersonVO3.class, Person.class)
                 .field("firstName", "firstName")
                 .field("lastName", "lastName")
-        		.field("dateOfBirth", "date"));
+        		.field("dateOfBirth", "date")
+        		.register();
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
         Person person = new Person();

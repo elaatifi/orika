@@ -133,6 +133,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.propertyResolverStrategy = builder.propertyResolverStrategy;
         this.classMapBuilderFactory = builder.classMapBuilderFactory;
         this.classMapBuilderFactory.setPropertyResolver(this.propertyResolverStrategy);
+        this.classMapBuilderFactory.setMapperFactory(this);
         this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
         this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy);
         this.useAutoMapping = builder.useAutoMapping;

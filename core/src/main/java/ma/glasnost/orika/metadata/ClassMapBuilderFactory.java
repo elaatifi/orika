@@ -19,68 +19,84 @@
 package ma.glasnost.orika.metadata;
 
 import ma.glasnost.orika.DefaultFieldMapper;
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
- * ClassMapBuilderFactory should be used to construct the new instances
- * of ClassMapBuilder needed to register a mapping from one class/type to
- * another class/type.
+ * ClassMapBuilderFactory should be used to construct the new instances of
+ * ClassMapBuilder needed to register a mapping from one class/type to another
+ * class/type.
  * 
  * @author matt.deboer@gmail.com
- *
+ * 
  */
 public abstract class ClassMapBuilderFactory {
-
-	protected PropertyResolverStrategy propertyResolver;
-	protected DefaultFieldMapper[] defaults;
-	
-	/**
-	 * @param propertyResolver the PropertyResolverStrategy instance to use when resolving properties
-     * of the mapped types
-	 */
-	public synchronized void setPropertyResolver(PropertyResolverStrategy propertyResolver) {
-	    this.propertyResolver = propertyResolver;
-	}
-	
-	/**
-	 * @param defaults zero or more DefaultFieldMapper instances that should be applied when the 
-     * <code>byDefault</code> method of the ClassMapBuilder is called.
-	 */
-	public synchronized void setDefaultFieldMappers(DefaultFieldMapper... defaults) {
-	    this.defaults = defaults;
-	}
-	
-	/**
-	 * Verifies whether the factory has been properly initialized
-	 * @return true if the factory has been initialized
-	 */
-	public synchronized boolean isInitialized() {
-	    return propertyResolver != null && defaults != null;
-	}
-	
-	/**
-	 * Generates a new ClassMapBuilder instance
-	 * 
-	 * @param aType
-	 * @param bType
-	 * @return a new ClassMapBuilder for the provided types
-	 */
-	protected abstract <A,B> ClassMapBuilder<A, B> newClassMapBuilder(Type<A> aType, Type<B> bType, PropertyResolverStrategy propertyResolver,
-			DefaultFieldMapper[] defaults);
-	    
-	
-	/**
-	 * @param aType
-	 * @param bType
-	 * @return
-	 */
-	private final <A,B> ClassMapBuilder<A, B> getNewClassMapBuilder(Type<A> aType, Type<B> bType) {
-		return newClassMapBuilder(aType, bType, propertyResolver, defaults);
-	}
-	
-	/**
-	 * Begin a new mapping for the specified types.
-	 * 
+    
+    protected MapperFactory mapperFactory;
+    protected PropertyResolverStrategy propertyResolver;
+    protected DefaultFieldMapper[] defaults;
+    
+    /**
+     * @param mapperFactory
+     *            the MapperFactory which will be used to register the ClassMapBuilder
+     *            instances via their 'register()' method
+     */
+    public synchronized void setMapperFactory(MapperFactory mapperFactory) {
+        this.mapperFactory = mapperFactory;
+    }
+    
+    /**
+     * @param propertyResolver
+     *            the PropertyResolverStrategy instance to use when resolving
+     *            properties of the mapped types
+     */
+    public synchronized void setPropertyResolver(PropertyResolverStrategy propertyResolver) {
+        this.propertyResolver = propertyResolver;
+    }
+    
+    /**
+     * @param defaults
+     *            zero or more DefaultFieldMapper instances that should be
+     *            applied when the <code>byDefault</code> method of the
+     *            ClassMapBuilder is called.
+     */
+    public synchronized void setDefaultFieldMappers(DefaultFieldMapper... defaults) {
+        this.defaults = defaults;
+    }
+    
+    
+    
+    /**
+     * Verifies whether the factory has been properly initialized
+     * 
+     * @return true if the factory has been initialized
+     */
+    public synchronized boolean isInitialized() {
+        return propertyResolver != null && defaults != null;
+    }
+    
+    /**
+     * Generates a new ClassMapBuilder instance
+     * 
+     * @param aType
+     * @param bType
+     * @return a new ClassMapBuilder for the provided types
+     */
+    protected abstract <A, B> ClassMapBuilder<A, B> newClassMapBuilder(Type<A> aType, Type<B> bType, MapperFactory mapperFactory,
+            PropertyResolverStrategy propertyResolver, DefaultFieldMapper[] defaults);
+    
+    /**
+     * @param aType
+     * @param bType
+     * @return
+     */
+    private final <A, B> ClassMapBuilder<A, B> getNewClassMapBuilder(Type<A> aType, Type<B> bType) {
+        return newClassMapBuilder(aType, bType, mapperFactory, propertyResolver, defaults);
+    }
+    
+    /**
+     * Begin a new mapping for the specified types.
+     * 
      * @param aType
      * @param bType
      * @return a new ClassMapBuilder instance for the specified types
@@ -110,7 +126,7 @@ public abstract class ClassMapBuilderFactory {
     public <A, B> ClassMapBuilder<A, B> map(Type<A> aType, Class<B> bType) {
         return getNewClassMapBuilder(aType, TypeFactory.<B> valueOf(bType));
     }
-	
+    
     /**
      * Begin a new mapping for the specified classes.
      * 
