@@ -158,6 +158,10 @@ public class Property {
     	return Map.class.isAssignableFrom(type.getRawType());
     }
     
+    public boolean isMapKey() {
+        return false;
+    }
+    
     public boolean hasPath() {
         return false;
     }

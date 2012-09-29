@@ -85,6 +85,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      */
     private static volatile WeakReference<PropertyResolverStrategy> defaultPropertyResolver;
     
+    
     /**
      * @param aType
      * @param bType
@@ -116,7 +117,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
 	    this.usedMappers = new LinkedHashSet<MapperKey>();
 	    
 	}
-	
+     
     /**
      * @param aType
      * @param bType
@@ -649,7 +650,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     /**
      * @return the property resolver used by this builder
      */
-    protected PropertyResolverStrategy getPropertyRessolver() {
+    protected PropertyResolverStrategy getPropertyResolver() {
     	return this.propertyResolver;
     }
     

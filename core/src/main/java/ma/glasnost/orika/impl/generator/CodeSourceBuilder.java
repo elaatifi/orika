@@ -32,8 +32,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.BoundMapperFacade;
+import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
@@ -955,6 +955,17 @@ public class CodeSourceBuilder {
         Type<?> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
         return new VariableRef(sourceEntryType, s + ".entrySet()");
     }
+       
+    public CodeSourceBuilder fromMapToBean(VariableRef d, VariableRef s) {
+
+        statement(d.assign(d.cast(s)));
+        return this;
+    }
+    
+    public CodeSourceBuilder fromBeanToMap(VariableRef d, VariableRef s) {
+        statement(d.assign(s));
+        return this;
+    } 
     
     /**
      * Generate the code necessary to process the provided FieldMap.
@@ -1068,13 +1079,15 @@ public class CodeSourceBuilder {
             fromAnyTypeToString(destinationProperty, sourceProperty);
         } else {
             /**/
-            
-            if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive()) {
+            if (fieldMap.is(aMapToBean())) {
+                fromMapToBean(destinationProperty, sourceProperty);
+            } else if (fieldMap.is(aBeanToMap())) {
+                fromBeanToMap(destinationProperty, sourceProperty);
+            } else if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive()) {
                 if (logDetails != null) {
                     logDetails.append("ignoring { Object to primitive or primitive to Object}");
                 }
                 newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
-                
             } else {
                 if (logDetails != null) {
                     logDetails.append("mapping Object to Object");

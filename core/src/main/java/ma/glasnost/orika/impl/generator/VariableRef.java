@@ -247,6 +247,10 @@ public class VariableRef {
         }
     }
     
+    public String cast(VariableRef ref) {
+        return cast(""+ref);
+    }
+    
     /**
      * Returns Java code which provides a cast of the specified value to the type of this property ref
      * 

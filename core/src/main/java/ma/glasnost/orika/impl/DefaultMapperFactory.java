@@ -57,6 +57,7 @@ import ma.glasnost.orika.inheritance.SuperTypeResolverStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.ClassMapBuilderFactory;
+import ma.glasnost.orika.metadata.ClassMapBuilderForMaps;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -96,6 +97,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final PropertyResolverStrategy propertyResolverStrategy;
     private final Map<java.lang.reflect.Type, Type<?>> concreteTypeRegistry;
     private final ClassMapBuilderFactory classMapBuilderFactory;
+    private final ClassMapBuilderForMaps.Factory classMapBuilderForMapsFactory;
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
     
     private final boolean useAutoMapping;
@@ -134,6 +136,10 @@ public class DefaultMapperFactory implements MapperFactory {
         this.classMapBuilderFactory = builder.classMapBuilderFactory;
         this.classMapBuilderFactory.setPropertyResolver(this.propertyResolverStrategy);
         this.classMapBuilderFactory.setMapperFactory(this);
+        this.classMapBuilderForMapsFactory = new ClassMapBuilderForMaps.Factory();
+        this.classMapBuilderForMapsFactory.setPropertyResolver(this.propertyResolverStrategy);
+        this.classMapBuilderForMapsFactory.setMapperFactory(this);
+        
         this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
         this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy);
         this.useAutoMapping = builder.useAutoMapping;
@@ -1008,7 +1014,11 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
-        return getClassMapBuilderFactory().map(aType, bType);
+        if (aType.isMap() || bType.isMap()) {
+            return this.classMapBuilderForMapsFactory.map(aType, bType);
+        } else {
+            return getClassMapBuilderFactory().map(aType, bType);
+        }
     }
     
     public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Type<B> bType) {

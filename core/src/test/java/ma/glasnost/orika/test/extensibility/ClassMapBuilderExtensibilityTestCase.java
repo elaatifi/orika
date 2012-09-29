@@ -203,7 +203,7 @@ public class ClassMapBuilderExtensibilityTestCase {
 
 		public Map<String, Property> getPropertyExpressions(Type<?> type) {
 
-			PropertyResolverStrategy propertyResolver = getPropertyRessolver();
+			PropertyResolverStrategy propertyResolver = getPropertyResolver();
 
 			Map<String, Property> properties = new HashMap<String, Property>();
 			LinkedHashMap<String, Property> toProcess = new LinkedHashMap<String, Property>(
