@@ -680,7 +680,7 @@ public class CodeSourceBuilder {
      *            a StringBuilder to accept debug logging information
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromMultiOccurrenceToMultiOccurrence(Set<FieldMap> fieldMappings, StringBuilder logDetails) {
+    public Set<FieldMap> fromMultiOccurrenceToMultiOccurrence(Set<FieldMap> fieldMappings, StringBuilder logDetails) {
         
         Map<String, IterableRef> sources = new HashMap<String, IterableRef>();
         Map<String, IterableRef> destinations = new HashMap<String, IterableRef>();
@@ -765,9 +765,9 @@ public class CodeSourceBuilder {
      *            a StringBuilder to accept debug logging information
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
-    public CodeSourceBuilder generateMultiOccurrenceMapping(Map<String, IterableRef> sources, Map<String, IterableRef> destinations,
+    public Set<FieldMap> generateMultiOccurrenceMapping(Map<String, IterableRef> sources, Map<String, IterableRef> destinations,
             Map<FieldMap, Set<FieldMap>> subFields, StringBuilder logDetails) {
-        
+        Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
         List<String> sourceSizes = new ArrayList<String>();
         for (IterableRef ref : sources.values()) {
             statement(ref.multiOccurrenceVar.declareIterator());
@@ -804,8 +804,6 @@ public class CodeSourceBuilder {
             if (ClassUtil.isImmutable(destRef.elementRef.type())) {
                 statement(destRef.elementRef.declare());
             } else {
-//                statement(destRef.elementRef.declare("mapperFacade.newObject(%s, %s, mappingContext)", destRef.associations.iterator()
-//                        .next().elementRef, usedType(destRef.elementRef.type())));
                 VariableRef sourceRef = destRef.associations.iterator().next().elementRef;
                 statement(destRef.elementRef.declare("%s(%s, mappingContext)", usedMapperFacadeNewObjectCall(destRef.elementRef,sourceRef),sourceRef));
             }
@@ -828,7 +826,11 @@ public class CodeSourceBuilder {
                                     subMap.getSource(), srcRef.elementRef));
                             VariableRef dest = ("".equals(subMap.getDestination().getExpression()) ? destRef.elementRef : new VariableRef(
                                     subMap.getDestination(), destRef.elementRef));
-                            mapFields(subMap, src, dest, destRef.elementRef.type(), logDetails);
+                            
+                            FieldMap f = mapFields(subMap, src, dest, destRef.elementRef.type(), logDetails);
+                            if (f != null) {
+                                mappedFields.add(f);
+                            }
                             
                         }
                         
@@ -847,7 +849,7 @@ public class CodeSourceBuilder {
             statement(destRef.multiOccurrenceVar.assign(destRef.newDestination));
         }
         
-        return this;
+        return mappedFields;
     }
     
     @SuppressWarnings("unchecked")
@@ -957,7 +959,6 @@ public class CodeSourceBuilder {
     }
        
     public CodeSourceBuilder fromMapToBean(VariableRef d, VariableRef s) {
-
         statement(d.assign(d.cast(s)));
         return this;
     }
@@ -966,6 +967,17 @@ public class CodeSourceBuilder {
         statement(d.assign(s));
         return this;
     } 
+    
+ 
+    public CodeSourceBuilder fromArrayOrListToBean(VariableRef d, VariableRef s) {
+        statement(d.assign(d.cast(s)));
+        return this;
+    }
+    
+    public CodeSourceBuilder fromBeanToArrayOrList(VariableRef d, VariableRef s) {
+        statement(d.assign(s));
+        return this;
+    }
     
     /**
      * Generate the code necessary to process the provided FieldMap.
@@ -982,9 +994,10 @@ public class CodeSourceBuilder {
      *            a StringBuilder to contain the debug output
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
-    public CodeSourceBuilder mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty,
+    public FieldMap mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty,
             Type<?> destinationType, StringBuilder logDetails) {
         
+        FieldMap processedFieldMap = fieldMap;
         if (sourceProperty.isNestedProperty()) {
             ifPathNotNull(sourceProperty).then();
         }
@@ -1083,11 +1096,16 @@ public class CodeSourceBuilder {
                 fromMapToBean(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aBeanToMap())) {
                 fromBeanToMap(destinationProperty, sourceProperty);
+            } else if (fieldMap.is(anArrayOrListToBean())) {
+                fromArrayOrListToBean(destinationProperty, sourceProperty);
+            } else if (fieldMap.is(aBeanToArrayOrList())) {
+                fromBeanToArrayOrList(destinationProperty, sourceProperty);
             } else if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive()) {
                 if (logDetails != null) {
                     logDetails.append("ignoring { Object to primitive or primitive to Object}");
                 }
                 newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
+                processedFieldMap = null;
             } else {
                 if (logDetails != null) {
                     logDetails.append("mapping Object to Object");
@@ -1105,7 +1123,7 @@ public class CodeSourceBuilder {
             end();
         }
         
-        return this;
+        return processedFieldMap;
     }
     
     private Converter<Object, Object> getConverter(FieldMap fieldMap, String converterId) {

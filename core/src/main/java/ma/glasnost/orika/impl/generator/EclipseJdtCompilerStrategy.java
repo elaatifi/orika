@@ -73,7 +73,11 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
         } catch (IllegalArgumentException e) {
             throw new RuntimeException(e);
         } catch (InvocationTargetException e) {
-            throw new RuntimeException(e.getTargetException());
+            if (e.getTargetException() instanceof RuntimeException) {
+                throw (RuntimeException)e.getTargetException();
+            } else {
+                throw new RuntimeException(e.getTargetException());
+            }
         }
     }
     
@@ -173,8 +177,15 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
     }
     
     private RuntimeException classCompilationException(Throwable cause, String packageName, String classSimpleName, String source) {
-        
-        return new RuntimeException("Error compiling " + packageName + "." + classSimpleName + ":\n\n" + source + "\n", cause);
+        RuntimeException e;
+        if (cause instanceof RuntimeException) {
+            e = (RuntimeException)cause;
+            e = new RuntimeException("Error compiling " + packageName + "." + classSimpleName + ":\n\n" + source + "\n" +
+                    e.getLocalizedMessage(), e.getCause());
+        } else {
+            e = new RuntimeException("Error compiling " + packageName + "." + classSimpleName + ":\n\n" + source + "\n", cause);
+        }
+        return e;
     }
     
     /**
@@ -189,7 +200,16 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
         throws SourceCodeGenerationException {
 
         Class<?> compiledClass = null;
-        String sourceText = formatSource(sourceCode.toSourceFile());
+        String sourceText = sourceCode.toSourceFile();
+        try {
+            sourceText = formatSource(sourceCode.toSourceFile());
+        } catch (Exception e) {
+            /*
+             * If source code couldn't be formatted, we should still proceed
+             * with compile, allowing the compilation to fail and tell us
+             * what the real error was
+             */
+        }
         String packageName = sourceCode.getPackageName();
         String classSimpleName = sourceCode.getClassSimpleName();
         String className = sourceCode.getClassName();

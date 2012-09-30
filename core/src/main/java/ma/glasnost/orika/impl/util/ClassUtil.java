@@ -67,7 +67,7 @@ public final class ClassUtil {
      * @return true if the passed type is not abstract and not an interface; false otherwise.
      */
     public static boolean isConcrete(Class<?> type) {
-    	return !type.isInterface() && (type.isPrimitive() || !Modifier.isAbstract(type.getModifiers()));
+    	return !type.isInterface() && (type.isPrimitive() || type.isArray() || !Modifier.isAbstract(type.getModifiers()));
     }
     
     /**

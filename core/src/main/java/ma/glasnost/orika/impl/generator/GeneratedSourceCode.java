@@ -73,15 +73,16 @@ public class GeneratedSourceCode {
 	public GeneratedSourceCode(final String baseClassName, Class<?> superClass,
 	        CompilerStrategy compilerStrategy) {
 
+	    String safeBaseClassName = baseClassName.replace("[]", "$Array");
 		this.compilerStrategy = compilerStrategy;
 		this.sourceBuilder = new StringBuilder();
-		this.classSimpleName = baseClassName + System.identityHashCode(this);
+		this.classSimpleName = safeBaseClassName + System.identityHashCode(this);
 		this.superClass = superClass;
 
-		int namePos = baseClassName.lastIndexOf(".");
+		int namePos = safeBaseClassName.lastIndexOf(".");
 		if (namePos > 0) {
-			this.packageName = baseClassName.substring(0, namePos - 1);
-			this.classSimpleName = baseClassName.substring(namePos + 1);
+			this.packageName = safeBaseClassName.substring(0, namePos - 1);
+			this.classSimpleName = safeBaseClassName.substring(namePos + 1);
 		} else {
 			this.packageName = "ma.glasnost.orika.generated";
 		}
@@ -93,7 +94,7 @@ public class GeneratedSourceCode {
 		sourceBuilder.append("public class " + classSimpleName + " extends "
 		        + superClass.getCanonicalName() + " {\n");
 	}
-
+	
     /**
      * @return the StringBuilder containing the current accumulated source.
      */

@@ -53,7 +53,6 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
 	}
 	
 	private final Set<String> nestedTypesUsed = new HashSet<String>();
-	private final boolean aTypeIsMap;
 	
     /**
      * @param aType
@@ -63,12 +62,19 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
      */
     protected ClassMapBuilderForMaps(Type<A> aType, Type<B> bType, MapperFactory mapperFactory, PropertyResolverStrategy propertyResolver, DefaultFieldMapper... defaults) {
 	    super(aType, bType, mapperFactory, propertyResolver, defaults);
-	    aTypeIsMap = aType.isMap();
 	}
        
     protected ClassMapBuilderForMaps<A, B> self() {
         return this;
     }           
+    
+    protected boolean isATypeBean() {
+        return !getAType().isMap();
+    }
+    
+    protected boolean isSpecialCaseType(Type<?> type) {
+        return type.isMap();
+    }
     
     /**
      * Configures this class-map builder to employ the default property mapping
@@ -84,13 +90,13 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
     public ClassMapBuilderForMaps<A, B> byDefault(DefaultFieldMapper... withDefaults) {
     	
     	Set<String> remainingProperties;
-    	if (aTypeIsMap) {
+    	if (isATypeBean()) {
+            remainingProperties = new LinkedHashSet<String>(getPropertiesForTypeA());
+            remainingProperties.removeAll(getMappedPropertiesForTypeA());
+        } else {
     	    remainingProperties = new LinkedHashSet<String>(getPropertiesForTypeB());
     	    remainingProperties.removeAll(getMappedPropertiesForTypeB());
-    	} else {
-    	    remainingProperties = new LinkedHashSet<String>(getPropertiesForTypeA());
-    	    remainingProperties.removeAll(getMappedPropertiesForTypeA());
-    	}
+    	}  
     	remainingProperties.remove("class");
     	
         for (final String propertyName : remainingProperties) {  
@@ -106,7 +112,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
         return self();
     }
 
-    private String getParentExpression(String epxression) {
+    protected String getParentExpression(String epxression) {
         String[] parts = epxression.split("[.]");
         StringBuilder name = new StringBuilder();
         for (int i=0; i < parts.length - 1; ++i) {
@@ -116,11 +122,11 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
     }
     
     public FieldMapBuilder<A, B> fieldMap(String fieldNameA, String fieldNameB, boolean byDefault) {
-        if (aTypeIsMap && isNestedPropertyExpression(fieldNameB)) {
-            nestedTypesUsed.add(getParentExpression(fieldNameB));
-        } else if (!aTypeIsMap && isNestedPropertyExpression(fieldNameA)) {
+        if (isATypeBean() && isNestedPropertyExpression(fieldNameA)) {
             nestedTypesUsed.add(getParentExpression(fieldNameA));
-        }
+        } else if (!isATypeBean() && isNestedPropertyExpression(fieldNameB)) {
+            nestedTypesUsed.add(getParentExpression(fieldNameB));
+        } 
         return super.fieldMap(fieldNameA, fieldNameB, byDefault);
     }
     
@@ -131,13 +137,19 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
      * @param expr the property expression to resolve
      * @return
      */
-    protected Property resolveProperty(java.lang.reflect.Type type, String expr) {
+    protected Property resolveProperty(java.lang.reflect.Type rawType, String expr) {
         
-        if (TypeFactory.valueOf(type).isMap()) {
-            return new MapKeyProperty(expr);
+        Type<?> type = TypeFactory.valueOf(rawType);
+        if (isSpecialCaseType(type)) {
+            Type<?> propertyType = isSpecialCaseType(getBType()) ? getBType() : getAType();
+            return resolveCustomProperty(expr, propertyType);
         } else {
             return super.resolveProperty(type, expr);
         }
+    }
+    
+    protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
+        return new MapKeyProperty(expr, propertyType.getNestedType(1));
     }
     
     /**
@@ -149,12 +161,12 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
      */
     public static final class MapKeyProperty extends Property {
         
-        public MapKeyProperty(String key) {
+        public MapKeyProperty(String key, Type<?> type) {
             setName(key);
             setExpression(key);
             setGetter("get(\"" + key + "\")");
             setSetter("put(\"" + key + "\",%s)");
-            setType(TypeFactory.TYPE_OF_OBJECT);
+            setType(type);
         }
         
         public boolean isMapKey() {

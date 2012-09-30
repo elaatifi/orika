@@ -19,6 +19,7 @@
 package ma.glasnost.orika.metadata;
 
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 import ma.glasnost.orika.MappedTypePair;
@@ -41,6 +42,7 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
     
     private final String[] constructorA;
     private final String[] constructorB;
+    private final MapperKey mapperKey;
     
     /**
      * Constructs a new ClassMap
@@ -63,6 +65,8 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
         this.fieldsMapping = Collections.unmodifiableSet(fieldsMapping);
         this.usedMappers = Collections.unmodifiableSet(usedMappers);
         
+        this.mapperKey = new MapperKey(aType, bType);
+        
         if (constructorA != null) {
             this.constructorA = constructorA.clone();
         } else {
@@ -74,6 +78,19 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
         } else {
             this.constructorB = null;
         }
+    }
+    
+    public ClassMap<A,B> copy(Set<FieldMap> fieldsMapping) {
+        Set<MapperKey> usedMappers = new LinkedHashSet<MapperKey>();
+        usedMappers.addAll(this.usedMappers);
+        String[] constructorA = this.constructorA == null ? null : this.constructorA.clone();
+        String[] constructorB = this.constructorB == null ? null : this.constructorB.clone();
+        
+        return new ClassMap<A,B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
+    }
+    
+    public MapperKey getMapperKey() {
+        return mapperKey;
     }
     
     /**
@@ -129,7 +146,7 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
      * @return
      */
     public String getMapperClassName() {
-        return "Orika_" + bType.getSimpleName() + "_" + getATypeName() + "_Mapper";
+        return "Orika_" + getBTypeName() + "_" + getATypeName() + "_Mapper";
     }
     
     /**

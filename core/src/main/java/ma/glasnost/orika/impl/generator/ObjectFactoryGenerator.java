@@ -78,7 +78,7 @@ public class ObjectFactoryGenerator {
             UsedConvertersContext usedConverters = new UsedConvertersContext();
             UsedMapperFacadesContext usedMapperFacades = new UsedMapperFacadesContext();
             
-            addCreateMethod(factoryCode, usedTypes, usedConverters, usedMapperFacades, type, logDetails);
+            addCreateMethod(factoryCode, usedTypes, usedConverters, usedMapperFacades, type, context, logDetails);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
@@ -114,20 +114,20 @@ public class ObjectFactoryGenerator {
     
     private void addCreateMethod(GeneratedSourceCode code, UsedTypesContext usedTypes, 
     		UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, 
-    		Type<?> clazz, StringBuilder logDetails) throws CannotCompileException {
+    		Type<?> type, MappingContext mappingContext, StringBuilder logDetails) throws CannotCompileException {
     	
         final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, usedMappers, mapperFactory);
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
         out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
         
-        Set<Type<? extends Object>> sourceClasses = mapperFactory.lookupMappedClasses(clazz);
+        Set<Type<? extends Object>> sourceClasses = mapperFactory.lookupMappedClasses(type);
         
         if (sourceClasses != null && !sourceClasses.isEmpty()) {
             for (Type<? extends Object> sourceType : sourceClasses) {
-                addSourceClassConstructor(out, clazz, sourceType, logDetails);
+                addSourceClassConstructor(out, type, sourceType, mappingContext, logDetails);
             }
         } else {
-            throw new MappingException("Cannot generate ObjectFactory for " + clazz);
+            throw new MappingException("Cannot generate ObjectFactory for " + type);
         }
         
         // TODO: can this condition be reached?
@@ -140,58 +140,75 @@ public class ObjectFactoryGenerator {
         code.addMethod(out.toString());
     }
     
-    private void addSourceClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceClass, StringBuilder logDetails) {
-        ClassMap<Object, Object> classMap = mapperFactory.getClassMap(new MapperKey(type,sourceClass)); 
+    private void addSourceClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails) {
+        MapperKey mapperKey = new MapperKey(type,sourceType);
+        ClassMap<Object, Object>  classMap = mapperFactory.getClassMap(mapperKey); 
+        
         if (classMap==null) {
-        	classMap = mapperFactory.getClassMap(new MapperKey(sourceClass,type));
+        	classMap = mapperFactory.getClassMap(new MapperKey(sourceType,type));
         }
         
-        ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap, type);
-        Constructor<?> constructor = constructorMapping.getConstructor();
+        if (type.isArray()) {
+            addArrayClassConstructor(out, type, sourceType, classMap.getFieldsMapping().size());
+        } else {
         
-        if (constructor == null) {
-            throw new IllegalArgumentException("no constructors found for " + type);
-        } else if (logDetails != null) {
-        	logDetails.append("\n\tUsing constructor: " + constructor);
-        }
-        
-        List<FieldMap> properties = constructorMapping.getMappedFields();
-        Class<?>[] constructorArguments = constructor.getParameterTypes();
-
-        int argIndex = 0;
-        
-        out.ifInstanceOf("s", sourceClass).then();
-        out.append("%s source = (%s) s;", sourceClass.getCanonicalName(), sourceClass.getCanonicalName());
-        out.append("\ntry {\n");
-        argIndex = 0;
-        for (FieldMap fieldMap : properties) {
-        	
-            Class<?> targetClass = constructorArguments[argIndex];
-            VariableRef v = new VariableRef(TypeFactory.resolveValueOf(targetClass, type), "arg" + argIndex++);
-            VariableRef s = new VariableRef(fieldMap.getSource(), "source");
-           
-            out.statement(v.declare());
-                        
-            out.mapFields(fieldMap, s, v, fieldMap.getDestination().getType(), logDetails);
-        }
-        
-        out.append("return new %s", type.getCanonicalName()).append("(");
-        for (int i = 0; i < properties.size(); i++) {
-            out.append("arg%d", i);
-            if (i < properties.size() - 1) {
-                out.append(",");
+            ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap, type);
+            Constructor<?> constructor = constructorMapping.getConstructor();
+            
+            if (constructor == null) {
+                throw new IllegalArgumentException("no constructors found for " + type);
+            } else if (logDetails != null) {
+            	logDetails.append("\n\tUsing constructor: " + constructor);
             }
+            
+            List<FieldMap> properties = constructorMapping.getMappedFields();
+            Class<?>[] constructorArguments = constructor.getParameterTypes();
+    
+            int argIndex = 0;
+            
+            out.ifInstanceOf("s", sourceType).then();
+            out.append("%s source = (%s) s;", sourceType.getCanonicalName(), sourceType.getCanonicalName());
+            out.append("\ntry {\n");
+            argIndex = 0;
+            
+            for (FieldMap fieldMap : properties) {
+            	
+                Class<?> targetClass = constructorArguments[argIndex];
+                VariableRef v = new VariableRef(TypeFactory.resolveValueOf(targetClass, type), "arg" + argIndex++);
+                VariableRef s = new VariableRef(fieldMap.getSource(), "source");
+               
+                out.statement(v.declare());
+                            
+                out.mapFields(fieldMap, s, v, fieldMap.getDestination().getType(), logDetails);
+            }
+            
+            out.append("return new %s", type.getCanonicalName()).append("(");
+            for (int i = 0; i < properties.size(); i++) {
+                out.append("arg%d", i);
+                if (i < properties.size() - 1) {
+                    out.append(",");
+                }
+            }
+            out.append(");");
+            
+            /*
+             * Any exceptions thrown calling constructors should be propagated
+             */
+            out.append("\n} catch (java.lang.Exception e) {\n");
+            out.append("throw new java.lang.RuntimeException(" + 
+            		"\"Error while constructing new " + type.getSimpleName() + 
+            		" instance\", e); \n}");
+            out.end();
         }
-        out.append(");");
-        
-        /*
-         * Any exceptions thrown calling constructors should be propagated
-         */
-        out.append("\n} catch (java.lang.Exception e) {\n");
-        out.append("throw new java.lang.RuntimeException(" + 
-        		"\"Error while constructing new " + type.getSimpleName() + 
-        		" instance\", e); \n}");
+    }
+
+    /**
+     * @param type
+     * @param size
+     */
+    private void addArrayClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceType, int size) {
+        out.ifInstanceOf("s", sourceType).then();
+        out.append("return new " + type.getRawType().getComponentType().getCanonicalName() + "[" + size + "];");
         out.end();
-        
     }
 }

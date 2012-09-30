@@ -27,6 +27,7 @@ import javolution.util.FastList;
 import javolution.util.FastMap;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
+import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
@@ -34,7 +35,7 @@ public class MappingContext implements Reusable {
 	
 	private final Map<Type<?>, Type<?>> mapping;
 	private final Map<java.lang.reflect.Type, Map<Object, Object>> cache;
-	private final FastList<FastList<ClassMap<?,?>>> mappersSeen;
+	private FastList<FastMap<MapperKey, ClassMap<?,?>>> mappersSeen;
 	private MappingStrategy strategy;
 	private boolean isNew = true;
 	private int depth;
@@ -60,7 +61,6 @@ public class MappingContext implements Reusable {
 	public MappingContext() {
 		mapping = new FastMap<Type<?>, Type<?>>();
 		cache = new FastMap<java.lang.reflect.Type, Map<Object, Object>>();
-		mappersSeen = new FastList<FastList<ClassMap<?,?>>>();
 	}
 	
 	public void setResolvedMappingStrategy(MappingStrategy strategy) {
@@ -131,12 +131,29 @@ public class MappingContext implements Reusable {
 		return (D) (localCache == null ? null : localCache.get(source));
 	}
 
-	public void mapped(ClassMap<?,?> classMap) {
-	    FastList<ClassMap<?,?>> list = mappersSeen.isEmpty() ? null : this.mappersSeen.get(depth-1);
-	    if (list == null) {
-	        list = new FastList<ClassMap<?,?>>();
+	/**
+	 * Registers a ClassMap marking it as mapped within the current context
+	 * 
+	 * @param classMap
+	 */
+	public void registerMapperGeneration(ClassMap<?,?> classMap) {
+	    if (mappersSeen == null) {
+	        mappersSeen = new FastList<FastMap<MapperKey, ClassMap<?,?>>>();
 	    }
-	    list.add(classMap);
+	    FastMap<MapperKey, ClassMap<?,?>> list = mappersSeen.isEmpty() ? null : this.mappersSeen.get(depth-1);
+	    if (list == null) {
+	        list = new FastMap<MapperKey, ClassMap<?,?>>();
+	    }
+	    list.put(classMap.getMapperKey(), classMap);
+	}
+	
+	public ClassMap<?,?> getMapperGeneration(MapperKey mapperKey) {
+	    ClassMap<?,?> result = null;
+	    FastMap<MapperKey, ClassMap<?,?>> map = (mappersSeen == null || mappersSeen.isEmpty()) ? null : this.mappersSeen.get(depth-1);
+	    if (map != null) {
+	        result = map.get(mapperKey);
+	    }
+	    return result;
 	}
 	
 	public void beginMapping() {
@@ -153,7 +170,9 @@ public class MappingContext implements Reusable {
     public void reset() {
         cache.clear();
         mapping.clear();
-        mappersSeen.clear();
+        if (mappersSeen != null) {
+            mappersSeen.clear();
+        }
         strategy = null;
         isNew = true;
         depth = 0;

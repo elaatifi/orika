@@ -247,7 +247,7 @@ public class VariableRef {
         }
     }
     
-    public String cast(VariableRef ref) {
+    public String cast(VariableRef ref) {  
         return cast(""+ref);
     }
     
@@ -265,6 +265,8 @@ public class VariableRef {
          */
         if (isPrimitive()) {
             castValue = format("((%s)%s).%sValue()", wrapperTypeName(), castValue, primitiveType());
+        } else if (type().isString()) {
+            castValue = "\"\" + " + castValue;
         } else if (!value.startsWith("(" + typeName + ")")) {
             castValue = "((" + typeName() + ")" + castValue + ")";
         }
@@ -426,7 +428,8 @@ public class VariableRef {
                 var = getGetter(p, var);
             }
         }
-        return "((" + property.getType().getCanonicalName() + ")" + var + "." + property.getGetter() + ")";
+        return "((" + property.getType().getCanonicalName() + ")" + var + 
+                ( property.isArrayElement() ? "" : ".") + property.getGetter() + ")";
     }
     
     public String isInstanceOf(Type<?> type) {
@@ -454,10 +457,9 @@ public class VariableRef {
                 var = getGetter(p, var);
             }
         }
-        return var + "." + property.getSetter();
-        
+        return var + ( property.isArrayElement() ? "" : ".") + property.getSetter();
     }
-    
+
     /**
      * Return Java code which avoids a NullPointerException when accessing this variable reference;
      * if it is not backed by a nested property, this method returns the empty string. 

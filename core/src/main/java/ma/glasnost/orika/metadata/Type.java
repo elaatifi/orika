@@ -5,6 +5,7 @@ import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.List;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 
@@ -237,8 +238,16 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     	return Collection.class.isAssignableFrom(getRawType());
     }
     
+    public boolean isList() {
+        return List.class.isAssignableFrom(getRawType());
+    }
+    
     public boolean isMap() {
     	return Map.class.isAssignableFrom(getRawType());
+    }
+    
+    public boolean isString() {
+        return String.class.isAssignableFrom(getRawType());
     }
     
     public boolean isPrimitive() {

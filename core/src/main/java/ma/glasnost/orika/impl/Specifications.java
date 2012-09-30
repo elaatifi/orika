@@ -83,8 +83,16 @@ public final class Specifications {
         return BEAN_TO_MAP;
     }
     
+    public static Specification aBeanToArrayOrList() {
+        return BEAN_TO_ARRAY_OR_LIST;
+    }
+    
     public static Specification aMapToBean() {
         return MAP_TO_BEAN;
+    }
+    
+    public static Specification anArrayOrListToBean() {
+        return ARRAY_OR_LIST_TO_BEAN;
     }
     
     public static Specification aMappingOfTheRequiredClassProperty() {
@@ -212,6 +220,16 @@ public final class Specifications {
         }
     };
     
+    private static final Specification ARRAY_OR_LIST_TO_BEAN = new Specification() {
+        
+        public boolean apply(FieldMap fieldMap) {
+            return (fieldMap.getSource().isListElement() || fieldMap.getSource().isArrayElement())
+                    && (ClassUtil.isImmutable(fieldMap.getDestination().getType()) || (!fieldMap.getDestination().isCollection()
+                            && !fieldMap.getDestination().isArray() && !fieldMap.getDestination().isMap() && !fieldMap.getDestination()
+                            .isEnum()));
+        }
+    };
+    
     private static final Specification ARRAY_OR_COLLECTION_TO_MAP = new Specification() {
         
         public boolean apply(FieldMap fieldMap) {
@@ -224,6 +242,16 @@ public final class Specifications {
         public boolean apply(FieldMap fieldMap) {
             
             return fieldMap.getDestination().isMapKey()
+                    && (ClassUtil.isImmutable(fieldMap.getSource().getType()) || (!fieldMap.getSource().isCollection()
+                            && !fieldMap.getSource().isArray() && !fieldMap.getSource().isMap() && !fieldMap.getSource().isEnum()));
+        }
+    };
+    
+    private static final Specification BEAN_TO_ARRAY_OR_LIST = new Specification() {
+        
+        public boolean apply(FieldMap fieldMap) {
+            
+            return (fieldMap.getDestination().isListElement() || fieldMap.getDestination().isArrayElement())
                     && (ClassUtil.isImmutable(fieldMap.getSource().getType()) || (!fieldMap.getSource().isCollection()
                             && !fieldMap.getSource().isArray() && !fieldMap.getSource().isMap() && !fieldMap.getSource().isEnum()));
         }

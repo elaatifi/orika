@@ -162,6 +162,14 @@ public class Property {
         return false;
     }
     
+    public boolean isListElement() {
+        return false;
+    }
+    
+    public boolean isArrayElement() {
+        return false;
+    }
+    
     public boolean hasPath() {
         return false;
     }
