@@ -431,12 +431,12 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         Matcher matcher = INLINE_PROPERTY_PATTERN.matcher(expr);
         
         if (matcher.matches()) {
-            DynamicPropertyBuilder builder = new DynamicPropertyBuilder(theType, this);
-            builder.setName(matcher.group(1));
-            builder.setGetter(matcher.group(2));
-            builder.setSetter(matcher.group(3));
-            builder.setTypeName(matcher.group(4));
-            return builder.toProperty(); 
+            PropertyBuilder builder = new PropertyBuilder(theType, this);
+            builder.name(matcher.group(1));
+            builder.getter(matcher.group(2));
+            builder.setter(matcher.group(3));
+            builder.typeName(matcher.group(4));
+            return builder.build(); 
         } else {
             throw new IllegalArgumentException("'" + expr + "' is not a valid dynamic property expression");
         }

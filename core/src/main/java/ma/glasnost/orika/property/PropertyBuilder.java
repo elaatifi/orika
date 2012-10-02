@@ -27,7 +27,7 @@ import ma.glasnost.orika.metadata.TypeFactory;
  * @author matt.deboer@gmail.com
  * 
  */
-class DynamicPropertyBuilder {
+class PropertyBuilder {
     
     private Method readMethod;
     private Method writeMethod;
@@ -39,7 +39,7 @@ class DynamicPropertyBuilder {
     private String name;
     private PropertyResolver propertyResolver;
     
-    public DynamicPropertyBuilder(Type<?> owningType, PropertyResolver propertyResolver) {
+    public PropertyBuilder(Type<?> owningType, PropertyResolver propertyResolver) {
         this.owningType = owningType;
         this.propertyResolver = propertyResolver;
     }
@@ -48,7 +48,7 @@ class DynamicPropertyBuilder {
      * @param getter
      *            the getter to set
      */
-    public void setGetter(String getter) {
+    public void getter(String getter) {
         this.getter = getter;
     }
     
@@ -56,19 +56,19 @@ class DynamicPropertyBuilder {
      * @param setter
      *            the setter to set
      */
-    public void setSetter(String setter) {
+    public void setter(String setter) {
         this.setter = setter;
     }
     
-    public void setName(String name) {
+    public void name(String name) {
         this.name = name;
     }
     
-    public void setTypeName(String typeName) {
+    public void typeName(String typeName) {
         this.propertyTypeName = typeName;
     }
     
-    public void setReadMethod(Method readMethod) {
+    public void getterMethod(Method readMethod) {
         this.readMethod = readMethod;
         if (this.propertyType == null) {
             this.propertyType = propertyResolver.resolvePropertyType(readMethod, null, owningType.getRawType(), owningType);
@@ -89,7 +89,7 @@ class DynamicPropertyBuilder {
         return writeMethod;
     }
     
-    public void setWriteMethod(Method writeMethod) {
+    public void setterMethod(Method writeMethod) {
         this.writeMethod = writeMethod;
         if (writeMethod.getParameterTypes().length == 1) {
             this.propertyType = propertyResolver.resolvePropertyType(readMethod, writeMethod.getParameterTypes()[0],
@@ -97,7 +97,7 @@ class DynamicPropertyBuilder {
         }
     }
     
-    public Property toProperty() {
+    public Property build() {
         validate();
         Property property = new Property();
         property.setName(name);
@@ -134,9 +134,9 @@ class DynamicPropertyBuilder {
             if (!"".equals(getter) || !"".equals(setter)) {
                 for (Method m : owningType.getRawType().getMethods()) {
                     if (getter != null && m.getName().equals(getter) && m.getParameterTypes().length == 0) {
-                        setReadMethod(m);
+                        getterMethod(m);
                     } else if (setter != null && m.getName().endsWith(setter) && m.getParameterTypes().length == 1) {
-                        setWriteMethod(m);
+                        setterMethod(m);
                     }
                 }
             }
