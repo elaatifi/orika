@@ -48,8 +48,6 @@ public class ClassMapBuilderForArrays<A, B> extends ClassMapBuilderForLists<A,B>
 		}
 	}
 	
-//	private int currentIndex = 0;
-//	
     /**
      * @param aType
      * @param bType

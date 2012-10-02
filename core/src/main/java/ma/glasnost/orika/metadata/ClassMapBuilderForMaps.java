@@ -68,10 +68,19 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
         return this;
     }           
     
+    /**
+     * @return true if the A type for this Builder is the Java Bean type
+     */
     protected boolean isATypeBean() {
         return !getAType().isMap();
     }
     
+    /**
+     * Test whether the provided type is the special case type for this Builder
+     * (as in, not the standard Java Bean type)
+     * @param type
+     * @return
+     */
     protected boolean isSpecialCaseType(Type<?> type) {
         return type.isMap();
     }

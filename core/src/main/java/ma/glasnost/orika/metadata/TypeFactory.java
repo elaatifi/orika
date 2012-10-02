@@ -28,6 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ma.glasnost.orika.metadata.TypeUtil.InvalidTypeDescriptorException;
+
 /**
  * TypeFactory contains various methods for obtaining a Type instance to
  * represent various type situations.
@@ -465,4 +467,19 @@ public abstract class TypeFactory {
         return valueOf((Class<T>) (object == null || !object.iterator().hasNext() ? null : object.iterator().next().getClass()));
     }
     
+    /**
+     * Constructs a nested type from a string description of that type; allows for package names
+     * to be omitted for 'java.lang' and 'java.util' classes.
+     * 
+     * @param typeDescriptor a string representation of the java declaration of a generic type
+     * @return
+     */
+    public static Type<?> valueOf(final String typeDescriptor) {
+        try {
+            return TypeUtil.parseTypeDescriptor(typeDescriptor);
+        } catch (InvalidTypeDescriptorException e) {
+            throw new IllegalArgumentException(typeDescriptor + " is an invalid type descriptor");
+        }
+    }
+
 }

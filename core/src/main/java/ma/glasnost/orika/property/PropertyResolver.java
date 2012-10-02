@@ -53,7 +53,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     private final boolean includePublicFields;
     
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
-    private final Map<java.lang.reflect.Type, Map<String, Property>> adHocPropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
+    private final Map<java.lang.reflect.Type, Map<String, Property>> inlinePropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     
     public PropertyResolver(boolean includePublicFields) {
         this.includePublicFields = includePublicFields;
@@ -210,36 +210,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         
         if (readMethod != null || writeMethod != null) {
             
-            Class<?> rawType = resolveRawPropertyType(propertyType, readMethod);
-            
-            if (referenceType.isParameterized() || owningType.getTypeParameters().length > 0 || rawType.getTypeParameters().length > 0) {
-                /*
-                 * Make attempts to determine the parameters
-                 */
-                Type<?> resolvedGenericType = null;
-                if (readMethod != null) {
-                    try {
-                        resolvedGenericType = resolveGenericType(
-                                readMethod.getDeclaringClass().getDeclaredMethod(readMethod.getName(), new Class[0]).getGenericReturnType(),
-                                referenceType);
-                    } catch (NoSuchMethodException e) {
-                        throw new IllegalStateException("readMethod does not exist", e);
-                    }
-                }
-                
-                if (resolvedGenericType != null && !resolvedGenericType.isAssignableFrom(rawType)) {
-                    property.setType(resolvedGenericType);
-                } else {
-                    property.setType(TypeFactory.valueOf(rawType));
-                }
-                
-            } else {
-                /*
-                 * Neither the type nor it's parameter is generic; use the raw
-                 * type
-                 */
-                property.setType(TypeFactory.valueOf(rawType));
-            }
+            property.setType(resolvePropertyType(readMethod, propertyType, owningType, referenceType));
             
             Property existing = properties.get(propertyName);
             if (existing == null) {
@@ -253,6 +224,31 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
             }
         }
     }
+    
+    protected Type<?> resolvePropertyType(Method readMethod, Class<?> rawType, Class<?> owningType, Type<?> referenceType) {
+        
+        rawType = resolveRawPropertyType(rawType, readMethod);
+        
+        Type<?> resolvedGenericType = null;
+        if (referenceType.isParameterized() || owningType.getTypeParameters().length > 0 || rawType.getTypeParameters().length > 0) {
+            
+            if (readMethod != null) {
+                try {
+                    resolvedGenericType = resolveGenericType(
+                            readMethod.getDeclaringClass().getDeclaredMethod(readMethod.getName(), new Class[0]).getGenericReturnType(),
+                            referenceType);
+                } catch (NoSuchMethodException e) {
+                    throw new IllegalStateException("readMethod does not exist", e);
+                }
+            }
+        }
+        
+        if (resolvedGenericType == null || resolvedGenericType.isAssignableFrom(rawType)) {
+            resolvedGenericType = TypeFactory.valueOf(rawType);
+        }
+        return resolvedGenericType;
+    }
+    
     
     /**
      * Add public non-static fields as properties
@@ -298,9 +294,14 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return
      */
     protected boolean isNestedPropertyExpression(String expression) {
-        return expression.indexOf('.') != -1;
+        return expression.replaceAll("\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
     }
     
+    
+    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.=\"\\|\\%,\\(\\)\\$ ]+";
+    
+    private static final String NESTED_PROPERTY_SPLITTER = 
+            "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS + "\\})";
     /*
      * (non-Javadoc)
      * 
@@ -316,11 +317,11 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         final List<Property> path = new ArrayList<Property>();
         final StringBuilder expression = new StringBuilder();
         if (p.indexOf('.') != -1) {
-            final String[] ps = p.split("\\.");
+            final String[] ps = p.split(NESTED_PROPERTY_SPLITTER);
             int i = 0;
             while (i < ps.length) {
                 try {
-                    property = getProperty(propertyType, ps[i]);
+                    property = getProperty(propertyType, ps[i], (i < ps.length - 1) );
                     propertyType = property.getType();
                 } catch (MappingException e) {
                     throw new MappingException("could not resolve nested property [" + p + "] on " + type + ", because " + e.getLocalizedMessage());
@@ -345,7 +346,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     
     public Property getProperty(java.lang.reflect.Type type, String expr) {
         
-        return getProperty(type, expr, getProperties(type));
+        return getProperty(type, expr, false);
     }
     
     /**
@@ -357,31 +358,32 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return the resolved Property
      * @throws MappingException if the expression cannot be resolved to a property for the type
      */
-    protected Property getProperty(java.lang.reflect.Type type, String expr, Map<String, Property> properties) throws MappingException {
+    protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup) throws MappingException {
         Property property = null;
         
         if (isNestedPropertyExpression(expr)) {
             property = getNestedProperty(type, expr);
         } else {
-            // TODO: perhaps ad-hoc properties should be isolated to a given
-            // ClassMapBuilder, rather than made available for other mappings
+            // TODO: perhaps in-line properties should be isolated to a given
+            // ClassMapBuilder instance, rather than made available for other mappings
             // of the class; can this cause problems?
-            Map<String, Property> adHocPoperties = adHocPropertiesCache.get(type);
-            if (adHocPoperties != null) {
-                property = adHocPoperties.get(expr);
+            Map<String, Property> inlinePoperties = inlinePropertiesCache.get(type);
+            if (inlinePoperties != null) {
+                property = inlinePoperties.get(expr);
             }
             if (property == null) {
+                Map<String, Property> properties = getProperties(type);
                 if (properties.containsKey(expr)) {
                     property = properties.get(expr);
-                } else if (isAdHocPropertyExpression(expr)) {
-                    property = resolveAdHocProperty(type, expr);
+                } else if (isInlinePropertyExpression(expr)) {
+                    property = resolveInlineProperty(type, expr);
                     if (property != null) {
                         synchronized(type) {
-                            if (adHocPoperties == null) {
-                                adHocPoperties = new HashMap<String, Property>(1);
-                                adHocPropertiesCache.put(type, adHocPoperties);
+                            if (inlinePoperties == null) {
+                                inlinePoperties = new HashMap<String, Property>(1);
+                                inlinePropertiesCache.put(type, inlinePoperties);
                             }
-                            adHocPoperties.put(property.getName(), property);
+                            inlinePoperties.put(property.getName(), property);
                         }
                     }
                 } else {
@@ -392,46 +394,48 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return property;
     }
     
-    private static final Pattern ADHOC_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\(\\s*([\\w]*)\\s*,\\s*([\\w]*)\\s*\\)");
+    private static final Pattern INLINE_PROPERTY_PATTERN = 
+            Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
     
     /**
-     * Determines whether the provided string is a valid ad-hoc property expression
+     * Determines whether the provided string is a valid in-line property expression
      * 
      * @param expression
      *            the expression to evaluate
      * @return
      */
-    protected boolean isAdHocPropertyExpression(String expression) {
-        return ADHOC_PROPERTY_PATTERN.matcher(expression).matches(); 
+    protected boolean isInlinePropertyExpression(String expression) {
+        return INLINE_PROPERTY_PATTERN.matcher(expression).matches(); 
     } 
     
     /**
-     * Resolves ad-hoc properties, which are defined in-line with the following format:<br>
-     * "name(getterName,setterName)"
+     * Resolves in-line properties, which are defined with the following format:<br>
+     * "name{getterName|setterName|type=typeName}".<br><br>
+     * Setter name can be omitted, as well as type name; if getter name is omitted,
+     * then setter name must be preceded by '|', like so: <br>"name{|setterName|type=typeName}",
+     * or like "name{|setterName}". <br><br>
+     * At least one of getter or setter must be provided.<br>
+     * Getter or setter 'names' can optionally be the java source of the method call including static
+     * arguments, like so: <br>"name{getTheName(\"someString\")|setTheName(\"someString\", %s)}"<br>
+     * If the setter is defined in this way, it should contain the string '%s' which represents
+     * the value being set.
+     *  
+     * 
      * 
      * @param type
      * @param expr
      * @return
      */
-    public Property resolveAdHocProperty(java.lang.reflect.Type type, String expr) {
+    public Property resolveInlineProperty(java.lang.reflect.Type type, String expr) {
         Type<?> theType = TypeFactory.valueOf(type); 
-        Matcher matcher = ADHOC_PROPERTY_PATTERN.matcher(expr);
+        Matcher matcher = INLINE_PROPERTY_PATTERN.matcher(expr);
         
         if (matcher.matches()) {
-            DynamicPropertyBuilder builder = new DynamicPropertyBuilder(theType);
+            DynamicPropertyBuilder builder = new DynamicPropertyBuilder(theType, this);
             builder.setName(matcher.group(1));
-            String readMethod = matcher.group(2);
-            String writeMethod = matcher.group(3);
-            
-            if (!"".equals(readMethod) || !"".equals(writeMethod.trim())) {
-                for (Method m : theType.getRawType().getMethods()) {
-                    if (m.getName().equals(readMethod) && m.getParameterTypes().length == 0) {
-                        builder.setReadMethod(m);
-                    } else if (m.getName().endsWith(writeMethod) && m.getParameterTypes().length == 1) {
-                        builder.setWriteMethod(m);
-                    }
-                }
-            }
+            builder.setGetter(matcher.group(2));
+            builder.setSetter(matcher.group(3));
+            builder.setTypeName(matcher.group(4));
             return builder.toProperty(); 
         } else {
             throw new IllegalArgumentException("'" + expr + "' is not a valid dynamic property expression");

@@ -21,11 +21,13 @@ import java.io.Externalizable;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -217,6 +219,111 @@ abstract class TypeUtil {
         }
         
         return typesByVariable.values().toArray(new Type<?>[0]);
+    }
+    
+    static class InvalidTypeDescriptorException extends Exception {
+        private static final long serialVersionUID = 1L;        
+    }
+    
+    /**
+     * Parses a type descriptor to produce the Type instance with a matching representation
+     * 
+     * @param typeDescriptor
+     * @return
+     * @throws InvalidTypeDescriptorException
+     */
+    static Type<?> parseTypeDescriptor(String typeDescriptor) throws InvalidTypeDescriptorException {
+        final ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        StringBuilder descriptor = new StringBuilder(typeDescriptor);
+        int split = descriptor.indexOf("<");
+        if (split >= 0) {
+            String className = descriptor.substring(0, split);
+            if (!descriptor.subSequence(descriptor.length()-1, descriptor.length()).equals(">")) {
+                throw new InvalidTypeDescriptorException();
+            } else {
+                descriptor.setLength(descriptor.length()-1);
+                descriptor.replace(0, split+1, "");
+            }
+            String[] subDescriptors = splitTypeArguments(descriptor.toString());
+            Type<?>[] typeArguments = new Type<?>[subDescriptors.length];
+            int index = -1;
+            for (String subDescriptor: subDescriptors) {
+                typeArguments[++index] = parseTypeDescriptor(subDescriptor);
+            }
+            
+            return TypeFactory.valueOf(loadClass(className, cl), typeArguments);
+           
+        } else {
+            return TypeFactory.valueOf(loadClass(typeDescriptor, cl));  
+        }
+    }
+    
+    /**
+     * Splits the provided string of nested types into separate top-level instances.
+     * 
+     * @param nestedTypes
+     * @return
+     */
+    private static String[] splitTypeArguments(String nestedTypes) {
+        StringBuilder string = new StringBuilder(nestedTypes.replaceAll("\\s*", ""));
+        List<String> arguments = new ArrayList<String>();
+        while(string.length() > 0) {
+            int nextComma = string.indexOf(",");
+            int nextOpen = string.indexOf("<");
+            if (nextComma == -1 ) {
+                arguments.add(string.toString());
+                string.setLength(0);
+            } else if (nextOpen == -1 || nextComma < nextOpen) {
+                arguments.add(string.substring(0, nextComma));
+                string.replace(0,nextComma+1,"");
+            } else { // nextOpen < nextComma
+                int depth = 1;
+                int index = nextOpen;
+                while (depth > 0 && index < string.length() -1 ) {
+                    char nextChar = string.charAt(++index);
+                    if ('<' == nextChar) {
+                        ++depth;
+                    } else if ('>' == nextChar) {
+                        --depth;
+                    }
+                }
+                arguments.add(string.substring(0,index+1));
+                string.replace(0,index+1,"");
+            }
+        }
+        return arguments.toArray(new String[arguments.size()]);
+    }
+    
+    /**
+     * Attempt to load the class specified by the given name, using
+     * the provided class loader.<br>
+     * Additional attempts are made for classes not found which have no package 
+     * declaration, under the assumption that the class may be in the 
+     * 'java.lang' package, or 'java.util' package (in that order).
+     * 
+     * @param name
+     * @param cl
+     * @return
+     */
+    private static Class<?> loadClass(String name, ClassLoader cl) {
+        try {
+            return Class.forName(name, false, cl);
+        } catch (ClassNotFoundException e) {
+            if (!name.contains(".")) {
+                try {
+                    return Class.forName("java.lang." + name, false, cl);
+                } catch (ClassNotFoundException e1) {
+                    try {
+                        return Class.forName("java.util." + name, false, cl);
+                    } catch (ClassNotFoundException e2) {
+                        /*
+                         * Report the originally specified type
+                         */
+                    }
+                }
+            }
+            throw new IllegalArgumentException("'" + name + "' is non-existent or inaccessible");
+        }
     }
     
 }

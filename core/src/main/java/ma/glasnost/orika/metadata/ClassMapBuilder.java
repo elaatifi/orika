@@ -237,6 +237,42 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     }
     
     /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public FieldMapBuilder<A,B> fieldMap(Property fieldA, Property fieldB, boolean byDefault) {
+        return new FieldMapBuilder<A,B>(this, fieldA, fieldB, null, byDefault);
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property fieldB, boolean byDefault) {
+        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB, null, byDefault);
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldNameB
+     * @param byDefault
+     * @return
+     */
+    public FieldMapBuilder<A,B> fieldMap(Property fieldA, String fieldNameB, boolean byDefault) {
+        return new FieldMapBuilder<A,B>(this, fieldA, fieldNameB, null, byDefault);
+    }
+    
+    /**
      * Exclude the specified field from mapping
      * 
      * @param fieldName the name of the field/property to exclude

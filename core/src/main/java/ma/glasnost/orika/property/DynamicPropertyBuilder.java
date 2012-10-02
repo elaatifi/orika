@@ -31,22 +31,47 @@ class DynamicPropertyBuilder {
     
     private Method readMethod;
     private Method writeMethod;
-    private Class<?> propertyType;
+    private String getter;
+    private String setter;
+    private String propertyTypeName;
+    private Type<?> propertyType;
     private Type<?> owningType;
     private String name;
+    private PropertyResolver propertyResolver;
     
-    public DynamicPropertyBuilder(Type<?> owningType) {
+    public DynamicPropertyBuilder(Type<?> owningType, PropertyResolver propertyResolver) {
         this.owningType = owningType;
+        this.propertyResolver = propertyResolver;
+    }
+    
+    /**
+     * @param getter
+     *            the getter to set
+     */
+    public void setGetter(String getter) {
+        this.getter = getter;
+    }
+    
+    /**
+     * @param setter
+     *            the setter to set
+     */
+    public void setSetter(String setter) {
+        this.setter = setter;
     }
     
     public void setName(String name) {
         this.name = name;
     }
     
+    public void setTypeName(String typeName) {
+        this.propertyTypeName = typeName;
+    }
+    
     public void setReadMethod(Method readMethod) {
         this.readMethod = readMethod;
         if (this.propertyType == null) {
-            this.propertyType = readMethod.getReturnType();
+            this.propertyType = propertyResolver.resolvePropertyType(readMethod, null, owningType.getRawType(), owningType);
         }
     }
     
@@ -56,69 +81,93 @@ class DynamicPropertyBuilder {
     public Method getReadMethod() {
         return readMethod;
     }
-
+    
     /**
      * @return the writeMethod
      */
     public Method getWriteMethod() {
         return writeMethod;
     }
-
+    
     public void setWriteMethod(Method writeMethod) {
         this.writeMethod = writeMethod;
         if (writeMethod.getParameterTypes().length == 1) {
-            this.propertyType = writeMethod.getParameterTypes()[0];
-        } 
+            this.propertyType = propertyResolver.resolvePropertyType(readMethod, writeMethod.getParameterTypes()[0],
+                    owningType.getRawType(), owningType);
+        }
     }
- 
+    
     public Property toProperty() {
         validate();
         Property property = new Property();
         property.setName(name);
-        property.setType(TypeFactory.valueOf(propertyType));
+        if (propertyType == null && propertyTypeName != null) {
+            property.setType(TypeFactory.valueOf(propertyTypeName));
+        } else if (propertyType != null) {
+            property.setType(TypeFactory.valueOf(propertyType));
+        } else {
+            throw new IllegalStateException("no type specified for property '" + name + "{" + getter + (setter != null ? "|" + setter : "")
+                    + "}'");
+        }
         property.setExpression(name);
         if (readMethod != null) {
             property.setGetter(readMethod.getName() + "()");
+        } else {
+            property.setGetter(getter);
         }
         if (writeMethod != null) {
             property.setSetter(writeMethod.getName() + "(%s)");
+        } else {
+            property.setSetter(setter);
         }
+        
         return property;
     }
     
     private void validate() {
         
-        if (readMethod == null && writeMethod == null) {
-            throw new IllegalArgumentException("property " + 
-                    owningType.getCanonicalName() + "["+ name +"]" + 
-                   " cannot be read or written");
+        if (readMethod == null && writeMethod == null && getter == null && setter == null) {
+            throw new IllegalArgumentException("property " + owningType.getCanonicalName() + "[" + name + "]"
+                    + " cannot be read or written");
         } else {
-            if (writeMethod != null && writeMethod.getParameterTypes().length != 1) {
-                throw new IllegalArgumentException("writeMethod (" + writeMethod.getName() + ") for " + 
-                        owningType.getCanonicalName() + "["+ name +"] does not have exactly 1 input argument ");
-            }
             
-            if (readMethod != null && (readMethod.getReturnType() == null || readMethod.getReturnType().equals(Void.TYPE)) || readMethod.getReturnType().equals(Void.class)) {
-                throw new IllegalArgumentException("readMethod (" + readMethod.getName() + ") for " + 
-                        owningType.getCanonicalName() + "["+ name +"] does not return a value ");
-            }
-            
-            if (readMethod != null && writeMethod != null) { 
-        
-                if(!readMethod.getReturnType().isAssignableFrom(propertyType)) {
-                    /*
-                     * If we've already parsed the write method, and the read method type is not
-                     * a sub-type of the write method's type, the two should not be considered to form
-                     * a 'property'.
-                     */
-                    throw new IllegalArgumentException("write method ("+writeMethod.getName()+") for " + 
-                            owningType.getCanonicalName() + "["+ name +"]" + 
-                           " has type (" + writeMethod.getParameterTypes()[0].getCanonicalName() + ") " +
-                           "is not assignable from the type (" + readMethod.getReturnType().getCanonicalName() + ") for " +
-                           "the corresponding read method (" + readMethod.getName() + ")");
+            if (!"".equals(getter) || !"".equals(setter)) {
+                for (Method m : owningType.getRawType().getMethods()) {
+                    if (getter != null && m.getName().equals(getter) && m.getParameterTypes().length == 0) {
+                        setReadMethod(m);
+                    } else if (setter != null && m.getName().endsWith(setter) && m.getParameterTypes().length == 1) {
+                        setWriteMethod(m);
+                    }
                 }
-            }   
-        }  
+            }
+            
+            if (writeMethod != null && writeMethod.getParameterTypes().length != 1) {
+                throw new IllegalArgumentException("writeMethod (" + writeMethod.getName() + ") for " + owningType.getCanonicalName() + "["
+                        + name + "] does not have exactly 1 input argument ");
+            }
+            
+            if (readMethod != null
+                    && (readMethod.getReturnType() == null || readMethod.getReturnType().equals(Void.TYPE) || readMethod.getReturnType()
+                            .equals(Void.class))) {
+                throw new IllegalArgumentException("readMethod (" + readMethod.getName() + ") for " + owningType.getCanonicalName() + "["
+                        + name + "] does not return a value ");
+            }
+            
+            if (readMethod != null && writeMethod != null && propertyType != null) {
+                
+                if (!readMethod.getReturnType().isAssignableFrom(propertyType.getRawType())) {
+                    /*
+                     * If we've already parsed the write method, and the read
+                     * method type is not a sub-type of the write method's type,
+                     * the two should not be considered to form a 'property'.
+                     */
+                    throw new IllegalArgumentException("write method (" + writeMethod.getName() + ") for " + owningType.getCanonicalName()
+                            + "[" + name + "]" + " has type (" + writeMethod.getParameterTypes()[0].getCanonicalName() + ") "
+                            + "is not assignable from the type (" + readMethod.getReturnType().getCanonicalName() + ") for "
+                            + "the corresponding read method (" + readMethod.getName() + ")");
+                }
+            }
+        }
     }
     
 }

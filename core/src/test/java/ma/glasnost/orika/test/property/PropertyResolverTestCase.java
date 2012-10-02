@@ -19,12 +19,17 @@
 package ma.glasnost.orika.test.property;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -45,7 +50,7 @@ public class PropertyResolverTestCase {
 	public void testNestedProperty() {
 		String np = "start.x";
 
-		NestedProperty p = propertyResolver.getNestedProperty(Line.class, np);
+		NestedProperty p = (NestedProperty) propertyResolver.getProperty(Line.class, np);
 
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
 	}
@@ -55,7 +60,7 @@ public class PropertyResolverTestCase {
         String np = "bogus.x";
 
         try {
-            propertyResolver.getNestedProperty(Line.class, np);
+            propertyResolver.getProperty(Line.class, np);
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("could not resolve nested property [" + np + "]"));
         }
@@ -86,13 +91,25 @@ public class PropertyResolverTestCase {
 	@Test
     public void testAdHocResolution() {
 	    
-	    Property prop = propertyResolver.getProperty(A.class, "name(readTheNameForThisBean,assignTheName).firstName");
+	    Property prop = propertyResolver.getProperty(A.class, "name{readTheNameForThisBean|assignTheName}.firstName");
 	    
 	    Assert.assertNotNull(prop);
 	    Assert.assertEquals("firstName", prop.getName());
 	    Assert.assertEquals("name.firstName", prop.getExpression());
 	    Assert.assertEquals(TypeFactory.valueOf(String.class), prop.getType());
 	}
+	
+	
+	@Test
+    public void testAdHocResolution_withType() {
+        
+        Property prop = propertyResolver.getProperty(A.class, "name{readTheNameForThisBean|assignTheName|type=ma.glasnost.orika.test.property.TestCaseClasses$Name}.firstName");
+        
+        Assert.assertNotNull(prop);
+        Assert.assertEquals("firstName", prop.getName());
+        Assert.assertEquals("name.firstName", prop.getExpression());
+        Assert.assertEquals(TypeFactory.valueOf(String.class), prop.getType());
+    }
 	
 	
 	/**
@@ -105,8 +122,8 @@ public class PropertyResolverTestCase {
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         factory.registerClassMap(
                 factory.classMap(A.class, B.class)
-                    .field("name(readTheNameForThisBean,assignTheName).firstName", "givenName")
-                    .field("name(readTheNameForThisBean,assignTheName).lastName", "sirName")
+                    .field("name{readTheNameForThisBean|assignTheName}.firstName", "givenName")
+                    .field("name{readTheNameForThisBean|assignTheName}.lastName", "sirName")
                     .field("address.city", "city")
                     .field("address.street", "street")
                     .field("address.postalCode", "postalCode")
@@ -149,7 +166,7 @@ public class PropertyResolverTestCase {
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         factory.registerClassMap(
                 factory.classMap(A.class, B.class)
-                    .field("name(readTheNameForThisBean,assignTheName).firstName", "givenName")
+                    .field("name{readTheNameForThisBean|assignTheName}.firstName", "givenName")
                     .field("name.lastName", "sirName")
                     .field("address.city", "city")
                     .field("address.street", "street")
@@ -183,6 +200,301 @@ public class PropertyResolverTestCase {
         
     }
 	
+    /**
+     * This test case verifies that properties can be added through a programmatic
+     * interface, explicitly defining the properties using the programming API.
+     * It may be ugly, but at least it's possible
+     */
+    @Test
+    public void testAdHocResolution_integration_programmaticProperties() {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        ClassMapBuilder<Element,PersonDto> builder = factory.classMap(Element.class, PersonDto.class);
+        
+        {
+            Property employment = new Property("employment", Element.class, "getAttribute(\"employment\")", "setAttribute(\"employment\", %s)");
+            Property jobTitle = new Property("jobTitle",TypeFactory.valueOf(List.class, String.class),"getAttribute(\"jobTitle\")","setAttribute(\"jobTitle\", %s)");
+            
+            NestedProperty employmentJobTitle = new NestedProperty("employment.jobTitle", jobTitle, new Property[]{employment});
+            builder.fieldMap(employmentJobTitle, "jobTitles", false).add();
+            
+            Property salary = new Property("salary", Long.class, "getAttribute(\"salary\")", "setAttribute(\"salary\", %s)");
+            
+            NestedProperty employmentSalary = new NestedProperty("employment.salary", salary, new Property[]{employment});
+            builder.fieldMap(employmentSalary, "salary", false).add();
+            
+            Property name = new Property("name", Element.class, "getAttribute(\"name\")", "setAttribute(\"name\", %s)");
+            Property first = new Property("first", String.class, "getAttribute(\"first\")", "setAttribute(\"first\", %s)");
+            
+            NestedProperty firstName = new NestedProperty("name.first", first, new Property[]{name});
+            builder.fieldMap(firstName, "firstName", false).add();
+            
+            Property last = new Property("last", String.class, "getAttribute(\"last\")", "setAttribute(\"last\", %s)");
+              
+            NestedProperty lastName = new NestedProperty("name.last", last, new Property[]{name});
+            builder.fieldMap(lastName, "lastName", false).add();
+        }
+        
+        factory.registerClassMap(builder);
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Element person = new Element();
+        Element employment = new Element();
+        List<String> jobTitles = new ArrayList<String>();
+        jobTitles.add("manager");
+        jobTitles.add("executive");
+        employment.setAttribute("jobTitle", jobTitles);
+        employment.setAttribute("salary", 50000L);
+        person.setAttribute("employment", employment);
+        Element name = new Element();
+        name.setAttribute("first", "Chuck");
+        name.setAttribute("last", "Testa");
+        person.setAttribute("name", name);
+        
+        PersonDto result = mapper.map(person, PersonDto.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), result.firstName);
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), result.lastName);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary"), result.salary);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), result.jobTitles);
+    }
+    
+    
+    /**
+     * Demonstrates that you can declare properties in-line using a custom property descriptor format;
+     * like so: "propertyName{getterName|setterName|type=the.type.Name}"
+     * setter and type name are optional
+     * although those arguments must be constants;
+     */
+    @Test
+    public void testAdHocResolution_integration_declarativeProperties() {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        {
+            String employmentDef = "employment{getAttribute(\"employment\")|setAttribute(\"employment\", %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String jobTitleDef = "jobTitle{getAttribute(\"jobTitle\")|setAttribute(\"jobTitle\", %s)|type=java.util.List}";
+            String salaryDef = "salary{getAttribute(\"salary\")|setAttribute(\"salary\", %s)|type=java.lang.Long}";
+            
+            String nameDef = "name{getAttribute(\"name\")|setAttribute(\"name\",%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String firstNameDef = "first{getAttribute(\"first\")|setAttribute(\"first\", %s)|type=java.lang.String}";
+            String lastNameDef = "last{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
+            
+            factory.classMap(Element.class, PersonDto.class)
+            .field(employmentDef + "." + jobTitleDef, "jobTitles")
+            .field(employmentDef + "." + salaryDef, "salary")
+            .field(nameDef + "." + firstNameDef, "firstName")
+            .field(nameDef + "." + lastNameDef, "lastName")
+            .register();
+        }
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Element person = new Element();
+        Element employment = new Element();
+        List<String> jobTitles = new ArrayList<String>();
+        jobTitles.add("manager");
+        jobTitles.add("executive");
+        employment.setAttribute("jobTitle", jobTitles);
+        employment.setAttribute("salary", 50000L);
+        person.setAttribute("employment", employment);
+        Element name = new Element();
+        name.setAttribute("first", "Chuck");
+        name.setAttribute("last", "Testa");
+        person.setAttribute("name", name);
+        
+        PersonDto result = mapper.map(person, PersonDto.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), result.firstName);
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), result.lastName);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary"), result.salary);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), result.jobTitles);
+        
+        Element mapBack = mapper.map(result, Element.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), ((Element)mapBack.getAttribute("name")).getAttribute("first"));
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), ((Element)mapBack.getAttribute("name")).getAttribute("last"));
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary"), ((Element)mapBack.getAttribute("employment")).getAttribute("salary"));
+        
+        /*
+         * Note!!!: map-back fails here, because we've only given enough info to identify jobTitle
+         * as a List<Object>; see the next test where we pass parameterized List<String> to identify
+         * the list properly.
+         */
+        List<?> original = (List<?>) ((Element)person.getAttribute("employment")).getAttribute("jobTitle");
+        List<?> mapBackList = (List<?>) ((Element)mapBack.getAttribute("employment")).getAttribute("jobTitle");
+        Assert.assertFalse(original.containsAll(mapBackList));
+        Assert.assertFalse(mapBackList.containsAll(original));
+        
+    }
+    
+    /**
+     * Demonstrates that you can specify the types as parameterized if necessary,
+     * such as "List&lt;String&gt;" or "java.util.List&lt;java.lang.String&gt;"
+     * 
+     */
+    @Test
+    public void testAdHocResolution_integration_declarativePropertiesNestedTypes() {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        {
+            String employmentDef = "employment{getAttribute(\"employment\")|setAttribute(\"employment\", %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String jobTitleDef = "jobTitle{getAttribute(\"jobTitle\")|setAttribute(\"jobTitle\", %s)|type=List<String>}";
+            String salaryDef = "salary{getAttribute(\"salary\")|setAttribute(\"salary\", %s)|type=java.lang.Long}";
+            
+            String nameDef = "name{getAttribute(\"name\")|setAttribute(\"name\",%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String firstNameDef = "first{getAttribute(\"first\")|setAttribute(\"first\", %s)|type=java.lang.String}";
+            String lastNameDef = "last{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
+            
+            factory.classMap(Element.class, PersonDto.class)
+                .field(employmentDef + "." + jobTitleDef, "jobTitles")
+                .field("employment." + salaryDef, "salary") // reuse the in-line declaration of 'employment' property
+                .field(nameDef + "." + firstNameDef, "firstName")
+                .field("name." + lastNameDef, "lastName") // reuses the in-line declaration of 'name' property
+                .register();
+        }
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Element person = new Element();
+        Element employment = new Element();
+        List<String> jobTitles = new ArrayList<String>();
+        jobTitles.add("manager");
+        jobTitles.add("executive");
+        employment.setAttribute("jobTitle", jobTitles);
+        employment.setAttribute("salary", 50000L);
+        person.setAttribute("employment", employment);
+        Element name = new Element();
+        name.setAttribute("first", "Chuck");
+        name.setAttribute("last", "Testa");
+        person.setAttribute("name", name);
+        
+        PersonDto result = mapper.map(person, PersonDto.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), result.firstName);
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), result.lastName);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary"), result.salary);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), result.jobTitles);
+        
+        Element mapBack = mapper.map(result, Element.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), ((Element)mapBack.getAttribute("name")).getAttribute("first"));
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), ((Element)mapBack.getAttribute("name")).getAttribute("last"));
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary"), ((Element)mapBack.getAttribute("employment")).getAttribute("salary"));
+        
+        List<?> original = (List<?>) ((Element)person.getAttribute("employment")).getAttribute("jobTitle");
+        List<?> mapBackList = (List<?>) ((Element)mapBack.getAttribute("employment")).getAttribute("jobTitle");
+        Assert.assertTrue(original.containsAll(mapBackList));
+        Assert.assertTrue(mapBackList.containsAll(original));
+        
+    }
+    
+    
+    /**
+     * For my next trick, this is a custom Property Resolver which automatically attempts
+     * a dynamic definition of type Element (after normal resolution has failed)
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     */
+    public static class ElementPropertyResolver extends IntrospectorPropertyResolver {
+        
+        protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup) throws MappingException {
+            Property property = null;
+            try {
+                property = super.getProperty(type, expr, isNestedLookup);
+            } catch (MappingException e) {
+                try {
+                    property = super.resolveInlineProperty(type, expr + "{getAttribute(\""+ expr+"\")|setAttribute(\""+ expr+"\",%s)|type=" + 
+                            (isNestedLookup? "ma.glasnost.orika.test.property.PropertyResolverTestCase$Element" : "Object") + "}");
+                } catch (MappingException e2) {
+                    throw e; // throw the original exception
+                }
+            }
+            return property;
+        }
+            
+    }
+    
+    /**
+     *  This test demonstrates how you might implement a custom property resolver which provides
+     *  a proprietary definition of properties
+     */
+    @Test
+    public void testAdHocResolution_integration_customResolverUsingDeclarativeProperties() {
+        
+        MapperFactory factory = 
+                new DefaultMapperFactory.Builder()
+                    .propertyResolverStrategy(new ElementPropertyResolver())
+                    .build();
+        
+        factory.classMap(Element.class, PersonDto2.class)
+            .field("employment.jobTitle", "jobTitle")
+            .field("employment.salary", "salary") 
+            .field("name.first", "firstName")
+            .field("name.last", "lastName") 
+            .register();
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Element person = new Element();
+        Element employment = new Element();
+        employment.setAttribute("jobTitle", "manager");
+        employment.setAttribute("salary", 50000L);
+        person.setAttribute("employment", employment);
+        Element name = new Element();
+        name.setAttribute("first", "Chuck");
+        name.setAttribute("last", "Testa");
+        person.setAttribute("name", name);
+        
+        PersonDto2 result = mapper.map(person, PersonDto2.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), result.firstName);
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), result.lastName);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary")+"", result.salary);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), result.jobTitle);
+        
+        Element mapBack = mapper.map(result, Element.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), ((Element)mapBack.getAttribute("name")).getAttribute("first"));
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), ((Element)mapBack.getAttribute("name")).getAttribute("last"));
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary")+"", ((Element)mapBack.getAttribute("employment")).getAttribute("salary"));
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), ((Element)mapBack.getAttribute("employment")).getAttribute("jobTitle"));
+        
+        
+    }
+    
+    public static class Element {
+        
+        Map<String,Object> attributes = new HashMap<String,Object>();
+        
+        public Object getAttribute(String name) {
+            return attributes.get(name);
+        }
+        
+        public void setAttribute(String name, Object value) {
+            attributes.put(name, value);
+        }
+    }
+    
+    public static class PersonDto {
+        public String firstName;
+        public String lastName;
+        public List<String> jobTitles;
+        public long salary;
+    }
+    
+    public static class PersonDto2 {
+        public String firstName;
+        public String lastName;
+        public String jobTitle;
+        public String salary;
+    }
+    
+    
 	public static class Point {
 		private int x, y;
 

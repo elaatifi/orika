@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 // XXX must be immutable
 public class Property {
@@ -34,6 +36,61 @@ public class Property {
     private Type<?> elementType;
     private boolean declared;
     
+    public Property() { 
+    }
+    
+    private static final Pattern ADHOC_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\(([\\w\\$\\.]*\\s*,)?\\s*([\\w\\(\\)\"]*)\\s*(,\\s*[\\w\\(\\)\\%\",]*)?\\s*\\)");
+    
+    public Property(String adHocPropertyExpression) {
+        Matcher matcher = ADHOC_PROPERTY_PATTERN.matcher(adHocPropertyExpression);
+        if (matcher.matches()) {
+            
+            String name = matcher.group(1);
+            String typeName = matcher.group(2);
+            String getter = matcher.group(3);
+            String setter = matcher.group(4);
+            
+            setName(name);
+            setExpression(name);
+            setGetter(getter);
+            setSetter(setter);
+            
+            if (typeName != null && !"".equals(typeName)) {
+                try {
+                    Class<?> rawType = Class.forName(typeName, false, Thread.currentThread().getContextClassLoader());
+                    Type<?> type = TypeFactory.valueOf(rawType);
+                    setType(type);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException("specified type '" + typeName + "' not found or not accessible");
+                }
+            } else {
+                setType(TypeFactory.TYPE_OF_OBJECT);
+            }
+        } else {
+            throw new IllegalArgumentException("'" + adHocPropertyExpression + "' is not a valid property expression");
+        }
+    }
+    
+    public Property(String name, Type<?> type, String getter, String setter, boolean declared) {
+        setName(name);
+        setExpression(name);
+        setType(type);
+        setGetter(getter);
+        setSetter(setter);
+        setDeclared(declared);
+    }
+    
+    public Property(String name, Type<?> type, String getter, String setter) {
+        this(name,TypeFactory.valueOf(type),getter,setter,true);
+    }
+    
+    public Property(String name, Class<?> type, String getter, String setter) {
+        this(name,TypeFactory.valueOf(type),getter,setter,true);
+    }
+    
+    public Property(String name, Class<?> type, String getter, String setter, boolean declared) {
+        this(name,TypeFactory.valueOf(type),getter,setter,declared);
+    }
     
     public Property copy() {
         Property copy = new Property();

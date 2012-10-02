@@ -39,7 +39,7 @@ public class IntrospectorResolverTestCase {
 	public void testNestedProperty() {
 		String np = "start.x";
 
-		NestedProperty p = propertyResolver.getNestedProperty(Line.class, np);
+		NestedProperty p = (NestedProperty) propertyResolver.getProperty(Line.class, np);
 
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
 	}
@@ -49,7 +49,7 @@ public class IntrospectorResolverTestCase {
         String np = "bogus.x";
 
         try {
-            propertyResolver.getNestedProperty(Line.class, np);
+            propertyResolver.getProperty(Line.class, np);
         } catch (RuntimeException e) {
             Assert.assertTrue(e.getMessage().contains("could not resolve nested property [" + np + "]"));
         }

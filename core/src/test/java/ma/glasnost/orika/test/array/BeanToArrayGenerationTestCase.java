@@ -1,7 +1,5 @@
 package ma.glasnost.orika.test.array;
 
-import java.util.List;
-
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;

@@ -92,13 +92,13 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                     String name = readMatcher.group(1);
                     if (name != null) {
                         name = uncapitalize(name);
-                        DynamicPropertyBuilder info = collectedMethods.get(name);
-                        if (info == null) {
-                            info = new DynamicPropertyBuilder(TypeFactory.resolveValueOf(type, referenceType));
-                            info.setName(name);
-                            collectedMethods.put(name, info);
+                        DynamicPropertyBuilder builder = collectedMethods.get(name);
+                        if (builder == null) {
+                            builder = new DynamicPropertyBuilder(TypeFactory.resolveValueOf(type, referenceType), this);
+                            builder.setName(name);
+                            collectedMethods.put(name, builder);
                         }
-                        info.setReadMethod(m);
+                        builder.setReadMethod(m);
                     } else {
                         throw new IllegalStateException("the configured readMethod regex '" + readPattern + 
                                 "' does not define group (1) containing the property's name");
@@ -111,13 +111,13 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                     String name = writeMatcher.group(1);
                     if (name != null) {
                         name = uncapitalize(name);
-                        DynamicPropertyBuilder info = collectedMethods.get(name);
-                        if (info == null) {
-                            info = new DynamicPropertyBuilder(TypeFactory.resolveValueOf(type, referenceType));
-                            info.setName(name);
-                            collectedMethods.put(name, info);
+                        DynamicPropertyBuilder builder = collectedMethods.get(name);
+                        if (builder == null) {
+                            builder = new DynamicPropertyBuilder(TypeFactory.resolveValueOf(type, referenceType), this);
+                            builder.setName(name);
+                            collectedMethods.put(name, builder);
                         }
-                        info.setWriteMethod(m);
+                        builder.setWriteMethod(m);
                     } else {
                         throw new IllegalStateException("the configured writeMethod regex '" + writePattern + 
                                 "' does not define group (1) containing the property's name");
