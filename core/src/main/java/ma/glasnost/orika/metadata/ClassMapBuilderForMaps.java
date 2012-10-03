@@ -171,11 +171,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
     public static final class MapKeyProperty extends Property {
         
         public MapKeyProperty(String key, Type<?> type) {
-            setName(key);
-            setExpression(key);
-            setGetter("get(\"" + key + "\")");
-            setSetter("put(\"" + key + "\",%s)");
-            setType(type);
+            super(key,key,"get(\"" + key + "\")","put(\"" + key + "\",%s)",type,null);
         }
         
         public boolean isMapKey() {

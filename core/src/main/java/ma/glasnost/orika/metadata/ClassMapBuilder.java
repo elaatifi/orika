@@ -30,6 +30,7 @@ import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.UtilityResolver;
+import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
@@ -271,6 +272,115 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     public FieldMapBuilder<A,B> fieldMap(Property fieldA, String fieldNameB, boolean byDefault) {
         return new FieldMapBuilder<A,B>(this, fieldA, fieldNameB, null, byDefault);
     }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, Property.Builder fieldB, boolean byDefault) {
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldB.build((PropertyResolver)propertyResolver), null, byDefault);
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property.Builder fieldB, boolean byDefault) {
+        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB.build((PropertyResolver)propertyResolver), null, byDefault);
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldNameB
+     * @param byDefault
+     * @return
+     */
+    public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, String fieldNameB, boolean byDefault) {
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldNameB, null, byDefault);
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public ClassMapBuilder<A,B> field(Property fieldA, Property fieldB) {
+        return fieldMap(fieldA, fieldB, false).add();
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public ClassMapBuilder<A,B> field(String fieldNameA, Property fieldB) {
+        return fieldMap(fieldNameA, fieldB, false).add();
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldNameB
+     * @param byDefault
+     * @return
+     */
+    public ClassMapBuilder<A,B> field(Property fieldA, String fieldNameB) {
+        return fieldMap(fieldA, fieldNameB, false).add();
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public ClassMapBuilder<A,B> field(Property.Builder fieldA, Property.Builder fieldB) {
+        return fieldMap(fieldA, fieldB, false).add(); 
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldB
+     * @param byDefault
+     * @return
+     */
+    public ClassMapBuilder<A,B> field(String fieldNameA, Property.Builder fieldB) {
+        return fieldMap(fieldNameA, fieldB, false).add(); 
+    }
+    
+    /**
+     * 
+     * 
+     * @param fieldA
+     * @param fieldNameB
+     * @param byDefault
+     * @return
+     */
+    public ClassMapBuilder<A,B> field(Property.Builder fieldA, String fieldNameB) {
+        return fieldMap(fieldA, fieldNameB, false).add(); 
+    }
+    
     
     /**
      * Exclude the specified field from mapping
@@ -579,11 +689,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     protected Property resolveProperty(java.lang.reflect.Type type, String expr) {
         Property property;
         if (isSelfReferenceExpression(expr)) {
-        	property = new Property();
-        	property.setName("");
-        	property.setGetter("");
-        	property.setExpression("");
-        	property.setType(TypeFactory.valueOf(type));
+        	property = new Property.Builder()
+        	    .name("").getter("").type(TypeFactory.valueOf(type)).build((PropertyResolver) propertyResolver);
         } else {
             property = propertyResolver.getProperty(type, expr);
         }

@@ -32,6 +32,7 @@ import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
+import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
@@ -199,41 +200,59 @@ public class PropertyResolverTestCase {
         Assert.assertEquals(a, mapBack);
         
     }
-	
+	 
     /**
      * This test case verifies that properties can be added through a programmatic
-     * interface, explicitly defining the properties using the programming API.
-     * It may be ugly, but at least it's possible
+     * builder interface, explicitly defining the properties using the programming API.
      */
     @Test
-    public void testAdHocResolution_integration_programmaticProperties() {
+    public void testAdHocResolution_integration_programmaticPropertyBuilder() {
         
         MapperFactory factory = MappingUtil.getMapperFactory(true);
         
         ClassMapBuilder<Element,PersonDto> builder = factory.classMap(Element.class, PersonDto.class);
         
         {
-            Property employment = new Property("employment", Element.class, "getAttribute(\"employment\")", "setAttribute(\"employment\", %s)");
-            Property jobTitle = new Property("jobTitle",TypeFactory.valueOf(List.class, String.class),"getAttribute(\"jobTitle\")","setAttribute(\"jobTitle\", %s)");
+            Property.Builder employment = 
+                    Property.Builder.propertyFor(Element.class, "employment")
+                        .type(Element.class)
+                        .getter("getAttribute(\"employment\")")
+                        .setter("setAttribute(\"employment\", %s)");
+           
             
-            NestedProperty employmentJobTitle = new NestedProperty("employment.jobTitle", jobTitle, new Property[]{employment});
-            builder.fieldMap(employmentJobTitle, "jobTitles", false).add();
+            builder.field(employment.nestedProperty("jobTitle")
+                        .type(new TypeBuilder<List<String>>(){}.build())
+                        .getter("getAttribute(\"jobTitle\")")
+                        .setter("setAttribute(\"jobTitle\", %s)")
+                    , "jobTitles");
+           
             
-            Property salary = new Property("salary", Long.class, "getAttribute(\"salary\")", "setAttribute(\"salary\", %s)");
+            builder.field(employment.nestedProperty("salary")
+                        .type(Long.class)
+                        .getter("getAttribute(\"salary\")")
+                        .setter("setAttribute(\"salary\", %s)")
+                    , "salary");
             
-            NestedProperty employmentSalary = new NestedProperty("employment.salary", salary, new Property[]{employment});
-            builder.fieldMap(employmentSalary, "salary", false).add();
             
-            Property name = new Property("name", Element.class, "getAttribute(\"name\")", "setAttribute(\"name\", %s)");
-            Property first = new Property("first", String.class, "getAttribute(\"first\")", "setAttribute(\"first\", %s)");
+            Property.Builder name = 
+                    Property.Builder.propertyFor(Element.class, "name")
+                        .type(Element.class)
+                        .getter("getAttribute(\"name\")")
+                        .setter("setAttribute(\"name\", %s)");
             
-            NestedProperty firstName = new NestedProperty("name.first", first, new Property[]{name});
-            builder.fieldMap(firstName, "firstName", false).add();
             
-            Property last = new Property("last", String.class, "getAttribute(\"last\")", "setAttribute(\"last\", %s)");
-              
-            NestedProperty lastName = new NestedProperty("name.last", last, new Property[]{name});
-            builder.fieldMap(lastName, "lastName", false).add();
+            builder.field(name.nestedProperty("first")
+                        .type(String.class)
+                        .getter("getAttribute(\"first\")")
+                        .setter("setAttribute(\"first\", %s)")
+                    , "firstName");
+            
+            builder.field(name.nestedProperty("last")
+                        .type(String.class)
+                        .getter("getAttribute(\"last\")")
+                        .setter("setAttribute(\"last\", %s)")
+                    , "lastName");
+            
         }
         
         factory.registerClassMap(builder);
@@ -261,7 +280,6 @@ public class PropertyResolverTestCase {
         Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), result.jobTitles);
     }
     
-    
     /**
      * Demonstrates that you can declare properties in-line using a custom property descriptor format;
      * like so: "propertyName{getterName|setterName|type=the.type.Name}"
@@ -283,11 +301,11 @@ public class PropertyResolverTestCase {
             String lastNameDef = "last{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
             
             factory.classMap(Element.class, PersonDto.class)
-            .field(employmentDef + "." + jobTitleDef, "jobTitles")
-            .field(employmentDef + "." + salaryDef, "salary")
-            .field(nameDef + "." + firstNameDef, "firstName")
-            .field(nameDef + "." + lastNameDef, "lastName")
-            .register();
+                .field(employmentDef + "." + jobTitleDef, "jobTitles")
+                .field(employmentDef + "." + salaryDef, "salary")
+                .field(nameDef + "." + firstNameDef, "firstName")
+                .field(nameDef + "." + lastNameDef, "lastName")
+                .register();
         }
         
         MapperFacade mapper = factory.getMapperFacade();

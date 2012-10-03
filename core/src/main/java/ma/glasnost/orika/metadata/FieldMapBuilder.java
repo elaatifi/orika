@@ -234,28 +234,28 @@ public class FieldMapBuilder<A, B> {
     
     public static FieldMap mapKeys(Type<?> aType, Type<?> bType) {
     	
-    	Property aProperty = new Property();
-    	aProperty.setName("key");
-    	aProperty.setExpression("key");
-    	aProperty.setGetter("getKey()");
-    	aProperty.setSetter("setKey(%s)");
-    	aProperty.setType(aType);
-    	Property bProperty = aProperty.copy();
-    	bProperty.setType(bType);
+    	Property aProperty = 
+    	        new Property.Builder()
+    	            .name("key")
+    	            .getter("getKey()")
+    	            .setter("setKey(%s)")
+    	            .type(aType).build(null);
+    	
+    	Property bProperty = aProperty.copy(bType);
     	
     	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null, false);
     }
     
     public static FieldMap mapValues(Type<?> aType, Type<?> bType) {
     	
-    	Property aProperty = new Property();
-    	aProperty.setName("value");
-    	aProperty.setExpression("value");
-    	aProperty.setGetter("getValue()");
-    	aProperty.setSetter("setValue(%s)");
-    	aProperty.setType(aType);
-    	Property bProperty = aProperty.copy();
-    	bProperty.setType(bType);
+        Property aProperty = 
+                new Property.Builder()
+                    .name("value")
+                    .getter("getValue()")
+                    .setter("setValue(%s)")
+                    .type(aType).build(null);
+        
+        Property bProperty = aProperty.copy(bType);
     	
     	return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, null, false);
     }

@@ -83,7 +83,7 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
      */
     protected void collectProperties(Class<?> type, Type<?> referenceType, Map<String, Property> properties) {
         
-        Map<String, PropertyBuilder> collectedMethods = new LinkedHashMap<String, PropertyBuilder>();
+        Map<String, Property.Builder> collectedMethods = new LinkedHashMap<String, Property.Builder>();
         for (Method m: type.getMethods()) {
             
             if (m.getParameterTypes().length == 0 && m.getReturnType() != null && m.getReturnType() != Void.TYPE) {
@@ -92,13 +92,13 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                     String name = readMatcher.group(1);
                     if (name != null) {
                         name = uncapitalize(name);
-                        PropertyBuilder builder = collectedMethods.get(name);
+                        Property.Builder builder = collectedMethods.get(name);
                         if (builder == null) {
-                            builder = new PropertyBuilder(TypeFactory.resolveValueOf(type, referenceType), this);
-                            builder.name(name);
+                            builder = new Property.Builder(TypeFactory.resolveValueOf(type, referenceType), name);
+                            //builder.name(name);
                             collectedMethods.put(name, builder);
                         }
-                        builder.getterMethod(m);
+                        builder.getter(m);
                     } else {
                         throw new IllegalStateException("the configured readMethod regex '" + readPattern + 
                                 "' does not define group (1) containing the property's name");
@@ -111,13 +111,13 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                     String name = writeMatcher.group(1);
                     if (name != null) {
                         name = uncapitalize(name);
-                        PropertyBuilder builder = collectedMethods.get(name);
+                        Property.Builder builder = collectedMethods.get(name);
                         if (builder == null) {
-                            builder = new PropertyBuilder(TypeFactory.resolveValueOf(type, referenceType), this);
-                            builder.name(name);
+                            builder = new Property.Builder(TypeFactory.resolveValueOf(type, referenceType), name);
+                            //builder.name(name);
                             collectedMethods.put(name, builder);
                         }
-                        builder.setterMethod(m);
+                        builder.setter(m);
                     } else {
                         throw new IllegalStateException("the configured writeMethod regex '" + writePattern + 
                                 "' does not define group (1) containing the property's name");
@@ -126,8 +126,8 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
             }
         }
            
-        for (Entry<String, PropertyBuilder> entry: collectedMethods.entrySet()) {
-            Property property = entry.getValue().build();
+        for (Entry<String, Property.Builder> entry: collectedMethods.entrySet()) {
+            Property property = entry.getValue().build(this);
             processProperty(property.getName(), property.getType().getRawType(), entry.getValue().getReadMethod(), entry.getValue().getWriteMethod(), type, referenceType, properties);
         }
         

@@ -7,27 +7,27 @@ public class MapEntryRef extends VariableRef {
 
 	public enum EntryPart {
 		KEY {{
-			this.prototype = new Property();
-			prototype.setName("key");
-			prototype.setExpression("key");
-			prototype.setGetter("getKey()");
-			prototype.setSetter("setKey(%s)");
+		    this.prototype = new Property.Builder()
+                .name("key")
+                .expression("key")
+                .getter("getKey()")
+                .setter("setKey(%s)")
+                .build();
 	    	
 		}},
 		VALUE {{
-			this.prototype = new Property();
-			prototype.setName("value");
-			prototype.setExpression("value");
-			prototype.setGetter("getValue()");
-			prototype.setSetter("setValue(%s)");
+			this.prototype = new Property.Builder()
+			    .name("value")
+			    .expression("value")
+			    .getter("getValue()")
+			    .setter("setValue(%s)")
+			    .build();
 		}};
 		
 		protected Property prototype;
 		
 		Property newProperty(Type<?> type) {
-			Property p = prototype.copy();
-			p.setType(type);
-			return p;
+			return prototype.copy(type);
 		}
 	}
 	

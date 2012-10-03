@@ -18,16 +18,14 @@
 
 package ma.glasnost.orika.metadata;
 
+import ma.glasnost.orika.property.PropertyResolver;
+
 public class NestedProperty extends Property {
     
     private final Property[] path;
     
     public NestedProperty(String expression, Property property, Property[] path) {
-        this.setExpression(expression);
-        this.setType(property.getType());
-        this.setGetter(property.getGetter());
-        this.setSetter(property.getSetter());
-        this.setName(property.getName());
+        super(expression,property.getName(),property.getGetter(),property.getSetter(),property.getType(),property.getElementType());
         this.path = path;
     }
     
@@ -58,6 +56,38 @@ public class NestedProperty extends Property {
     
     public int hashCode() {
     	return super.hashCode();
+    }
+    
+    static class Builder extends Property.Builder {
+
+        private Property.Builder parent;
+        
+        /**
+         * @param owningType
+         * @param name
+         */
+        Builder(Property.Builder parent, String name) {
+            super(null, name);
+            this.parent = parent;
+        }
+        
+        public Property build(PropertyResolver propertyResolver) {
+            Property parentProperty = parent.build(propertyResolver);
+            
+            Property[] path;
+            if (parentProperty instanceof NestedProperty) {
+                path = ((NestedProperty)parentProperty).getPath();
+                System.arraycopy(path, 0, path, 0, path.length + 1);
+                path[path.length-1] = parentProperty;
+            } else {
+                path = new Property[]{parentProperty};
+            }
+            this.owningType = parentProperty.getType();
+            
+            Property p = super.build(propertyResolver);
+            return new NestedProperty("", p, path);
+        }
+        
     }
     
 }

@@ -71,7 +71,8 @@ public class ClassMapBuilderForArrays<A, B> extends ClassMapBuilderForLists<A,B>
     }
      
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
-        return new ArrayElementProperty(expr, propertyType.getComponentType());
+        int index = Integer.valueOf(expr.replaceAll("[\\[\\]]", ""));
+        return new ArrayElementProperty(index, propertyType.getComponentType());
     }
     
     /**
@@ -83,14 +84,8 @@ public class ClassMapBuilderForArrays<A, B> extends ClassMapBuilderForLists<A,B>
      */
     public static final class ArrayElementProperty extends Property {
         
-        public ArrayElementProperty(String indexExpr, Type<?> propertyType) {
-            indexExpr = indexExpr.replaceAll("[\\[\\]]", "");
-            int index = Integer.valueOf(indexExpr);
-            setName("["+index + "]");
-            setExpression("["+index + "]");
-            setGetter("[" + index + "]");
-            setSetter("[" + index + "] = %s");
-            setType(propertyType);
+        public ArrayElementProperty(int index, Type<?> propertyType) {
+            super("["+index + "]","["+index + "]","["+index + "]","["+index + "] = %s",propertyType,null);
         }
         
         public boolean isArrayElement() {

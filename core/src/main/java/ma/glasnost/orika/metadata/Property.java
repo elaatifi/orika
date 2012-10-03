@@ -18,148 +18,119 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Set;
 
-// XXX must be immutable
+import ma.glasnost.orika.property.PropertyResolver;
+
+/**
+ * Property is an immutable representation of an accessor/mutator pair
+ * (either of which may be null) that is used to generate code needed to
+ * copy data from one type to another.
+ *
+ */
 public class Property {
+    
     private static final Property[] EMPTY_PATH = new Property[0];
-    private String expression;
-    private String name;
-    private String getter;
-    private String setter;
-    private Type<?> type;
-    private Type<?> elementType;
-    private boolean declared;
     
-    public Property() { 
-    }
+    private final String expression;
+    private final String name;
+    private final String getter;
+    private final String setter;
+    private final Type<?> type;
+    private final Type<?> elementType;
     
-    private static final Pattern ADHOC_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\(([\\w\\$\\.]*\\s*,)?\\s*([\\w\\(\\)\"]*)\\s*(,\\s*[\\w\\(\\)\\%\",]*)?\\s*\\)");
-    
-    public Property(String adHocPropertyExpression) {
-        Matcher matcher = ADHOC_PROPERTY_PATTERN.matcher(adHocPropertyExpression);
-        if (matcher.matches()) {
-            
-            String name = matcher.group(1);
-            String typeName = matcher.group(2);
-            String getter = matcher.group(3);
-            String setter = matcher.group(4);
-            
-            setName(name);
-            setExpression(name);
-            setGetter(getter);
-            setSetter(setter);
-            
-            if (typeName != null && !"".equals(typeName)) {
-                try {
-                    Class<?> rawType = Class.forName(typeName, false, Thread.currentThread().getContextClassLoader());
-                    Type<?> type = TypeFactory.valueOf(rawType);
-                    setType(type);
-                } catch (ClassNotFoundException e) {
-                    throw new IllegalArgumentException("specified type '" + typeName + "' not found or not accessible");
-                }
-            } else {
-                setType(TypeFactory.TYPE_OF_OBJECT);
-            }
+    protected Property(String expression, String name, String getter, String setter, Type<?> type, Type<?> elementType) {
+        super();
+        this.expression = expression;
+        this.name = name;
+        this.getter = getter;
+        this.setter = setter;
+        this.type = type;
+        //this.declared = declared;
+        if (type.getActualTypeArguments().length>0 && elementType == null) {
+            this.elementType = (Type<?>)type.getActualTypeArguments()[0];
         } else {
-            throw new IllegalArgumentException("'" + adHocPropertyExpression + "' is not a valid property expression");
+            this.elementType = elementType;
         }
     }
-    
-    public Property(String name, Type<?> type, String getter, String setter, boolean declared) {
-        setName(name);
-        setExpression(name);
-        setType(type);
-        setGetter(getter);
-        setSetter(setter);
-        setDeclared(declared);
-    }
-    
-    public Property(String name, Type<?> type, String getter, String setter) {
-        this(name,TypeFactory.valueOf(type),getter,setter,true);
-    }
-    
-    public Property(String name, Class<?> type, String getter, String setter) {
-        this(name,TypeFactory.valueOf(type),getter,setter,true);
-    }
-    
-    public Property(String name, Class<?> type, String getter, String setter, boolean declared) {
-        this(name,TypeFactory.valueOf(type),getter,setter,declared);
-    }
-    
+
     public Property copy() {
-        Property copy = new Property();
-        copy.declared = this.declared;
-        copy.expression = this.expression;
-        copy.name = this.name;
-        copy.getter = this.getter;
-        copy.setter = this.setter;
-        copy.type = this.type;
-        copy.elementType = this.elementType;
-        return copy;
+        return copy(this.type);
     }
     
+    public Property copy(Type<?> newType) {
+        return new Property.Builder()
+            .name(this.name)
+            .getter(this.getter)
+            .setter(this.setter)
+            .type(newType)
+            .elementType(this.elementType)
+            .build(null);
+    }
+    
+    /**
+     * @return the expression describing this property
+     */
     public String getExpression() {
         return expression;
     }
     
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
-    
+    /**
+     * @return the name of this property
+     */
     public String getName() {
         return name;
     }
     
-    public void setName(String name) {
-        this.name = name;
-    }
-    
+    /**
+     * @return the type of this property
+     */
     public Type<?> getType() {
         return type;
     }
-    
-    public void setType(Type<?> type) {
-        this.type = type;
-        this.elementType = null;
-    }
-    
+
+    /**
+     * @return the string description of the accessor for this property
+     */
     public String getGetter() {
         return getter;
     }
-    
-    public void setGetter(String getter) {
-        this.getter = getter;
-    }
-    
+ 
+    /**
+     * @return the string description of the mutator for this property
+     */
     public String getSetter() {
         return setter;
     }
     
+    /**
+     * @return the name of the setter method for this property
+     */
     public String getSetterName() {
         return setter.split("[\\( \\=]")[0];
     }
     
+    /**
+     * @return the name of the getter method for this property
+     */
     public String getGetterName() {
         return getter.split("[\\( \\=]")[0];
     }
     
-    public void setSetter(String setter) {
-        this.setter = setter;
-    }
-    
+    /**
+     * @return the element type for this property
+     */
     public Type<?> getElementType() {
-        if (elementType==null && type.getActualTypeArguments().length>0) {
-            elementType = (Type<?>)type.getActualTypeArguments()[0];
-        }
         return elementType;
     }
     
+    /**
+     * @return the raw type of this property
+     */
     public Class<?> getRawType() {
     	return getType().getRawType();
     }
@@ -235,14 +206,6 @@ public class Property {
         return EMPTY_PATH;
     }
     
-    public boolean isDeclared() {
-        return declared;
-    }
-    
-    public void setDeclared(boolean declared) {
-        this.declared = declared;
-    }
-    
     @Override
     public int hashCode() {
         int result = name.hashCode();
@@ -260,4 +223,218 @@ public class Property {
     public boolean isEnum() {
         return type.getRawType().isEnum();
     }
+    
+    
+    /**
+     * Builder is used to construct immutable Property instances
+     *
+     */
+    public static class Builder {
+        
+        private Method getterMethod;
+        private Method setterMethod;
+        private String getter;
+        private String setter;
+        private String propertyTypeName;
+        private Type<?> elementType;
+        private Type<?> propertyType;
+        protected Type<?> owningType;
+        private String name;
+        private String expression;
+        
+        public Builder(Type<?> owningType, String name) {
+            this.owningType = owningType;
+            this.name = name;
+        }
+        
+        public Builder() {
+            
+        }
+        
+        public Builder merge(Property property) {
+            
+            if (property.getter != null) {
+                getter = property.getter;
+                getterMethod = null;
+            }
+            if (property.setter != null) {
+                setter = property.setter;
+                setterMethod = null;
+            }
+            if (elementType == null || (property.elementType != null && elementType.isAssignableFrom(property.elementType))) {
+                elementType = property.elementType;
+            }
+            if (propertyType == null || (property.type != null && propertyType.isAssignableFrom(property.type))) {
+                propertyType = property.type;
+            }
+            name = property.name;
+            expression = property.expression;
+            
+            return this;
+        }
+        
+        public static Builder propertyFor(Type<?> owningType, String name) {
+            return new Builder(owningType, name);
+        }
+        
+        public static Builder propertyFor(Class<?> owningType, String name) {
+            return new Builder(TypeFactory.valueOf(owningType), name);
+        }
+        
+        public static Builder propertyFor(String owningTypeDescriptor, String name) {
+            return new Builder(TypeFactory.valueOf(owningTypeDescriptor), name);
+        }
+        
+        public Builder nestedProperty(String name) {
+            return new NestedProperty.Builder(this, name);
+        }
+        
+        
+        /**
+         * @param getter
+         *            the getter to set
+         */
+        public Builder getter(String getter) {
+            this.getter = getter;
+            return this;
+        }
+        
+        /**
+         * @param setter
+         *            the setter to set
+         */
+        public Builder setter(String setter) {
+            this.setter = setter;
+            return this;
+        }
+        
+        public Builder expression(String expression) {
+            this.expression = expression;
+            return this;
+        }
+        
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+        
+        public Builder type(java.lang.reflect.Type type) {
+            this.propertyType = TypeFactory.valueOf(type);
+            return this;
+        }
+        
+        public Builder type(String typeName) {
+            this.propertyTypeName = typeName;
+            return this;
+        }
+        
+        public Builder elementType(Type<?> elementType) {
+            this.elementType = elementType;
+            return this;
+        }
+        
+        public Builder getter(Method readMethod) {
+            this.getterMethod = readMethod;
+            return this;
+        }
+        
+        /**
+         * @return the readMethod
+         */
+        public Method getReadMethod() {
+            return getterMethod;
+        }
+        
+        /**
+         * @return the writeMethod
+         */
+        public Method getWriteMethod() {
+            return setterMethod;
+        }
+        
+        public Builder setter(Method writeMethod) {
+            this.setterMethod = writeMethod;
+            return this;
+        }
+        
+        public Property build() {
+            return build(null);
+        }
+        
+        public Property build(PropertyResolver propertyResolver) {
+            validate(propertyResolver);
+            
+            if (propertyType == null && propertyTypeName != null) {
+                propertyType = TypeFactory.valueOf(propertyTypeName);
+            } else if (propertyType == null) {
+                propertyType = TypeFactory.TYPE_OF_OBJECT;
+            }
+            if (getterMethod != null) {
+                getter = getterMethod.getName() + "()";
+            } 
+            if (setterMethod != null) {
+                setter = setterMethod.getName() + "(%s)";
+            } 
+            return new Property(expression != null ? expression : name,name,getter,setter,propertyType,elementType);
+        }
+        
+        private void validate(PropertyResolver propertyResolver) {
+            
+            if (getterMethod == null && setterMethod == null && getter == null && setter == null) {
+                throw new IllegalArgumentException("property " + (owningType!= null ? owningType.getCanonicalName() : "") + "[" + name + "]"
+                        + " cannot be read or written");
+            } else {
+                
+                if (owningType != null && (!"".equals(getter) || !"".equals(setter))) {
+                    for (Method m : owningType.getRawType().getMethods()) {
+                        if (getter != null && m.getName().equals(getter) && m.getParameterTypes().length == 0) {
+                            getter(m); 
+                        } else if (setter != null && m.getName().endsWith(setter) && m.getParameterTypes().length == 1) {
+                            setter(m);
+                        }
+                    }
+                }
+                
+                if (propertyResolver != null && getterMethod != null && this.propertyType == null) {
+                    this.propertyType = propertyResolver.resolvePropertyType(getterMethod, null, owningType.getRawType(), owningType);
+                }
+                
+                if (propertyResolver != null && setterMethod != null && setterMethod.getParameterTypes().length == 1) {
+                    this.propertyType = propertyResolver.resolvePropertyType(getterMethod, setterMethod.getParameterTypes()[0],
+                            owningType.getRawType(), owningType);
+                }
+                
+                if (setterMethod != null && setterMethod.getParameterTypes().length != 1) {
+                    throw new IllegalArgumentException("writeMethod (" + setterMethod.getName() + ") for " + owningType.getCanonicalName() + "["
+                            + name + "] does not have exactly 1 input argument ");
+                }
+                
+                if (getterMethod != null
+                        && (getterMethod.getReturnType() == null || getterMethod.getReturnType().equals(Void.TYPE) || getterMethod.getReturnType()
+                                .equals(Void.class))) {
+                    throw new IllegalArgumentException("readMethod (" + getterMethod.getName() + ") for " + owningType.getCanonicalName() + "["
+                            + name + "] does not return a value ");
+                }
+                
+                if (getterMethod != null && setterMethod != null && propertyType != null) {
+                    
+                    if (!getterMethod.getReturnType().isAssignableFrom(propertyType.getRawType())) {
+                        /*
+                         * If we've already parsed the write method, and the read
+                         * method type is not a sub-type of the write method's type,
+                         * the two should not be considered to form a 'property'.
+                         */
+                        throw new IllegalArgumentException("write method (" + setterMethod.getName() + ") for " + owningType.getCanonicalName()
+                                + "[" + name + "]" + " has type (" + setterMethod.getParameterTypes()[0].getCanonicalName() + ") "
+                                + "is not assignable from the type (" + getterMethod.getReturnType().getCanonicalName() + ") for "
+                                + "the corresponding read method (" + getterMethod.getName() + ")");
+                    }
+                }
+            }
+        }
+        
+    }   
+    
+    
+    
 }

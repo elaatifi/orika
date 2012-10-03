@@ -95,7 +95,8 @@ public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
     }
      
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
-        return new ListElementProperty(expr, propertyType.getNestedType(0));
+        int index = Integer.valueOf(expr.replaceAll("[\\[\\]]", ""));
+        return new ListElementProperty(index, propertyType.getNestedType(0));
     }
     
     /**
@@ -107,14 +108,8 @@ public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
      */
     public static final class ListElementProperty extends Property {
         
-        public ListElementProperty(String indexExpr, Type<?> propertyType) {
-            indexExpr = indexExpr.replaceAll("[\\[\\]]", "");
-            int index = Integer.valueOf(indexExpr);
-            setName("["+index + "]");
-            setExpression("["+index + "]");
-            setGetter("get(" + index + ")");
-            setSetter("add(" + index + ", %s)");
-            setType(propertyType);
+        public ListElementProperty(int index, Type<?> propertyType) {
+            super("["+index + "]","["+index + "]","get(" + index + ")","add(" + index + ", %s)",propertyType,null);
         }
         
         public boolean isListElement() {

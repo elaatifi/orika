@@ -189,10 +189,12 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
     }
     
 	private FieldMap mapConstructorArgument(FieldMap existing, Type<?> argumentType, boolean byDefault) {
-		Property destProp = new Property();
-		destProp.setName(existing.getDestination().getName());
-		destProp.setExpression(existing.getDestination().getExpression());
-		destProp.setType(argumentType);
+		Property destProp = new Property.Builder()
+        		.name(existing.getDestination().getName())
+    		    //.expression(existing.getDestination().getExpression())
+        		.getter(existing.getDestination().getName())
+    		    .type(argumentType)
+    		    .build();
 		FieldMap fieldMap = new FieldMap(existing.getSource(), destProp, null,
 				null, MappingDirection.A_TO_B, false, existing.getConverterId(), 
 				null, byDefault);

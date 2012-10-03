@@ -196,36 +196,37 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      */
     protected void processProperty(String propertyName, Class<?> propertyType, Method readMethod, Method writeMethod, Class<?> owningType,
             Type<?> referenceType, Map<String, Property> properties) {
-        final Property property = new Property();
+        final Property.Builder builder = new Property.Builder();
         
-        property.setExpression(propertyName);
-        property.setName(propertyName);
+        builder.expression(propertyName);
+        builder.name(propertyName);
         
         if (readMethod != null) {
-            property.setGetter(readMethod.getName() + "()");
+            builder.getter(readMethod.getName() + "()");
         }
         if (writeMethod != null) {
-            property.setSetter(writeMethod.getName() + "(%s)");
+            builder.setter(writeMethod.getName() + "(%s)");
         }
         
         if (readMethod != null || writeMethod != null) {
             
-            property.setType(resolvePropertyType(readMethod, propertyType, owningType, referenceType));
+            builder.type(resolvePropertyType(readMethod, propertyType, owningType, referenceType));
+            Property property = builder.build(this);
             
             Property existing = properties.get(propertyName);
             if (existing == null) {
-                properties.put(propertyName, property);
+                properties.put(propertyName, builder.build(this));
             } else if (existing.getType().isAssignableFrom(property.getType()) && !existing.getType().equals(property.getType())) {
                 /*
                  * The type has been refined by the generic information in a
                  * super-type
                  */
-                existing.setType(property.getType());
+                properties.put(propertyName, builder.merge(existing).build(this));
             }
         }
     }
     
-    protected Type<?> resolvePropertyType(Method readMethod, Class<?> rawType, Class<?> owningType, Type<?> referenceType) {
+    public Type<?> resolvePropertyType(Method readMethod, Class<?> rawType, Class<?> owningType, Type<?> referenceType) {
         
         rawType = resolveRawPropertyType(rawType, readMethod);
         
@@ -262,25 +263,26 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         
         for (Field f : referenceType.getRawType().getFields()) {
             if (!Modifier.isStatic(f.getModifiers())) {
-                final Property property = new Property();
-                property.setExpression(f.getName());
-                property.setName(f.getName());
+                final Property.Builder builder = new Property.Builder();
+                builder.expression(f.getName());
+                builder.name(f.getName());
                 
                 Class<?> rawType = f.getType();
                 Type<?> genericType = resolveGenericType(f.getGenericType(), referenceType);
                 if (genericType != null && !genericType.isAssignableFrom(rawType)) {
-                    property.setType(genericType);
+                    builder.type(genericType);
                 } else {
-                    property.setType(TypeFactory.valueOf(rawType));
+                    builder.type(TypeFactory.valueOf(rawType));
                 }
                 
-                Property existing = properties.get(property.getName());
+                Property existing = properties.get(f.getName());
+                builder.setter(f.getName() + " = %s");
                 if (existing == null) {
-                    property.setGetter(property.getName());
-                    property.setSetter(property.getName() + " = %s");
-                    properties.put(property.getName(), property);
+                    builder.getter(f.getName());
+                    properties.put(f.getName(), builder.build(this));
                 } else if (existing.getSetter() == null) {
-                    existing.setSetter(property.getName() + " = %s");
+                    builder.merge(existing);
+                    properties.put(f.getName(), builder.build(this));
                 }
             }
         }
@@ -431,12 +433,11 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         Matcher matcher = INLINE_PROPERTY_PATTERN.matcher(expr);
         
         if (matcher.matches()) {
-            PropertyBuilder builder = new PropertyBuilder(theType, this);
-            builder.name(matcher.group(1));
+            Property.Builder builder = new Property.Builder(theType, matcher.group(1));
             builder.getter(matcher.group(2));
             builder.setter(matcher.group(3));
-            builder.typeName(matcher.group(4));
-            return builder.build(); 
+            builder.type(matcher.group(4));
+            return builder.build(this); 
         } else {
             throw new IllegalArgumentException("'" + expr + "' is not a valid dynamic property expression");
         }
