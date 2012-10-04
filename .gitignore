@@ -12,11 +12,11 @@
 # /eclipse-tools/
 /eclipse-tools/.project
 /eclipse-tools/.classpath
-/eclipse-tools/.settings/.*
+/eclipse-tools/.settings
 /eclipse-tools/target
 
 /benchmarks/target
-/benchmarks/.settings/.*
+/benchmarks/.settings
 /benchmarks/.project
 /benchmarks/.classpath
 
