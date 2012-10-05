@@ -117,7 +117,7 @@ public class PrimitivesTestCase {
 
 	
 	@Test
-	public void short_int() {
+	public void int_short() {
 	    ShortHolder source = new ShortHolder();
 	    source.value = 2;
 	    
@@ -130,6 +130,36 @@ public class PrimitivesTestCase {
 	    ShortHolder mapBack = mapper.map(dest, ShortHolder.class);
 	    assertEquals(source.value, mapBack.value);
 	}
+	
+    @Test
+    public void long_short() {
+        ShortHolder source = new ShortHolder();
+        source.value = 2;
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        LongHolder dest = mapper.map(source, LongHolder.class);
+        assertEquals(source.value, dest.value);
+        
+        ShortHolder mapBack = mapper.map(dest, ShortHolder.class);
+        assertEquals(source.value, mapBack.value);
+    }
+    
+    @Test
+    public void long_int() {
+        IntHolder source = new IntHolder();
+        source.value = 2;
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        LongHolder dest = mapper.map(source, LongHolder.class);
+        assertEquals(source.value, dest.value);
+        
+        IntHolder mapBack = mapper.map(dest, IntHolder.class);
+        assertEquals(source.value, mapBack.value);
+    }
 	
 	
 	public static class IntHolder {

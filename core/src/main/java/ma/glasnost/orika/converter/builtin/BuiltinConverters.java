@@ -7,8 +7,12 @@ import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
+
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import ma.glasnost.orika.converter.ConverterFactory;
 
@@ -109,6 +113,13 @@ public abstract class BuiltinConverters {
               Inet6Address.class,
               InetSocketAddress.class
                 ));
-        
+        /*
+         * Register additional common "cloneable" types
+         */
+        converterFactory.registerConverter(new CloneableConverter(
+              Date.class,
+              Calendar.class,
+              XMLGregorianCalendar.class
+                ));
     }
 }

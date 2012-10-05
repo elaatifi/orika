@@ -55,10 +55,20 @@ public class DateAndTimeConverters {
 	public static class DateToXmlGregorianCalendarConverter extends
 			BidirectionalConverter<Date, XMLGregorianCalendar> {
 
+	    private DatatypeFactory factory;
+        
+        {
+            try {
+                factory = DatatypeFactory.newInstance();
+            } catch (DatatypeConfigurationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+	    
 		@Override
 		public XMLGregorianCalendar convertTo(Date source,
 				Type<XMLGregorianCalendar> destinationType) {
-			return toXMLGregorianCalendar(source);
+			return toXMLGregorianCalendar(source, factory);
 		}
 
 		@Override
@@ -76,37 +86,26 @@ public class DateAndTimeConverters {
 	public static class CalendarToXmlGregorianCalendarConverter extends
 			BidirectionalConverter<Calendar, XMLGregorianCalendar> {
 
+	    private DatatypeFactory factory;
+	    
+	    {
+	        try {
+                factory = DatatypeFactory.newInstance();
+            } catch (DatatypeConfigurationException e) {
+                throw new IllegalStateException(e);
+            }
+	    }
+	    
 		@Override
 		public XMLGregorianCalendar convertTo(Calendar source,
 				Type<XMLGregorianCalendar> destinationType) {
-			return toXMLGregorianCalendar(source);
+			return toXMLGregorianCalendar(source, factory);
 		}
 
 		@Override
 		public Calendar convertFrom(XMLGregorianCalendar source,
 				Type<Calendar> destinationType) {
 			return toCalendar(source);
-		}
-	}
-
-	/**
-	 * Provides conversion between Long and XMLGregorianCalendar
-	 * 
-	 * @author matt.deboer@gmail.com
-	 */
-	public static class LongToXmlGregorianCalendarConverter extends
-			BidirectionalConverter<Long, XMLGregorianCalendar> {
-
-		@Override
-		public XMLGregorianCalendar convertTo(Long source,
-				Type<XMLGregorianCalendar> destinationType) {
-			return toXMLGregorianCalendar(source);
-		}
-
-		@Override
-		public Long convertFrom(XMLGregorianCalendar source,
-				Type<Long> destinationType) {
-			return toLong(source);
 		}
 	}
 
@@ -150,6 +149,37 @@ public class DateAndTimeConverters {
 		}
 	}
 
+	
+	/**
+     * Provides conversion between Long and Calendar
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     */
+    public static class LongToXmlGregorianCalendarConverter extends
+            BidirectionalConverter<Long, XMLGregorianCalendar> {
+
+        private DatatypeFactory factory;
+        
+        {
+            try {
+                factory = DatatypeFactory.newInstance();
+            } catch (DatatypeConfigurationException e) {
+                throw new IllegalStateException(e);
+            }
+        }
+        
+        @Override
+        public XMLGregorianCalendar convertTo(Long source, Type<XMLGregorianCalendar> destinationType) {
+            return toXMLGregorianCalendar(source, factory);
+        }
+
+        @Override
+        public Long convertFrom(XMLGregorianCalendar source, Type<Long> destinationType) {
+            return toLong(source);
+        }
+    }
+    
 	private static Date toDate(XMLGregorianCalendar source) {
 		return source.toGregorianCalendar().getTime();
 	}
@@ -177,24 +207,23 @@ public class DateAndTimeConverters {
 	}
 
 	private static XMLGregorianCalendar toXMLGregorianCalendar(
-			Calendar source) {
-		return toXMLGregorianCalendar(source.getTime());
+			Calendar source, DatatypeFactory factory) {
+		return toXMLGregorianCalendar(source.getTime(), factory);
 	}
 
 	private static XMLGregorianCalendar toXMLGregorianCalendar(
-			Date source) {
-		GregorianCalendar c = new GregorianCalendar();
+			Date source, DatatypeFactory factory) {
+		
+	    GregorianCalendar c = new GregorianCalendar();
 		c.setTime(source);
-		try {
-			return DatatypeFactory.newInstance().newXMLGregorianCalendar(c);
-		} catch (DatatypeConfigurationException e) {
-			throw new IllegalStateException(e);
-		}
+		
+		return factory.newXMLGregorianCalendar(c);
+		
 	}
 
 	private static XMLGregorianCalendar toXMLGregorianCalendar(
-			Long source) {
-		return toXMLGregorianCalendar(new Date(source));
+			Long source, DatatypeFactory factory) {
+		return toXMLGregorianCalendar(new Date(source), factory);
 	}
 
 	private static Long toLong(Date source) {
