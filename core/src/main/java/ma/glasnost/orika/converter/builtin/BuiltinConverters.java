@@ -83,6 +83,10 @@ public abstract class BuiltinConverters {
         converterFactory.registerConverter(new NumericConverters.BigIntegerToIntegerConverter(false));
         converterFactory.registerConverter(new NumericConverters.BigIntegerToLongConverter(false));
         
+        converterFactory.registerConverter(new NumericConverters.IntegerToShortConverter(false));
+        converterFactory.registerConverter(new NumericConverters.LongToIntegerConverter(false));
+        converterFactory.registerConverter(new NumericConverters.LongToShortConverter(false));
+        
         /*
          * Register additional common "immutable" types
          */
