@@ -338,9 +338,9 @@ public class VariableRef {
         return getter() + " == null";
     }
     
-    public String notNull() {
-        return getter() + " != null";
-    }
+//    public String notNull() {
+//        return getter() + " != null";
+//    }
     
     public String ifNotNull() {
         return "if ( " + notNull() + ") ";
@@ -484,6 +484,36 @@ public class VariableRef {
             }
             path.append(")");
         }
+        return path.toString();
+    }
+    
+    /**
+     * @return a nested-property safe null check for this property
+     */
+    public String notNull() {
+        StringBuilder path = new StringBuilder();
+        path.append("(");
+        if (property() != null && property().hasPath()) {
+            boolean first = true;
+            
+            String expression = "source";
+            
+            for (final Property p : property().getPath()) {
+                if (!first) {
+                    path.append(" && ");
+                } else {
+                    first = false;
+                }
+                expression = getGetter(p, expression);
+                path.append(format("%s != null", expression));
+            }
+        }
+        if (path.length() > 1) {
+            path.append(" && ");
+        }
+        path.append(format("%s != null", getter()));
+        path.append(")");
+        
         return path.toString();
     }
 }

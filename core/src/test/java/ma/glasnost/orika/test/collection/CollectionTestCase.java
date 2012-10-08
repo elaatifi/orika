@@ -52,6 +52,17 @@ public class CollectionTestCase {
 		Assert.assertEquals(3, destination.getTags().size());
 	}
 	
+	@Test
+    public void testStringToStringWithGetterOnlyCollection_nullCollection() {
+        Source source = new Source();
+        //source.setTags(Arrays.asList("soa", "java", "rest"));
+
+        Destination destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination.class);
+
+        Assert.assertNull(destination.getNames());
+    }
+	
+	
 	static public class A {
 		private Set<String> tags;
 
@@ -88,5 +99,46 @@ public class CollectionTestCase {
 			return tags;
 		}
 		
+	}
+	
+	public static class Name {
+	    public String first;
+	    public String last;
+	}
+	
+	public static class Source {
+	    private List<Name> names;
+
+        /**
+         * @return the names
+         */
+        public List<Name> getNames() {
+            return names;
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(List<Name> names) {
+            this.names = names;
+        }
+	}
+	
+	public static class Destination {
+	    private List<Name> names;
+
+        /**
+         * @return the names
+         */
+        public List<Name> getNames() {
+            return names;
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(List<Name> names) {
+            this.names = names;
+        }
 	}
 }

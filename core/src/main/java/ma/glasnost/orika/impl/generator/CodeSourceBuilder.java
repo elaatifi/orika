@@ -172,12 +172,13 @@ public class CodeSourceBuilder {
             throw new MappingException("cannot determine runtime type of destination collection " + dc.getName() + "." + d.name());
         }
         
+        // Start check if source property ! = null
+        ifNotNull(s).then();
+        
         if (d.isAssignable()) {
             statement("if (%s == null) %s", d, d.assign(d.newInstance(src.size())));
         }
         
-        // Start check if source property ! = null
-        ifNotNull(s).then();
         if (s.isArray()) {
             if (s.elementType().isPrimitive())
                 newLine().append("%s.addAll(asList(%s));", d, s);
@@ -536,8 +537,7 @@ public class CodeSourceBuilder {
             if (!ClassUtil.isConcrete(ref.type())) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
-//            statement("if(%s == null) %s", ref,
-//                    ref.assign("(%s)mapperFacade.newObject(source, %s, mappingContext)", ref.typeName(), usedType(ref)));
+            
             statement("if(%s == null) %s", ref,
                     ref.assign("(%s)%s(source, mappingContext)", ref.typeName(), usedMapperFacadeNewObjectCall(ref,source)));
         }
