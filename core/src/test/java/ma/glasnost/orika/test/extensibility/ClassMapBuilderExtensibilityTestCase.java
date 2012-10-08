@@ -57,363 +57,304 @@ import org.junit.Test;
  */
 public class ClassMapBuilderExtensibilityTestCase {
 
-	/**
-	 * FieldMatchScore is used to rank "closeness" of a given field mapping
-	 * 
-	 * @author matt.deboer@gmail.com
-	 * 
-	 */
-	private static class FieldMatchScore implements Comparable<FieldMatchScore> {
+    /**
+     * FieldMatchScore is used to rank "closeness" of a given field mapping
+     * 
+     * @author matt.deboer@gmail.com
+     * 
+     */
+    private static class FieldMatchScore implements Comparable<FieldMatchScore> {
 
-		private boolean contains;
-		private boolean containsIgnoreCase;
-		private boolean typeMatch;
-		private int distance;
-		private int distanceIgnoreCase;
-		private Property propertyA;
-		private Property propertyB;
+        private boolean contains;
+        private boolean containsIgnoreCase;
+        private boolean typeMatch;
+        private int distance;
+        private int distanceIgnoreCase;
+        private Property propertyA;
+        private Property propertyB;
 
-		public FieldMatchScore(Property propertyA, Property propertyB) {
-			String propertyALower = propertyA.getName().toLowerCase();
-			String propertyBLower = propertyB.getName().toLowerCase();
+        public FieldMatchScore(Property propertyA, Property propertyB) {
+            String propertyALower = propertyA.getName().toLowerCase();
+            String propertyBLower = propertyB.getName().toLowerCase();
 
-			this.contains = propertyA.getName().contains(propertyB.getName())
-					|| propertyB.getName().contains(propertyA.getName());
-			this.containsIgnoreCase = contains
-					|| propertyALower.contains(propertyBLower)
-					|| propertyBLower.contains(propertyALower);
-			this.distance = StringUtils.getLevenshteinDistance(
-					propertyA.getName(), propertyB.getName());
-			this.distanceIgnoreCase = StringUtils.getLevenshteinDistance(
-					propertyALower, propertyBLower);
-			this.propertyA = propertyA;
-			this.propertyB = propertyB;
-			this.typeMatch = propertyA.getType().isAssignableFrom(
-					propertyB.getType())
-					|| propertyB.getType()
-							.isAssignableFrom(propertyA.getType());
-		}
-		
-        public static int getLevenshteinDistance(String s, String t) {
-            if (s == null || t == null) {
-                throw new IllegalArgumentException("Strings must not be null");
-            }
-            int n = s.length(); 
-            int m = t.length(); 
+            this.contains = propertyA.getName().contains(propertyB.getName())
+                    || propertyB.getName().contains(propertyA.getName());
+            this.containsIgnoreCase = contains
+                    || propertyALower.contains(propertyBLower)
+                    || propertyBLower.contains(propertyALower);
+            this.distance = StringUtils.getLevenshteinDistance(
+                    propertyA.getName(), propertyB.getName());
+            this.distanceIgnoreCase = StringUtils.getLevenshteinDistance(
+                    propertyALower, propertyBLower);
+            this.propertyA = propertyA;
+            this.propertyB = propertyB;
+            this.typeMatch = propertyA.getType().isAssignableFrom(
+                    propertyB.getType())
+                    || propertyB.getType()
+                            .isAssignableFrom(propertyA.getType());
+        }
 
-            if (n == 0) {
-                return m;
-            } else if (m == 0) {
-                return n;
-            }
-
-            if (n > m) {
-                // swap the input strings to consume less memory
-                String tmp = s;
-                s = t;
-                t = tmp;
-                n = m;
-                m = t.length();
+        /*
+         * (non-Javadoc)
+         * 
+         * @see java.lang.Comparable#compareTo(java.lang.Object)
+         */
+        public int compareTo(FieldMatchScore that) {
+            if (this.containsIgnoreCase && !that.containsIgnoreCase) {
+                return -1;
+            } else if (!this.containsIgnoreCase && that.containsIgnoreCase) {
+                return 1;
             }
 
-            int p[] = new int[n+1]; //'previous' cost array, horizontally
-            int d[] = new int[n+1]; // cost array, horizontally
-            int _d[]; //placeholder to assist in swapping p and d
-
-            // indexes into strings s and t
-            int i; // iterates through s
-            int j; // iterates through t
-
-            char t_j; // jth character of t
-
-            int cost; // cost
-
-            for (i = 0; i<=n; i++) {
-                p[i] = i;
+            if (this.contains && !that.contains) {
+                return -1;
+            } else if (!this.contains && that.contains) {
+                return 1;
             }
 
-            for (j = 1; j<=m; j++) {
-                t_j = t.charAt(j-1);
-                d[0] = j;
+            if (this.distanceIgnoreCase < that.distanceIgnoreCase) {
+                return -1;
+            } else if (this.distanceIgnoreCase > that.distanceIgnoreCase) {
+                return 1;
+            }
 
-                for (i=1; i<=n; i++) {
-                    cost = s.charAt(i-1)==t_j ? 0 : 1;
-                    // minimum of cell to the left+1, to the top+1, diagonally left and up +cost
-                    d[i] = Math.min(Math.min(d[i-1]+1, p[i]+1),  p[i-1]+cost);
+            if (this.distance < that.distance) {
+                return -1;
+            } else if (this.distance > that.distance) {
+                return 1;
+            }
+
+            if (this.typeMatch && !that.typeMatch) {
+                return -1;
+            } else if (!this.typeMatch && that.typeMatch) {
+                return 1;
+            }
+
+            if (this.propertyA.getName().length() > that.propertyA.getName()
+                    .length()) {
+                return -1;
+            } else if (this.propertyA.getName().length() > that.propertyA
+                    .getName().length()) {
+                return 1;
+            }
+
+            int propACompare = this.propertyA.getName().compareTo(
+                    that.propertyA.getName());
+            if (propACompare < 0) {
+                return -1;
+            } else if (propACompare > 0) {
+                return 1;
+            }
+
+            return this.propertyB.getName().compareTo(that.propertyB.getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return EqualsBuilder.reflectionEquals(this, obj);
+        }
+
+    }
+
+    public static class ScoringClassMapBuilder<A, B> extends
+            ClassMapBuilder<A, B> {
+
+        public static class Factory extends ClassMapBuilderFactory {
+
+            /*
+             * (non-Javadoc)
+             * 
+             * @see
+             * ma.glasnost.orika.metadata.ClassMapBuilderFactory#newClassMapBuilder
+             * (ma.glasnost.orika.metadata.Type,
+             * ma.glasnost.orika.metadata.Type,
+             * ma.glasnost.orika.property.PropertyResolverStrategy,
+             * ma.glasnost.orika.DefaultFieldMapper[])
+             */
+            @Override
+            protected <A, B> ClassMapBuilder<A, B> newClassMapBuilder(
+                    Type<A> aType, Type<B> bType,
+                    MapperFactory mapperFactory,
+                    PropertyResolverStrategy propertyResolver,
+                    DefaultFieldMapper[] defaults) {
+
+                return new ScoringClassMapBuilder<A, B>(aType, bType,
+                        mapperFactory, propertyResolver, defaults);
+            }
+
+        }
+
+        /**
+         * @param aType
+         * @param bType
+         * @param propertyResolver
+         * @param defaults
+         */
+        protected ScoringClassMapBuilder(Type<A> aType, Type<B> bType,
+                MapperFactory mapperFactory, PropertyResolverStrategy propertyResolver,
+                DefaultFieldMapper[] defaults) {
+            super(aType, bType, mapperFactory, propertyResolver, defaults);
+        }
+
+        public Map<String, Property> getPropertyExpressions(Type<?> type) {
+
+            PropertyResolverStrategy propertyResolver = getPropertyResolver();
+
+            Map<String, Property> properties = new HashMap<String, Property>();
+            LinkedHashMap<String, Property> toProcess = new LinkedHashMap<String, Property>(
+                    propertyResolver.getProperties(type));
+
+            while (!toProcess.isEmpty()) {
+
+                Entry<String, Property> entry = toProcess.entrySet().iterator().next();
+                if (!entry.getKey().equals("class")) {
+
+                    if (!ClassUtil.isImmutable(entry.getValue().getType())) {
+                        Map<String, Property> props = propertyResolver
+                                .getProperties(entry.getValue().getType());
+                        if (!props.isEmpty()) {
+                            for (Entry<String, Property> property : props
+                                    .entrySet()) {
+                                if (!property.getKey().equals("class")) {
+                                    String expression = entry.getKey() + "." + property.getKey();
+                                    toProcess.put(expression, resolveProperty(type, expression));
+                                }
+                            }
+                        } else {
+                            properties.put(
+                                    entry.getKey(), resolveProperty(type, entry.getKey()));
+                        }
+                    } else {
+                        properties.put(
+                                entry.getKey(), resolveProperty(type, entry.getKey()));
+                    }
                 }
+                toProcess.remove(entry.getKey());
+            }
+            return properties;
+        }
 
-                // copy current distance counts to 'previous row' distance counts
-                _d = p;
-                p = d;
-                d = _d;
+        /*
+         * (non-Javadoc)
+         * 
+         * @see
+         * ma.glasnost.orika.metadata.ClassMapBuilder#byDefault(ma.glasnost.
+         * orika.DefaultFieldMapper[])
+         */
+        public ClassMapBuilder<A, B> byDefault(
+                DefaultFieldMapper... withDefaults) {
+
+            DefaultFieldMapper[] defaults;
+            if (withDefaults.length == 0) {
+                defaults = getDefaultFieldMappers();
+            } else {
+                defaults = withDefaults;
+            }
+            /*
+             * For our custom 'byDefault' method, we're going to try and match
+             * fields by their Levenshtein distance
+             */
+            TreeSet<FieldMatchScore> matchScores = new TreeSet<FieldMatchScore>();
+
+            Map<String, Property> propertiesForA = getPropertyExpressions(getAType());
+            Map<String, Property> propertiesForB = getPropertyExpressions(getBType());
+
+            for (final Entry<String, Property> propertyA : propertiesForA.entrySet()) {
+                if (!propertyA.getValue().getName().equals("class")) {
+                    for (final Entry<String, Property> propertyB : propertiesForB
+                            .entrySet()) {
+                        if (!propertyB.getValue().getName().equals("class")) {
+                            matchScores.add(new FieldMatchScore(propertyA
+                                    .getValue(), propertyB.getValue()));
+                        }
+                    }
+                }
             }
 
-            // our last action in the above loop was to switch d and p, so p now 
-            // actually has the most recent cost counts
-            return p[n];
+            Set<String> unmatchedFields = new HashSet<String>(
+                    this.getPropertiesForTypeA());
+            unmatchedFields.remove("class");
+
+            for (FieldMatchScore score : matchScores) {
+
+                if (!this.getMappedPropertiesForTypeA().contains(
+                        score.propertyA.getExpression())
+                        && !this.getMappedPropertiesForTypeB().contains(
+                                score.propertyB.getExpression())) {
+
+                    fieldMap(score.propertyA.getExpression(),
+                            score.propertyB.getExpression()).add();
+                    unmatchedFields.remove(score.propertyA);
+                }
+            }
+
+            /*
+             * Apply any default field mappers to the unmapped fields
+             */
+            for (String propertyNameA : unmatchedFields) {
+                Property prop = resolvePropertyForA(propertyNameA);
+                for (DefaultFieldMapper defaulter : defaults) {
+                    String suggestion = defaulter.suggestMappedField(
+                            propertyNameA, prop.getType());
+                    if (suggestion != null
+                            && getPropertiesForTypeB().contains(suggestion)) {
+                        if (!getMappedPropertiesForTypeB().contains(suggestion)) {
+                            fieldMap(propertyNameA, suggestion).add();
+                        }
+                    }
+                }
+            }
+
+            return this;
+        }
+
+    }
+
+    public static class Name {
+        public String first;
+        public String middle;
+        public String last;
+    }
+    
+    public static class Source {
+        public String lastName;
+        public Integer age;
+        public String postalAddress;
+        public String firstName;
+        public String stateOfBirth;
+    }
+
+    public static class Destination {
+        public Name name;
+        public Integer currentAge;
+        public String address;
+        public String birthState;
+    }
+
+    @Test
+    public void testClassMapBuilderExtension() {
+
+        MapperFactory factory = new DefaultMapperFactory.Builder()
+                .classMapBuilderFactory(new ScoringClassMapBuilder.Factory())
+                .build();
+
+        ClassMap<Source, Destination> map = factory.classMap(Source.class, Destination.class).byDefault().toClassMap();
+        Map<String, String> mapping = new HashMap<String, String>();
+        for (FieldMap f: map.getFieldsMapping()) {
+            mapping.put(f.getSource().getExpression(), f.getDestination().getExpression());
         }
         
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.lang.Comparable#compareTo(java.lang.Object)
-		 */
-		public int compareTo(FieldMatchScore that) {
-			if (this.containsIgnoreCase && !that.containsIgnoreCase) {
-				return -1;
-			} else if (!this.containsIgnoreCase && that.containsIgnoreCase) {
-				return 1;
-			}
-
-			if (this.contains && !that.contains) {
-				return -1;
-			} else if (!this.contains && that.contains) {
-				return 1;
-			}
-
-			if (this.distanceIgnoreCase < that.distanceIgnoreCase) {
-				return -1;
-			} else if (this.distanceIgnoreCase > that.distanceIgnoreCase) {
-				return 1;
-			}
-
-			if (this.distance < that.distance) {
-				return -1;
-			} else if (this.distance > that.distance) {
-				return 1;
-			}
-
-			if (this.typeMatch && !that.typeMatch) {
-				return -1;
-			} else if (!this.typeMatch && that.typeMatch) {
-				return 1;
-			}
-
-			if (this.propertyA.getName().length() > that.propertyA.getName()
-					.length()) {
-				return -1;
-			} else if (this.propertyA.getName().length() > that.propertyA
-					.getName().length()) {
-				return 1;
-			}
-
-			int propACompare = this.propertyA.getName().compareTo(
-					that.propertyA.getName());
-			if (propACompare < 0) {
-				return -1;
-			} else if (propACompare > 0) {
-				return 1;
-			}
-
-			return this.propertyB.getName().compareTo(that.propertyB.getName());
-		}
-
-		@Override
-		public int hashCode() {
-			return HashCodeBuilder.reflectionHashCode(this);
-		}
-
-		@Override
-		public boolean equals(Object obj) {
-			return EqualsBuilder.reflectionEquals(this, obj);
-		}
-
-	}
-
-	public static class ScoringClassMapBuilder<A, B> extends
-			ClassMapBuilder<A, B> {
-
-		public static class Factory extends ClassMapBuilderFactory {
-
-			/*
-			 * (non-Javadoc)
-			 * 
-			 * @see
-			 * ma.glasnost.orika.metadata.ClassMapBuilderFactory#newClassMapBuilder
-			 * (ma.glasnost.orika.metadata.Type,
-			 * ma.glasnost.orika.metadata.Type,
-			 * ma.glasnost.orika.property.PropertyResolverStrategy,
-			 * ma.glasnost.orika.DefaultFieldMapper[])
-			 */
-			@Override
-			protected <A, B> ClassMapBuilder<A, B> newClassMapBuilder(
-					Type<A> aType, Type<B> bType,
-					MapperFactory mapperFactory,
-					PropertyResolverStrategy propertyResolver,
-					DefaultFieldMapper[] defaults) {
-
-				return new ScoringClassMapBuilder<A, B>(aType, bType,
-						mapperFactory, propertyResolver, defaults);
-			}
-
-		}
-
-		/**
-		 * @param aType
-		 * @param bType
-		 * @param propertyResolver
-		 * @param defaults
-		 */
-		protected ScoringClassMapBuilder(Type<A> aType, Type<B> bType,
-		        MapperFactory mapperFactory, PropertyResolverStrategy propertyResolver,
-				DefaultFieldMapper[] defaults) {
-			super(aType, bType, mapperFactory, propertyResolver, defaults);
-		}
-
-		public Map<String, Property> getPropertyExpressions(Type<?> type) {
-
-			PropertyResolverStrategy propertyResolver = getPropertyResolver();
-
-			Map<String, Property> properties = new HashMap<String, Property>();
-			LinkedHashMap<String, Property> toProcess = new LinkedHashMap<String, Property>(
-					propertyResolver.getProperties(type));
-
-			while (!toProcess.isEmpty()) {
-
-				Entry<String, Property> entry = toProcess.entrySet().iterator().next();
-				if (!entry.getKey().equals("class")) {
-
-					if (!ClassUtil.isImmutable(entry.getValue().getType())) {
-						Map<String, Property> props = propertyResolver
-								.getProperties(entry.getValue().getType());
-						if (!props.isEmpty()) {
-							for (Entry<String, Property> property : props
-									.entrySet()) {
-								if (!property.getKey().equals("class")) {
-									String expression = entry.getKey() + "." + property.getKey();
-									toProcess.put(expression, resolveProperty(type, expression));
-								}
-							}
-						} else {
-							properties.put(
-									entry.getKey(), resolveProperty(type, entry.getKey()));
-						}
-					} else {
-						properties.put(
-								entry.getKey(),	resolveProperty(type, entry.getKey()));
-					}
-				}
-				toProcess.remove(entry.getKey());
-			}
-			return properties;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see
-		 * ma.glasnost.orika.metadata.ClassMapBuilder#byDefault(ma.glasnost.
-		 * orika.DefaultFieldMapper[])
-		 */
-		public ClassMapBuilder<A, B> byDefault(
-				DefaultFieldMapper... withDefaults) {
-
-			DefaultFieldMapper[] defaults;
-			if (withDefaults.length == 0) {
-				defaults = getDefaultFieldMappers();
-			} else {
-				defaults = withDefaults;
-			}
-			/*
-			 * For our custom 'byDefault' method, we're going to try and match
-			 * fields by their Levenshtein distance
-			 */
-			TreeSet<FieldMatchScore> matchScores = new TreeSet<FieldMatchScore>();
-
-			Map<String, Property> propertiesForA = getPropertyExpressions(getAType());
-			Map<String, Property> propertiesForB = getPropertyExpressions(getBType());
-
-			for (final Entry<String, Property> propertyA : propertiesForA.entrySet()) {
-				if (!propertyA.getValue().getName().equals("class")) {
-					for (final Entry<String, Property> propertyB : propertiesForB
-							.entrySet()) {
-						if (!propertyB.getValue().getName().equals("class")) {
-							matchScores.add(new FieldMatchScore(propertyA
-									.getValue(), propertyB.getValue()));
-						}
-					}
-				}
-			}
-
-			Set<String> unmatchedFields = new HashSet<String>(
-					this.getPropertiesForTypeA());
-			unmatchedFields.remove("class");
-
-			for (FieldMatchScore score : matchScores) {
-
-				if (!this.getMappedPropertiesForTypeA().contains(
-						score.propertyA.getExpression())
-						&& !this.getMappedPropertiesForTypeB().contains(
-								score.propertyB.getExpression())) {
-
-					fieldMap(score.propertyA.getExpression(),
-							score.propertyB.getExpression()).add();
-					unmatchedFields.remove(score.propertyA);
-				}
-			}
-
-			/*
-			 * Apply any default field mappers to the unmapped fields
-			 */
-			for (String propertyNameA : unmatchedFields) {
-				Property prop = resolvePropertyForA(propertyNameA);
-				for (DefaultFieldMapper defaulter : defaults) {
-					String suggestion = defaulter.suggestMappedField(
-							propertyNameA, prop.getType());
-					if (suggestion != null
-							&& getPropertiesForTypeB().contains(suggestion)) {
-						if (!getMappedPropertiesForTypeB().contains(suggestion)) {
-							fieldMap(propertyNameA, suggestion).add();
-						}
-					}
-				}
-			}
-
-			return this;
-		}
-
-	}
-
-	public static class Name {
-		public String first;
-		public String middle;
-		public String last;
-	}
-	
-	public static class Source {
-		public String lastName;
-		public Integer age;
-		public String postalAddress;
-		public String firstName;
-		public String stateOfBirth;
-	}
-
-	public static class Destination {
-		public Name name;
-		public Integer currentAge;
-		public String address;
-		public String birthState;
-	}
-
-	@Test
-	public void testClassMapBuilderExtension() {
-
-		MapperFactory factory = new DefaultMapperFactory.Builder()
-				.classMapBuilderFactory(new ScoringClassMapBuilder.Factory())
-				.build();
-
-		ClassMap<Source, Destination> map = factory.classMap(Source.class, Destination.class).byDefault().toClassMap();
-		Map<String, String> mapping = new HashMap<String, String>();
-		for (FieldMap f: map.getFieldsMapping()) {
-			mapping.put(f.getSource().getExpression(), f.getDestination().getExpression());
-		}
-		
-		Assert.assertEquals("name.first", mapping.get("firstName"));
-		Assert.assertEquals("name.last", mapping.get("lastName"));
-		Assert.assertEquals("address", mapping.get("postalAddress"));
-		Assert.assertEquals("currentAge", mapping.get("age"));
-		Assert.assertEquals("birthState", mapping.get("stateOfBirth"));
-		
-	}
+        Assert.assertEquals("name.first", mapping.get("firstName"));
+        Assert.assertEquals("name.last", mapping.get("lastName"));
+        Assert.assertEquals("address", mapping.get("postalAddress"));
+        Assert.assertEquals("currentAge", mapping.get("age"));
+        Assert.assertEquals("birthState", mapping.get("stateOfBirth"));
+        
+    }
 
 }
