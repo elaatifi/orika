@@ -48,6 +48,11 @@ import org.slf4j.LoggerFactory;
  * guess the correct mappings; be sure to test and double-check the mappings
  * generated to assure they match expectations.<br><br>
  * 
+ * Note: levenshtein distance implementation is pulled from code found in
+ * Apache Commons Lang <em>org.apache.commons.lang.StringUtils</em>, which is based on
+ * the implementation provided by Chas Emerick 
+ * <a href="http://www.merriampark.com/ldjava.htm">http://www.merriampark.com/ldjava.htm</a>
+ * 
  * @author matt.deboer@gmail.com
  * 
  */
