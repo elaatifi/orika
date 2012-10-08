@@ -53,11 +53,19 @@ public class CollectionTestCase {
 	}
 	
 	@Test
-    public void testStringToStringWithGetterOnlyCollection_nullCollection() {
+    public void nullSourceCollection_toCollection() {
         Source source = new Source();
-        //source.setTags(Arrays.asList("soa", "java", "rest"));
 
         Destination destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination.class);
+
+        Assert.assertNull(destination.getNames());
+    }
+	
+	@Test
+    public void nullSourceCollection_toArray() {
+        Source source = new Source();
+
+        Destination2 destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination2.class);
 
         Assert.assertNull(destination.getNames());
     }
@@ -141,4 +149,22 @@ public class CollectionTestCase {
             this.names = names;
         }
 	}
+	
+	public static class Destination2 {
+        private Name[] names;
+
+        /**
+         * @return the names
+         */
+        public Name[] getNames() {
+            return names;
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(Name[] names) {
+            this.names = names;
+        }
+    }
 }
