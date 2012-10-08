@@ -15,8 +15,12 @@
 		<level value="OFF" />
 	</root>
 	
-    <logger name="ma.glasnost.orika" level="DEBUG"> -->
-        <appender-ref ref="STDOUT" /> -->
+    <logger name="ma.glasnost.orika.metadata" level="TRACE" additivity="false"> 
+        <appender-ref ref="STDOUT" /> 
+    </logger>
+    
+    <logger name="ma.glasnost.orika" level="DEBUG"> 
+        <appender-ref ref="STDOUT" /> 
     </logger>
 
 </configuration>
