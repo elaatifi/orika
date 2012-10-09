@@ -140,6 +140,12 @@
                 <artifactId>hibernate-entitymanager</artifactId>
                 <version>3.6.10.Final</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javassist</groupId>
+                        <artifactId>javassist</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
