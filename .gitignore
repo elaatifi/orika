@@ -19,4 +19,5 @@
 /benchmarks/.settings/.*
 /benchmarks/.project
 /benchmarks/.classpath
+/benchmarks/bin
 
