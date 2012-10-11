@@ -52,6 +52,25 @@ public class CollectionTestCase {
 		Assert.assertEquals(3, destination.getTags().size());
 	}
 	
+	@Test
+    public void nullSourceCollection_toCollection() {
+        Source source = new Source();
+
+        Destination destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination.class);
+
+        Assert.assertNull(destination.getNames());
+    }
+	
+	@Test
+    public void nullSourceCollection_toArray() {
+        Source source = new Source();
+
+        Destination2 destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination2.class);
+
+        Assert.assertNull(destination.getNames());
+    }
+	
+	
 	static public class A {
 		private Set<String> tags;
 
@@ -89,4 +108,63 @@ public class CollectionTestCase {
 		}
 		
 	}
+	
+	public static class Name {
+	    public String first;
+	    public String last;
+	}
+	
+	public static class Source {
+	    private List<Name> names;
+
+        /**
+         * @return the names
+         */
+        public List<Name> getNames() {
+            return names;
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(List<Name> names) {
+            this.names = names;
+        }
+	}
+	
+	public static class Destination {
+	    private List<Name> names;
+
+        /**
+         * @return the names
+         */
+        public List<Name> getNames() {
+            return names;
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(List<Name> names) {
+            this.names = names;
+        }
+	}
+	
+	public static class Destination2 {
+        private Name[] names;
+
+        /**
+         * @return the names
+         */
+        public Name[] getNames() {
+            return names;
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(Name[] names) {
+            this.names = names;
+        }
+    }
 }

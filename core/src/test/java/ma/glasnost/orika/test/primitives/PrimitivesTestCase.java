@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.test.primitives;
 
+import static org.junit.Assert.assertEquals;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.test.MappingUtil;
@@ -114,6 +115,77 @@ public class PrimitivesTestCase {
 
 	}
 
+	
+	@Test
+	public void int_short() {
+	    ShortHolder source = new ShortHolder();
+	    source.value = 2;
+	    
+	    MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+	    
+	    IntHolder dest = mapper.map(source, IntHolder.class);
+	    assertEquals(source.value, dest.value);
+	    
+	    ShortHolder mapBack = mapper.map(dest, ShortHolder.class);
+	    assertEquals(source.value, mapBack.value);
+	}
+	
+    @Test
+    public void long_short() {
+        ShortHolder source = new ShortHolder();
+        source.value = 2;
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        LongHolder dest = mapper.map(source, LongHolder.class);
+        assertEquals(source.value, dest.value);
+        
+        ShortHolder mapBack = mapper.map(dest, ShortHolder.class);
+        assertEquals(source.value, mapBack.value);
+    }
+    
+    @Test
+    public void long_int() {
+        IntHolder source = new IntHolder();
+        source.value = 2;
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        LongHolder dest = mapper.map(source, LongHolder.class);
+        assertEquals(source.value, dest.value);
+        
+        IntHolder mapBack = mapper.map(dest, IntHolder.class);
+        assertEquals(source.value, mapBack.value);
+    }
+	
+	
+	public static class IntHolder {
+	    public int value;
+	}
+	
+	public static class ShortHolder {
+	    public short value;
+	}
+	
+	public static class LongHolder {
+	    public long value;
+	}
+	
+	public static class FloatHolder {
+	    public float value;
+	}
+	
+	public static class DoubleHolder {
+	    public double value;
+	}
+	
+	public static class CharHolder {
+	    public char value;
+	}
+	
 	public static class PrimitiveAttributes {
 		private int age;
 		private short shortValue;

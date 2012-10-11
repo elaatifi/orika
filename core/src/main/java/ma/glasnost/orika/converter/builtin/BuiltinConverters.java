@@ -7,8 +7,12 @@ import java.net.Inet6Address;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URL;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
+
+import javax.xml.datatype.XMLGregorianCalendar;
 
 import ma.glasnost.orika.converter.ConverterFactory;
 
@@ -83,6 +87,18 @@ public abstract class BuiltinConverters {
         converterFactory.registerConverter(new NumericConverters.BigIntegerToIntegerConverter(false));
         converterFactory.registerConverter(new NumericConverters.BigIntegerToLongConverter(false));
         
+        converterFactory.registerConverter(new NumericConverters.IntegerToShortConverter(false));
+        converterFactory.registerConverter(new NumericConverters.LongToIntegerConverter(false));
+        converterFactory.registerConverter(new NumericConverters.LongToShortConverter(false));
+        
+        converterFactory.registerConverter(new NumericConverters.FloatToShortConverter(false));
+        converterFactory.registerConverter(new NumericConverters.FloatToIntegerConverter(false));
+        converterFactory.registerConverter(new NumericConverters.FloatToLongConverter(false));
+        
+        converterFactory.registerConverter(new NumericConverters.DoubleToShortConverter(false));
+        converterFactory.registerConverter(new NumericConverters.DoubleToIntegerConverter(false));
+        converterFactory.registerConverter(new NumericConverters.DoubleToLongConverter(false));
+        
         /*
          * Register additional common "immutable" types
          */
@@ -97,6 +113,13 @@ public abstract class BuiltinConverters {
               Inet6Address.class,
               InetSocketAddress.class
                 ));
-        
+        /*
+         * Register additional common "cloneable" types
+         */
+        converterFactory.registerConverter(new CloneableConverter(
+              Date.class,
+              Calendar.class,
+              XMLGregorianCalendar.class
+                ));
     }
 }

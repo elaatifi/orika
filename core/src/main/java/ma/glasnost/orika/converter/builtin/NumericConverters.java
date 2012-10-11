@@ -180,4 +180,361 @@ public class NumericConverters {
 		}
 	}
 	
+	
+	/**
+     * Provides conversion between Integer and Short
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class IntegerToShortConverter extends
+            BidirectionalConverter<Integer, Short> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new IntegerToShortConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public IntegerToShortConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Short convertTo(Integer source, Type<Short> destinationType) {
+            if (!truncate && (source.compareTo((int) Short.MAX_VALUE) > 0 || source.compareTo((int) Short.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Short.class.getCanonicalName());
+            }
+            return source.shortValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Integer convertFrom(Short source, Type<Integer> destinationType) {
+            return source.intValue();
+        }
+    }
+    
+    /**
+     * Provides conversion between Long and Short
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class LongToShortConverter extends
+            BidirectionalConverter<Long, Short> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new LongToShortConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public LongToShortConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Short convertTo(Long source, Type<Short> destinationType) {
+            if (!truncate && (source.compareTo((long) Short.MAX_VALUE) > 0 || source.compareTo((long) Short.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Short.class.getCanonicalName());
+            }
+            return source.shortValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Long convertFrom(Short source, Type<Long> destinationType) {
+            return source.longValue();
+        }
+    }
+	
+    /**
+     * Provides conversion between Long and Integer
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class LongToIntegerConverter extends
+            BidirectionalConverter<Long, Integer> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new LongToIntegerConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public LongToIntegerConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Integer convertTo(Long source, Type<Integer> destinationType) {
+            if (!truncate && (source.compareTo((long) Integer.MAX_VALUE) > 0 || source.compareTo((long) Integer.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Integer.class.getCanonicalName());
+            }
+            return source.intValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Long convertFrom(Integer source, Type<Long> destinationType) {
+            return source.longValue();
+        }
+    }
+	
+    /**
+     * Provides conversion between Long and Integer
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class DoubleToLongConverter extends BidirectionalConverter<Double, Long> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new LongToIntegerConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public DoubleToLongConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Long convertTo(Double source, Type<Long> destinationType) {
+            if (!truncate && (source.compareTo((double) Long.MAX_VALUE) > 0 || source.compareTo((double) Long.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Long.class.getCanonicalName());
+            }
+            return source.longValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Double convertFrom(Long source, Type<Double> destinationType) {
+            return source.doubleValue();
+        }
+    }
+    
+    /**
+     * Provides conversion between Integer and Integer
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class DoubleToIntegerConverter extends BidirectionalConverter<Double, Integer> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new IntegerToIntegerConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public DoubleToIntegerConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Integer convertTo(Double source, Type<Integer> destinationType) {
+            if (!truncate && (source.compareTo((double) Integer.MAX_VALUE) > 0 || source.compareTo((double) Integer.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Integer.class.getCanonicalName());
+            }
+            return source.intValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Double convertFrom(Integer source, Type<Double> destinationType) {
+            return source.doubleValue();
+        }
+    }
+    
+    /**
+     * Provides conversion between Short and Short
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class DoubleToShortConverter extends BidirectionalConverter<Double, Short> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new ShortToShortConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public DoubleToShortConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Short convertTo(Double source, Type<Short> destinationType) {
+            if (!truncate && (source.compareTo((double) Short.MAX_VALUE) > 0 || source.compareTo((double) Short.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Short.class.getCanonicalName());
+            }
+            return source.shortValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Double convertFrom(Short source, Type<Double> destinationType) {
+            return source.doubleValue();
+        }
+    }
+    
+    // ~
+    
+    /**
+     * Provides conversion between Long and Integer
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class FloatToLongConverter extends BidirectionalConverter<Float, Long> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new LongToIntegerConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public FloatToLongConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Long convertTo(Float source, Type<Long> destinationType) {
+            if (!truncate && (source.compareTo((float) Long.MAX_VALUE) > 0 || source.compareTo((float) Long.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Long.class.getCanonicalName());
+            }
+            return source.longValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Float convertFrom(Long source, Type<Float> destinationType) {
+            return source.floatValue();
+        }
+    }
+    
+    /**
+     * Provides conversion between Integer and Integer
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class FloatToIntegerConverter extends BidirectionalConverter<Float, Integer> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new IntegerToIntegerConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public FloatToIntegerConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Integer convertTo(Float source, Type<Integer> destinationType) {
+            if (!truncate && (source.compareTo((float) Integer.MAX_VALUE) > 0 || source.compareTo((float) Integer.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Integer.class.getCanonicalName());
+            }
+            return source.intValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Float convertFrom(Integer source, Type<Float> destinationType) {
+            return source.floatValue();
+        }
+    }
+    
+    /**
+     * Provides conversion between Short and Short
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class FloatToShortConverter extends BidirectionalConverter<Float, Short> {
+
+        private final boolean truncate;
+        
+        /**
+         * Constructs a new ShortToShortConverter, with the configured truncation behavior.
+         * 
+         * @param truncate specifies whether the converter should perform truncation; if false,
+         * an ArithmeticException is thrown for a value which is too large or too small to be
+         * accurately represented by the smaller of the two types
+         */
+        public FloatToShortConverter(boolean truncate) {
+            this.truncate = truncate;
+        }
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Short convertTo(Float source, Type<Short> destinationType) {
+            if (!truncate && (source.compareTo((float) Short.MAX_VALUE) > 0 || source.compareTo((float) Short.MIN_VALUE) < 0)) {
+                throw new ArithmeticException("Overflow: " + source + " cannot be represented by " + Short.class.getCanonicalName());
+            }
+            return source.shortValue();
+        }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        @Override
+        public Float convertFrom(Short source, Type<Float> destinationType) {
+            return source.floatValue();
+        }
+    }
+    
 }

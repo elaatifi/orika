@@ -22,7 +22,6 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -47,7 +46,7 @@ public final class ClassUtil {
     }
     
     private static Set<Class<?>> getImmutablesTypes() {
-        Set<Class<?>> immutables = new HashSet<Class<?>>(Arrays.<Class<?>>asList(String.class, BigDecimal.class, Date.class, java.sql.Date.class,
+        Set<Class<?>> immutables = new HashSet<Class<?>>(Arrays.<Class<?>>asList(String.class, BigDecimal.class,
         		Byte.TYPE, Short.TYPE, Integer.TYPE, Long.TYPE, Boolean.TYPE, Character.TYPE, Float.TYPE, Double.TYPE ));
         immutables.addAll(getWrapperTypes());
         return immutables;
