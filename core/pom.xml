@@ -130,7 +130,7 @@
 
     </dependencies>
 
-    <!-- <build>
+    <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -143,7 +143,8 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-                            <finalName>orika-core-standalone-${project.version}</finalName>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>deps-included</shadedClassifierName> <!-- Any name that makes sense -->
                             <minimizeJar>true</minimizeJar>
                             <relocations>
                                 <relocation>
@@ -164,6 +165,6 @@
                 </executions>
             </plugin>
         </plugins>
-    </build>-->
+    </build>
 
 </project>
