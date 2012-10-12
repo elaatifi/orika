@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import javolution.util.FastMap;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
@@ -46,6 +45,7 @@ import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
+import ma.glasnost.orika.util.CacheLRULinkedHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,8 +55,8 @@ public class MapperFacadeImpl implements MapperFacade {
     private final MapperFactory mapperFactory;
     private final MappingContextFactory contextFactory;
     private final UnenhanceStrategy unenhanceStrategy;
-    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new FastMap<MappingStrategyKey, MappingStrategy>();
-    
+    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new CacheLRULinkedHashMap<MappingStrategyKey, MappingStrategy>(
+            500);
     private final Logger log = LoggerFactory.getLogger(getClass());
     
     public MapperFacadeImpl(MapperFactory mapperFactory, MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {

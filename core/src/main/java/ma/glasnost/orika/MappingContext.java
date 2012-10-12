@@ -18,49 +18,47 @@
 
 package ma.glasnost.orika;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import javolution.context.ObjectFactory;
-import javolution.lang.Reusable;
-import javolution.util.FastList;
-import javolution.util.FastMap;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
-public class MappingContext implements Reusable {
+public class MappingContext {
 	
 	private final Map<Type<?>, Type<?>> mapping;
 	private final Map<java.lang.reflect.Type, Map<Object, Object>> cache;
-	private FastList<FastMap<MapperKey, ClassMap<?,?>>> mappersSeen;
+	private List<Map<MapperKey, ClassMap<?,?>>> mappersSeen;
 	private MappingStrategy strategy;
 	private boolean isNew = true;
 	private int depth;
 	
-	public static class Factory extends ObjectFactory<MappingContext> implements MappingContextFactory {
+	public static class Factory implements MappingContextFactory {
 
-        @Override
-        protected MappingContext create() {
-            return new MappingContext();
-        }
-        
+	    LinkedBlockingQueue<MappingContext> contextQueue = new LinkedBlockingQueue<MappingContext>();
+	    
         public MappingContext getContext() {
-            return object();
+            MappingContext context = contextQueue.poll();
+            return context != null ? context : new MappingContext();
         }
         
         public void release(MappingContext context) {
-            recycle(context);
+            context.reset();
+            contextQueue.offer(context);
         }
-	    
 	}
 	
 
-	public MappingContext() {
-		mapping = new FastMap<Type<?>, Type<?>>();
-		cache = new FastMap<java.lang.reflect.Type, Map<Object, Object>>();
+	private MappingContext() {
+		mapping = new HashMap<Type<?>, Type<?>>();
+		cache = new HashMap<java.lang.reflect.Type, Map<Object, Object>>();
 	}
 	
 	public void setResolvedMappingStrategy(MappingStrategy strategy) {
@@ -132,24 +130,24 @@ public class MappingContext implements Reusable {
 	}
 
 	/**
-	 * Registers a ClassMap marking it as mapped within the current context
+	 * Registers a ClassMap marking it as mapped within the current context;
 	 * 
 	 * @param classMap
 	 */
 	public void registerMapperGeneration(ClassMap<?,?> classMap) {
 	    if (mappersSeen == null) {
-	        mappersSeen = new FastList<FastMap<MapperKey, ClassMap<?,?>>>();
+	        mappersSeen = new ArrayList<Map<MapperKey, ClassMap<?,?>>>();
 	    }
-	    FastMap<MapperKey, ClassMap<?,?>> list = mappersSeen.isEmpty() ? null : this.mappersSeen.get(depth-1);
+	    Map<MapperKey, ClassMap<?,?>> list = mappersSeen.isEmpty() ? null : this.mappersSeen.get(depth-1);
 	    if (list == null) {
-	        list = new FastMap<MapperKey, ClassMap<?,?>>();
+	        list = new HashMap<MapperKey, ClassMap<?,?>>();
 	    }
 	    list.put(classMap.getMapperKey(), classMap);
 	}
 	
 	public ClassMap<?,?> getMapperGeneration(MapperKey mapperKey) {
 	    ClassMap<?,?> result = null;
-	    FastMap<MapperKey, ClassMap<?,?>> map = (mappersSeen == null || mappersSeen.isEmpty()) ? null : this.mappersSeen.get(depth-1);
+	    Map<MapperKey, ClassMap<?,?>> map = (mappersSeen == null || mappersSeen.isEmpty()) ? null : this.mappersSeen.get(depth-1);
 	    if (map != null) {
 	        result = map.get(mapperKey);
 	    }
@@ -164,9 +162,6 @@ public class MappingContext implements Reusable {
 	    --depth;
 	}
 	
-    /* (non-Javadoc)
-     * @see javolution.lang.Reusable#reset()
-     */
     public void reset() {
         cache.clear();
         mapping.clear();
@@ -176,6 +171,25 @@ public class MappingContext implements Reusable {
         strategy = null;
         isNew = true;
         depth = 0;
+    }
+    
+    public static final class NonCyclicMappingContext extends MappingContext {
+        
+        public <S, D> void cacheMappedObject(S source, D destination) {
+            // No-op
+        }
+        
+        public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType, D destination) {
+            // No-op
+        }
+        
+        public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
+            return false;
+        }
+        
+        public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
+            return null;
+        }
     }
 	
 }

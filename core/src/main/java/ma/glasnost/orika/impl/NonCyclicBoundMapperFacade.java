@@ -19,6 +19,7 @@ package ma.glasnost.orika.impl;
 
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.MappingContext.NonCyclicMappingContext;
 import ma.glasnost.orika.MappingContextFactory;
 
 /**
@@ -26,25 +27,6 @@ import ma.glasnost.orika.MappingContextFactory;
  * 
  */
 public class NonCyclicBoundMapperFacade<A, B> extends DefaultBoundMapperFacade<A, B> {
-    
-    private static final class NonCyclicMappingContext extends MappingContext {
-        
-        public <S, D> void cacheMappedObject(S source, D destination) {
-            // No-op
-        }
-        
-        public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType, D destination) {
-            // No-op
-        }
-        
-        public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
-            return false;
-        }
-        
-        public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
-            return null;
-        }
-    }
     
     private final MappingContext nonCyclicContext;
     

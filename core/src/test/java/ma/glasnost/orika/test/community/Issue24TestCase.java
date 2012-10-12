@@ -28,11 +28,11 @@ public class Issue24TestCase {
         factory.registerClassMap(ClassMapBuilder.map(A.class, BSuper.class).byDefault().toClassMap());
         factory.getMapperFacade();
 
-        Type bsuper = factory.lookupConcreteDestinationType(TypeFactory.valueOf(A.class), TypeFactory.valueOf(BSuper.class), new MappingContext());
+        Type bsuper = factory.lookupConcreteDestinationType(TypeFactory.valueOf(A.class), TypeFactory.valueOf(BSuper.class), null);
         Assert.assertEquals(BSuper.class, bsuper.getRawType());
-        Type b = factory.lookupConcreteDestinationType(TypeFactory.valueOf(A.class), TypeFactory.valueOf(B.class), new MappingContext());
+        Type b = factory.lookupConcreteDestinationType(TypeFactory.valueOf(A.class), TypeFactory.valueOf(B.class), null);
         Assert.assertEquals(B.class, b.getRawType());
-        Type bsub = factory.lookupConcreteDestinationType(TypeFactory.valueOf(A.class), TypeFactory.valueOf(BSub.class), new MappingContext());
+        Type bsub = factory.lookupConcreteDestinationType(TypeFactory.valueOf(A.class), TypeFactory.valueOf(BSub.class), null);
         Assert.assertEquals(BSub.class, bsub.getRawType());
     }
 
