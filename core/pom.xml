@@ -143,10 +143,6 @@
                             <minimizeJar>true</minimizeJar>
                             <relocations>
                                 <relocation>
-                                    <pattern>javolution</pattern>
-                                    <shadedPattern>orika_shaded.javolution</shadedPattern>
-                                </relocation>
-                                <relocation>
                                     <pattern>javassist</pattern>
                                     <shadedPattern>orika_shaded.javassist</shadedPattern>
                                 </relocation>
