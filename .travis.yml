@@ -1,9 +1,6 @@
 language: java
 jdk:
   - oraclejdk7
-#  - openjdk6
-script: mvn -q clean install
-# whitelist
 branches:
   only:
     - master
