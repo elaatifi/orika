@@ -614,7 +614,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 strategy = resolveMappingStrategy(item, sourceType, destinationType, false, context);
                 sourceClass = item.getClass();
             }
-            D mappedItem = context.getMappedObject(item, destinationType);
+            D mappedItem = (D) context.getMappedObject(item, destinationType);
             if (mappedItem == null) {
                 mappedItem = (D) strategy.map(item, null, context);
             }
@@ -769,7 +769,7 @@ public class MapperFacadeImpl implements MapperFacade {
                     keyStrategy = resolveMappingStrategy(entry.getKey(), sourceType.<Sk> getNestedType(0), destinationType.<Dk> getNestedType(0), false, context);
                     keyClass = entry.getKey().getClass();
                 }
-                Dk mappedKey = context.getMappedObject(entry.getKey(), destinationType.<Dk> getNestedType(0));
+                Dk mappedKey = (Dk) context.getMappedObject(entry.getKey(), destinationType.<Dk> getNestedType(0));
                 if (mappedKey == null) {
                     mappedKey = (Dk) (Dk) keyStrategy.map(entry.getKey(), null, context);
                 }
@@ -786,7 +786,7 @@ public class MapperFacadeImpl implements MapperFacade {
                     valueClass = entry.getValue().getClass();
                 }
                 
-                Dv mappedValue = context.getMappedObject(entry.getValue(), destinationType.<Dv> getNestedType(1));
+                Dv mappedValue = (Dv) context.getMappedObject(entry.getValue(), destinationType.<Dv> getNestedType(1));
                 if (mappedValue == null) {
                     mappedValue = (Dv) (Dv) valueStrategy.map(entry.getValue(), null, context);
                 }
