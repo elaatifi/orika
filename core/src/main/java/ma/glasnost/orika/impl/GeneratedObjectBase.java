@@ -55,7 +55,7 @@ public abstract class GeneratedObjectBase {
         this.usedMapperFacades = usedMapperFacades;
     }
     
-    protected int min(int... sizes) {
+    protected int min(int[] sizes) {
         
         int min = Integer.MAX_VALUE;
         for (int size : sizes) {

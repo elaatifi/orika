@@ -1,19 +1,15 @@
 package ma.glasnost.orika.test.custommapper;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
-import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ScoringClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
-import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
 

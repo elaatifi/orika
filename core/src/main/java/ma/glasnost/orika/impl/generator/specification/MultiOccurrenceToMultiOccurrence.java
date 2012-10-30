@@ -100,7 +100,7 @@ public class MultiOccurrenceToMultiOccurrence {
         
         String sizeExpr = join(sourceSizes, ", ");
         if (!"".equals(sizeExpr)) {
-            sizeExpr = "min(" + sizeExpr + ")";
+            sizeExpr = "min(new int[]{" + sizeExpr + "})";
         }
         
         for (Node destRef : destNodes) {
