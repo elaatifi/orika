@@ -614,7 +614,11 @@ public class MapperFacadeImpl implements MapperFacade {
                 strategy = resolveMappingStrategy(item, sourceType, destinationType, false, context);
                 sourceClass = item.getClass();
             }
-            destination.add((D) strategy.map(item, null, context));
+            D mappedItem = (D) context.getMappedObject(item, destinationType);
+            if (mappedItem == null) {
+                mappedItem = (D) strategy.map(item, null, context);
+            }
+            destination.add(mappedItem);
         }
         return destination;
     }
@@ -765,7 +769,12 @@ public class MapperFacadeImpl implements MapperFacade {
                     keyStrategy = resolveMappingStrategy(entry.getKey(), sourceType.<Sk> getNestedType(0), destinationType.<Dk> getNestedType(0), false, context);
                     keyClass = entry.getKey().getClass();
                 }
-                key = (Dk) keyStrategy.map(entry.getKey(), null, context);
+                Dk mappedKey = (Dk) context.getMappedObject(entry.getKey(), destinationType.<Dk> getNestedType(0));
+                if (mappedKey == null) {
+                    mappedKey = (Dk) (Dk) keyStrategy.map(entry.getKey(), null, context);
+                }
+                
+                key = mappedKey;
             } 
             
             Dv value;
@@ -776,7 +785,13 @@ public class MapperFacadeImpl implements MapperFacade {
                     valueStrategy = resolveMappingStrategy(entry.getValue(), sourceType.<Sv> getNestedType(1), destinationType.<Dv> getNestedType(1), false, context);
                     valueClass = entry.getValue().getClass();
                 }
-                value = (Dv) valueStrategy.map(entry.getValue(), null, context);
+                
+                Dv mappedValue = (Dv) context.getMappedObject(entry.getValue(), destinationType.<Dv> getNestedType(1));
+                if (mappedValue == null) {
+                    mappedValue = (Dv) (Dv) valueStrategy.map(entry.getValue(), null, context);
+                }
+                
+                value = mappedValue;
             } 
             
             destination.put(key, value);
@@ -793,6 +808,7 @@ public class MapperFacadeImpl implements MapperFacade {
         } 
     }
     
+    @SuppressWarnings("unchecked")
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
             MappingContext context) {
         
@@ -807,8 +823,11 @@ public class MapperFacadeImpl implements MapperFacade {
                 strategy = resolveMappingStrategy(element, sourceType, entryType, false, context);
                 entryClass = element.getClass();
             }
-            @SuppressWarnings("unchecked")
-            Map.Entry<Dk, Dv> entry = (Map.Entry<Dk, Dv>) strategy.map(element, null, context);
+            
+            Map.Entry<Dk, Dv> entry = context.getMappedObject(element, entryType);
+            if (entry == null) {
+                entry = (Map.Entry<Dk, Dv>) strategy.map(element, null, context);
+            }
             destination.put(entry.getKey(), entry.getValue());
         }
         
@@ -824,6 +843,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
+    @SuppressWarnings("unchecked")
     public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
             MappingContext context) {
         
@@ -837,8 +857,11 @@ public class MapperFacadeImpl implements MapperFacade {
                 strategy = resolveMappingStrategy(element, sourceType, entryType, false, context);
                 entryClass = element.getClass();
             }
-            @SuppressWarnings("unchecked")
-            MapEntry<Dk, Dv> entry = (MapEntry<Dk, Dv>) strategy.map(element, null, context);
+            
+            MapEntry<Dk, Dv> entry = context.getMappedObject(element, entryType);
+            if (entry == null) {
+                entry = (MapEntry<Dk, Dv>) strategy.map(element, null, context);
+            }
             destination.put(entry.getKey(), entry.getValue());
         }
         
