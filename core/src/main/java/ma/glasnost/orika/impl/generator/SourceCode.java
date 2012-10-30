@@ -156,7 +156,14 @@ public class SourceCode {
         this.specifications = new LinkedHashSet<Specification>();
         this.logDetails = logDetails;
         
-        // TODO: allow customization of this ordering
+        /*
+         *  TODO: allow customization of this ordering; these should be
+         *  instantiated once within the MapperFactory, and then passed
+         *  to the SourceCode instance when constructing it (instead of
+         *  creating a new set each time we need to generate source
+         *  code)
+         */
+        
         specifications.add(new CopyByReference(mapperFactory));
         specifications.add(new PrimitiveOrWrapperToPrimitive(mapperFactory));
         specifications.add(new PrimitiveToWrapper(mapperFactory));

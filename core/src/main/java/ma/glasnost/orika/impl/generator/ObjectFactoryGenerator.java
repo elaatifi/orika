@@ -103,9 +103,9 @@ public class ObjectFactoryGenerator {
     		UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, 
     		Type<?> type, MappingContext mappingContext, StringBuilder logDetails) throws CannotCompileException {
     	
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, usedMappers, mapperFactory);
+        final StringBuilder out = new StringBuilder();
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
-        out.append("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName());
+        out.append(format("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName()));
         
         Set<Type<? extends Object>> sourceClasses = mapperFactory.lookupMappedClasses(type);
         
@@ -120,8 +120,8 @@ public class ObjectFactoryGenerator {
         // TODO: can this condition be reached?
         // if object factory generation failed, we should not create the factory
         // which is unable to construct an instance of anything.
-        out.append("throw new %s(s.getClass().getCanonicalName() + \" is an unsupported source class : \"+s.getClass().getCanonicalName());",
-                IllegalArgumentException.class.getCanonicalName());
+        out.append(format("throw new %s(s.getClass().getCanonicalName() + \" is an unsupported source class : \"+s.getClass().getCanonicalName());",
+                IllegalArgumentException.class.getCanonicalName()));
         out.append("\n}");
         
         code.addMethod(out.toString());

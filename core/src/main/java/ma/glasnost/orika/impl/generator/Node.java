@@ -143,10 +143,6 @@ public class Node {
         
         for (Node child: children) {
             if (child.value != null) {
-//                boolean isSource = false;
-//                if (this.multiOccurrenceVar.type().equals(child.value.getSource().getContainer().getType())) {
-//                    isSource = true;
-//                }
                 
                 int depth = 0;
                 FieldMap value = child.value;
@@ -162,7 +158,7 @@ public class Node {
             }
         }
         if (!nodes.isEmpty()) {
-            return nodes.firstEntry().getValue();
+            return nodes.get(nodes.firstKey());
         } else {
             return null;
         }
