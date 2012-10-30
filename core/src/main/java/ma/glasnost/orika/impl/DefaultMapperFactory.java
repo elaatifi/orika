@@ -150,8 +150,8 @@ public class DefaultMapperFactory implements MapperFactory {
         this.classMapBuilderForArraysFactory.setPropertyResolver(this.propertyResolverStrategy);
         this.classMapBuilderForArraysFactory.setMapperFactory(this);
         
-        this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
-        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy);
+        this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy, this.propertyResolverStrategy);
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy, this.propertyResolverStrategy);
         this.useAutoMapping = builder.useAutoMapping;
         this.useBuiltinConverters = builder.useBuiltinConverters;
         
@@ -363,7 +363,7 @@ public class DefaultMapperFactory implements MapperFactory {
          * Mis-spelled method signature
          * 
          * @param useBuiltinConverters
-         * @return
+         * @return true if the built-in converters should be used
          * @deprecated use {@link #useBuiltinConverters(boolean)} instead
          */
         @Deprecated
@@ -673,6 +673,11 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     }
     
+    /**
+     * @param targetType
+     * @param context
+     * @return an ObjectFactory instance which is able to instantiate the specified type
+     */
     @SuppressWarnings("unchecked")
     public <T> ObjectFactory<T> lookupObjectFactory(Type<T> targetType, MappingContext context) {
         if (targetType == null) {
@@ -1040,6 +1045,10 @@ public class DefaultMapperFactory implements MapperFactory {
         } else {
             return getClassMapBuilderFactory().map(aType, bType);
         }
+    }
+    
+    public <A, B> ClassMapBuilder<A, B> expand(Type<A> aType, Type<B> bType) {
+        return getClassMapBuilderFactory().map(aType, bType);
     }
     
     public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Type<B> bType) {

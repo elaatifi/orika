@@ -18,14 +18,15 @@
 
 package ma.glasnost.orika.impl.generator;
 
-import java.util.Arrays;
+import static java.lang.String.format;
+import static ma.glasnost.orika.impl.Specifications.aMultiOccurrenceElementMap;
+import static ma.glasnost.orika.impl.generator.SourceCode.append;
+
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
 import javassist.CannotCompileException;
-import ma.glasnost.orika.BoundMapperFacade;
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
@@ -34,6 +35,7 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,10 +46,12 @@ public final class MapperGenerator {
     
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
+    private final PropertyResolverStrategy propertyResolver;
     
-    public MapperGenerator(MapperFactory mapperFactory, CompilerStrategy compilerStrategy) {
+    public MapperGenerator(MapperFactory mapperFactory, CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
+        this.propertyResolver = propertyResolver;
     }
     
     public GeneratedMapperBase build(ClassMap<?, ?> classMap, MappingContext context) {
@@ -56,13 +60,6 @@ public final class MapperGenerator {
             compilerStrategy.assureTypeIsAccessible(classMap.getAType().getRawType());
             compilerStrategy.assureTypeIsAccessible(classMap.getBType().getRawType());
             
-            final GeneratedSourceCode mapperCode = new GeneratedSourceCode(
-                    classMap.getMapperClassName(), GeneratedMapperBase.class,
-                    compilerStrategy);
-            
-            UsedTypesContext usedTypes = new UsedTypesContext();
-            UsedConvertersContext usedConverters = new UsedConvertersContext();
-            UsedMapperFacadesContext usedMapperFacades = new UsedMapperFacadesContext();
             
             StringBuilder logDetails;
             if (LOGGER.isDebugEnabled()) {
@@ -72,31 +69,20 @@ public final class MapperGenerator {
             	logDetails = null;
             }
             
+            final SourceCode mapperCode = new SourceCode(
+                    classMap.getMapperClassName(), GeneratedMapperBase.class,
+                    compilerStrategy, propertyResolver, mapperFactory, logDetails);
+            
+            
             Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
-            mappedFields.addAll(addMapMethod(mapperCode, true, classMap, usedTypes, usedConverters, usedMapperFacades, logDetails));
-            mappedFields.addAll(addMapMethod(mapperCode, false, classMap, usedTypes, usedConverters, usedMapperFacades, logDetails));
+            mappedFields.addAll(addMapMethod(mapperCode, true, classMap, logDetails));
+            mappedFields.addAll(addMapMethod(mapperCode, false, classMap, logDetails));
             
             GeneratedMapperBase instance = mapperCode.getInstance();
             instance.setAType(classMap.getAType());
             instance.setBType(classMap.getBType());
             
-            Type<Object>[] usedTypesArray = usedTypes.toArray();
-            Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
-            BoundMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
-            if (logDetails != null) {
-            	if (usedTypesArray.length > 0) {
-            		logDetails.append("\n\t" + Type.class.getSimpleName() + "s used: " + Arrays.toString(usedTypesArray));
-            	}
-            	if (usedConvertersArray.length > 0) {
-            		logDetails.append("\n\t" + Converter.class.getSimpleName() + "s used: " + Arrays.toString(usedConvertersArray));
-            	}
-            	if (usedMapperFacadesArray.length > 0) {
-            	    logDetails.append("\n\t" + BoundMapperFacade.class.getSimpleName() + "s used: " + Arrays.toString(usedMapperFacadesArray));
-            	}
-            } 
-            instance.setUsedTypes(usedTypesArray);
-            instance.setUsedConverters(usedConvertersArray);
-            instance.setUsedMapperFacades(usedMapperFacadesArray);
+            
             if (logDetails != null) {
             	LOGGER.debug(logDetails.toString());
             }
@@ -121,7 +107,7 @@ public final class MapperGenerator {
     	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
     }
     
-    private Set<FieldMap> addMapMethod(GeneratedSourceCode code, boolean aToB, ClassMap<?, ?> classMap, UsedTypesContext usedTypes, UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers,StringBuilder logDetails) throws CannotCompileException {
+    private Set<FieldMap> addMapMethod(SourceCode code, boolean aToB, ClassMap<?, ?> classMap, StringBuilder logDetails) throws CannotCompileException {
         
         
         Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
@@ -133,11 +119,12 @@ public final class MapperGenerator {
         	}
         }
     	
-        final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, usedMappers, mapperFactory);
+        //final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, usedMappers, mapperFactory);
+    	final StringBuilder out = new StringBuilder();
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
-        out.append("\tpublic void ")
-                .append(mapMethod)
-                .append("(java.lang.Object a, java.lang.Object b, %s mappingContext) {\n\n", MappingContext.class.getCanonicalName());
+        out.append("\tpublic void ");
+        out.append(mapMethod);
+        out.append(format("(java.lang.Object a, java.lang.Object b, %s mappingContext) {\n\n", MappingContext.class.getCanonicalName()));
         
         VariableRef source;
         VariableRef destination;
@@ -149,9 +136,12 @@ public final class MapperGenerator {
             destination = new VariableRef(classMap.getAType(), "destination");
         }
          
-        out.statement("super.%s(a, b, mappingContext);", mapMethod);
-        out.statement(source.declare("a"));
-        out.statement(destination.declare("b"));
+        append(out,
+                format("super.%s(a, b, mappingContext);", mapMethod),
+                "\n\n",
+                source.declare("a"),
+                destination.declare("b"),
+                "\n\n");
         LinkedList<FieldMap> nestedFieldMaps = new LinkedList<FieldMap>();
         
         for (FieldMap currentFieldMap : classMap.getFieldsMapping()) {
@@ -177,7 +167,7 @@ public final class MapperGenerator {
                 fieldMap = fieldMap.flip();
             }
             
-            if (fieldMap.getElementMap() != null) {
+            if (fieldMap.is(aMultiOccurrenceElementMap())) {
             	nestedFieldMaps.add(fieldMap);
             	continue;
             }
@@ -188,9 +178,12 @@ public final class MapperGenerator {
             
             if (!fieldMap.isIgnored()) {
                 try {
-                    FieldMap f = generateFieldMapCode(out, fieldMap, classMap, destination.type(), logDetails);
-                    if (f != null) {
-                        mappedFields.add(currentFieldMap);
+                    mappedFields.add(currentFieldMap);
+                    String sourceCode = generateFieldMapCode(code, fieldMap, classMap, destination, logDetails);
+                    if (sourceCode == null || sourceCode.endsWith("null")) {
+                        throw new IllegalArgumentException();
+                    } else {
+                        out.append(sourceCode);
                     }
                 } catch (final Exception e) {
                     MappingException me = new MappingException(e);
@@ -206,9 +199,10 @@ public final class MapperGenerator {
         }
         
         while (!nestedFieldMaps.isEmpty()) {
-        	Set<FieldMap> associated = out.getAssociatedMappings(nestedFieldMaps, nestedFieldMaps.getFirst());
+        	Set<FieldMap> associated = code.getAssociatedMappings(nestedFieldMaps, nestedFieldMaps.getFirst());
         	nestedFieldMaps.removeAll(associated);
-        	mappedFields.addAll(out.fromMultiOccurrenceToMultiOccurrence(associated, logDetails));
+        	mappedFields.addAll(associated);
+        	out.append(code.fromMultiOccurrenceToMultiOccurrence(associated, logDetails));
         }
         
         out.append("\n\t\tif(customMapper != null) { \n\t\t\t customMapper.")
@@ -247,33 +241,34 @@ public final class MapperGenerator {
         return false;
     }
     
-    private FieldMap generateFieldMapCode(CodeSourceBuilder code, FieldMap fieldMap, ClassMap<?, ?> classMap, Type<?> destinationType, StringBuilder logDetails) throws Exception {
+    private String generateFieldMapCode(SourceCode code, FieldMap fieldMap, ClassMap<?, ?> classMap, VariableRef destination, StringBuilder logDetails) throws Exception {
         
         final VariableRef sourceProperty = new VariableRef(fieldMap.getSource(), "source");
         final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
+        destinationProperty.setOwner(destination);
         
         if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection() && !destinationProperty.isArray() && !destinationProperty.isMap())) {
             if (logDetails != null) {
                 
             	logDetails.append("excluding because ");
     			if (!sourceProperty.isReadable()) {
-    			    Type<?> sourceType = classMap.getAType().equals(destinationType) ? classMap.getBType() : classMap.getAType();
+    			    Type<?> sourceType = classMap.getAType().equals(destination.type()) ? classMap.getBType() : classMap.getAType();
     				logDetails.append(sourceType + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is not readable");
     			} else {
     				// TODO: this brings up an important case: sometimes the destination is not assignable, 
     				// but it's properties can still be mapped in-place. Should we handle it?
     			    
-    				logDetails.append(destinationType + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is neither assignable nor an array, collection, or map");
+    				logDetails.append(destination.type() + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is neither assignable nor an array, collection, or map");
     			}		
             }
-        	return null;
+        	return "";
         }
         
         // Make sure the source and destination types are accessible to the builder
         compilerStrategy.assureTypeIsAccessible(sourceProperty.rawType());
         compilerStrategy.assureTypeIsAccessible(destinationProperty.rawType());
 
-        return code.mapFields(fieldMap, sourceProperty, destinationProperty, destinationType, logDetails);
+        return code.mapFields(fieldMap, sourceProperty, destinationProperty, destination.type(), logDetails);
     }
     
 }

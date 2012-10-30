@@ -58,8 +58,7 @@ public class ConstructorMappingTestCase {
     public void testSimpleCase() throws Throwable {
     	
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
-        MapperFactory factory = new DefaultMapperFactory.Builder()
-            .useBuiltinConverters(true).build();
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
         
         factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
                 //.constructorA()
@@ -69,8 +68,6 @@ public class ConstructorMappingTestCase {
                 .byDefault()
                 .toClassMap());
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
-        
-        factory.build();
         
         Person person = new Person();
         person.setFirstName("Abdelkrim");

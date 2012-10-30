@@ -70,6 +70,12 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
         this.writePattern = Pattern.compile(writeMethodRegex);
     }
     
+    /**
+     * Converts the first character of a String to lowercase
+     * 
+     * @param string
+     * @return the original String with the first character converted to lowercase
+     */
     protected String uncapitalize(String string) {
         return string.substring(0, 1).toLowerCase() + string.substring(1, string.length());
     }

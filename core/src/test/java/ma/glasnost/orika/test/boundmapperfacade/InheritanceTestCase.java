@@ -66,7 +66,6 @@ public class InheritanceTestCase {
         factory.registerClassMap(factory.classMap(ChildEntity.class, Child2DTO.class)
                 .customize(new CustomMapper<ChildEntity, Child2DTO>() {
                     
-                    @Override
                     public void mapAtoB(ChildEntity a, Child2DTO b, MappingContext context) {
                         b.setMessage("Hello " + a.getName());
                     }

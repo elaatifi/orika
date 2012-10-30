@@ -11,6 +11,7 @@ import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.GeneratedObjectBase;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
@@ -269,7 +270,7 @@ public class MapGenerationTestCase {
 		testScores.add("C");
 		numericScores.add(70);
 		source.setStringArray(testScores.toArray(new String[testScores.size()]));
-		source.setIntArray(ClassUtil.intArray(numericScores));
+		source.setIntArray(GeneratedObjectBase.intArray(numericScores));
 		
 		MapWithoutSetter result = mapper.map(source);
 		
@@ -303,7 +304,7 @@ public class MapGenerationTestCase {
 		testScores.add("C");
 	
 		source.setStringArray(testScores.toArray(new String[testScores.size()]));
-		source.setIntArray(ClassUtil.intArray(numericScores));
+		source.setIntArray(GeneratedObjectBase.intArray(numericScores));
 		
 		MapWithoutSetter result = mapper.map(source);
 		

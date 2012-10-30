@@ -34,7 +34,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.metadata.NestedElementProperty;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
@@ -55,6 +57,12 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     private final Map<java.lang.reflect.Type, Map<String, Property>> inlinePropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     
+    /**
+     * Creates a new PropertyResolver instance
+     * 
+     * @param includePublicFields
+     *            whether public fields should be included as properties
+     */
     public PropertyResolver(boolean includePublicFields) {
         this.includePublicFields = includePublicFields;
     }
@@ -103,7 +111,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                             types.add(type.getSuperclass());
                         }
                         
-                        @SuppressWarnings("unchecked")
                         List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                         types.addAll(interfaces);
                     }
@@ -154,6 +161,12 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return resolvedType;
     }
     
+    /**
+     * Convert the first character of the provided string to uppercase.
+     * 
+     * @param string
+     * @return the String with the first character converter to uppercase.
+     */
     protected String capitalize(String string) {
         return string.substring(0, 1).toUpperCase() + string.substring(1);
     }
@@ -226,6 +239,15 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         }
     }
     
+    /**
+     * Resolves the type of a property from the provided input factors.
+     * 
+     * @param readMethod
+     * @param rawType
+     * @param owningType
+     * @param referenceType
+     * @return the resolved Type of the property
+     */
     public Type<?> resolvePropertyType(Method readMethod, Class<?> rawType, Class<?> owningType, Type<?> referenceType) {
         
         rawType = resolveRawPropertyType(rawType, readMethod);
@@ -249,7 +271,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         }
         return resolvedGenericType;
     }
-    
     
     /**
      * Add public non-static fields as properties
@@ -289,21 +310,49 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     }
     
     /**
-     * Determines whether the provided string is a valid nested property expression
+     * Determines whether the provided string is a valid nested property
+     * expression
      * 
      * @param expression
      *            the expression to evaluate
-     * @return
+     * @return true of the expression represents a nested property
      */
     protected boolean isNestedPropertyExpression(String expression) {
         return expression.replaceAll("\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
     }
     
+    /**
+     * Determines whether the provided string is a valid element property
+     * expression
+     * 
+     * @param expression
+     *            the expression to evaluate
+     * @return true if the expression represents an element property
+     */
+    protected boolean isElementPropertyExpression(String expression) {
+        return expression.replaceAll("\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('[') != -1;
+    }
+    
+    /**
+     * Determines if the provided property expression is a element
+     * self-reference.
+     * 
+     * @param expr
+     *            the expression to evaluate
+     * @return
+     */
+    private boolean isSelfReferenceExpression(String expr) {
+        return "".equals(expr);
+    }
     
     private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.=\"\\|\\%,\\(\\)\\$ ]+";
     
-    private static final String NESTED_PROPERTY_SPLITTER = 
-            "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS + "\\})";
+    private static final String NESTED_PROPERTY_SPLITTER = "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS
+            + "\\})";
+    
+    private static final String ELEMENT_PROPERTY_SPLITTER = "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[\\[](?!"
+            + DYNAMIC_PROPERTY_CHARACTERS + "\\})";
+    
     /*
      * (non-Javadoc)
      * 
@@ -323,10 +372,11 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
             int i = 0;
             while (i < ps.length) {
                 try {
-                    property = getProperty(propertyType, ps[i], (i < ps.length - 1) );
+                    property = getProperty(propertyType, ps[i], (i < ps.length - 1));
                     propertyType = property.getType();
                 } catch (MappingException e) {
-                    throw new MappingException("could not resolve nested property [" + p + "] on " + type + ", because " + e.getLocalizedMessage());
+                    throw new MappingException("could not resolve nested property [" + p + "] on " + type + ", because "
+                            + e.getLocalizedMessage());
                 }
                 
                 i++;
@@ -346,6 +396,40 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return new NestedProperty(expression.toString(), property, path.toArray(new Property[path.size()]));
     }
     
+    /**
+     * @param type
+     * @param p
+     * @return the Property represented by the specified element property
+     *         expression
+     */
+    @SuppressWarnings("unchecked")
+    public Property getElementProperty(java.lang.reflect.Type type, String p) {
+        
+        String[] ps = p.split(ELEMENT_PROPERTY_SPLITTER, 2);
+        String elementPropertyExpression = ps[1].substring(0, ps[1].length() - 1);
+        
+        Property owningProperty = getProperty(type, ps[0]);
+        Type<?> elementType;
+        
+        Property elementProperty;
+        if (owningProperty.isMap()) {
+            // elementType = MapEntry.entryType((Type<Map<Object,Object>>)
+            // owningProperty.getType());
+            elementType = MapEntry.concreteEntryType((Type<Map<Object, Object>>) owningProperty.getType());
+            elementProperty = getProperty(elementType, elementPropertyExpression);
+        } else if (owningProperty.isCollection()) {
+            elementType = owningProperty.getType().getNestedType(0);
+            elementProperty = getProperty(elementType, elementPropertyExpression);
+        } else if (owningProperty.isArray()) {
+            elementType = owningProperty.getType().getComponentType();
+            elementProperty = getProperty(elementType, elementPropertyExpression);
+        } else {
+            throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
+        }
+        
+        return new NestedElementProperty(owningProperty, elementProperty, this);
+    }
+    
     public Property getProperty(java.lang.reflect.Type type, String expr) {
         
         return getProperty(type, expr, false);
@@ -354,20 +438,30 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     /**
      * Resolves the specified property expression
      * 
-     * @param type the property's owning type
-     * @param expr the property expression to resolve
-     * @param properties the known properties for the type
+     * @param type
+     *            the property's owning type
+     * @param expr
+     *            the property expression to resolve
+     * @param properties
+     *            the known properties for the type
      * @return the resolved Property
-     * @throws MappingException if the expression cannot be resolved to a property for the type
+     * @throws MappingException
+     *             if the expression cannot be resolved to a property for the
+     *             type
      */
     protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup) throws MappingException {
         Property property = null;
         
-        if (isNestedPropertyExpression(expr)) {
+        if (isSelfReferenceExpression(expr)) {
+            property = new Property.Builder().name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type)).build(this);
+        } else if (isElementPropertyExpression(expr)) {
+            property = getElementProperty(type, expr);
+        } else if (isNestedPropertyExpression(expr)) {
             property = getNestedProperty(type, expr);
         } else {
             // TODO: perhaps in-line properties should be isolated to a given
-            // ClassMapBuilder instance, rather than made available for other mappings
+            // ClassMapBuilder instance, rather than made available for other
+            // mappings
             // of the class; can this cause problems?
             Map<String, Property> inlinePoperties = inlinePropertiesCache.get(type);
             if (inlinePoperties != null) {
@@ -380,7 +474,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                 } else if (isInlinePropertyExpression(expr)) {
                     property = resolveInlineProperty(type, expr);
                     if (property != null) {
-                        synchronized(type) {
+                        synchronized (type) {
                             if (inlinePoperties == null) {
                                 inlinePoperties = new HashMap<String, Property>(1);
                                 inlinePropertiesCache.put(type, inlinePoperties);
@@ -396,40 +490,43 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return property;
     }
     
-    private static final Pattern INLINE_PROPERTY_PATTERN = 
-            Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
+    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
     
     /**
-     * Determines whether the provided string is a valid in-line property expression
+     * Determines whether the provided string is a valid in-line property
+     * expression
      * 
      * @param expression
      *            the expression to evaluate
-     * @return
+     * @return true if the expression represents an in-line property
      */
     protected boolean isInlinePropertyExpression(String expression) {
-        return INLINE_PROPERTY_PATTERN.matcher(expression).matches(); 
-    } 
+        return INLINE_PROPERTY_PATTERN.matcher(expression).matches();
+    }
     
     /**
      * Resolves in-line properties, which are defined with the following format:<br>
-     * "name{getterName|setterName|type=typeName}".<br><br>
-     * Setter name can be omitted, as well as type name; if getter name is omitted,
-     * then setter name must be preceded by '|', like so: <br>"name{|setterName|type=typeName}",
-     * or like "name{|setterName}". <br><br>
+     * "name{getterName|setterName|type=typeName}".<br>
+     * <br>
+     * Setter name can be omitted, as well as type name; if getter name is
+     * omitted, then setter name must be preceded by '|', like so: <br>
+     * "name{|setterName|type=typeName}", or like "name{|setterName}". <br>
+     * <br>
      * At least one of getter or setter must be provided.<br>
-     * Getter or setter 'names' can optionally be the java source of the method call including static
-     * arguments, like so: <br>"name{getTheName(\"someString\")|setTheName(\"someString\", %s)}"<br>
-     * If the setter is defined in this way, it should contain the string '%s' which represents
-     * the value being set.
-     *  
+     * Getter or setter 'names' can optionally be the java source of the method
+     * call including static arguments, like so: <br>
+     * "name{getTheName(\"someString\")|setTheName(\"someString\", %s)}"<br>
+     * If the setter is defined in this way, it should contain the string '%s'
+     * which represents the value being set.
+     * 
      * 
      * 
      * @param type
      * @param expr
-     * @return
+     * @return an in-line Property as defined by the provided expression
      */
     public Property resolveInlineProperty(java.lang.reflect.Type type, String expr) {
-        Type<?> theType = TypeFactory.valueOf(type); 
+        Type<?> theType = TypeFactory.valueOf(type);
         Matcher matcher = INLINE_PROPERTY_PATTERN.matcher(expr);
         
         if (matcher.matches()) {
@@ -437,7 +534,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
             builder.getter(matcher.group(2));
             builder.setter(matcher.group(3));
             builder.type(matcher.group(4));
-            return builder.build(this); 
+            return builder.build(this);
         } else {
             throw new IllegalArgumentException("'" + expr + "' is not a valid dynamic property expression");
         }

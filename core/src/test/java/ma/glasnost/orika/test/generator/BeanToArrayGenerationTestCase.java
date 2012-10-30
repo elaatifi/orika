@@ -1,4 +1,4 @@
-package ma.glasnost.orika.test.array;
+package ma.glasnost.orika.test.generator;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;

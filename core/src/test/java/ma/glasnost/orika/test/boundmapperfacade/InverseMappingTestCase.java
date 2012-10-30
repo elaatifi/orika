@@ -117,7 +117,7 @@ public class InverseMappingTestCase {
     
     @Test
     public void testInverseManyToManyMapping() {
-        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
         
         ClassMapBuilder<ReaderDTO, Reader> classMapBuilder = factory.classMap(ReaderDTO.class, Reader.class);
         classMapBuilder.fieldMap("books").bInverse("readers").add();

@@ -18,14 +18,15 @@
 package ma.glasnost.orika.impl.generator;
 
 
+import static java.lang.String.format;
+import static ma.glasnost.orika.impl.generator.SourceCode.append;
+import static ma.glasnost.orika.impl.generator.SourceCode.statement;
+
 import java.lang.reflect.Constructor;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import javassist.CannotCompileException;
-import ma.glasnost.orika.BoundMapperFacade;
-import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
@@ -37,6 +38,7 @@ import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,13 +51,15 @@ public class ObjectFactoryGenerator {
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
     private final String nameSuffix;
+    private final PropertyResolverStrategy propertyResolver;
     
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
-    		CompilerStrategy compilerStrategy) {
+    		CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
         this.nameSuffix = Integer.toHexString(System.identityHashCode(compilerStrategy));
         this.constructorResolverStrategy = constructorResolverStrategy;
+        this.propertyResolver = propertyResolver;
     }
     
     public GeneratedObjectFactory build(Type<?> type, MappingContext context) {
@@ -63,9 +67,7 @@ public class ObjectFactoryGenerator {
         final String className = type.getSimpleName() + "_ObjectFactory" + nameSuffix;
         
         try {
-            final GeneratedSourceCode factoryCode = 
-        			new GeneratedSourceCode(className,GeneratedObjectFactory.class,compilerStrategy);
-        	
+            
             StringBuilder logDetails;
             if (LOGGER.isDebugEnabled()) {
             	logDetails = new StringBuilder();
@@ -73,6 +75,9 @@ public class ObjectFactoryGenerator {
             } else {
             	logDetails = null;
             }
+            
+            final SourceCode factoryCode = 
+                    new SourceCode(className,GeneratedObjectFactory.class,compilerStrategy, propertyResolver, mapperFactory, logDetails);
             
             UsedTypesContext usedTypes = new UsedTypesContext();
             UsedConvertersContext usedConverters = new UsedConvertersContext();
@@ -82,24 +87,6 @@ public class ObjectFactoryGenerator {
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
-            
-            Type<Object>[] usedTypesArray = usedTypes.toArray();
-            Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
-            BoundMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
-            if (logDetails != null) {
-                if (usedTypesArray.length > 0) {
-                    logDetails.append("\n\t" + Type.class.getSimpleName() + "s used: " + Arrays.toString(usedTypesArray));
-                }
-                if (usedConvertersArray.length > 0) {
-                    logDetails.append("\n\t" + Converter.class.getSimpleName() + "s used: " + Arrays.toString(usedConvertersArray));
-                }
-                if (usedMapperFacadesArray.length > 0) {
-                    logDetails.append("\n\t" + BoundMapperFacade.class.getSimpleName() + "s used: " + Arrays.toString(usedMapperFacadesArray));
-                }
-            } 
-            objectFactory.setUsedTypes(usedTypesArray);
-            objectFactory.setUsedConverters(usedConvertersArray);
-            objectFactory.setUsedMapperFacades(usedMapperFacadesArray);
             
             if (logDetails != null) {
             	LOGGER.debug(logDetails.toString());
@@ -112,7 +99,7 @@ public class ObjectFactoryGenerator {
         } 
     }
     
-    private void addCreateMethod(GeneratedSourceCode code, UsedTypesContext usedTypes, 
+    private void addCreateMethod(SourceCode code, UsedTypesContext usedTypes, 
     		UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, 
     		Type<?> type, MappingContext mappingContext, StringBuilder logDetails) throws CannotCompileException {
     	
@@ -124,7 +111,7 @@ public class ObjectFactoryGenerator {
         
         if (sourceClasses != null && !sourceClasses.isEmpty()) {
             for (Type<? extends Object> sourceType : sourceClasses) {
-                addSourceClassConstructor(out, type, sourceType, mappingContext, logDetails);
+                out.append(addSourceClassConstructor(code, type, sourceType, mappingContext, logDetails));
             }
         } else {
             throw new MappingException("Cannot generate ObjectFactory for " + type);
@@ -140,7 +127,8 @@ public class ObjectFactoryGenerator {
         code.addMethod(out.toString());
     }
     
-    private void addSourceClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails) {
+    private String addSourceClassConstructor(SourceCode code, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails) {
+        
         MapperKey mapperKey = new MapperKey(type,sourceType);
         ClassMap<Object, Object>  classMap = mapperFactory.getClassMap(mapperKey); 
         
@@ -148,8 +136,10 @@ public class ObjectFactoryGenerator {
         	classMap = mapperFactory.getClassMap(new MapperKey(sourceType,type));
         }
         
+        StringBuilder out = new StringBuilder();
+        
         if (type.isArray()) {
-            addArrayClassConstructor(out, type, sourceType, classMap.getFieldsMapping().size());
+            out.append(addArrayClassConstructor(code, type, sourceType, classMap.getFieldsMapping().size()));
         } else {
         
             ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap, type);
@@ -166,8 +156,8 @@ public class ObjectFactoryGenerator {
     
             int argIndex = 0;
             
-            out.ifInstanceOf("s", sourceType).then();
-            out.append("%s source = (%s) s;", sourceType.getCanonicalName(), sourceType.getCanonicalName());
+            out.append(format("if (s instanceof %s) {", sourceType.getCanonicalName()));
+            out.append(format("%s source = (%s) s;", sourceType.getCanonicalName(), sourceType.getCanonicalName()));
             out.append("\ntry {\n");
             argIndex = 0;
             
@@ -176,15 +166,16 @@ public class ObjectFactoryGenerator {
                 Class<?> targetClass = constructorArguments[argIndex];
                 VariableRef v = new VariableRef(TypeFactory.resolveValueOf(targetClass, type), "arg" + argIndex++);
                 VariableRef s = new VariableRef(fieldMap.getSource(), "source");
-               
-                out.statement(v.declare());
+                VariableRef destOwner = new VariableRef(fieldMap.getDestination(), "");
+                v.setOwner(destOwner);
+                out.append(statement(v.declare()));
                             
-                out.mapFields(fieldMap, s, v, fieldMap.getDestination().getType(), logDetails);
+                out.append(code.mapFields(fieldMap, s, v, type, logDetails));
             }
             
-            out.append("return new %s", type.getCanonicalName()).append("(");
+            out.append(format("return new %s(", type.getCanonicalName()));
             for (int i = 0; i < properties.size(); i++) {
-                out.append("arg%d", i);
+                out.append(format("arg%d", i));
                 if (i < properties.size() - 1) {
                     out.append(",");
                 }
@@ -194,21 +185,26 @@ public class ObjectFactoryGenerator {
             /*
              * Any exceptions thrown calling constructors should be propagated
              */
-            out.append("\n} catch (java.lang.Exception e) {\n");
-            out.append("throw new java.lang.RuntimeException(" + 
-            		"\"Error while constructing new " + type.getSimpleName() + 
-            		" instance\", e); \n}");
-            out.end();
+            append(out,
+                    "\n} catch (java.lang.Exception e) {\n",
+                    "if (e instanceof RuntimeException) {\n",
+                    "throw (RuntimeException)e;\n",
+                    "} else {",
+                    "throw new java.lang.RuntimeException(" +
+            		"\"Error while constructing new " + type.getSimpleName() + " instance\", e);",
+            		"\n}\n}\n}");
         }
+        return out.toString();
     }
 
     /**
      * @param type
      * @param size
      */
-    private void addArrayClassConstructor(CodeSourceBuilder out, Type<?> type, Type<?> sourceType, int size) {
-        out.ifInstanceOf("s", sourceType).then();
-        out.append("return new " + type.getRawType().getComponentType().getCanonicalName() + "[" + size + "];");
-        out.end();
+    private String addArrayClassConstructor(SourceCode code, Type<?> type, Type<?> sourceType, int size) {
+        return
+                format("if (s instanceof %s) {", sourceType.getCanonicalName()) +
+                "return new " + type.getRawType().getComponentType().getCanonicalName() + "[" + size + "];" +
+                "\n}";
     }
 }

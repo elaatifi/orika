@@ -18,9 +18,10 @@
 
 package ma.glasnost.orika.metadata;
 
+import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.impl.Specifications.Specification;
 
-public class FieldMap {
+public class FieldMap implements MappedTypePair<Object, Object> {
     
     private final Property source;
     private final Property destination;
@@ -30,7 +31,11 @@ public class FieldMap {
     private final boolean excluded;
     private final String converterId;
     private final boolean byDefault;
-    private FieldMap elementMap;
+    private final String sourceExpression;
+    private final String destinationExpression;
+    private final FieldMap elementMap;
+    private final Property sourceLeaf;
+    private final Property destinationLeaf;
     
     private FieldMap base;
     
@@ -45,6 +50,18 @@ public class FieldMap {
         this.excluded = excluded;
         this.elementMap = elementMap;
         this.byDefault = byDefault;
+        if (elementMap != null && !"".equals(elementMap.getSourceExpression())) {
+            this.sourceExpression = this.source.getExpression() + "[" + elementMap.getSourceExpression() + "]";
+        } else {
+            this.sourceExpression = this.source.getExpression();
+        }
+        if (elementMap != null && !"".equals(elementMap.getDestinationExpression())) {
+            this.destinationExpression = this.destination.getExpression() + "[" + elementMap.getDestinationExpression() + "]";
+        } else {
+            this.destinationExpression = this.destination.getExpression();
+        }
+        this.sourceLeaf = elementMap != null ? elementMap.getSourceLeaf() : this.source;
+        this.destinationLeaf = elementMap != null ? elementMap.getDestinationLeaf() : this.destination;
     }
     
     public FieldMap copy() {
@@ -69,12 +86,38 @@ public class FieldMap {
         return destination;
     }
     
+    @SuppressWarnings("unchecked")
+    public Type<Object> getAType() {
+        return (Type<Object>) getSource().getType();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Type<Object> getBType() {
+        return (Type<Object>) getDestination().getType();
+    }
+    
     String getSourceName() {
         return source.getExpression();
     }
     
     String getDestinationName() {
         return destination.getExpression();
+    }
+    
+    public String getSourceExpression() {
+        return sourceExpression;
+    }
+    
+    public String getDestinationExpression() {
+        return destinationExpression;
+    }
+    
+    public Property getSourceLeaf() {
+        return sourceLeaf;
+    }
+    
+    public Property getDestinationLeaf() {
+        return destinationLeaf;
     }
     
     public Property getInverse() {
@@ -128,7 +171,7 @@ public class FieldMap {
     
     @Override
     public String toString() {
-        return "FieldMap [destination=" + getDestination().toString() + ", source=" + getSource().toString() + "]";
+        return "FieldMap [destination=" + getDestinationExpression() + ", source=" + getSourceExpression() + "]";
     }
 
 	@Override
@@ -215,7 +258,5 @@ public class FieldMap {
 		}
 		return true;
 	}
-    
-  
     
 }

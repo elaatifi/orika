@@ -20,6 +20,7 @@ package ma.glasnost.orika;
 
 import java.lang.reflect.ParameterizedType;
 
+import ma.glasnost.orika.impl.GeneratedObjectBase;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
@@ -32,9 +33,9 @@ import ma.glasnost.orika.metadata.TypeFactory;
  */
 public abstract class CustomMapper<A, B> implements Mapper<A, B> {
     
-    protected MapperFacade mapperFacade;
     protected Type<A> aType;
     protected Type<B> bType;
+    protected MapperFacade mapperFacade;
     
     public CustomMapper() {
         java.lang.reflect.Type genericSuperclass = getClass().getGenericSuperclass();
@@ -59,10 +60,6 @@ public abstract class CustomMapper<A, B> implements Mapper<A, B> {
         /* */
     }
     
-    public void setMapperFacade(MapperFacade mapper) {
-        this.mapperFacade = mapper;
-    }
-    
     public Type<A> getAType() {
         if (aType==null) {
             throw new IllegalStateException("getAType() must be overridden when Type parameters are not supplied");
@@ -77,11 +74,11 @@ public abstract class CustomMapper<A, B> implements Mapper<A, B> {
         return bType;
     }
     
-    public void setUsedMappers(Mapper<Object, Object>[] mapper) {
-        throw throwShouldNotCalledCustomMapper();
+    public void setMapperFacade(MapperFacade mapperFacade) {
+        this.mapperFacade = mapperFacade;
     }
     
-    public void setUsedTypes(Type<Object>[] usedTypes) {
+    public void setUsedMappers(Mapper<Object, Object>[] mapper) {
         throw throwShouldNotCalledCustomMapper();
     }
     

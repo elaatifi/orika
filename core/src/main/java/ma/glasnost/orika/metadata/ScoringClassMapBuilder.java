@@ -1,4 +1,5 @@
 /*
+
  * Orika - simpler, better and faster Java bean mapping
  * 
  * Copyright (C) 2011 Orika authors
@@ -33,6 +34,7 @@ import java.util.TreeSet;
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.util.ClassUtil;
+import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
@@ -54,7 +56,8 @@ import org.slf4j.LoggerFactory;
  * <a href="http://www.merriampark.com/ldjava.htm">http://www.merriampark.com/ldjava.htm</a>
  * 
  * @author matt.deboer@gmail.com
- * 
+ * @param <A>
+ * @param <B>
  */
 public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
     
@@ -95,6 +98,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * between two property expressions
          * 
          * @param weight the weight associated with the number of words found in common
+         * @return this instance of PropertyMatchingWeights
          * between two property expressions
          */
         public PropertyMatchingWeights commonWordCount(double weight) {
@@ -115,6 +119,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * 
          * @param weight the weight associated with one property containing the
          * entire name of another property
+         * @return this instance of PropertyMatchingWeights
          */
         public PropertyMatchingWeights containsName(double weight) {
             validateWeight(weight);
@@ -131,6 +136,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * Set the weight associated with one property matching the type of the other
          * 
          * @param weight the weight associated with one property matching the type of the other
+         * @return this instance of PropertyMatchingWeights
          */
         public PropertyMatchingWeights typeMatch(double weight) {
             validateWeight(weight);
@@ -151,6 +157,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * 
          * @param weight the weight modifier associated with a property word's edit distance based on
          * it's nesting depth
+         * @return this instance of PropertyMatchingWeights
          */
         public PropertyMatchingWeights nestedDepth(double weight) {
             validateWeight(weight);
@@ -169,6 +176,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * Set the weight associated with the number of unmatched words between two property expressions
          * 
          * @param weight the weight associated with the number of unmatched words between two property expressions
+         * @return this instance of PropertyMatchingWeights
          */
         public PropertyMatchingWeights unmatchedWords(double weight) {
             validateWeight(weight);
@@ -184,7 +192,9 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         /**
          * Set the weight associated with the edit distance between words in two property expressions
          * 
+         * 
          * @param weight the weight associated with the edit distance between words in two property expressions
+         * @return this instance of PropertyMatchingWeights
          */
         public PropertyMatchingWeights editDistance(double weight) {
             validateWeight(weight);
@@ -203,6 +213,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * values makes the matching more restrictive, lower scores make matching more lenient.
          * 
          * @param weight the weight applied to the minimum score needed to accept a given match
+         * @return this instance of PropertyMatchingWeights
          */
         public PropertyMatchingWeights minimumScore(double weight) {
             validateWeight(weight);
@@ -247,14 +258,44 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         Map<String, Property> properties = new HashMap<String, Property>();
         LinkedHashMap<String, Property> toProcess = new LinkedHashMap<String, Property>(propertyResolver.getProperties(type));
         
+        if (type.isMap() || type.isList() || type.isArray()) {
+            Property selfReferenceProperty =
+                    new Property.Builder()
+                        .name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type))
+                        .build((PropertyResolver) propertyResolver);
+            toProcess.put("", selfReferenceProperty);
+        }
+        
         while (!toProcess.isEmpty()) {
             
             Entry<String, Property> entry = toProcess.entrySet().iterator().next();
             if (!entry.getKey().equals("class")) {
-                
-                if (!ClassUtil.isImmutable(entry.getValue().getType())) {
-                    Map<String, Property> props = propertyResolver.getProperties(entry.getValue().getType());
-                    if (!props.isEmpty()) {
+                Property owningProperty = entry.getValue();
+                Type<?> propertyType = owningProperty.getType();
+                if (!ClassUtil.isImmutable(propertyType)) {
+                    Map<String, Property> props = propertyResolver.getProperties(propertyType);
+                    if (propertyType.isMap()) {
+                        Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getNestedType(1));
+                        for (Entry<String, Property> prop: valueProperties.entrySet()) {
+                            Property elementProp = new NestedElementProperty(entry.getValue(), prop.getValue(), propertyResolver);
+                            String key = entry.getKey() + "[" + prop.getKey() + "]";
+                            toProcess.put(key, elementProp);
+                        }
+                    } else if (propertyType.isList()) {
+                        Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getNestedType(0));
+                        for (Entry<String, Property> prop: valueProperties.entrySet()) {
+                            Property elementProp = new NestedElementProperty(owningProperty, prop.getValue(), propertyResolver);
+                            String key = entry.getKey() + "[" + prop.getValue().getExpression() + "]";
+                            toProcess.put(key, elementProp);
+                        }
+                    } else if (propertyType.isArray()) {
+                        Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getComponentType());
+                        for (Entry<String, Property> prop: valueProperties.entrySet()) {
+                            Property elementProp = new NestedElementProperty(entry.getValue(), prop.getValue(), propertyResolver);
+                            String key = entry.getKey() + "[" + prop.getKey() + "]";
+                            toProcess.put(key, elementProp);
+                        }
+                    } else if (!props.isEmpty()) {
                         for (Entry<String, Property> property : props.entrySet()) {
                             if (!property.getKey().equals("class")) {
                                 String expression = entry.getKey() + "." + property.getKey();
@@ -342,14 +383,27 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         return this;
     }
     
+    /**
+     * @author mattdeboer
+     *
+     */
     public static class Factory extends ClassMapBuilderFactory {
         
         private PropertyMatchingWeights matchingWeights;
         
+        /**
+         * Constructs a new Factory for ScoringClassMapBuilder instances
+         */
         public Factory() {
             matchingWeights = new PropertyMatchingWeights();
         }
         
+        /**
+         * Constructs a new Factory for ScoringClassMapBuilder instances
+         * 
+         * @param matchingWeights the weights used to control the scorin on ScoringClassMapBuilder instances
+         * created by this factory
+         */
         public Factory(PropertyMatchingWeights matchingWeights) {
             this.matchingWeights = matchingWeights;
         }
@@ -392,7 +446,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         
         private boolean contains;
         private boolean containsIgnoreCase;
-        private boolean typeMatch;
+        private double typeMatch;
         private Property propertyA;
         private Property propertyB;
         private int hashCode;
@@ -404,6 +458,14 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         private double commonWordsScore;
         private double containsScore;
         
+        /**
+         * Constructs a new FieldMatchScore based on the provided pair of properties, with scoring modified by
+         * the provided PropertyMatchingWeights
+         * 
+         * @param propertyA
+         * @param propertyB
+         * @param matchingWeights
+         */
         public FieldMatchScore(Property propertyA, Property propertyB, PropertyMatchingWeights matchingWeights) {
             
             this.matchingWeights = matchingWeights;
@@ -429,9 +491,16 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
             this.contains = propertyA.getName().contains(propertyB.getName()) || propertyB.getName().contains(propertyA.getName());
             this.containsIgnoreCase = contains || propertyALower.contains(propertyBLower) || propertyBLower.contains(propertyALower);
             
+            if ((propertyA.isMultiOccurrence() && !propertyB.isMultiOccurrence())
+                    || (!propertyA.isMultiOccurrence() && propertyB.isMultiOccurrence())) {
+                this.typeMatch = Double.NEGATIVE_INFINITY;
+            } else if (propertyA.getType().isAssignableFrom(propertyB.getType()) 
+                    || propertyB.getType().isAssignableFrom(propertyA.getType())){
+                this.typeMatch = 1.0;
+            } else {
+                this.typeMatch = 0.0;
+            }
             
-            this.typeMatch = propertyA.getType().isAssignableFrom(propertyB.getType())
-                    || propertyB.getType().isAssignableFrom(propertyA.getType());
             
             computeOverallScore();
             
@@ -467,6 +536,9 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
             return set;
         }
         
+        /**
+         * @return true if this match meets the minimum score (determined by the matching weights)
+         */
         public boolean meetsMinimumScore() {
             double normalizedScore = ((MAX_POSSIBLE_SCORE / 2.0)* this.matchingWeights.minimumScore());
             return this.score >= normalizedScore;
@@ -524,7 +596,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
             } else {
                 this.commonWordsScore = (this.matchingWeights.commonWordCount()) * (Math.pow(2 * this.commonWordCount, 2.0)*((avgWordCount + commonWordCount)/avgWordCount));
             }
-            this.typeMatchScore = (this.matchingWeights.typeMatch()) * (this.typeMatch ? 1.0 : 0);
+            this.typeMatchScore = (this.matchingWeights.typeMatch()) * this.typeMatch;
             this.score =  this.wordMatchScore + commonWordsScore + containsScore + typeMatchScore;
         }
         

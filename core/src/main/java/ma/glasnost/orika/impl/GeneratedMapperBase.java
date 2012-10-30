@@ -29,12 +29,9 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.Type;
 
-public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
+public abstract class GeneratedMapperBase extends GeneratedObjectBase implements Mapper<Object, Object> {
     
     protected Mapper<Object, Object> customMapper;
-    protected Type<?>[] usedTypes;
-    protected Converter<Object, Object>[] usedConverters;
-    protected BoundMapperFacade<Object, Object>[] usedMapperFacades;
     private Mapper<Object, Object>[] usedMappers;
     private Type<Object> aType;
     private Type<Object> bType;
@@ -75,7 +72,6 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         return usedMappers;
     }
     
-    @Override
     public void setUsedMappers(Mapper<Object, Object>[] usedMappers) {
         this.usedMappers = usedMappers;
     }
@@ -92,7 +88,6 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         this.usedMapperFacades = usedMapperFacades;
     }
     
-    @Override
     public void mapAtoB(Object a, Object b, MappingContext context) {
         if (usedMappers == null) {
             return;
@@ -102,7 +97,6 @@ public abstract class GeneratedMapperBase extends CustomMapper<Object, Object> {
         }
     }
     
-    @Override
     public void mapBtoA(Object b, Object a, MappingContext context) {
         if (usedMappers == null) {
             return;

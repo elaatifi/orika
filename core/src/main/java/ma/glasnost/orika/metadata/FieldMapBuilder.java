@@ -63,20 +63,22 @@ public class FieldMapBuilder<A, B> {
     		final Type<?> aType, final Type<?> bType, boolean byDefault) {
         this.classMapBuilder = classMapBuilder;
         this.byDefault = byDefault;
-        String[] aParts = splitAtRootProperty(a);
-        String[] bParts = splitAtRootProperty(b);
+        //String[] aParts = splitAtRootProperty(a);
+        //String[] bParts = splitAtRootProperty(b);
         
-        this.aProperty = classMapBuilder.resolveProperty(aType, aParts[0]);
-        this.bProperty = classMapBuilder.resolveProperty(bType, bParts[0]);
-        
+        //this.aProperty = classMapBuilder.resolveProperty(aType, aParts[0]);
+        //this.bProperty = classMapBuilder.resolveProperty(bType, bParts[0]);
+        this.aProperty = classMapBuilder.resolveProperty(aType, a);
+        this.bProperty = classMapBuilder.resolveProperty(bType, b);
+        /*
         if (aParts.length > 1 || bParts.length > 1) {
-        	String elementA = aParts.length > 0 ? aParts[1] : "";
-        	String elementB = bParts.length > 0 ? bParts[1] : "";
+        	String elementA = aParts.length > 1 ? aParts[1] : "";
+        	String elementB = bParts.length > 1 ? bParts[1] : "";
         	Type<?> elementTypeA = getElementType(aProperty.getType());
         	Type<?> elementTypeB = getElementType(bProperty.getType());
         	
         	this.elementMap = new FieldMapBuilder<A, B>(classMapBuilder, elementA, elementB, elementTypeA, elementTypeB, byDefault).toFieldMap();
-        } 
+        } */
     }
     
     /**

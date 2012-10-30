@@ -246,6 +246,13 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     	return Map.class.isAssignableFrom(getRawType());
     }
     
+    /**
+     * @return true if this type is a Map, Collection or Array
+     */
+    public boolean isMultiOccurrence() {
+        return isMap() || isCollection() || isArray();
+    }
+    
     public boolean isString() {
         return String.class.isAssignableFrom(getRawType());
     }

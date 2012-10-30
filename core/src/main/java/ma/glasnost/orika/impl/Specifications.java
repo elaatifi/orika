@@ -99,6 +99,10 @@ public final class Specifications {
         return OBJECT_CLASS_PROPERTY;
     }
     
+    public static Specification aMultiOccurrenceElementMap() {
+        return MULTI_OCCURRENCE_ELEMENT;
+    }
+    
     /**
      * @return true if this field map specifies a mapping from a String type
      *         field to another field which has a static valueOf method which
@@ -263,6 +267,13 @@ public final class Specifications {
             return "class".equals(fieldMap.getSource().getName()) && "class".equals(fieldMap.getDestination().getName())
                     && Class.class.equals(fieldMap.getSource().getRawType());
             
+        }
+    };
+    
+    private static final Specification MULTI_OCCURRENCE_ELEMENT = new Specification() {
+        
+        public boolean apply(FieldMap fieldMap) {
+            return fieldMap.getSource().getContainer() != null || fieldMap.getDestination().getContainer() != null;
         }
     };
 }

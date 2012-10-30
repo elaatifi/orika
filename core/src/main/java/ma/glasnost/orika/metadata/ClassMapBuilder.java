@@ -603,16 +603,20 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     		} else if (f.getElementMap() == null){
     			output.append("\n\t .field( " + f.getSource() + ", " + f.getDestination() + " )");
     		} else {
-    			StringBuilder source = new StringBuilder(""+f.getSource());
-    			StringBuilder dest = new StringBuilder(""+f.getDestination());
+    			StringBuilder source = new StringBuilder(""+f.getSource().getExpression());
+    			StringBuilder dest = new StringBuilder(""+f.getDestination().getExpression());
     			StringBuilder suffix = new StringBuilder();
     			FieldMap elementMap = f.getElementMap();
+    			
     			while (elementMap != null) {
-    				source.append("[" + elementMap.getSource());
-    				dest.append("[" + elementMap.getDestination());
+    				source.append("[" + elementMap.getSource().getExpression());
+    				dest.append("[" + elementMap.getDestination().getExpression());
     				suffix.append("]");
+    				f = elementMap;
     				elementMap = elementMap.getElementMap();
     			}
+    			source.append("(" + f.getSource().getType() + ")");
+    			dest.append("(" + f.getDestination().getType() + ")");
     			
     			output.append("\n\t .field( " + source + suffix + ", " + dest + suffix + " )");
     		}
@@ -684,35 +688,17 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * 
      * @param type the type to resolve
      * @param expr the property expression to resolve
-     * @return
+     * @return the Property referenced by the provided expression
      */
     protected Property resolveProperty(java.lang.reflect.Type type, String expr) {
-        Property property;
-        if (isSelfReferenceExpression(expr)) {
-        	property = new Property.Builder()
-        	    .name("").getter("").type(TypeFactory.valueOf(type)).build((PropertyResolver) propertyResolver);
-        } else {
-            property = propertyResolver.getProperty(type, expr);
-        }
-        
-        return property;
+        return propertyResolver.getProperty(type, expr);
     }
     
-    /**
-     * Determines if the provided property expression is a element self-reference.
-     * 
-	 * @param expr the expression to evaluate
-	 * @return
-	 */
-	private boolean isSelfReferenceExpression(String expr) {
-		return "".equals(expr);
-	}
-
 	/**
      * Resolves a property expression for this builder's 'A' type
      * 
      * @param expr the property expression
-     * @return
+     * @return the Property referenced by the provided expression
      */
     protected Property resolvePropertyForA(String expr) {
         return resolveProperty(aType, expr);
@@ -722,7 +708,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * Resolves a property expression for this builder's 'B' type
      * 
      * @param expr the property expression
-     * @return
+     * @return the Property referenced by the provided expression
      */
     protected Property resolvePropertyForB(String expr) {
         return resolveProperty(bType, expr);
@@ -744,8 +730,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     
     protected void addFieldMap(FieldMap fieldMap) {
     	getMappedFields().add(fieldMap);
-        getMappedPropertiesForTypeA().add(fieldMap.getSource().getExpression());
-        getMappedPropertiesForTypeB().add(fieldMap.getDestination().getExpression());
+        getMappedPropertiesForTypeA().add(fieldMap.getSourceExpression());
+        getMappedPropertiesForTypeB().add(fieldMap.getDestinationExpression());
     }
     
     /**
@@ -802,7 +788,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * with the specified arguments.
      * 
      * @param args the arguments identifying the constructor to be used
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A, B> constructorA(String... args) {
         this.constructorA = args.clone();
@@ -814,7 +800,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * with the specified arguments.
      * 
      * @param args the arguments identifying the constructor to be used
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A, B> constructorB(String... args) {
         this.constructorB = args.clone();

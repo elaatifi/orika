@@ -21,11 +21,22 @@ package ma.glasnost.orika.metadata;
 import ma.glasnost.orika.MappedTypePair;
 
 
+/**
+ * MapperKey represents a key which can be used to store the types mapped by
+ * a given Mapper.
+ *
+ */
 public class MapperKey implements MappedTypePair<Object,Object>{
 
 	private Type<Object> aType;
 	private Type<Object> bType;
 
+	/**
+	 * Constructs a new MapperKey instance
+	 * 
+	 * @param aType
+	 * @param bType
+	 */
 	@SuppressWarnings("unchecked")
     public MapperKey(Type<?> aType, Type<?> bType) {
 		this.aType = (Type<Object>) aType;
@@ -53,7 +64,7 @@ public class MapperKey implements MappedTypePair<Object,Object>{
 	}
 
 	public String toString() {
-	    return "{[A]"+aType+",[B]"+bType+"}";
+	    return "("+aType+", "+bType+")";
 	}
 	
 	@Override
@@ -67,17 +78,7 @@ public class MapperKey implements MappedTypePair<Object,Object>{
 		return aType;
 	}
 
-	@SuppressWarnings("unchecked")
-    public void setAType(Type<? super Object> aType) {
-		this.aType = (Type<Object>) aType;
-	}
-
 	public Type<Object> getBType() {
 		return bType;
-	}
-
-	@SuppressWarnings("unchecked")
-    public void setBType(Type<?> bType) {
-		this.bType = (Type<Object>) bType;
 	}
 }

@@ -196,7 +196,7 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
      * @return the (generated) compiled class
      * @throws IOException
      */
-    public Class<?> compileClass(GeneratedSourceCode sourceCode)
+    public Class<?> compileClass(SourceCode sourceCode)
         throws SourceCodeGenerationException {
 
         Class<?> compiledClass = null;

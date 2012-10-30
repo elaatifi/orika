@@ -198,12 +198,23 @@ public class Property {
         return false;
     }
     
+    /**
+     * @return true if this property is a Map, Collection or Array
+     */
+    public boolean isMultiOccurrence() {
+        return isMap() || isCollection() || isArray();
+    }
+    
     public boolean hasPath() {
         return false;
     }
     
     public Property[] getPath() {
         return EMPTY_PATH;
+    }
+    
+    public Property getContainer() {
+        return null;
     }
     
     @Override

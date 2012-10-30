@@ -19,18 +19,35 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.*;
+import static ma.glasnost.orika.impl.Specifications.aBeanToArrayOrList;
+import static ma.glasnost.orika.impl.Specifications.aBeanToMap;
+import static ma.glasnost.orika.impl.Specifications.aCollection;
+import static ma.glasnost.orika.impl.Specifications.aConversionToString;
+import static ma.glasnost.orika.impl.Specifications.aMapToArray;
+import static ma.glasnost.orika.impl.Specifications.aMapToBean;
+import static ma.glasnost.orika.impl.Specifications.aMapToCollection;
+import static ma.glasnost.orika.impl.Specifications.aMapToMap;
+import static ma.glasnost.orika.impl.Specifications.aPrimitiveToWrapper;
+import static ma.glasnost.orika.impl.Specifications.aStringToPrimitiveOrWrapper;
+import static ma.glasnost.orika.impl.Specifications.aWrapperToPrimitive;
+import static ma.glasnost.orika.impl.Specifications.anArray;
+import static ma.glasnost.orika.impl.Specifications.anArrayOrCollectionToMap;
+import static ma.glasnost.orika.impl.Specifications.anArrayOrListToBean;
+import static ma.glasnost.orika.impl.Specifications.immutable;
+import static ma.glasnost.orika.impl.Specifications.toAnEnumeration;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.Converter;
@@ -41,9 +58,11 @@ import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
 import ma.glasnost.orika.impl.util.ClassUtil;
+import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.FieldMapBuilder;
+import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -99,6 +118,22 @@ public class CodeSourceBuilder {
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
     }
     
+    private String callMapper(Type<?> sourceType, Type<?> destinationType, String sourceExpression, String destExpression) {
+        return usedMapperFacadeCall(sourceType, destinationType) + "(" + sourceExpression + ", " + destExpression + ", mappingContext)";
+    }
+    
+    private String callMapper(Type<?> sourceType, Type<?> destinationType, String sourceExpression) {
+        return usedMapperFacadeCall(sourceType, destinationType) + "(" + sourceExpression + ", mappingContext)";
+    }
+    
+    private String callMapper(VariableRef source, VariableRef destination) {
+        return callMapper(source.type(), destination.type(), ""+source, ""+destination);
+    }
+    
+    private String callMapper(VariableRef source, Type<?> destination) {
+        return callMapper(source.type(), destination, ""+source);
+    }
+    
     private String usedMapperFacadeNewObjectCall(VariableRef source, VariableRef destination) {
         return usedMapperFacadeNewObjectCall(source.type(), destination.type());
     }
@@ -107,6 +142,14 @@ public class CodeSourceBuilder {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
         String instantiateMethod = usedFacade.isReversed ? "newObject" : "newObjectReverse";
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
+    }
+    
+    private String newObjectFromMapper(Type<?> sourceType, Type<?> destinationType, String sourceExpr) {
+        return usedMapperFacadeNewObjectCall(sourceType, destinationType) + "(" + sourceExpr + ", mappingContext)";
+    }
+    
+    private String newObjectFromMapper(VariableRef source, Type<?> destinationType) {
+        return usedMapperFacadeNewObjectCall(source.type(), destinationType) + "(" + source + ", mappingContext)";
     }
     
     private String usedType(VariableRef r) {
@@ -160,12 +203,12 @@ public class CodeSourceBuilder {
      * @param destinationType
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef dest, VariableRef src, Property ip, Type<?> destinationType) {
+    public CodeSourceBuilder fromArrayOrCollectionToCollection(VariableRef dest, VariableRef src, Property ip) {
         
         MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
         MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
         
-        final Class<?> dc = destinationType.getRawType();
+        final Class<?> dc = dest.getOwner().rawType();
         final Class<?> destinationElementClass = d.elementType().getRawType();
         
         if (destinationElementClass == null) {
@@ -247,6 +290,11 @@ public class CodeSourceBuilder {
         return this;
     }
     
+    public CodeSourceBuilder insert(int position, String str) {
+        out.insert(position, str);
+        return this;
+    }
+    
     /**
      * Appends the provided string as a source code statement, ending it with a
      * statement terminator as appropriate.
@@ -257,7 +305,10 @@ public class CodeSourceBuilder {
      */
     public CodeSourceBuilder statement(String str, Object... args) {
         if (str != null && !"".equals(str.trim())) {
-            String expr = "\n" + format(str, args);
+            String expr = format(str, args);
+            if (!this.out.toString().endsWith("\n") && !expr.startsWith("\n")) {
+                append("\n");
+            }
             append(expr);
             if (!expr.endsWith(";") && !expr.endsWith("}")) {
                 append(";");
@@ -571,7 +622,7 @@ public class CodeSourceBuilder {
      *            the type of the destination variable
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public CodeSourceBuilder fromMapToMap(VariableRef dest, VariableRef src, Type<?> destinationType) {
+    public CodeSourceBuilder fromMapToMap(VariableRef dest, VariableRef src) {
         
         MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(dest);
         MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(src);
@@ -602,8 +653,8 @@ public class CodeSourceBuilder {
             statement(entry.declare("_$_o"));
             statement(newKey.declare());
             statement(newVal.declare());
-            mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null);
-            mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null);
+            mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null);
+            mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null);
             statement("%s.put(%s, %s)", d, newKey, newVal);
             end();
         }
@@ -667,6 +718,219 @@ public class CodeSourceBuilder {
         public VariableRef elementRef;
         public MultiOccurrenceVariableRef newDestination;
         public Set<IterableRef> associations = new LinkedHashSet<IterableRef>();
+        public IterableRef parent;
+        
+        public IterableRef() {}
+        public IterableRef(IterableRef parent) {
+            this.parent = parent;
+        }
+    }
+    
+    
+    
+    
+    private static class Node {
+        
+        public Property property;
+        public MultiOccurrenceVariableRef multiOccurrenceVar;
+        public MultiOccurrenceVariableRef newDestination;
+        public VariableRef elementRef;
+        public FieldMap value;
+        public List<Node> children = new ArrayList<Node>();
+        public Node parent;
+        public Set<Node> mapped = new HashSet<Node>();
+        
+        private Node(Property property, FieldMap fieldMap, Node parent, List<Node> nodes, boolean isSource) {
+            
+            String name = isSource ? "source" : "destination";
+            this.value = fieldMap;
+            this.parent = parent;
+            this.property = property;
+            
+            if (property.isMultiOccurrence()) {
+                Type<?> elementType = null;
+                if (property.isMap()) {
+                    elementType = property.getType().getNestedType(1);
+                } else if (property.isCollection()) {
+                    elementType = property.getElementType();
+                } else if (property.isArray()) {
+                    elementType = property.getType().getComponentType();
+                } 
+                
+                this.newDestination = new MultiOccurrenceVariableRef(property.getType(), "new_" + name);  
+                String multiOccurrenceName;
+                if (parent != null) {
+                    multiOccurrenceName = name(parent.elementRef.name(),name);
+                } else /*if (isSource)*/ {
+                    multiOccurrenceName = name;
+                } /*else {
+                    multiOccurrenceName = newDestination.name();
+                }*/
+                this.multiOccurrenceVar = new MultiOccurrenceVariableRef(property, multiOccurrenceName);
+                this.elementRef = new VariableRef(elementType, property.getName() + "_" + name+ "Element");
+            } 
+            
+            if (nodes !=null) {
+                nodes.add(this);
+            } else if (parent != null) {
+                parent.children.add(this);
+            }
+        }
+        
+        public Node(Property property, Node parent, boolean isSource) {
+            this(property, null, parent, null, isSource);
+        }
+        
+        public Node(Property property, FieldMap fieldMap, Node parent, boolean isSource) {
+            this(property, fieldMap, parent, null, isSource);
+        }
+        
+        public Node(Property property, FieldMap fieldMap, List<Node> nodes, boolean isSource) {
+            this(property, fieldMap, null, nodes, isSource);
+        }
+        
+        private String name(String value1, String defaultValue) {
+            if (value1 != null && !"".equals(value1)) {
+                return value1;
+            } else {
+                return defaultValue;
+            }
+        }
+        
+        public boolean isLeaf() {
+            return children.isEmpty();
+        }
+        
+        /**
+         * @param type
+         * @param isSource
+         * @return
+         */
+        public FieldMap getMap() {
+            Node node = null;
+            TreeMap<Integer, FieldMap> nodes = new TreeMap<Integer, FieldMap>();
+            
+            for (Node child: children) {
+                if (child.value != null) {
+                    boolean isSource = false;
+                    if (this.multiOccurrenceVar.type().equals(child.value.getSource().getContainer().getType())) {
+                        isSource = true;
+                    }
+                    
+                    int depth = 0;
+                    FieldMap value = child.value;
+                    Property prop = isSource ? value.getSource() : value.getDestination();
+                    while (prop.getContainer() != null) {
+                        ++depth;
+                        prop = prop.getContainer();
+                    }
+                    
+                    if (!nodes.containsKey(Integer.valueOf(depth))) {
+                        nodes.put(Integer.valueOf(depth), value);
+                    }
+                }
+            }
+            if (!nodes.isEmpty()) {
+                return nodes.firstEntry().getValue();
+            } else {
+                return null;
+            }
+        }
+        
+        public boolean isMapped(Node node) {
+            return mapped.contains(node);
+        }
+        
+        public void mapped(Node node) {
+            mapped.add(node);
+        }
+        public static Node findFieldMap(final FieldMap map, final List<Node> nodes, boolean useSource) {
+            LinkedList<Property> path = new LinkedList<Property>();
+            Property root = useSource ? map.getSource() : map.getDestination();
+            Property container = root;
+            while (container.getContainer() != null) {
+                path.addFirst(container.getContainer());
+                container = container.getContainer();
+            }
+            Node currentNode = null;
+            List<Node> children = nodes;
+            
+            for(int p = 0, len=path.size(); p < len; ++p) {
+                Property pathElement = path.get(p);
+                currentNode = null;
+                for (Node node: children) {
+                    if (node.property.equals(pathElement)) {
+                       currentNode = node;
+                       children = currentNode.children;
+                       break;
+                    }
+                }
+                if (currentNode == null) {
+                    return null;
+                }
+            }
+            
+            for (Node node: children) {
+                if (map.equals(node.value)) {
+                    return node;
+                }
+            }
+            return null;
+        }
+        
+        public static Node addFieldMap(final FieldMap map, final List<Node> nodes, boolean useSource) {
+            LinkedList<Property> path = new LinkedList<Property>();
+            Property root = useSource ? map.getSource() : map.getDestination();
+            Property container = root;
+            while (container.getContainer() != null) {
+                path.addFirst(container.getContainer());
+                container = container.getContainer();
+            }
+            /*
+             * Attempt to locate the path within the tree of nodes
+             * under which this fieldMap should be placed
+             */
+            Node currentNode = null;
+            Node parentNode = null;
+            List<Node> children = nodes;
+            
+            for(int p = 0, len=path.size(); p < len; ++p) {
+                Property pathElement = path.get(p);
+                
+                for (Node node: children) {
+                    if (node.property.equals(pathElement)) {
+                       currentNode = node;
+                       children = currentNode.children;
+                       break;
+                    }
+                }
+                if (currentNode == null) {
+                    
+                    currentNode = new Node(pathElement, parentNode, useSource);
+                    if (parentNode == null) {
+                        nodes.add(currentNode);
+                    }
+                    parentNode = currentNode;
+                    for (p+=1; p < len; ++p) {
+                        currentNode = new Node(path.get(p), parentNode, useSource);
+                        parentNode = currentNode;
+                    }
+                } else {
+                    parentNode = currentNode;
+                    currentNode = null;
+                }
+            }
+            /*
+             * Finally add a node for the fieldMap at the end
+             */
+            if (parentNode == null) {
+                currentNode = new Node(root, map, nodes, useSource);
+            } else {
+                currentNode = new Node(root, map, parentNode, useSource);
+            }
+                
+            return currentNode;
+        }
     }
     
     /**
@@ -682,64 +946,16 @@ public class CodeSourceBuilder {
      */
     public Set<FieldMap> fromMultiOccurrenceToMultiOccurrence(Set<FieldMap> fieldMappings, StringBuilder logDetails) {
         
-        Map<String, IterableRef> sources = new HashMap<String, IterableRef>();
-        Map<String, IterableRef> destinations = new HashMap<String, IterableRef>();
-        Map<FieldMap, Set<FieldMap>> subFields = new HashMap<FieldMap, Set<FieldMap>>();
+        List<Node> sourceNodes = new ArrayList<Node>();
+        List<Node> destNodes = new ArrayList<Node>();
         
         for (FieldMap map : fieldMappings) {
-            IterableRef srcRef = sources.get(map.getSource().getName());
-            if (srcRef == null) {
-                srcRef = new IterableRef();
-                srcRef.multiOccurrenceVar = new MultiOccurrenceVariableRef(map.getSource(), "source");
-                Type<?> elementType = srcRef.multiOccurrenceVar.elementType();
-                if (MapEntry.class.equals(elementType.getRawType())) {
-                    @SuppressWarnings("unchecked")
-                    Type<Map<Object, Object>> mapType = (Type<Map<Object, Object>>) srcRef.multiOccurrenceVar.type();
-                    elementType = MapEntry.entryType(mapType);
-                }
-                srcRef.elementRef = new VariableRef(elementType, srcRef.multiOccurrenceVar.name() + "_$_srcElement");
-                sources.put(map.getSource().getName(), srcRef);
-            }
-            IterableRef destRef = destinations.get(map.getDestination().getName());
-            if (destRef == null) {
-                destRef = new IterableRef();
-                destRef.multiOccurrenceVar = new MultiOccurrenceVariableRef(map.getDestination(), "destination");
-                destRef.newDestination = new MultiOccurrenceVariableRef(map.getDestination().getType(), "new_$_"
-                        + map.getDestination().getName());
-                destRef.elementRef = destRef.multiOccurrenceVar.elementRef(destRef.multiOccurrenceVar.name() + "_$_dstElement");
-                destinations.put(map.getDestination().getName(), destRef);
-            }
-            destRef.associations.add(srcRef);
-            
-            Set<FieldMap> elements = subFields.get(map.getBaseFieldMap());
-            if (elements == null) {
-                elements = new LinkedHashSet<FieldMap>();
-                subFields.put(map.getBaseFieldMap(), elements);
-            }
-            elements.add(map.getElementMap());
-        }
-        
-        /*
-         * For any of the subField mappings which are between non-immutable
-         * types
-         */
-        Iterator<Entry<FieldMap, Set<FieldMap>>> subfieldIter = subFields.entrySet().iterator();
-        while (subfieldIter.hasNext()) {
-            Entry<FieldMap, Set<FieldMap>> entry = subfieldIter.next();
-            Type<?> srcType = elementType(entry.getKey().getSource().getType());
-            Type<?> dstType = elementType(entry.getKey().getDestination().getType());
-            if (!ClassUtil.isImmutable(dstType) && !ClassUtil.isImmutable(srcType)) {
-                
-                ClassMapBuilder<?, ?> builder = mapperFactory.classMap(srcType, dstType);
-                
-                for (FieldMap f : entry.getValue()) {
-                    builder.field(f.getSource().getExpression(), f.getDestination().getExpression());
-                }
-                mapperFactory.registerClassMap(builder);
-            }
-        }
-        
-        return generateMultiOccurrenceMapping(sources, destinations, subFields, logDetails);
+
+            Node.addFieldMap(map, sourceNodes, true);
+            Node.addFieldMap(map, destNodes, false);
+        }    
+          
+        return generateMultiOccurrenceMapping(sourceNodes, destNodes, fieldMappings, logDetails);
     }
     
     private String join(List<?> list, String separator) {
@@ -747,7 +963,7 @@ public class CodeSourceBuilder {
         for (Object item : list) {
             result.append(item + separator);
         }
-        return result.substring(0, result.length() - separator.length());
+        return result.length() > 0 ? result.substring(0, result.length() - separator.length()) : "";
     }
     
     /**
@@ -765,92 +981,196 @@ public class CodeSourceBuilder {
      *            a StringBuilder to accept debug logging information
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
-    public Set<FieldMap> generateMultiOccurrenceMapping(Map<String, IterableRef> sources, Map<String, IterableRef> destinations,
-            Map<FieldMap, Set<FieldMap>> subFields, StringBuilder logDetails) {
-        Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
+    public Set<FieldMap> generateMultiOccurrenceMapping(List<Node> sourceNodes, List<Node> destNodes,
+            Set<FieldMap> subFields, StringBuilder logDetails) {
+        
+        Map<MapperKey, ClassMapBuilder<?,?>> builders = new HashMap<MapperKey, ClassMapBuilder<?,?>>();
         List<String> sourceSizes = new ArrayList<String>();
-        for (IterableRef ref : sources.values()) {
-            statement(ref.multiOccurrenceVar.declareIterator());
-            sourceSizes.add(ref.multiOccurrenceVar.size());
+        for (Node ref : sourceNodes) {
+            if (!ref.isLeaf()) {
+                sourceSizes.add(ref.multiOccurrenceVar.size());
+            }
         }
+        
         String sizeExpr = "min(" + join(sourceSizes, ",") + ")";
-        for (IterableRef destRef : destinations.values()) {
+        
+        for (Node destRef : destNodes) {
+            
             statement(destRef.newDestination.declare(destRef.newDestination.newInstance(sizeExpr)));
             if (destRef.newDestination.isArray()) {
                 statement(destRef.newDestination.declareIterator());
             }
-        }
-        
-        append("while (");
-        Iterator<IterableRef> sourcesIter = sources.values().iterator();
-        while (sourcesIter.hasNext()) {
-            IterableRef ref = sourcesIter.next();
-            append(ref.multiOccurrenceVar.iteratorHasNext());
-            if (sourcesIter.hasNext()) {
-                append(" && ");
+            List<Node> children = new ArrayList<Node>();
+            children.add(destRef);
+            while (!children.isEmpty()) {
+                Node child = children.remove(0);
+                children.addAll(child.children);
+                if (child.elementRef != null) {
+                    statement(child.elementRef.declare());
+                }
             }
-            
-        }
-        append(") {");
-        
-        // get the next elements from the src iterators
-        for (IterableRef srcRef : sources.values()) {
-            statement(srcRef.elementRef.declare(srcRef.multiOccurrenceVar.nextElement()));
         }
         
-        // apply the appropriate mappings onto the destination elements
-        for (IterableRef destRef : destinations.values()) {
+        StringBuilder endWhiles = new StringBuilder();
+        iterateSources(sourceNodes, destNodes, endWhiles);
+        
+        LinkedList<Node> stack = new LinkedList<Node>(destNodes);
+        while (!stack.isEmpty()) {
             
-            if (ClassUtil.isImmutable(destRef.elementRef.type())) {
-                statement(destRef.elementRef.declare());
+            Node currentNode = stack.removeFirst();
+            stack.addAll(0, currentNode.children);
+            Node srcNode = null;
+            if (currentNode.value != null) {
+                srcNode = Node.findFieldMap(currentNode.value, sourceNodes, true);
             } else {
-                VariableRef sourceRef = destRef.associations.iterator().next().elementRef;
-                statement(destRef.elementRef.declare("%s(%s, mappingContext)", usedMapperFacadeNewObjectCall(destRef.elementRef,sourceRef),sourceRef));
+                srcNode = Node.findFieldMap(currentNode.getMap(), sourceNodes, true).parent;
             }
             
-            for (IterableRef srcRef : destRef.associations) {
+            if (!currentNode.isLeaf()) { 
                 
-                /*
-                 * check through the subFields mapped to find one with source
-                 * and destination matching the types of the source and
-                 * destination elements
-                 */
-                Iterator<Entry<FieldMap, Set<FieldMap>>> subfieldIter = subFields.entrySet().iterator();
-                while (subfieldIter.hasNext()) {
-                    Entry<FieldMap, Set<FieldMap>> entry = subfieldIter.next();
-                    if (elementType(entry.getKey().getSource().getType()).isAssignableFrom(srcRef.elementRef.type())
-                            && elementType(entry.getKey().getDestination().getType()).isAssignableFrom(destRef.elementRef.type())) {
-                        
-                        for (FieldMap subMap : entry.getValue()) {
-                            VariableRef src = ("".equals(subMap.getSource().getExpression()) ? srcRef.elementRef : new VariableRef(
-                                    subMap.getSource(), srcRef.elementRef));
-                            VariableRef dest = ("".equals(subMap.getDestination().getExpression()) ? destRef.elementRef : new VariableRef(
-                                    subMap.getDestination(), destRef.elementRef));
-                            
-                            FieldMap f = mapFields(subMap, src, dest, destRef.elementRef.type(), logDetails);
-                            if (f != null) {
-                                mappedFields.add(f);
-                            }
-                            
+                append("if ( " + currentNode.elementRef.isNull() + orCurrentElementComparator(srcNode, currentNode) + ")").begin();
+                statement(currentNode.elementRef.assign(newObjectFromMapper(currentNode.elementRef, currentNode.elementRef.type())));
+                statement(currentNode.multiOccurrenceVar.add(currentNode.elementRef));
+                end();
+            }
+            
+            if (currentNode.value != null) {
+                if (!currentNode.parent.isMapped(srcNode.parent) && srcNode.parent != null) {
+                    statement(callMapper(srcNode.parent.elementRef, currentNode.parent.elementRef)).newLine();;
+                    currentNode.parent.mapped(srcNode.parent);
+                }
+                if (srcNode.parent != null 
+                        && srcNode.parent.elementRef != null 
+                        && currentNode.parent != null 
+                        && currentNode.parent.elementRef != null) {
+                    
+                    MapperKey key = new MapperKey(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type());
+                    if (!mapperFactory.existsRegisteredMapper(key.getAType(), key.getBType(), true)) {
+                        ClassMapBuilder<?,?> builder = builders.get(key);
+                        if (builder == null) {
+                            builder = mapperFactory.classMap(key.getAType(), key.getBType());
+                            builders.put(key, builder);
                         }
-                        
-                        subfieldIter.remove();
+                        builder.fieldMap(currentNode.value.getSource().getName(), currentNode.value.getDestination().getName()).add();
                     }
                 }
-                
             }
-            // add the new destination elements to their respective collections
-            statement(destRef.newDestination.add(destRef.elementRef));
+        }  
+        
+        append(endWhiles.toString());
+        
+        for (Node destRef : destNodes) {
+            if ("".equals(destRef.multiOccurrenceVar.name())) {
+                newLine();
+                statement("%s.addAll(%s)",destRef.multiOccurrenceVar, destRef.newDestination);
+                newLine();
+            }
         }
         
-        append("}");
-        
-        for (IterableRef destRef : destinations.values()) {
-            statement(destRef.multiOccurrenceVar.assign(destRef.newDestination));
+        for (ClassMapBuilder<?,?> builder: builders.values()) {
+            builder.register();
         }
         
-        return mappedFields;
+        return subFields;
     }
+    
+    private void iterateSources(List<Node> sourceNodes, List<Node> destNodes, StringBuilder endWhiles) {
+        
+        if (!sourceNodes.isEmpty()) {
+            for (Node srcRef : sourceNodes) {
+                if (!srcRef.isLeaf()) {
+                    statement(srcRef.multiOccurrenceVar.declareIterator());
+                }
+            }
+            
+            StringBuilder loopSource = new StringBuilder();
+            /*
+             * Create while loop for the top level multi-occurrence objects
+             */
+            loopSource.append("while (");
+            Iterator<Node> sourcesIter = sourceNodes.iterator();
+            boolean atLeastOneIter = false;
+            while (sourcesIter.hasNext()) {
+                Node ref = sourcesIter.next();
+                if (!ref.isLeaf()) {
+                    if (atLeastOneIter) {
+                        loopSource.append(" && ");
+                    }
+                    loopSource.append(ref.multiOccurrenceVar.iteratorHasNext());
+                    atLeastOneIter = true;
+                }
+            }
+            loopSource.append(") {");
+            
+            if (atLeastOneIter) {
+                newLine().append(loopSource.toString());
+            }
+            for (Node srcRef : sourceNodes) {
+                
+                if (!srcRef.isLeaf()) {
+                    statement(srcRef.elementRef.declare(srcRef.multiOccurrenceVar.nextElement()));
+//                    Node destRef = Node.findFieldMap(srcRef.getMap(), destNodes, false).parent;
+//                    if (!destRef.isMapped(srcRef)) {    
+//                        append("if ( " + destRef.elementRef.isNull() + orCurrentElementComparator(srcRef, destRef) + ")").begin();
+//                        statement(destRef.elementRef.assign(newObjectFromMapper(destRef.elementRef, destRef.elementRef.type())));
+//                        statement(destRef.multiOccurrenceVar.add(destRef.elementRef));
+//                        end();
+//                        destRef.mapped(srcRef);
+//                    }
+                    iterateSources(srcRef.children, destNodes, endWhiles);
+                }
+            }
+            if (atLeastOneIter) {
+                endWhiles.append("}\n");
+            }
+        }
+    }
+    
+    
+    private String orCurrentElementComparator(Node source, Node dest) {
+        // TODO:
+        if (source == null) {
+            return  " || " + "true";
+        } else {
+            return "";
+        }
+    }
+    
+    /**
+     * Generates source code to compare the fields of the source and
+     * destination variables.
+     * 
+     * @param source
+     * @param dest
+     * @return
+     */
+    private String testEquality(VariableRef source, VariableRef dest) {
+        ClassMap<?,?> classMap = mapperFactory.getClassMap(new MapperKey(source.type(), dest.type()));
+        
+        
+        
+        return null;
+    }
+    
+    /**
+     * @param d
+     * @param src
+     * @return
+     */
+    public CodeSourceBuilder applyToMultiOccurrence(VariableRef d, VariableRef src, VariableRef destElement) {
+        
+        MultiOccurrenceVariableRef dest = MultiOccurrenceVariableRef.from(d);
+        append(dest.ifNull());
+        statement(dest.assignIfPossible(dest.newCollection()));
+        if (destElement != null) {
+            statement(callMapper(src, destElement));
+        } else {
+            statement(dest.add(callMapper(src, dest.type())));
+        }
+
+        return this;
+    }
+    
     
     @SuppressWarnings("unchecked")
     private Type<?> elementType(Type<?> multiOccurrenceType) {
@@ -861,13 +1181,24 @@ public class CodeSourceBuilder {
         } else if (multiOccurrenceType.isCollection()) {
             return multiOccurrenceType.getNestedType(0);
         } else {
-            throw new IllegalArgumentException(multiOccurrenceType + " is not a supported multi-occurrence type");
+            return multiOccurrenceType;
+            //throw new IllegalArgumentException(multiOccurrenceType + " is not a supported multi-occurrence type");
         }
+    }
+    
+    private Property root(Property prop) {
+        Property root = prop;
+        while (root.getContainer() != null) {
+            root = root.getContainer();
+        }
+        return root;
     }
     
     /**
      * Finds all field maps out of the provided set which are associated with
-     * the map passed in ( including that map itself)
+     * the map passed in ( including that map itself); by "associated", we mean
+     * any mappings which are connected to the original FieldMap by having a
+     * matching source or destination, including transitive associations.
      * 
      * @param fieldMaps
      *            the set of all field maps
@@ -885,16 +1216,16 @@ public class CodeSourceBuilder {
         
         Set<String> nextRoundSources = new LinkedHashSet<String>();
         Set<String> nextRoundDestinations = new LinkedHashSet<String>();
-        Set<String> thisRoundSources = Collections.singleton(map.getSource().getName());
-        Set<String> thisRoundDestinations = Collections.singleton(map.getDestination().getName());
+        Set<String> thisRoundSources = Collections.singleton(root(map.getSource()).getExpression());
+        Set<String> thisRoundDestinations = Collections.singleton(root(map.getDestination()).getExpression());
         
         while (!unprocessed.isEmpty() && !(thisRoundSources.isEmpty() && thisRoundDestinations.isEmpty())) {
             
             Iterator<FieldMap> iter = unprocessed.iterator();
             while (iter.hasNext()) {
                 FieldMap f = iter.next();
-                boolean containsSource = thisRoundSources.contains(f.getSource().getName());
-                boolean containsDestination = thisRoundDestinations.contains(f.getDestination().getName());
+                boolean containsSource = thisRoundSources.contains(root(f.getSource()).getExpression());
+                boolean containsDestination = thisRoundDestinations.contains(root(f.getDestination()).getExpression());
                 if (containsSource && containsDestination) {
                     associated.add(f);
                     iter.remove();
@@ -930,7 +1261,7 @@ public class CodeSourceBuilder {
      * @param destinationType
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
-    private CodeSourceBuilder fromMapToArray(VariableRef d, VariableRef s, Property inverse, Type<?> destinationType) {
+    private CodeSourceBuilder fromMapToArray(VariableRef d, VariableRef s, Property inverse) {
         
         return fromArrayOrCollectionToArray(d, entrySetRef(s));
     }
@@ -947,9 +1278,9 @@ public class CodeSourceBuilder {
      * @param destinationType
      * @return
      */
-    private CodeSourceBuilder fromMapToCollection(VariableRef d, VariableRef s, Property inverse, Type<?> destinationType) {
+    private CodeSourceBuilder fromMapToCollection(VariableRef d, VariableRef s, Property inverse) {
         
-        return fromArrayOrCollectionToCollection(d, entrySetRef(s), inverse, destinationType);
+        return fromArrayOrCollectionToCollection(d, entrySetRef(s), inverse);
     }
     
     private VariableRef entrySetRef(VariableRef s) {
@@ -958,23 +1289,23 @@ public class CodeSourceBuilder {
         return new VariableRef(sourceEntryType, s + ".entrySet()");
     }
        
-    public CodeSourceBuilder fromMapToBean(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromMapElementToObject(VariableRef d, VariableRef s) {
         statement(d.assign(d.cast(s)));
         return this;
     }
     
-    public CodeSourceBuilder fromBeanToMap(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromObjectToMapElement(VariableRef d, VariableRef s) {
         statement(d.assign(s));
         return this;
     } 
     
  
-    public CodeSourceBuilder fromArrayOrListToBean(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromArrayOrListElementToObject(VariableRef d, VariableRef s) {
         statement(d.assign(d.cast(s)));
         return this;
     }
     
-    public CodeSourceBuilder fromBeanToArrayOrList(VariableRef d, VariableRef s) {
+    public CodeSourceBuilder fromObjectToArrayOrListElement(VariableRef d, VariableRef s) {
         statement(d.assign(s));
         return this;
     }
@@ -995,7 +1326,7 @@ public class CodeSourceBuilder {
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
     public FieldMap mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty,
-            Type<?> destinationType, StringBuilder logDetails) {
+            StringBuilder logDetails) {
         
         FieldMap processedFieldMap = fieldMap;
         if (sourceProperty.isNestedProperty()) {
@@ -1059,22 +1390,22 @@ public class CodeSourceBuilder {
             if (logDetails != null) {
                 logDetails.append("mapping Array or Collection to Collection");
             }
-            fromArrayOrCollectionToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+            fromArrayOrCollectionToCollection(destinationProperty, sourceProperty, fieldMap.getInverse());
         } else if (fieldMap.is(aMapToMap())) {
             if (logDetails != null) {
                 logDetails.append("mapping Map to Map");
             }
-            fromMapToMap(destinationProperty, sourceProperty, destinationType);
+            fromMapToMap(destinationProperty, sourceProperty);
         } else if (fieldMap.is(aMapToArray())) {
             if (logDetails != null) {
                 logDetails.append("mapping Map to Array");
             }
-            fromMapToArray(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+            fromMapToArray(destinationProperty, sourceProperty, fieldMap.getInverse());
         } else if (fieldMap.is(aMapToCollection())) {
             if (logDetails != null) {
                 logDetails.append("mapping Map to Collection");
             }
-            fromMapToCollection(destinationProperty, sourceProperty, fieldMap.getInverse(), destinationType);
+            fromMapToCollection(destinationProperty, sourceProperty, fieldMap.getInverse());
         } else if (fieldMap.is(anArrayOrCollectionToMap())) {
             if (logDetails != null) {
                 logDetails.append("mapping Map to Array");
@@ -1093,17 +1424,18 @@ public class CodeSourceBuilder {
         } else {
             /**/
             if (fieldMap.is(aMapToBean())) {
-                fromMapToBean(destinationProperty, sourceProperty);
+                fromMapElementToObject(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aBeanToMap())) {
-                fromBeanToMap(destinationProperty, sourceProperty);
+                fromObjectToMapElement(destinationProperty, sourceProperty);
             } else if (fieldMap.is(anArrayOrListToBean())) {
-                fromArrayOrListToBean(destinationProperty, sourceProperty);
+                fromArrayOrListElementToObject(destinationProperty, sourceProperty);
             } else if (fieldMap.is(aBeanToArrayOrList())) {
-                fromBeanToArrayOrList(destinationProperty, sourceProperty);
+                fromObjectToArrayOrListElement(destinationProperty, sourceProperty);
             } else if (sourceProperty.isPrimitive() || destinationProperty.isPrimitive()) {
                 if (logDetails != null) {
-                    logDetails.append("ignoring { Object to primitive or primitive to Object}");
+                    logDetails.append("ignoring ( Object to primitive or primitive to Object )");
                 }
+                // TODO: should we throw an exception here instead?
                 newLine().append("/* Ignore field map : %s -> %s */", sourceProperty.property(), destinationProperty.property());
                 processedFieldMap = null;
             } else {

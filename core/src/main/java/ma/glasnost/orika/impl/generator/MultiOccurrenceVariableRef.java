@@ -79,6 +79,13 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         return iteratorName;
     }
     
+    public String declareIteratorIfNotDeclared() {
+        if (!iteratorDeclared) {
+            return declareIterator();
+        }
+        return "";
+    }
+    
     public String declareIterator() {
         if (iteratorDeclared) {
             throw new IllegalStateException("Iterator has already been declared");
@@ -121,6 +128,39 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         return hasNext;
     }
     
+    
+    public String notEmpty() {
+        if (isArray()) {
+            return getter() + ".length > 0";
+        } else {
+            return "!" + getter() + ".isEmpty()";
+        }
+    }
+    
+    /**
+     * @param value
+     * @return
+     */
+    public String addAll(VariableRef value) {
+        if (isArray() && value.isCollection()) {
+            if (type().getComponentType().isPrimitive()) {
+                return assign("%sArray(%s)", type().getComponentType().getCanonicalName(), value);
+            } else {
+                return assign("%s.toArray(new %s{})", value, type().getCanonicalName());
+            }
+        } else if (isCollection() && value.isArray()) {
+            if (value.type().getComponentType().isPrimitive()) {
+                return getter() + ".addAll(asList(" + value + "))";
+            } else {
+                return getter() + ".addAll(java.util.Arrays.asList(" + value + ")";
+            }
+        } else if (isMap() && value.isMap()) {
+            return getter() + ".putAll(" + value + ")";
+        } else {
+            return getter() + ".addAll(" + value + ")";
+        }
+    }
+    
     public String add(VariableRef value) {
         
         if (isArray()) {
@@ -136,6 +176,23 @@ public class MultiOccurrenceVariableRef extends VariableRef {
             throw new IllegalArgumentException(type() + " does not support adding elements of type " + value.type());
         }
     }
+    
+    public String add(String value) {
+        
+        if (isArray()) {
+            if (!iteratorDeclared) {
+                throw new IllegalStateException("Iterator must be declared in order to add elements to destination array");
+            }
+            return getter() + "[++" + getIteratorName() + "] = " + value;
+        } else if (isMap()) {
+            return getter() + ".put(" + value + ".getKey(), " + value + ".getValue())";
+        } else if (isCollection()) {
+            return getter() + ".add(" + value + ")";
+        } else {
+            throw new IllegalArgumentException(type() + " does not support adding of elements");
+        }
+    }
+    
     
     public String collectionType() {
         String collection;
@@ -177,6 +234,8 @@ public class MultiOccurrenceVariableRef extends VariableRef {
     public String newMap() {
         return newMap("");
     }
+    
+    
     
     /**
      * Generates java code for a reference to the "size" of this VariableRef

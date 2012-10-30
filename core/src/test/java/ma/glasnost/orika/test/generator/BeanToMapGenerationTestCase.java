@@ -1,4 +1,4 @@
-package ma.glasnost.orika.test.map;
+package ma.glasnost.orika.test.generator;
 
 import java.util.Map;
 

@@ -1,4 +1,4 @@
-package ma.glasnost.orika.test.list;
+package ma.glasnost.orika.test.generator;
 
 import java.util.List;
 

@@ -39,7 +39,7 @@ public abstract class CompilerStrategy {
      * @return the (generated) compiled class
      * @throws SourceCodeGenerationException
      */
-    public abstract Class<?> compileClass(GeneratedSourceCode sourceCode) throws SourceCodeGenerationException;
+    public abstract Class<?> compileClass(SourceCode sourceCode) throws SourceCodeGenerationException;
 
     /**
      * Verify that the Class provided is accessible to the compiler/generator.
@@ -63,13 +63,13 @@ public abstract class CompilerStrategy {
     	this.writeSourceFiles = Boolean.valueOf(System.getProperty(
     		OrikaSystemProperties.WRITE_SOURCE_FILES,
     		// TODO: remove this before release
-    		System.getProperty(GeneratedSourceCode.PROPERTY_WRITE_SOURCE_FILES, 
+    		System.getProperty(SourceCode.PROPERTY_WRITE_SOURCE_FILES, 
     			writeSourceByDefault)));
     	
     	this.writeClassFiles = Boolean.valueOf(System.getProperty(
     		OrikaSystemProperties.WRITE_CLASS_FILES,
     		// TODO: remove this before release
-    		System.getProperty(GeneratedSourceCode.PROPERTY_WRITE_CLASS_FILES, 
+    		System.getProperty(SourceCode.PROPERTY_WRITE_CLASS_FILES, 
     			writeClassByDefault)));
     	
     	this.pathToWriteSourceFiles = 

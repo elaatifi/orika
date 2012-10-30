@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.NestedProperty;
@@ -49,7 +50,10 @@ public class VariableRef {
     
     protected String name;
     private Property property;
+    private VariableRef owner;
     private Type<?> type;
+    private boolean declared;
+    private Converter<?,?> converter;
     
     public VariableRef(Property property, String name) {
         this.name = name;
@@ -64,6 +68,22 @@ public class VariableRef {
     public VariableRef(Type<?> type, String name) {
         this.name = name;
         this.type = type;
+    }
+    
+    public void setConverter(Converter<?,?> converter) {
+        this.converter = converter;
+    }
+    
+    public Converter<?,?> getConverter() {
+        return converter;
+    }
+    
+    public void setOwner(VariableRef owner) {
+        this.owner = owner;
+    }
+   
+    public VariableRef getOwner() {
+        return owner;
     }
     
     protected String getter() {
@@ -139,6 +159,16 @@ public class VariableRef {
     
     public String elementTypeName() {
         return elementType() != null ? elementType().getCanonicalName() : null;
+    }
+    
+    public Type<?> elementValueType() {
+        if (type.getRawType().isArray()) {
+            return type.getComponentType();
+        } else if (type.isMap()) {
+            return type.getNestedType(1);
+        } else {
+            return type.getNestedType(0); 
+        }
     }
     
     @SuppressWarnings("unchecked")
@@ -279,6 +309,7 @@ public class VariableRef {
      * @return the code which declares this variable, and explicitly assigns it's default value.
      */
     public String declare() {
+        declared = true;
         return format("\n%s %s = %s", typeName(), name(), getDefaultValue(rawType()));
     }
     
@@ -292,7 +323,12 @@ public class VariableRef {
     public String declare(String value, Object...args) {
         String valueExpr = format(value, args);
         valueExpr = cast(valueExpr);
+        declared = true;
         return format("\n%s %s = %s", typeName(), name(), valueExpr);
+    }
+    
+    public boolean isDeclared() {
+        return declared;
     }
     
     /**
@@ -301,7 +337,7 @@ public class VariableRef {
      * @param clazz
      * @return
      */
-    private String getDefaultValue(Class<?> clazz) {
+    public static String getDefaultValue(Class<?> clazz) {
         if (Boolean.TYPE.equals(clazz))
             return "false";
         else if (Character.TYPE.equals(clazz))
@@ -338,9 +374,35 @@ public class VariableRef {
         return getter() + " == null";
     }
     
-//    public String notNull() {
-//        return getter() + " != null";
-//    }
+    /**
+     * @return a nested-property safe null check for this property
+     */
+    public String notNull() {
+        StringBuilder path = new StringBuilder();
+        path.append("(");
+        if (property() != null && property().hasPath()) {
+            boolean first = true;
+            
+            String expression = "source";
+            
+            for (final Property p : property().getPath()) {
+                if (!first) {
+                    path.append(" && ");
+                } else {
+                    first = false;
+                }
+                expression = getGetter(p, expression);
+                path.append(format("%s != null", expression));
+            }
+        }
+        if (path.length() > 1) {
+            path.append(" && ");
+        }
+        path.append(format("%s != null", getter()));
+        path.append(")");
+        
+        return path.toString();
+    }
     
     public String ifNotNull() {
         return "if ( " + notNull() + ") ";
@@ -428,8 +490,13 @@ public class VariableRef {
                 var = getGetter(p, var);
             }
         }
-        return "((" + property.getType().getCanonicalName() + ")" + var + 
-                ( property.isArrayElement() ? "" : ".") + property.getGetter() + ")";
+        String getter = "((" + property.getType().getCanonicalName() + ")" + var;
+        if ( !property.isArrayElement() && !"".equals(property.getName())) {
+            getter += "." + property.getGetter() + ")";
+        } else {
+            getter += property.getGetter() + ")";
+        }
+        return getter;
     }
     
     public String isInstanceOf(Type<?> type) {
@@ -457,7 +524,7 @@ public class VariableRef {
                 var = getGetter(p, var);
             }
         }
-        return var + ( property.isArrayElement() ? "" : ".") + property.getSetter();
+        return var + ( property.isArrayElement() || "".equals(property.getName()) ? "" : ".") + property.getSetter();
     }
 
     /**
@@ -487,33 +554,53 @@ public class VariableRef {
         return path.toString();
     }
     
-    /**
-     * @return a nested-property safe null check for this property
-     */
-    public String notNull() {
-        StringBuilder path = new StringBuilder();
-        path.append("(");
-        if (property() != null && property().hasPath()) {
-            boolean first = true;
-            
-            String expression = "source";
-            
-            for (final Property p : property().getPath()) {
-                if (!first) {
-                    path.append(" && ");
-                } else {
-                    first = false;
-                }
-                expression = getGetter(p, expression);
-                path.append(format("%s != null", expression));
-            }
-        }
-        if (path.length() > 1) {
-            path.append(" && ");
-        }
-        path.append(format("%s != null", getter()));
-        path.append(")");
-        
-        return path.toString();
+    
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((name == null) ? 0 : name.hashCode());
+        result = prime * result + ((property == null) ? 0 : property.hashCode());
+        result = prime * result + ((type == null) ? 0 : type.hashCode());
+        return result;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        VariableRef other = (VariableRef) obj;
+        if (name == null) {
+            if (other.name != null) {
+                return false;
+            }
+        } else if (!name.equals(other.name)) {
+            return false;
+        }
+        if (property == null) {
+            if (other.property != null) {
+                return false;
+            }
+        } else if (!property.equals(other.property)) {
+            return false;
+        }
+        if (type == null) {
+            if (other.type != null) {
+                return false;
+            }
+        } else if (!type.equals(other.type)) {
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

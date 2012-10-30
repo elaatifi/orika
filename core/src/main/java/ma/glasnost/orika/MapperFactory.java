@@ -367,4 +367,6 @@ public interface MapperFactory {
      */
     public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Class<B> bType);
     
+    public <A, B> ClassMapBuilder<A, B> expand(Type<A> aType, Type<B> bType);
+    
 }

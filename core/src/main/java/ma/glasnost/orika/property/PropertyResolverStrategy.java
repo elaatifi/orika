@@ -38,7 +38,7 @@ public interface PropertyResolverStrategy {
      * as in some cases, they will participate in one-way mappings.
      * 
      * @param type the type for which to resolve properties 
-     * @return
+     * @return a Map keyed by property names, with corresponding Property instances as values
      */
     Map<String, Property> getProperties(java.lang.reflect.Type type);
     
@@ -48,7 +48,7 @@ public interface PropertyResolverStrategy {
      * 
      * @param type
      * @param propertyExpression
-     * @return
+     * @return the NestedProperty instance defined by the provided expression
      * @deprecated use {@link #getProperty(java.lang.reflect.Type, String)} instead
      */
     @Deprecated
@@ -60,7 +60,7 @@ public interface PropertyResolverStrategy {
      * 
      * @param type
      * @param dynamicPropertyExpression
-     * @return
+     * @return the property (of any format)
      */
     Property getProperty(java.lang.reflect.Type type, String dynamicPropertyExpression);
 }

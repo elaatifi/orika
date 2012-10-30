@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.generator;
+package ma.glasnost.orika.test.generator.eclipsejdt;
 
 import ma.glasnost.orika.OrikaSystemProperties;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
