@@ -229,7 +229,7 @@ public class DefaultMapperFactory implements MapperFactory {
          * The configured value of whether or not to map null values; if false,
          * they will be ignored, and any existing value is unchanged in case of null.
          */
-        protected boolean mapNulls = false;
+        protected boolean mapNulls = true;
         
         /**
          * Instantiates a new MapperFactoryBuilder
