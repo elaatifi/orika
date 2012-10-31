@@ -67,10 +67,9 @@ public class ArrayOrCollectionToMap extends AbstractSpecification {
                 format("%s.put(%s, %s)", d, newKey, newVal),
                 "}");
         
-        append(out,
-                "} else {\n",
-                d.assignIfPossible("null"),
-                "}");
+        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
+        
+        append(out, "}" + mapNull);
         
         return out.toString();
     }

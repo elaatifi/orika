@@ -49,7 +49,7 @@ public interface CodeGenerationStrategy {
     
    
     /**
-     * @return an ordered list of the defined specifications
+     * @return the defined specifications 
      */
     public List<Specification> getSpecifications();
     
@@ -65,7 +65,7 @@ public interface CodeGenerationStrategy {
     public void addAggregateSpecification(AggregateSpecification spec, Position relativePosition, Class<AggregateSpecification> relativeSpec);
     
     /**
-     * @return an ordered map of the defined aggregate specifications, keyed by specificationId
+     * @return the defined aggregate specifications
      */
     public List<AggregateSpecification> getAggregateSpecifications();
 }

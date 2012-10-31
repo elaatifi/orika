@@ -1,5 +1,6 @@
 package ma.glasnost.orika.impl.generator.specification;
 
+import static java.lang.String.format;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
@@ -23,6 +24,9 @@ public class EnumToEnum extends AbstractSpecification {
     
     public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         String assignEnum = destination.assign("Enum.valueOf(%s.class, %s.name())", destination.typeName(), source);
-        return statement("%s { %s; } else { %s; }", source.ifNotNull(), assignEnum, destination.assign("null"));
+        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", destination.assignIfPossible("null")): "";
+        return statement("%s { %s; } %s", source.ifNotNull(), assignEnum, mapNull);
     }
 }
+
+

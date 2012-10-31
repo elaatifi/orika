@@ -156,7 +156,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy, this.propertyResolverStrategy);
         this.useAutoMapping = builder.useAutoMapping;
         this.useBuiltinConverters = builder.useBuiltinConverters;
-        
+        this.contextFactory.getGlobalProperties().put(Properties.SHOULD_MAP_NULLS, builder.mapNulls);
         this.codeGenerationStrategy = new DefaultCodeGenerationStrategy(this);
         /*
          * Register default concrete types for common collection types; these
@@ -225,6 +225,11 @@ public class DefaultMapperFactory implements MapperFactory {
          * MapperFactory
          */
         protected boolean useAutoMapping = true;
+        /**
+         * The configured value of whether or not to map null values; if false,
+         * they will be ignored, and any existing value is unchanged in case of null.
+         */
+        protected boolean mapNulls = false;
         
         /**
          * Instantiates a new MapperFactoryBuilder
@@ -372,6 +377,17 @@ public class DefaultMapperFactory implements MapperFactory {
         @Deprecated
         public B usedBuiltinConverters(boolean useBuiltinConverters) {
             this.useBuiltinConverters = useBuiltinConverters;
+            return self();
+        }
+        
+        /**
+         * Configure whether to map nulls in generated mapper code
+         * 
+         * @param mapNulls
+         * @return a reference to <code>this</code> MapperFactoryBuilder
+         */
+        public B mapNulls(boolean mapNulls) {
+            this.mapNulls = mapNulls;
             return self();
         }
         

@@ -1,5 +1,6 @@
 package ma.glasnost.orika.impl.generator.specification;
 
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
@@ -26,7 +27,22 @@ public class ObjectToMultiOccurrenceElement extends AbstractSpecification {
     }
 
     public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
-        return statement(destination.assign(source));
+        
+        StringBuilder out = new StringBuilder();
+        if (!source.isPrimitive()) {
+            out.append(source.ifNotNull() + "{");
+        }
+        out.append(statement(destination.assign(source)));
+        if (!source.isPrimitive()) {
+            out.append("}");
+            if (code.shouldMapNulls() && !destination.isPrimitive()) {
+                append(out, 
+                        " else {\n",
+                        destination.assignIfPossible("null"),
+                        "}\n");
+            }
+        }
+        return out.toString();
     }
 
 }

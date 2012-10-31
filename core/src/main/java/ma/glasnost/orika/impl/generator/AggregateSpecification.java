@@ -5,8 +5,8 @@ import java.util.List;
 import ma.glasnost.orika.metadata.FieldMap;
 
 /**
- * Specification encapsulates the logic to generate code for mapping
- * comparing a pair of types
+ * AggregateSpecification encapsulates the logic to generate code for mappings
+ * which are applied to collections of FieldMaps together
  * 
  * @author mattdeboer
  *

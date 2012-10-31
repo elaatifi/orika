@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
@@ -36,6 +37,8 @@ public class MappingContext {
 	private final Map<Type<?>, Type<?>> mapping;
 	private final Map<java.lang.reflect.Type, Map<Object, Object>> cache;
 	private List<Map<MapperKey, ClassMap<?,?>>> mappersSeen;
+	private Map<Object, Object> properties;
+	private Map<Object, Object> globalProperties;
 	private MappingStrategy strategy;
 	private boolean isNew = true;
 	private int depth;
@@ -43,22 +46,31 @@ public class MappingContext {
 	public static class Factory implements MappingContextFactory {
 
 	    LinkedBlockingQueue<MappingContext> contextQueue = new LinkedBlockingQueue<MappingContext>();
+	    ConcurrentHashMap<Object, Object> globalProperties = new ConcurrentHashMap<Object, Object>();
 	    
         public MappingContext getContext() {
             MappingContext context = contextQueue.poll();
-            return context != null ? context : new MappingContext();
+            return context != null ? context : new MappingContext(globalProperties);
         }
         
         public void release(MappingContext context) {
             context.reset();
             contextQueue.offer(context);
         }
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.MappingContextFactory#getGlobalProperties()
+         */
+        public Map<Object, Object> getGlobalProperties() {
+            return globalProperties;
+        }
 	}
 	
 
-	private MappingContext() {
-		mapping = new HashMap<Type<?>, Type<?>>();
-		cache = new HashMap<java.lang.reflect.Type, Map<Object, Object>>();
+	private MappingContext(Map<Object, Object> globalProperties) {
+		this.mapping = new HashMap<Type<?>, Type<?>>();
+		this.cache = new HashMap<java.lang.reflect.Type, Map<Object, Object>>();
+		this.globalProperties = globalProperties;
 	}
 	
 	public void setResolvedMappingStrategy(MappingStrategy strategy) {
@@ -165,6 +177,9 @@ public class MappingContext {
     public void reset() {
         cache.clear();
         mapping.clear();
+        if (properties != null) {
+            properties.clear();
+        }
         if (mappersSeen != null) {
             mappersSeen.clear();
         }
@@ -173,7 +188,26 @@ public class MappingContext {
         depth = 0;
     }
     
+    public void setProperty(Object key, Object value) {
+        if (this.properties == null) {
+            this.properties = new HashMap<Object, Object>();
+        }
+        this.properties.put(key, value);
+    }
+    
+    public Object getProperty(Object key) {
+        Object result = this.properties != null ? this.properties.get(key) : null;
+        if (result == null && this.globalProperties != null) {
+            result = this.globalProperties.get(key);
+        }
+        return result;
+    }
+    
     public static final class NonCyclicMappingContext extends MappingContext {
+        
+        public NonCyclicMappingContext() {
+            super(null);
+        }
         
         public <S, D> void cacheMappedObject(S source, D destination) {
             // No-op

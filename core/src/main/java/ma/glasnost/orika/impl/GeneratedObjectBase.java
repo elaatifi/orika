@@ -25,8 +25,6 @@ import java.util.List;
 
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.Converter;
-import ma.glasnost.orika.CustomMapper;
-import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;

@@ -32,17 +32,19 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javassist.CannotCompileException;
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.GeneratedObjectBase;
+import ma.glasnost.orika.impl.Properties;
 import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.impl.generator.Node.NodeList;
 import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
@@ -56,8 +58,9 @@ import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
- * SourceCodeContext is a utility class used to generate the various source code
- * snippets needed to generate the Orika mapping objects
+ * SourceCodeContext contains the state information necessary while generating
+ * source code for a given mapping object;
+ * it also houses various utility methods which can be used to aid in code generation.
  * 
  */
 public class SourceCodeContext {
@@ -78,21 +81,21 @@ public class SourceCodeContext {
     private final StringBuilder logDetails;
     private final PropertyResolverStrategy propertyResolver;
     private final Map<AggregateSpecification, List<FieldMap>> aggregateFieldMaps;
+    private final MappingContext mappingContext;
     
     /**
-     * Constructs a new instance of SourceCodeBuilder
+     * Constructs a new instance of SourceCodeContext
      * 
-     * @param usedTypes
-     *            a context for tracking the types used in the generated mapper
-     * @param usedConverters
-     *            a context for tracking the converters used in the generated
-     *            mapper
+     * @param baseClassName
+     * @param superClass
+     * @param compilerStrategy
+     * @param propertyResolver
      * @param mapperFactory
-     *            the mapper factory for which the mapper is being generated
+     * @param logDetails
      */
     public SourceCodeContext(final String baseClassName, Class<?> superClass,
             CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver, 
-            MapperFactory mapperFactory, StringBuilder logDetails) {
+            MapperFactory mapperFactory, MappingContext mappingContext, StringBuilder logDetails) {
         
         String safeBaseClassName = baseClassName.replace("[]", "$Array");
         this.compilerStrategy = compilerStrategy;
@@ -120,6 +123,7 @@ public class SourceCodeContext {
         this.usedTypes = new UsedTypesContext();
         this.usedConverters = new UsedConvertersContext();
         this.mapperFactory = mapperFactory;
+        this.mappingContext = mappingContext;
         this.usedMapperFacades = new UsedMapperFacadesContext();
         this.logDetails = logDetails;
         
@@ -158,7 +162,9 @@ public class SourceCodeContext {
         return methods;
     }
 
-    
+    public boolean shouldMapNulls() {
+        return (Boolean)mappingContext.getProperty(Properties.SHOULD_MAP_NULLS);
+    }
     /**
      * Adds a method definition to the class based on the provided source.
      * 

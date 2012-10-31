@@ -17,6 +17,8 @@
  */
 package ma.glasnost.orika;
 
+import java.util.Map;
+
 /**
  * @author matt.deboer@gmail.com
  *
@@ -37,4 +39,11 @@ public interface MappingContextFactory {
      * @param context the context to be recycled
      */
     public void release(MappingContext context);
+    
+    
+    /**
+     * @return a reference to the global properties map for this mapping context factory; any properties
+     * set here are available from any individual MappingContext created by this factory.
+     */
+    public Map<Object, Object> getGlobalProperties();
 }

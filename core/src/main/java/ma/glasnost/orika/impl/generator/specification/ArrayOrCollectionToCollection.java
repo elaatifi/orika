@@ -87,10 +87,10 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
             }
         }
         // End check if source property ! = null
-        append(out,
-                "} else { ",
-                d.assignIfPossible("null"),
-                "}\n");
+        
+        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
+        
+        append(out, "}" + mapNull);
         
         return out.toString();
     }

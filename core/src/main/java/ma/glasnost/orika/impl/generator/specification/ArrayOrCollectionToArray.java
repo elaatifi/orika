@@ -32,7 +32,8 @@ public class ArrayOrCollectionToArray extends AbstractSpecification {
             mapArray = format("mapperFacade.mapAsArray(%s, asList(%s), %s, %s, mappingContext)", destination.name(), source, code.usedType(source.elementType()),
                     code.usedType(destination.elementType()));
         }
-        return format(" %s { %s; %s; %s; } else { %s; }", source.ifNotNull(), newArray, mapArray, destination.assign(arrayVar), destination.assign("null"));
+        String mapNull = code.shouldMapNulls() ? format(" else { %s; }", destination.assign("null")) : "";
+        return format(" %s { %s; %s; %s; } %s", source.ifNotNull(), newArray, mapArray, destination.assign(arrayVar), mapNull);
     }
     
 }

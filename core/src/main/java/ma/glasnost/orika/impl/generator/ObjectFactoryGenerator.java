@@ -77,7 +77,8 @@ public class ObjectFactoryGenerator {
             }
             
             final SourceCodeContext factoryCode = 
-                    new SourceCodeContext(className,GeneratedObjectFactory.class,compilerStrategy, propertyResolver, mapperFactory, logDetails);
+                    new SourceCodeContext(className,GeneratedObjectFactory.class,compilerStrategy, 
+                            propertyResolver, mapperFactory, context, logDetails);
             
             UsedTypesContext usedTypes = new UsedTypesContext();
             UsedConvertersContext usedConverters = new UsedConvertersContext();

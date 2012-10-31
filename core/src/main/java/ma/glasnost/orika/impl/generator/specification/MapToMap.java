@@ -71,10 +71,9 @@ public class MapToMap extends AbstractSpecification {
                     format("%s.put(%s, %s)", d, newKey, newVal),
                     "}\n");
         }
-        append(out,
-                "} else {",
-                d.assignIfPossible("null"),
-                "}");
+        
+        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
+        append(out, "}" + mapNull);
         
         return out.toString();
     }

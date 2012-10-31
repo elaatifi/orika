@@ -1,5 +1,6 @@
 package ma.glasnost.orika.impl.generator.specification;
 
+import static java.lang.String.format;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
@@ -19,7 +20,7 @@ public class StringToStringConvertible extends AbstractSpecification {
     }
 
     public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
-        return source + ".equals(\"\" + " + destination +")";
+        return "(" + source.notNull() + " && " + source + ".equals(\"\" + " + destination +"))";
     }
 
     public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
@@ -30,7 +31,8 @@ public class StringToStringConvertible extends AbstractSpecification {
         if (destination.isPrimitive()) {
             return statement(destination.assign("%s.valueOf(%s)", destination.wrapperTypeName(), value));
         } else {
-            return statement(source.ifNotNull() + destination.assign("%s.valueOf(%s)", destination.typeName(), value));
+            String mapNull = code.shouldMapNulls() ? format(" else { %s; }", destination.assignIfPossible("null")): "";
+            return statement(format("%s {\n %s; } %s", source.ifNotNull(), destination.assign("%s.valueOf(%s)", destination.typeName(), value), mapNull));
         }
     }
 }

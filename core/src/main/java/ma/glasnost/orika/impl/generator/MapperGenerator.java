@@ -69,8 +69,7 @@ public final class MapperGenerator {
             
             final SourceCodeContext mapperCode = new SourceCodeContext(
                     classMap.getMapperClassName(), GeneratedMapperBase.class,
-                    compilerStrategy, propertyResolver, mapperFactory, logDetails);
-            
+                    compilerStrategy, propertyResolver, mapperFactory, context, logDetails);
             
             Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
             mappedFields.addAll(addMapMethod(mapperCode, true, classMap, logDetails));
