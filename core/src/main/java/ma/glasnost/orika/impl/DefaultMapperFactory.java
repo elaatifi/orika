@@ -47,6 +47,7 @@ import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.constructor.ConstructorResolverStrategy;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.converter.builtin.BuiltinConverters;
+import ma.glasnost.orika.impl.generator.CodeGenerationStrategy;
 import ma.glasnost.orika.impl.generator.CompilerStrategy;
 import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.impl.generator.MapperGenerator;
@@ -103,6 +104,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final ClassMapBuilderForLists.Factory classMapBuilderForListsFactory;
     private final ClassMapBuilderForArrays.Factory classMapBuilderForArraysFactory;
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
+    private final CodeGenerationStrategy codeGenerationStrategy;
     
     private final boolean useAutoMapping;
     private final boolean useBuiltinConverters;
@@ -155,6 +157,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.useAutoMapping = builder.useAutoMapping;
         this.useBuiltinConverters = builder.useBuiltinConverters;
         
+        this.codeGenerationStrategy = new DefaultCodeGenerationStrategy(this);
         /*
          * Register default concrete types for common collection types; these
          * can be overridden as needed by user code.
@@ -1121,6 +1124,13 @@ public class DefaultMapperFactory implements MapperFactory {
      */
     public <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles) {
         return getMapperFacade(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFactory#getCodeGenerationStrategy()
+     */
+    public CodeGenerationStrategy getCodeGenerationStrategy() {
+        return codeGenerationStrategy;
     }
     
 }

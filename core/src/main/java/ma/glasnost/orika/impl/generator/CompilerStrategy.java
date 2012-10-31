@@ -39,7 +39,7 @@ public abstract class CompilerStrategy {
      * @return the (generated) compiled class
      * @throws SourceCodeGenerationException
      */
-    public abstract Class<?> compileClass(SourceCode sourceCode) throws SourceCodeGenerationException;
+    public abstract Class<?> compileClass(SourceCodeContext sourceCode) throws SourceCodeGenerationException;
 
     /**
      * Verify that the Class provided is accessible to the compiler/generator.
@@ -57,19 +57,16 @@ public abstract class CompilerStrategy {
     
     protected static final String WRITE_RELATIVE_TO_CLASSPATH = "classpath:";
     
-    @SuppressWarnings("deprecation")
     protected CompilerStrategy(String writeSourceByDefault, String writeClassByDefault) {
 	
     	this.writeSourceFiles = Boolean.valueOf(System.getProperty(
     		OrikaSystemProperties.WRITE_SOURCE_FILES,
-    		// TODO: remove this before release
-    		System.getProperty(SourceCode.PROPERTY_WRITE_SOURCE_FILES, 
+    		System.getProperty("ma.glasnost.orika.GeneratedSourceCode.writeSourceFiles", 
     			writeSourceByDefault)));
     	
     	this.writeClassFiles = Boolean.valueOf(System.getProperty(
     		OrikaSystemProperties.WRITE_CLASS_FILES,
-    		// TODO: remove this before release
-    		System.getProperty(SourceCode.PROPERTY_WRITE_CLASS_FILES, 
+    		System.getProperty("ma.glasnost.orika.GeneratedSourceCode.writeClassFiles", 
     			writeClassByDefault)));
     	
     	this.pathToWriteSourceFiles = 
@@ -79,7 +76,6 @@ public abstract class CompilerStrategy {
     	this.pathToWriteClassFiles = 
     			(String)System.getProperty(OrikaSystemProperties.WRITE_CLASS_FILES_TO_PATH, 
     					WRITE_RELATIVE_TO_CLASSPATH + "/");
-	
     }
     
     /**

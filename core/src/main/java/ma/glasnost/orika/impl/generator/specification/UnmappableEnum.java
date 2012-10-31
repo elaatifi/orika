@@ -2,7 +2,7 @@ package ma.glasnost.orika.impl.generator.specification;
 
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.impl.generator.SourceCode;
+import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
@@ -24,7 +24,7 @@ public class UnmappableEnum extends AbstractSpecification {
         return fieldMap.getBType().isEnum() && !fieldMap.getAType().isEnum() && !fieldMap.getAType().isString();
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         throw new MappingException("Encountered mapping of enum to object (or vise-versa); sourceType="+
                 source.type() + ", destinationType=" + destination.type());
     }

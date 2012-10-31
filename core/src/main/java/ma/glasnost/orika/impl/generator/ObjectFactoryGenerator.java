@@ -19,8 +19,8 @@ package ma.glasnost.orika.impl.generator;
 
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.generator.SourceCode.append;
-import static ma.glasnost.orika.impl.generator.SourceCode.statement;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 
 import java.lang.reflect.Constructor;
 import java.util.List;
@@ -76,8 +76,8 @@ public class ObjectFactoryGenerator {
             	logDetails = null;
             }
             
-            final SourceCode factoryCode = 
-                    new SourceCode(className,GeneratedObjectFactory.class,compilerStrategy, propertyResolver, mapperFactory, logDetails);
+            final SourceCodeContext factoryCode = 
+                    new SourceCodeContext(className,GeneratedObjectFactory.class,compilerStrategy, propertyResolver, mapperFactory, logDetails);
             
             UsedTypesContext usedTypes = new UsedTypesContext();
             UsedConvertersContext usedConverters = new UsedConvertersContext();
@@ -99,7 +99,7 @@ public class ObjectFactoryGenerator {
         } 
     }
     
-    private void addCreateMethod(SourceCode code, UsedTypesContext usedTypes, 
+    private void addCreateMethod(SourceCodeContext code, UsedTypesContext usedTypes, 
     		UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, 
     		Type<?> type, MappingContext mappingContext, StringBuilder logDetails) throws CannotCompileException {
     	
@@ -127,7 +127,7 @@ public class ObjectFactoryGenerator {
         code.addMethod(out.toString());
     }
     
-    private String addSourceClassConstructor(SourceCode code, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails) {
+    private String addSourceClassConstructor(SourceCodeContext code, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails) {
         
         MapperKey mapperKey = new MapperKey(type,sourceType);
         ClassMap<Object, Object>  classMap = mapperFactory.getClassMap(mapperKey); 
@@ -201,7 +201,7 @@ public class ObjectFactoryGenerator {
      * @param type
      * @param size
      */
-    private String addArrayClassConstructor(SourceCode code, Type<?> type, Type<?> sourceType, int size) {
+    private String addArrayClassConstructor(SourceCodeContext code, Type<?> type, Type<?> sourceType, int size) {
         return
                 format("if (s instanceof %s) {", sourceType.getCanonicalName()) +
                 "return new " + type.getRawType().getComponentType().getCanonicalName() + "[" + size + "];" +

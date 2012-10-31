@@ -19,11 +19,9 @@
 package ma.glasnost.orika.impl.generator;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.Specifications.aMultiOccurrenceElementMap;
-import static ma.glasnost.orika.impl.generator.SourceCode.append;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
 
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.Set;
 
 import javassist.CannotCompileException;
@@ -69,7 +67,7 @@ public final class MapperGenerator {
             	logDetails = null;
             }
             
-            final SourceCode mapperCode = new SourceCode(
+            final SourceCodeContext mapperCode = new SourceCodeContext(
                     classMap.getMapperClassName(), GeneratedMapperBase.class,
                     compilerStrategy, propertyResolver, mapperFactory, logDetails);
             
@@ -107,7 +105,7 @@ public final class MapperGenerator {
     	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
     }
     
-    private Set<FieldMap> addMapMethod(SourceCode code, boolean aToB, ClassMap<?, ?> classMap, StringBuilder logDetails) throws CannotCompileException {
+    private Set<FieldMap> addMapMethod(SourceCodeContext code, boolean aToB, ClassMap<?, ?> classMap, StringBuilder logDetails) throws CannotCompileException {
         
         
         Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
@@ -119,7 +117,6 @@ public final class MapperGenerator {
         	}
         }
     	
-        //final CodeSourceBuilder out = new CodeSourceBuilder(usedTypes, usedConverters, usedMappers, mapperFactory);
     	final StringBuilder out = new StringBuilder();
         final String mapMethod = "map" + (aToB ? "AtoB" : "BtoA");
         out.append("\tpublic void ");
@@ -142,7 +139,6 @@ public final class MapperGenerator {
                 source.declare("a"),
                 destination.declare("b"),
                 "\n\n");
-        LinkedList<FieldMap> nestedFieldMaps = new LinkedList<FieldMap>();
         
         for (FieldMap currentFieldMap : classMap.getFieldsMapping()) {
             
@@ -167,9 +163,8 @@ public final class MapperGenerator {
                 fieldMap = fieldMap.flip();
             }
             
-            if (fieldMap.is(aMultiOccurrenceElementMap())) {
-            	nestedFieldMaps.add(fieldMap);
-            	continue;
+            if (code.aggregateSpecsApply(fieldMap)) {
+                continue;
             }
             
             if (logDetails != null) {
@@ -180,11 +175,7 @@ public final class MapperGenerator {
                 try {
                     mappedFields.add(currentFieldMap);
                     String sourceCode = generateFieldMapCode(code, fieldMap, classMap, destination, logDetails);
-                    if (sourceCode == null || sourceCode.endsWith("null")) {
-                        throw new IllegalArgumentException();
-                    } else {
-                        out.append(sourceCode);
-                    }
+                    out.append(sourceCode);
                 } catch (final Exception e) {
                     MappingException me = new MappingException(e);
                     me.setSourceProperty(fieldMap.getSource());
@@ -198,13 +189,8 @@ public final class MapperGenerator {
             }
         }
         
-        while (!nestedFieldMaps.isEmpty()) {
-        	Set<FieldMap> associated = code.getAssociatedMappings(nestedFieldMaps, nestedFieldMaps.getFirst());
-        	nestedFieldMaps.removeAll(associated);
-        	mappedFields.addAll(associated);
-        	out.append(code.fromMultiOccurrenceToMultiOccurrence(associated, logDetails));
-        }
-        
+        out.append(code.mapAggregateFields());
+                
         out.append("\n\t\tif(customMapper != null) { \n\t\t\t customMapper.")
                 .append(mapMethod)
                 .append("(source, destination, mappingContext);\n\t\t}");
@@ -241,7 +227,7 @@ public final class MapperGenerator {
         return false;
     }
     
-    private String generateFieldMapCode(SourceCode code, FieldMap fieldMap, ClassMap<?, ?> classMap, VariableRef destination, StringBuilder logDetails) throws Exception {
+    private String generateFieldMapCode(SourceCodeContext code, FieldMap fieldMap, ClassMap<?, ?> classMap, VariableRef destination, StringBuilder logDetails) throws Exception {
         
         final VariableRef sourceProperty = new VariableRef(fieldMap.getSource(), "source");
         final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");

@@ -80,7 +80,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
      * @throws CannotCompileException
      * @throws IOException
      */
-    protected void writeClassFile(SourceCode sourceCode, CtClass byteCodeClass) throws IOException {
+    protected void writeClassFile(SourceCodeContext sourceCode, CtClass byteCodeClass) throws IOException {
     	if (writeClassFiles) {
             try {
             	File parentDir = preparePackageOutputPath(this.pathToWriteClassFiles, "");
@@ -96,7 +96,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
      * 
      * @throws IOException
      */
-    protected void writeSourceFile(SourceCode sourceCode) throws IOException {
+    protected void writeSourceFile(SourceCodeContext sourceCode) throws IOException {
     	if (writeSourceFiles) {
         	File parentDir = preparePackageOutputPath(this.pathToWriteSourceFiles, sourceCode.getPackageName());
         	File sourceFile = new File(parentDir, sourceCode.getClassSimpleName() + ".java");
@@ -180,7 +180,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
      * ma.glasnost.orika.impl.GeneratedSourceCodeCompilerStrategy#compileClass
      * (ma.glasnost.orika.impl.GeneratedSourceCode)
      */
-    public Class<?> compileClass(SourceCode sourceCode) throws SourceCodeGenerationException {
+    public Class<?> compileClass(SourceCodeContext sourceCode) throws SourceCodeGenerationException {
         
         String className = sourceCode.getClassName();
         CtClass byteCodeClass = null;

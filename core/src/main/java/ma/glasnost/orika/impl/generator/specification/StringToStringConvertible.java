@@ -1,8 +1,8 @@
 package ma.glasnost.orika.impl.generator.specification;
 
-import static ma.glasnost.orika.impl.generator.SourceCode.statement;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.generator.SourceCode;
+import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
@@ -18,11 +18,11 @@ public class StringToStringConvertible extends AbstractSpecification {
                 && (fieldMap.getDestination().getType().isPrimitive() || fieldMap.getDestination().getType().isPrimitiveWrapper());
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         return source + ".equals(\"\" + " + destination +")";
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         String value = source.toString();
         if (String.class.equals(source.rawType()) && (Character.class.equals(destination.rawType()) || char.class.equals(destination.rawType()))) {
             value = value + ".charAt(0)";

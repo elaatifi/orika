@@ -3,9 +3,7 @@ package ma.glasnost.orika.impl.generator;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -280,6 +278,8 @@ public class Node {
     }
     
     public static class NodeList extends ArrayList<Node> {
+        
+        private static final long serialVersionUID = 1L;
         
         private int totalNodes = 0;
         private final NodeList parent;

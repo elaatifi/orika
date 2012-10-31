@@ -1,7 +1,7 @@
 package ma.glasnost.orika.impl.generator.specification;
 
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.generator.SourceCode;
+import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.Specification;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -17,11 +17,11 @@ public abstract class AbstractSpecification implements Specification {
     
     public abstract boolean appliesTo(FieldMap fieldMap);
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         return source + ".equals(" + destination + ")";
     }
 
-    public abstract String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code);
+    public abstract String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code);
     
     
 }

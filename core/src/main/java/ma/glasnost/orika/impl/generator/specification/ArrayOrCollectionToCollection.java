@@ -1,12 +1,12 @@
 package ma.glasnost.orika.impl.generator.specification;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.generator.SourceCode.append;
-import static ma.glasnost.orika.impl.generator.SourceCode.statement;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
-import ma.glasnost.orika.impl.generator.SourceCode;
+import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
@@ -21,12 +21,12 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
         return (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection()) && fieldMap.getDestination().isCollection();
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         // TODO:
         return "";
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         
         StringBuilder out = new StringBuilder();
         

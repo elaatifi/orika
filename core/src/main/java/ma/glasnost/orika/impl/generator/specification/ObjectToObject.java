@@ -1,10 +1,10 @@
 package ma.glasnost.orika.impl.generator.specification;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.generator.SourceCode.statement;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
-import ma.glasnost.orika.impl.generator.SourceCode;
+import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
@@ -19,11 +19,11 @@ public class ObjectToObject extends AbstractSpecification {
         return true;
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         return "";
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code) {
+    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         
         String mapNewObject = destination.assign(format("(%s)%s(%s, mappingContext)", destination.typeName(), code.usedMapperFacadeCall(source, destination), source));
         String mapExistingObject = format("%s(%s, %s, mappingContext)", code.usedMapperFacadeCall(source, destination), source, destination);

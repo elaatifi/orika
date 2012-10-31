@@ -33,7 +33,7 @@ public interface Specification {
      * @return the code snippet which represents a true|false statement describing
      * whether the two types should be considered 'equal'
      */
-    String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code);
+    String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code);
     
     
     /**
@@ -46,5 +46,5 @@ public interface Specification {
      * @return the code snippet which represents mapping from the source to destination
      * property
      */
-    String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCode code);
+    String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code);
 }

@@ -1,9 +1,7 @@
 package ma.glasnost.orika.impl.generator.specification;
 
 import static java.lang.String.format;
-import static ma.glasnost.orika.impl.generator.SourceCode.append;
-import static ma.glasnost.orika.impl.generator.SourceCode.join;
-import static ma.glasnost.orika.impl.generator.SourceCode.statement;
+import static ma.glasnost.orika.impl.generator.SourceCodeContext.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,9 +12,10 @@ import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.generator.AggregateSpecification;
 import ma.glasnost.orika.impl.generator.Node;
 import ma.glasnost.orika.impl.generator.Node.NodeList;
-import ma.glasnost.orika.impl.generator.SourceCode;
+import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
@@ -29,7 +28,7 @@ import ma.glasnost.orika.metadata.Type;
  * @author mattdeboer
  *
  */
-public class MultiOccurrenceToMultiOccurrence {
+public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification {
     
     private final MapperFactory mapperFactory;
     
@@ -53,18 +52,25 @@ public class MultiOccurrenceToMultiOccurrence {
      *            a StringBuilder to accept debug logging information
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
-    public String fromMultiOccurrenceToMultiOccurrence(Set<FieldMap> fieldMappings, SourceCode code, StringBuilder logDetails) {
+    public String fromMultiOccurrenceToMultiOccurrence(List<FieldMap> fieldMappings, SourceCodeContext code) {
         
-        NodeList sourceNodes = new NodeList();
-        NodeList destNodes = new NodeList();
-        
-        for (FieldMap map : fieldMappings) {
+        StringBuilder out = new StringBuilder();
+        while (!fieldMappings.isEmpty()) {
+            Set<FieldMap> associated = code.getAssociatedMappings(fieldMappings, fieldMappings.get(0));
+            fieldMappings.removeAll(associated);
+            
+            NodeList sourceNodes = new NodeList();
+            NodeList destNodes = new NodeList();
+            
+            for (FieldMap map : associated) {
 
-            Node.addFieldMap(map, sourceNodes, true);
-            Node.addFieldMap(map, destNodes, false);
-        }    
-          
-        return generateMultiOccurrenceMapping(sourceNodes, destNodes, fieldMappings, code, logDetails);
+                Node.addFieldMap(map, sourceNodes, true);
+                Node.addFieldMap(map, destNodes, false);
+            }    
+              
+            out.append(generateMultiOccurrenceMapping(sourceNodes, destNodes, associated, code));
+        }
+        return out.toString();
     }
     
     /**
@@ -86,7 +92,7 @@ public class MultiOccurrenceToMultiOccurrence {
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
     public String generateMultiOccurrenceMapping(NodeList sourceNodes, NodeList destNodes,
-            Set<FieldMap> subFields, SourceCode code, StringBuilder logDetails) {
+            Set<FieldMap> subFields, SourceCodeContext code) {
         
         StringBuilder out = new StringBuilder();
         
@@ -181,7 +187,7 @@ public class MultiOccurrenceToMultiOccurrence {
                 
                 Type<?> destType = currentNode.parent != null ? currentNode.parent.elementRef.type() : null;
                 
-                out.append(statement(code.mapFields(currentNode.value, s, d, destType, logDetails)));
+                out.append(statement(code.mapFields(currentNode.value, s, d, destType, null)));
                     
                 if (srcNode.parent != null 
                         && srcNode.parent.elementRef != null 
@@ -277,5 +283,19 @@ public class MultiOccurrenceToMultiOccurrence {
                 endWhiles.append("}\n");
             }
         }
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.generator.AggregateSpecification#appliesTo(ma.glasnost.orika.metadata.FieldMap)
+     */
+    public boolean appliesTo(FieldMap fieldMap) {
+        return fieldMap.getSource().getContainer() != null || fieldMap.getDestination().getContainer() != null;
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.generator.AggregateSpecification#generateMappingCode(java.util.Set, ma.glasnost.orika.impl.generator.SourceCode)
+     */
+    public String generateMappingCode(List<FieldMap> fieldMappings, SourceCodeContext code) {
+        return this.fromMultiOccurrenceToMultiOccurrence(fieldMappings, code);
     }
 }

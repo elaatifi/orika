@@ -28,10 +28,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import javassist.CannotCompileException;
 import ma.glasnost.orika.BoundMapperFacade;
@@ -44,27 +46,6 @@ import ma.glasnost.orika.impl.GeneratedObjectBase;
 import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.impl.generator.Node.NodeList;
 import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
-import ma.glasnost.orika.impl.generator.specification.AnyTypeToString;
-import ma.glasnost.orika.impl.generator.specification.ApplyRegisteredMapper;
-import ma.glasnost.orika.impl.generator.specification.ArrayOrCollectionToArray;
-import ma.glasnost.orika.impl.generator.specification.ArrayOrCollectionToCollection;
-import ma.glasnost.orika.impl.generator.specification.ArrayOrCollectionToMap;
-import ma.glasnost.orika.impl.generator.specification.Convert;
-import ma.glasnost.orika.impl.generator.specification.CopyByReference;
-import ma.glasnost.orika.impl.generator.specification.EnumToEnum;
-import ma.glasnost.orika.impl.generator.specification.MapToArray;
-import ma.glasnost.orika.impl.generator.specification.MapToCollection;
-import ma.glasnost.orika.impl.generator.specification.MapToMap;
-import ma.glasnost.orika.impl.generator.specification.MultiOccurrenceElementToObject;
-import ma.glasnost.orika.impl.generator.specification.MultiOccurrenceToMultiOccurrence;
-import ma.glasnost.orika.impl.generator.specification.ObjectToMultiOccurrenceElement;
-import ma.glasnost.orika.impl.generator.specification.ObjectToObject;
-import ma.glasnost.orika.impl.generator.specification.PrimitiveAndObject;
-import ma.glasnost.orika.impl.generator.specification.PrimitiveOrWrapperToPrimitive;
-import ma.glasnost.orika.impl.generator.specification.PrimitiveToWrapper;
-import ma.glasnost.orika.impl.generator.specification.StringToEnum;
-import ma.glasnost.orika.impl.generator.specification.StringToStringConvertible;
-import ma.glasnost.orika.impl.generator.specification.UnmappableEnum;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -75,24 +56,12 @@ import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
- * SourceCode is a utility class used to generate the various source code
+ * SourceCodeContext is a utility class used to generate the various source code
  * snippets needed to generate the Orika mapping objects
  * 
  */
-public class SourceCode {
+public class SourceCodeContext {
     
-    /**
-     * @deprecated use <code>OrikaSystemProperties.WRITE_CLASS_FILES</code> instead
-     */
-    @Deprecated
-    public static final String PROPERTY_WRITE_CLASS_FILES = "ma.glasnost.orika.GeneratedSourceCode.writeClassFiles";
-
-    /**
-     * @deprecated use <code>OrikaSystemProperties.WRITE_SOURCE_FILES</code> instead
-     */
-    @Deprecated
-    public static final String PROPERTY_WRITE_SOURCE_FILES = "ma.glasnost.orika.GeneratedSourceCode.writeSourceFiles";
-
     private StringBuilder sourceBuilder;
     private String classSimpleName;
     private String packageName;
@@ -106,10 +75,9 @@ public class SourceCode {
     private final UsedConvertersContext usedConverters;
     private final UsedMapperFacadesContext usedMapperFacades;
     private final MapperFactory mapperFactory;
-    private final LinkedHashSet<Specification> specifications;
-    private final MultiOccurrenceToMultiOccurrence multiOccurrenceSpec;
     private final StringBuilder logDetails;
     private final PropertyResolverStrategy propertyResolver;
+    private final Map<AggregateSpecification, List<FieldMap>> aggregateFieldMaps;
     
     /**
      * Constructs a new instance of SourceCodeBuilder
@@ -122,7 +90,7 @@ public class SourceCode {
      * @param mapperFactory
      *            the mapper factory for which the mapper is being generated
      */
-    public SourceCode(final String baseClassName, Class<?> superClass,
+    public SourceCodeContext(final String baseClassName, Class<?> superClass,
             CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver, 
             MapperFactory mapperFactory, StringBuilder logDetails) {
         
@@ -153,39 +121,9 @@ public class SourceCode {
         this.usedConverters = new UsedConvertersContext();
         this.mapperFactory = mapperFactory;
         this.usedMapperFacades = new UsedMapperFacadesContext();
-        this.specifications = new LinkedHashSet<Specification>();
         this.logDetails = logDetails;
         
-        /*
-         *  TODO: allow customization of this ordering; these should be
-         *  instantiated once within the MapperFactory, and then passed
-         *  to the SourceCode instance when constructing it (instead of
-         *  creating a new set each time we need to generate source
-         *  code)
-         */
-        
-        specifications.add(new CopyByReference(mapperFactory));
-        specifications.add(new PrimitiveOrWrapperToPrimitive(mapperFactory));
-        specifications.add(new PrimitiveToWrapper(mapperFactory));
-        specifications.add(new Convert(mapperFactory));
-        specifications.add(new ApplyRegisteredMapper(mapperFactory));
-        specifications.add(new EnumToEnum(mapperFactory));
-        specifications.add(new StringToEnum(mapperFactory));
-        specifications.add(new UnmappableEnum(mapperFactory));
-        specifications.add(new ArrayOrCollectionToArray(mapperFactory));
-        specifications.add(new ArrayOrCollectionToCollection(mapperFactory));
-        specifications.add(new MapToMap(mapperFactory));
-        specifications.add(new MapToArray(mapperFactory));
-        specifications.add(new MapToCollection(mapperFactory));
-        specifications.add(new ArrayOrCollectionToMap(mapperFactory));
-        specifications.add(new StringToStringConvertible(mapperFactory));
-        specifications.add(new AnyTypeToString(mapperFactory));
-        specifications.add(new MultiOccurrenceElementToObject(mapperFactory));
-        specifications.add(new ObjectToMultiOccurrenceElement(mapperFactory));
-        specifications.add(new PrimitiveAndObject(mapperFactory));
-        specifications.add(new ObjectToObject(mapperFactory));
-        
-        this.multiOccurrenceSpec = new MultiOccurrenceToMultiOccurrence(mapperFactory);
+        this.aggregateFieldMaps = new LinkedHashMap<AggregateSpecification, List<FieldMap>>();
     }
     
     
@@ -471,24 +409,7 @@ public class SourceCode {
         Type<?> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
         return new VariableRef(sourceEntryType, s + ".entrySet()");
     }
-    
-    /**
-     * Generates the code to support a (potentially parallel) mapping from one
-     * or more multi-occurrence fields in the source type to one or more
-     * multi-occurrence fields in the destination type.
-     * 
-     * @param fieldMappings
-     *            the field mappings to be applied
-     * @param logDetails
-     *            a StringBuilder to accept debug logging information
-     * @return a reference to <code>this</code> SourceCodeBuilder
-     */
-    public String fromMultiOccurrenceToMultiOccurrence(Set<FieldMap> fieldMappings, StringBuilder logDetails) {
         
-        return multiOccurrenceSpec.fromMultiOccurrenceToMultiOccurrence(fieldMappings, this, logDetails);
-    }
-    
-    
     /**
      * @param source
      * @param dest
@@ -627,6 +548,44 @@ public class SourceCode {
     }
     
     /**
+     * Tests whether any aggregate specifications apply for the specified FieldMap, and 
+     * if so, adds it to the list of FieldMaps for that spec, returning true.
+     * Otherwise, false is returned.
+     * 
+     * @param fieldMap
+     * @return
+     */
+    public boolean aggregateSpecsApply(FieldMap fieldMap) {
+        for (AggregateSpecification spec: mapperFactory.getCodeGenerationStrategy().getAggregateSpecifications()) {
+            if (spec.appliesTo(fieldMap)) {
+                List<FieldMap> fieldMaps = this.aggregateFieldMaps.get(spec);
+                if (fieldMaps == null) {
+                    fieldMaps = new ArrayList<FieldMap>();
+                    this.aggregateFieldMaps.put(spec, fieldMaps);
+                }
+                fieldMaps.add(fieldMap);
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * @return the source code generated from applying all aggregated specs with accumulated FieldMaps
+     * to  those FieldMap lists.
+     */
+    public String mapAggregateFields() {
+        StringBuilder out = new StringBuilder();
+        for (Entry<AggregateSpecification, List<FieldMap>> entry: aggregateFieldMaps.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                out.append(entry.getKey().generateMappingCode(entry.getValue(), this));
+            }
+        }
+        this.aggregateFieldMaps.clear();
+        return out.toString();
+    }
+    
+    /**
      * Generate the code necessary to process the provided FieldMap.
      * 
      * @param fieldMap
@@ -665,7 +624,7 @@ public class SourceCode {
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
         sourceProperty.setConverter(converter);
         
-        for (Specification spec: specifications) {
+        for (Specification spec: mapperFactory.getCodeGenerationStrategy().getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 String code = spec.generateMappingCode(sourceProperty, destinationProperty, fieldMap.getInverse(), this);
                 if (code == null || "".equals(code)) {
@@ -714,7 +673,7 @@ public class SourceCode {
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
         sourceProperty.setConverter(converter);
         
-        for (Specification spec: specifications) {
+        for (Specification spec: mapperFactory.getCodeGenerationStrategy().getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 String code = spec.generateEqualityTestCode(sourceProperty, destinationProperty, fieldMap.getInverse(), this);
                 if (code == null || "".equals(code)) {
