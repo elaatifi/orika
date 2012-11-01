@@ -698,15 +698,19 @@ public class DefaultMapperFactory implements MapperFactory {
      * @return an ObjectFactory instance which is able to instantiate the specified type
      */
     @SuppressWarnings("unchecked")
-    public <T> ObjectFactory<T> lookupObjectFactory(Type<T> targetType, MappingContext context) {
-        if (targetType == null) {
+    public <T> ObjectFactory<T> lookupObjectFactory(final Type<T> type, final MappingContext context) {
+        if (type == null) {
             return null;
         }
-        
+        Type<T> targetType = type;
         ObjectFactory<T> result = (ObjectFactory<T>) objectFactoryRegistry.get(targetType);
         if (result == null) {
             // Check if we can use default constructor...
             synchronized (this) {
+                if (!ClassUtil.isConcrete(targetType)) {
+                    targetType = (Type<T>) resolveConcreteType(targetType, targetType);
+                }
+                
                 Constructor<?>[] constructors = targetType.getRawType().getConstructors();
                 if (useAutoMapping || !isBuilt) {
                     if (constructors.length == 1 && constructors[0].getParameterTypes().length == 0) {

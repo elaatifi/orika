@@ -65,6 +65,33 @@ public class BeanToListGenerationTestCase {
 		
 	}
 	
+	@Test
+	public void nestedListElement() {
+	    MapperFactory factory = MappingUtil.getMapperFactory(true);
+	    
+        factory.classMap(Person.class, PersonDto.class)
+                .field("name.first", "names[0].name")
+                .register();
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Person person = new Person();
+        person.name = new Name();
+        person.name.first = "Chuck";
+        person.name.last = "Testa";
+        
+        PersonDto result = mapper.map(person, PersonDto.class);
+        
+        Assert.assertNotNull(result.names);
+        Assert.assertEquals(person.name.first, result.names.get(0).name);
+        
+        Person mapBack = mapper.map(result, Person.class);
+        
+        Assert.assertNotNull(mapBack.name.first);
+        Assert.assertEquals(person.name.first, mapBack.name.first);
+        
+	}
+	
 	public static class Student {
 	    public Grade grade;
 	    public String id;
@@ -77,10 +104,24 @@ public class BeanToListGenerationTestCase {
 	    public String last;
 	}
 	
+	public static class NameDto {
+	    public String name;
+	}
+	
 	public static class Grade {
 		public double point;
 		public double percentage;
 		public String letter;
 	}
+	
+	public static class Person {
+	    public Name name;
+	}
+	
+	public static class PersonDto {
+	    public List<NameDto> names;
+	}
+	
+	
 
 }

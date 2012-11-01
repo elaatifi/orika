@@ -371,7 +371,45 @@ public class VariableRef {
     }
     
     public String isNull() {
-        return getter() + " == null";
+        return property != null ? isNull(property, name) : getter() + " == null";
+    }
+    
+    /**
+     * Removes the outermost property from a nested getter expression
+     * 
+     * @param expression
+     * @return
+     */
+    private static String unwrap(String expression) {
+        // TODO: should write a getParentGetter() instead of unwrapping
+        if (expression.startsWith("((")) {
+            expression = expression.substring(expression.indexOf(")") +1, expression.length()-1);
+            if (expression.endsWith("]")) {
+                expression = expression.substring(0, expression.lastIndexOf("["));
+            } else {
+                expression = expression.substring(0, expression.lastIndexOf("."));
+            }
+        }
+        return expression;
+    }
+    
+    private static String isNull(Property property, String name) {
+        if (property == null) {
+            return name + " == null";
+        } else {
+            String getterNull = getGetter(property, name) + " == null";
+            if (property.isListElement()) {
+                return "(" + unwrap(getGetter(property, name)) + ".size() <= " + 
+                        property.getName().replaceAll("[\\[\\]]", "") +
+                        " || " + getterNull + ")";
+            } else if (property.isArrayElement()) {
+                return "(" + unwrap(getGetter(property, name))  + ".length <= " + 
+                        property.getName().replaceAll("[\\[\\]]", "") +
+                        " || " + getterNull + ")";
+            } else {
+                return getterNull;
+            } 
+        }
     }
     
     /**
@@ -391,14 +429,15 @@ public class VariableRef {
                 } else {
                     first = false;
                 }
+                
+                path.append(format("!(%s)", isNull(p,expression)));
                 expression = getGetter(p, expression);
-                path.append(format("%s != null", expression));
             }
         }
         if (path.length() > 1) {
             path.append(" && ");
         }
-        path.append(format("%s != null", getter()));
+        path.append(format("!(%s)", isNull(property, name)));
         path.append(")");
         
         return path.toString();
@@ -546,8 +585,8 @@ public class VariableRef {
                 } else {
                     first = false;
                 }
+                path.append(format("!(%s)", isNull(p, expression)));
                 expression = getGetter(p, expression);
-                path.append(format("%s != null", expression));
             }
             path.append(")");
         }

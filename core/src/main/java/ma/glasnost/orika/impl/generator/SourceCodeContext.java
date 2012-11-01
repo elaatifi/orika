@@ -338,11 +338,11 @@ public class SourceCodeContext {
         StringBuilder out = new StringBuilder();
         for (final VariableRef ref : propertyRef.getPath()) {
             
-            if (!ClassUtil.isConcrete(ref.type())) {
+            if (!ClassUtil.isConcrete(ref.type()) && !ref.type().isMultiOccurrence()) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
             
-            out.append(statement("if(%s == null) %s", ref,
+            out.append(statement("if(%s) %s", ref.isNull(),
                     ref.assign("(%s)%s(source, mappingContext)", ref.typeName(), usedMapperFacadeNewObjectCall(ref,source))));
         }
         return out.toString();

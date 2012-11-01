@@ -23,6 +23,11 @@ import java.util.List;
 
 public interface TestCaseClasses {
 
+    
+    public class Student {
+        public Book favoriteBook;
+    }
+    
 	public class Book {
 
 		public String title;

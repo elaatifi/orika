@@ -40,6 +40,7 @@ import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.property.TestCaseClasses.A;
 import ma.glasnost.orika.test.property.TestCaseClasses.B;
 import ma.glasnost.orika.test.property.TestCaseClasses.Name;
+import ma.glasnost.orika.test.property.TestCaseClasses.Student;
 
 import org.junit.Test;
 
@@ -52,8 +53,12 @@ public class PropertyResolverTestCase {
 		String np = "start.x";
 
 		NestedProperty p = (NestedProperty) propertyResolver.getProperty(Line.class, np);
-
+		
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
+		
+		p = (NestedProperty) propertyResolver.getProperty(Student.class, "favoriteBook.author.name");
+	
+		Assert.assertEquals(String.class, p.getRawType());
 	}
 	
 	@Test

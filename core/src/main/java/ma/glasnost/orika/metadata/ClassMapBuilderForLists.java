@@ -99,21 +99,4 @@ public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
         return new ListElementProperty(index, propertyType.getNestedType(0));
     }
     
-    /**
-     * ListElementProperty is a special Property instance used to represent a value
-     * which associated with a particular index in a list.
-     * 
-     * @author matt.deboer@gmail.com
-     *
-     */
-    public static final class ListElementProperty extends Property {
-        
-        public ListElementProperty(int index, Type<?> propertyType) {
-            super("["+index + "]","["+index + "]","get(" + index + ")","add(" + index + ", %s)",propertyType,null);
-        }
-        
-        public boolean isListElement() {
-            return true;
-        }
-    }
 }
