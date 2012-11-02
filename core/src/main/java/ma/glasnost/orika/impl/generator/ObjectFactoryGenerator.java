@@ -37,7 +37,6 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
-import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
@@ -153,7 +152,7 @@ public class ObjectFactoryGenerator {
             }
             
             List<FieldMap> properties = constructorMapping.getMappedFields();
-            Class<?>[] constructorArguments = constructor.getParameterTypes();
+            Type<?>[] constructorArguments = constructorMapping.getParameterTypes();
     
             int argIndex = 0;
             
@@ -164,13 +163,11 @@ public class ObjectFactoryGenerator {
             
             for (FieldMap fieldMap : properties) {
             	
-                Class<?> targetClass = constructorArguments[argIndex];
-                VariableRef v = new VariableRef(TypeFactory.resolveValueOf(targetClass, type), "arg" + argIndex++);
+                VariableRef v = new VariableRef(constructorArguments[argIndex], "arg" + argIndex++);
                 VariableRef s = new VariableRef(fieldMap.getSource(), "source");
                 VariableRef destOwner = new VariableRef(fieldMap.getDestination(), "");
                 v.setOwner(destOwner);
                 out.append(statement(v.declare()));
-                            
                 out.append(code.mapFields(fieldMap, s, v, type, logDetails));
             }
             

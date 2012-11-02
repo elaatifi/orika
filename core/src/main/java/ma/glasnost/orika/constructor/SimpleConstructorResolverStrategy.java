@@ -63,7 +63,6 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
     public <T, A, B> ConstructorMapping<T> resolve(ClassMap<A, B> classMap, Type<T> sourceType) {
         boolean aToB = classMap.getBType().equals(sourceType);
         
-        
         Type<?> targetClass = aToB ? classMap.getBType() : classMap.getAType();
         
         String[] declaredParameterNames = aToB ? classMap.getConstructorB() : classMap.getConstructorA();
@@ -118,17 +117,19 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         		 * 2) ...
         		 */
         		String[] parameterNames = paranamer.lookupParameterNames(constructor);
-        		java.lang.reflect.Type[] parameterTypes = constructor.getGenericParameterTypes();
+        		java.lang.reflect.Type[] genericParameterTypes = constructor.getGenericParameterTypes();
+        		Type<?>[] parameterTypes = new Type[genericParameterTypes.length];
         		constructorMapping.setParameterNameInfoAvailable(true);
         		if (targetParameters.keySet().containsAll(Arrays.asList(parameterNames))) {
         			constructorMapping.setConstructor(constructor);
         			for (int i=0; i < parameterNames.length; ++i) {
         				String parameterName = parameterNames[i];
-        				Type<?> parameterType = TypeFactory.valueOf(parameterTypes[i]);
+        				parameterTypes[i] = TypeFactory.valueOf(genericParameterTypes[i]);
         				FieldMap existingField = targetParameters.get(parameterName);
-        				FieldMap argumentMap = mapConstructorArgument(existingField, parameterType, byDefault);
+        				FieldMap argumentMap = mapConstructorArgument(existingField, parameterTypes[i], byDefault);
         				constructorMapping.getMappedFields().add(argumentMap);
         			}
+        			constructorMapping.setParameterTypes(parameterTypes);
         			constructorsByMatchedParams.put(parameterNames.length*1000, constructorMapping);
         		}
         	} catch (ParameterNamesNotFoundException e) {
@@ -140,19 +141,21 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
     	    	 int matchScore = 0;
     	    	 int exactMatches = 0;
     	    	 java.lang.reflect.Type[] params = constructor.getGenericParameterTypes();
+    	    	 Type<?>[] parameterTypes = new Type[params.length];
         	     for (int i=0; i < params.length; ++i) {
         	    	java.lang.reflect.Type param = params[i];
         	    	
-    	    		Type<?> type = TypeFactory.valueOf(param);
+        	    	parameterTypes[i] = TypeFactory.valueOf(param);
     	    		for (Iterator<FieldMap> iter = targetTypes.iterator(); iter.hasNext();) {
     	    			FieldMap fieldMap = iter.next();
     	    			Type<?> targetType = fieldMap.getDestination().getType();
-    	    			if ((type.equals(targetType) && ++exactMatches != 0) || type.isAssignableFrom(targetType) ) {
+    	    			if ((parameterTypes[i].equals(targetType) && ++exactMatches != 0) 
+    	    			        || parameterTypes[i].isAssignableFrom(targetType) ) {
     	    				++matchScore;
     	    				
     	    				String parameterName = fieldMap.getDestination().getName();
             				FieldMap existingField = targetParameters.get(parameterName);
-            				FieldMap argumentMap = mapConstructorArgument(existingField, type, byDefault);
+            				FieldMap argumentMap = mapConstructorArgument(existingField, parameterTypes[i], byDefault);
             				constructorMapping.getMappedFields().add(argumentMap);
     	    				
     	    				iter.remove();
@@ -160,7 +163,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
     	    			} 
     	    		}
     	    	 }
-        		 
+        		 constructorMapping.setParameterTypes(parameterTypes);
         	     constructorMapping.setConstructor(constructor);
         	     constructorMapping.setDeclaredParameters(declaredParameterNames);
         	     constructorsByMatchedParams.put((matchScore*1000 + exactMatches), constructorMapping); 
@@ -191,7 +194,6 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
 	private FieldMap mapConstructorArgument(FieldMap existing, Type<?> argumentType, boolean byDefault) {
 		Property destProp = new Property.Builder()
         		.name(existing.getDestination().getName())
-    		    //.expression(existing.getDestination().getExpression())
         		.getter(existing.getDestination().getName())
     		    .type(argumentType)
     		    .build();
