@@ -34,13 +34,6 @@ import ma.glasnost.orika.metadata.TypeFactory;
  */
 class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     
-    protected volatile MappingStrategy aToB;
-    protected volatile MappingStrategy bToA;
-    protected volatile MappingStrategy aToBInPlace;
-    protected volatile MappingStrategy bToAInPlace;
-    protected volatile ObjectFactory<A> objectFactoryA;
-    protected volatile ObjectFactory<B> objectFactoryB;
-    
     protected final java.lang.reflect.Type rawAType;
     protected final java.lang.reflect.Type rawBType;
     protected final Type<A> aType;
@@ -119,13 +112,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     public B map(A instanceA, MappingContext context) {
         B result = (B) context.getMappedObject(instanceA, bType);
         if (result == null) {
-            if (aToB == null) {
-                synchronized (this) {
-                    if (aToB == null) {
-                        aToB = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, false, context);
-                    }
-                }
-            }
+        	MappingStrategy aToB = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, false, context); 
             result = (B) aToB.map(instanceA, null, context);
         }
         return result;
@@ -141,13 +128,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     public A mapReverse(B instanceB, MappingContext context) {
         A result = (A) context.getMappedObject(instanceB, aType);
         if (result == null) {
-            if (bToA == null) {
-                synchronized (this) {
-                    if (bToA == null) {
-                        bToA = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
-                    }
-                }
-            }
+        	MappingStrategy bToA = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
             result = (A) bToA.map(instanceB, null, context);
         }
         return result;
@@ -161,13 +142,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     public void map(A instanceA, B instanceB, MappingContext context) {
         if (context.getMappedObject(instanceA, bType) == null) {
-            if (aToBInPlace == null) {
-                synchronized (this) {
-                    if (aToBInPlace == null) {
-                        aToBInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
-                    }
-                }
-            }
+            MappingStrategy aToBInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
             aToBInPlace.map(instanceA, instanceB, context);
         }
     }
@@ -180,13 +155,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     public void mapReverse(B instanceB, A instanceA, MappingContext context) {
         if (context.getMappedObject(instanceB, aType) == null) {
-            if (bToAInPlace == null) {
-                synchronized (this) {
-                    if (bToAInPlace == null) {
-                        bToAInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
-                    }
-                }
-            }
+            MappingStrategy bToAInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
             bToAInPlace.map(instanceB, instanceA, context);
         }
     }
@@ -199,13 +168,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * @see ma.glasnost.orika.DedicatedMapperFacade#newObjectB(java.lang.Object, ma.glasnost.orika.MappingContext)
      */
     public B newObject(A source, MappingContext context) {
-        if (objectFactoryB == null) {
-            synchronized(this) {
-                if (objectFactoryB == null) {
-                    objectFactoryB = mapperFactory.lookupObjectFactory(bType);
-                }
-            }
-        }
+        ObjectFactory<B> objectFactoryB = mapperFactory.lookupObjectFactory(bType);
         return objectFactoryB.create(source, context);
     }
 
@@ -213,13 +176,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * @see ma.glasnost.orika.DedicatedMapperFacade#newObjectA(java.lang.Object, ma.glasnost.orika.MappingContext)
      */
     public A newObjectReverse(B source, MappingContext context) {
-        if (objectFactoryA == null) {
-            synchronized(this) {
-                if (objectFactoryA == null) {
-                    objectFactoryA = mapperFactory.lookupObjectFactory(aType);
-                }
-            }
-        }
+        ObjectFactory<A> objectFactoryA = mapperFactory.lookupObjectFactory(aType);
         return objectFactoryA.create(source, context);
     }
 }
