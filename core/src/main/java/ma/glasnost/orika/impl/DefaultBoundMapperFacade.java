@@ -17,6 +17,8 @@
  */
 package ma.glasnost.orika.impl;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
@@ -34,12 +36,18 @@ import ma.glasnost.orika.metadata.TypeFactory;
  */
 class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     
-    protected volatile MappingStrategy aToB;
-    protected volatile MappingStrategy bToA;
-    protected volatile MappingStrategy aToBInPlace;
-    protected volatile MappingStrategy bToAInPlace;
+    /*
+     * Keep small cache of strategies; we expect the total size to be == 1 in most cases,
+     * but some polymorphism is possible
+     */
+    protected final ConcurrentHashMap<Class<?>, MappingStrategy> aToB = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
+    protected final ConcurrentHashMap<Class<?>, MappingStrategy> bToA = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
+    protected final ConcurrentHashMap<Class<?>, MappingStrategy> aToBInPlace = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
+    protected final ConcurrentHashMap<Class<?>, MappingStrategy> bToAInPlace = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
+    
     protected volatile ObjectFactory<A> objectFactoryA;
     protected volatile ObjectFactory<B> objectFactoryB;
+    
     
     protected final java.lang.reflect.Type rawAType;
     protected final java.lang.reflect.Type rawBType;
@@ -119,13 +127,12 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     public B map(A instanceA, MappingContext context) {
         B result = (B) context.getMappedObject(instanceA, bType);
         if (result == null) {
-            if (aToB == null) {
-                synchronized (this) {
-                    if (aToB == null) {
-                        aToB = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, false, context);
-                    }
-                }
+            MappingStrategy aToB = this.aToB.get(instanceA.getClass());
+            if (aToB == null) {    
+                aToB = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, false, context);
+                this.aToB.put(instanceA.getClass(), aToB);
             }
+            
             result = (B) aToB.map(instanceA, null, context);
         }
         return result;
@@ -141,12 +148,10 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     public A mapReverse(B instanceB, MappingContext context) {
         A result = (A) context.getMappedObject(instanceB, aType);
         if (result == null) {
+            MappingStrategy bToA = this.bToA.get(instanceB.getClass());
             if (bToA == null) {
-                synchronized (this) {
-                    if (bToA == null) {
-                        bToA = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
-                    }
-                }
+                bToA = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, false, context);
+                this.bToA.put(instanceB.getClass(), bToA);
             }
             result = (A) bToA.map(instanceB, null, context);
         }
@@ -161,13 +166,11 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     public void map(A instanceA, B instanceB, MappingContext context) {
         if (context.getMappedObject(instanceA, bType) == null) {
+            MappingStrategy aToBInPlace = this.aToBInPlace.get(instanceA.getClass());
             if (aToBInPlace == null) {
-                synchronized (this) {
-                    if (aToBInPlace == null) {
-                        aToBInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
-                    }
-                }
-            }
+                aToBInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceA, rawAType, rawBType, true, context);
+                this.aToBInPlace.put(instanceA.getClass(), aToBInPlace);
+            }            
             aToBInPlace.map(instanceA, instanceB, context);
         }
     }
@@ -180,12 +183,9 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     public void mapReverse(B instanceB, A instanceA, MappingContext context) {
         if (context.getMappedObject(instanceB, aType) == null) {
+            MappingStrategy bToAInPlace = this.bToAInPlace.get(instanceB.getClass());
             if (bToAInPlace == null) {
-                synchronized (this) {
-                    if (bToAInPlace == null) {
-                        bToAInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
-                    }
-                }
+                bToAInPlace = mapperFactory.getMapperFacade().resolveMappingStrategy(instanceB, rawBType, rawAType, true, context);
             }
             bToAInPlace.map(instanceB, instanceA, context);
         }

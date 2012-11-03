@@ -97,7 +97,6 @@ public class Issue65TestCase {
         public void setDate(Date date) {
             this.date = date;
         }
-        
     }
     
     
