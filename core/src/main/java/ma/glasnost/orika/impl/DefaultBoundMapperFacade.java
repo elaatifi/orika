@@ -132,7 +132,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     @SuppressWarnings("unchecked")
     public B map(A instanceA, MappingContext context) {
         B result = (B) context.getMappedObject(instanceA, bType);
-        if (result == null) {
+        if (result == null && instanceA != null) {
             result = (B) aToB.getStrategy(instanceA, context).map(instanceA, null, context);
         }
         return result;
@@ -147,7 +147,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     @SuppressWarnings("unchecked")
     public A mapReverse(B instanceB, MappingContext context) {
         A result = (A) context.getMappedObject(instanceB, aType);
-        if (result == null) {
+        if (result == null && instanceB != null) {
             result = (A) bToA.getStrategy(instanceB, context).map(instanceB, null, context);
         }
         return result;
@@ -160,7 +160,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
     public void map(A instanceA, B instanceB, MappingContext context) {
-        if (context.getMappedObject(instanceA, bType) == null) {
+        if (context.getMappedObject(instanceA, bType) == null && instanceA != null) {
             aToBInPlace.getStrategy(instanceA, context).map(instanceA, instanceB, context);
         }
     }
@@ -172,7 +172,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
     public void mapReverse(B instanceB, A instanceA, MappingContext context) {
-        if (context.getMappedObject(instanceB, aType) == null) {
+        if (context.getMappedObject(instanceB, aType) == null && instanceB != null) {
             bToAInPlace.getStrategy(instanceB, context).map(instanceB, instanceA, context);
         }
     }
@@ -225,11 +225,10 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         private final Type<?> bType;
         private final boolean inPlace;
         private final MapperFacade mapperFacade;
+        protected final ConcurrentHashMap<Class<?>, MappingStrategy> strategies = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
         
         private volatile Class<?> idClass;
         private volatile MappingStrategy defaultStrategy;
-        protected final ConcurrentHashMap<Class<?>, MappingStrategy> strategies = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
-        
         
         private BoundStrategyCache(Type<?> aType, Type<?> bType, MapperFacade mapperFacade, boolean inPlace) {
             this.aType = aType;
@@ -239,8 +238,10 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         }
         
         public MappingStrategy getStrategy(Object sourceObject, MappingContext context) {
-            MappingStrategy strategy;
-            if (defaultStrategy == null) {
+            MappingStrategy strategy = null;
+            if (defaultStrategy != null && sourceObject.getClass().equals(idClass)) {
+                strategy = defaultStrategy;
+            } else if (defaultStrategy == null) {
                 synchronized(this) {
                     if (defaultStrategy == null) {
                         defaultStrategy = mapperFacade.resolveMappingStrategy(sourceObject, aType, bType, inPlace, context);
@@ -248,14 +249,12 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
                     }
                 }
                 strategy = defaultStrategy;
-            } else if (sourceObject != null && !sourceObject.getClass().equals(idClass)) {
+            } else {
                 strategy = strategies.get(sourceObject.getClass());
                 if (strategy == null) {
                     strategy = mapperFacade.resolveMappingStrategy(sourceObject, aType, bType, inPlace, context);
                     strategies.put(sourceObject.getClass(), strategy);
                 }
-            } else {
-                strategy = defaultStrategy;
             }
             return strategy;
         }
