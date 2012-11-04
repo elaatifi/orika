@@ -349,8 +349,8 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return "".equals(expr);
     }
     
-    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.=\"\\|\\%,\\(\\)\\$ ]+";
-    private static final String NON_NESTED_PROPERTY_CHARACTERS = "[\\w.=\"\\|\\%,\\(\\)\\$\\[\\] ]+";
+    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$ ]+";
+    private static final String NON_NESTED_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\[\\] ]+";
     
     
     private static final String NESTED_PROPERTY_SPLITTER = "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS
@@ -422,7 +422,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
             elementType = MapEntry.concreteEntryType((Type<Map<Object, Object>>) owningProperty.getType());
             if (elementPropertyExpression.matches("(^'[.\\w]*')|(^\"[.\\w]*\")")) {
                 String key = elementPropertyExpression.substring(1, elementPropertyExpression.length()-1);
-                elementProperty = new MapKeyProperty(key, elementType); 
+                elementProperty = new MapKeyProperty(key, elementType.getNestedType(1)); 
                 return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
             } else {
                 elementProperty = getProperty(elementType, elementPropertyExpression); 
@@ -520,7 +520,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return property;
     }
     
-    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
+    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)'\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)'\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
     
     /**
      * Determines whether the provided string is a valid in-line property

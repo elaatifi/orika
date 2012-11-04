@@ -300,13 +300,44 @@ public class Property {
             return new NestedProperty.Builder(this, name);
         }
         
+        private String fixQuotes(String methodExpression) {
+            String expression = methodExpression;
+            StringBuilder output = new StringBuilder();
+            while (expression.length() > 0) {
+                int currentDouble = expression.indexOf('"');
+                int currentSingle = expression.indexOf("'");
+                if (currentSingle > 0 && (currentSingle < currentDouble || currentDouble == -1)) {
+                    output.append(expression.subSequence(0, currentSingle));
+                    expression = expression.substring(currentSingle+1);
+                    
+                    int nextSingle = expression.indexOf("'");
+                    if (nextSingle == 1) {
+                        output.append("'" + expression.substring(0, 2));
+                    } else {
+                        output.append("\"" + expression.substring(0, nextSingle) + "\"");
+                    }
+                    expression = expression.substring(nextSingle+1);
+                } else if (currentDouble > 0) {
+                    output.append(expression.subSequence(0, currentDouble));
+                    expression = expression.substring(currentDouble+1);
+                    
+                    int nextDouble = expression.indexOf('"');
+                    output.append("\"" + expression.substring(0, nextDouble) + "\"");
+                    expression = expression.substring(nextDouble+1);
+                } else {
+                    output.append(expression);
+                    expression = "";
+                }
+            }
+            return output.toString();
+        }
         
         /**
          * @param getter
          *            the getter to set
          */
         public Builder getter(String getter) {
-            this.getter = getter;
+            this.getter = fixQuotes(getter);
             return this;
         }
         
@@ -315,7 +346,7 @@ public class Property {
          *            the setter to set
          */
         public Builder setter(String setter) {
-            this.setter = setter;
+            this.setter = fixQuotes(setter);
             return this;
         }
         

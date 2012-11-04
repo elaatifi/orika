@@ -415,6 +415,67 @@ public class PropertyResolverTestCase {
         
     }
     
+    /**
+     * Demonstrates that you can specify the types as parameterized if necessary,
+     * such as "List&lt;String&gt;" or "java.util.List&lt;java.lang.String&gt;",
+     * and that single quotes can be used instead of double quotes for convenience.
+     */
+    @Test
+    public void testAdHocResolution_integration_declarativePropertiesNestedTypesSingleQuote() {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        {
+            String employmentDef = "employment{getAttribute('employment')|setAttribute('employment', %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase.Element}";
+            String jobTitleDef = "jobTitle{getAttribute(\"job's Title\")|setAttribute(\"job's Title\", %s)|type=List<String>}";
+            String salaryDef = "salary{getAttribute(\"'salary'\")|setAttribute(\"'salary'\", %s)|type=java.lang.Long}";
+            
+            String nameDef = "name{getAttribute('name')|setAttribute('name',%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase.Element}";
+            String firstNameDef = "first{getAttribute('first')|setAttribute('first', %s)|type=java.lang.String}";
+            String lastNameDef = "last{getAttribute('last')|setAttribute('last', %s)|type=java.lang.String}";
+            
+            factory.classMap(Element.class, PersonDto.class)
+                .field(employmentDef + "." + jobTitleDef, "jobTitles")
+                .field("employment." + salaryDef, "salary") // reuse the in-line declaration of 'employment' property
+                .field(nameDef + "." + firstNameDef, "firstName")
+                .field("name." + lastNameDef, "lastName") // reuses the in-line declaration of 'name' property
+                .register();
+        }
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Element person = new Element();
+        Element employment = new Element();
+        List<String> jobTitles = new ArrayList<String>();
+        jobTitles.add("manager");
+        jobTitles.add("executive");
+        employment.setAttribute("job's Title", jobTitles);
+        employment.setAttribute("'salary'", 50000L);
+        person.setAttribute("employment", employment);
+        Element name = new Element();
+        name.setAttribute("first", "Chuck");
+        name.setAttribute("last", "Testa");
+        person.setAttribute("name", name);
+        
+        PersonDto result = mapper.map(person, PersonDto.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), result.firstName);
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), result.lastName);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("'salary'"), result.salary);
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("job's Title"), result.jobTitles);
+        
+        Element mapBack = mapper.map(result, Element.class);
+        
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), ((Element)mapBack.getAttribute("name")).getAttribute("first"));
+        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), ((Element)mapBack.getAttribute("name")).getAttribute("last"));
+        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("'salary'"), ((Element)mapBack.getAttribute("employment")).getAttribute("'salary'"));
+        
+        List<?> original = (List<?>) ((Element)person.getAttribute("employment")).getAttribute("job's Title");
+        List<?> mapBackList = (List<?>) ((Element)mapBack.getAttribute("employment")).getAttribute("job's Title");
+        Assert.assertTrue(original.containsAll(mapBackList));
+        Assert.assertTrue(mapBackList.containsAll(original));
+        
+    }
     
     /**
      * For my next trick, this is a custom Property Resolver which automatically attempts
