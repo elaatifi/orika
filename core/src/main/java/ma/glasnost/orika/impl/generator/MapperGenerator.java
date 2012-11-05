@@ -33,7 +33,6 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
-import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,12 +43,10 @@ public final class MapperGenerator {
     
     private final MapperFactory mapperFactory;
     private final CompilerStrategy compilerStrategy;
-    private final PropertyResolverStrategy propertyResolver;
     
-    public MapperGenerator(MapperFactory mapperFactory, CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver) {
+    public MapperGenerator(MapperFactory mapperFactory, CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
         this.compilerStrategy = compilerStrategy;
-        this.propertyResolver = propertyResolver;
     }
     
     public GeneratedMapperBase build(ClassMap<?, ?> classMap, MappingContext context) {
@@ -68,8 +65,7 @@ public final class MapperGenerator {
             }
             
             final SourceCodeContext mapperCode = new SourceCodeContext(
-                    classMap.getMapperClassName(), GeneratedMapperBase.class,
-                    compilerStrategy, propertyResolver, mapperFactory, context, logDetails);
+                    classMap.getMapperClassName(), GeneratedMapperBase.class, context, logDetails);
             
             Set<FieldMap> mappedFields = new LinkedHashSet<FieldMap>();
             mappedFields.addAll(addMapMethod(mapperCode, true, classMap, logDetails));

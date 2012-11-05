@@ -53,9 +53,7 @@ public class PropertyResolverTestCase {
 		String np = "start.x";
 
 		NestedProperty p = (NestedProperty) propertyResolver.getProperty(Line.class, np);
-		
 		Assert.assertEquals(Integer.TYPE, p.getRawType());
-		
 		p = (NestedProperty) propertyResolver.getProperty(Student.class, "favoriteBook.author.name");
 	
 		Assert.assertEquals(String.class, p.getRawType());

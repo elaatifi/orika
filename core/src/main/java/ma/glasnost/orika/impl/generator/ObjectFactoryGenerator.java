@@ -37,7 +37,6 @@ import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
-import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,17 +47,13 @@ public class ObjectFactoryGenerator {
     
     private final ConstructorResolverStrategy constructorResolverStrategy;
     private final MapperFactory mapperFactory;
-    private final CompilerStrategy compilerStrategy;
     private final String nameSuffix;
-    private final PropertyResolverStrategy propertyResolver;
     
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
-    		CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver) {
+    		CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
-        this.compilerStrategy = compilerStrategy;
         this.nameSuffix = Integer.toHexString(System.identityHashCode(compilerStrategy));
         this.constructorResolverStrategy = constructorResolverStrategy;
-        this.propertyResolver = propertyResolver;
     }
     
     public GeneratedObjectFactory build(Type<?> type, MappingContext context) {
@@ -66,7 +61,6 @@ public class ObjectFactoryGenerator {
         final String className = type.getSimpleName() + "_ObjectFactory" + nameSuffix;
         
         try {
-            
             StringBuilder logDetails;
             if (LOGGER.isDebugEnabled()) {
             	logDetails = new StringBuilder();
@@ -76,8 +70,7 @@ public class ObjectFactoryGenerator {
             }
             
             final SourceCodeContext factoryCode = 
-                    new SourceCodeContext(className,GeneratedObjectFactory.class,compilerStrategy, 
-                            propertyResolver, mapperFactory, context, logDetails);
+                    new SourceCodeContext(className,GeneratedObjectFactory.class, context, logDetails);
             
             UsedTypesContext usedTypes = new UsedTypesContext();
             UsedConvertersContext usedConverters = new UsedConvertersContext();

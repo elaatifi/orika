@@ -104,7 +104,6 @@ public class DefaultMapperFactory implements MapperFactory {
     private final ClassMapBuilderForLists.Factory classMapBuilderForListsFactory;
     private final ClassMapBuilderForArrays.Factory classMapBuilderForArraysFactory;
     private final Map<MapperKey, Set<ClassMap<Object, Object>>> usedMapperMetadataRegistry;
-    private final CodeGenerationStrategy codeGenerationStrategy;
     
     private final boolean useAutoMapping;
     private final boolean useBuiltinConverters;
@@ -152,12 +151,20 @@ public class DefaultMapperFactory implements MapperFactory {
         this.classMapBuilderForArraysFactory.setPropertyResolver(this.propertyResolverStrategy);
         this.classMapBuilderForArraysFactory.setMapperFactory(this);
         
-        this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy, this.propertyResolverStrategy);
-        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy, this.propertyResolverStrategy);
+        this.mapperGenerator = new MapperGenerator(this, builder.compilerStrategy);
+        this.objectFactoryGenerator = new ObjectFactoryGenerator(this, builder.constructorResolverStrategy, builder.compilerStrategy);
         this.useAutoMapping = builder.useAutoMapping;
         this.useBuiltinConverters = builder.useBuiltinConverters;
-        this.contextFactory.getGlobalProperties().put(Properties.SHOULD_MAP_NULLS, builder.mapNulls);
-        this.codeGenerationStrategy = new DefaultCodeGenerationStrategy(this);
+        
+        builder.codeGenerationStrategy.setMapperFactory(this);
+        
+        Map<Object, Object> props = this.contextFactory.getGlobalProperties();
+        props.put(Properties.SHOULD_MAP_NULLS, builder.mapNulls);
+        props.put(Properties.CODE_GENERATION_STRATEGY, builder.codeGenerationStrategy);
+        props.put(Properties.COMPILER_STRATEGY, builder.compilerStrategy);
+        props.put(Properties.PROPERTY_RESOLVER_STRATEGY, builder.propertyResolverStrategy);
+        props.put(Properties.MAPPER_FACTORY, this);
+        
         /*
          * Register default concrete types for common collection types; these
          * can be overridden as needed by user code.
@@ -215,6 +222,10 @@ public class DefaultMapperFactory implements MapperFactory {
          * The ClassMapBuilderFactory configured for the MapperFactory
          */
         protected ClassMapBuilderFactory classMapBuilderFactory;
+        /**
+         * The CodeGenerationStrategy configured for the MapperFactory
+         */
+        protected CodeGenerationStrategy codeGenerationStrategy = new DefaultCodeGenerationStrategy();
         /**
          * The configured value of whether or not to use built-in converters for
          * the MapperFactory
@@ -389,6 +400,17 @@ public class DefaultMapperFactory implements MapperFactory {
         public B mapNulls(boolean mapNulls) {
             this.mapNulls = mapNulls;
             return self();
+        }
+        
+        /**
+         * Get a reference to the CodeGenerationStrategy associated with this MapperFactory,
+         * which may be used to configure/customize the individual mapping Specifications
+         * that are used to generate code for the various mapping scenarios.
+         * 
+         * @return the CodeGenerationStrategy to be associated with this MapperFactory
+         */
+        public CodeGenerationStrategy getCodeGenerationStrategy() {
+            return codeGenerationStrategy;
         }
         
         /**
@@ -1070,10 +1092,6 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     }
     
-    public <A, B> ClassMapBuilder<A, B> expand(Type<A> aType, Type<B> bType) {
-        return getClassMapBuilderFactory().map(aType, bType);
-    }
-    
     public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Type<B> bType) {
         return classMap(TypeFactory.<A> valueOf(aType), bType);
     }
@@ -1149,8 +1167,6 @@ public class DefaultMapperFactory implements MapperFactory {
     /* (non-Javadoc)
      * @see ma.glasnost.orika.MapperFactory#getCodeGenerationStrategy()
      */
-    public CodeGenerationStrategy getCodeGenerationStrategy() {
-        return codeGenerationStrategy;
-    }
+    
     
 }

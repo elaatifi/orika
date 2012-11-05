@@ -55,35 +55,44 @@ public class DefaultCodeGenerationStrategy implements CodeGenerationStrategy {
     private final ArrayList<Specification> specifications;
     private final ArrayList<AggregateSpecification> aggregateSpecifications;
     
-    DefaultCodeGenerationStrategy(MapperFactory mapperFactory) {
+    DefaultCodeGenerationStrategy() {
         
         this.specifications = new ArrayList<Specification>();
         
-        specifications.add(new CopyByReference(mapperFactory));
-        specifications.add(new PrimitiveOrWrapperToPrimitive(mapperFactory));
-        specifications.add(new PrimitiveToWrapper(mapperFactory));
-        specifications.add(new Convert(mapperFactory));
-        specifications.add(new ApplyRegisteredMapper(mapperFactory));
-        specifications.add(new EnumToEnum(mapperFactory));
-        specifications.add(new StringToEnum(mapperFactory));
-        specifications.add(new UnmappableEnum(mapperFactory));
-        specifications.add(new ArrayOrCollectionToArray(mapperFactory));
-        specifications.add(new ArrayOrCollectionToCollection(mapperFactory));
-        specifications.add(new MapToMap(mapperFactory));
-        specifications.add(new MapToArray(mapperFactory));
-        specifications.add(new MapToCollection(mapperFactory));
-        specifications.add(new ArrayOrCollectionToMap(mapperFactory));
-        specifications.add(new StringToStringConvertible(mapperFactory));
-        specifications.add(new AnyTypeToString(mapperFactory));
-        specifications.add(new MultiOccurrenceElementToObject(mapperFactory));
-        specifications.add(new ObjectToMultiOccurrenceElement(mapperFactory));
-        specifications.add(new PrimitiveAndObject(mapperFactory));
-        specifications.add(new ObjectToObject(mapperFactory));
+        specifications.add(new CopyByReference());
+        specifications.add(new PrimitiveOrWrapperToPrimitive());
+        specifications.add(new PrimitiveToWrapper());
+        specifications.add(new Convert());
+        specifications.add(new ApplyRegisteredMapper());
+        specifications.add(new EnumToEnum());
+        specifications.add(new StringToEnum());
+        specifications.add(new UnmappableEnum());
+        specifications.add(new ArrayOrCollectionToArray());
+        specifications.add(new ArrayOrCollectionToCollection());
+        specifications.add(new MapToMap());
+        specifications.add(new MapToArray());
+        specifications.add(new MapToCollection());
+        specifications.add(new ArrayOrCollectionToMap());
+        specifications.add(new StringToStringConvertible());
+        specifications.add(new AnyTypeToString());
+        specifications.add(new MultiOccurrenceElementToObject());
+        specifications.add(new ObjectToMultiOccurrenceElement());
+        specifications.add(new PrimitiveAndObject());
+        specifications.add(new ObjectToObject());
         
         this.aggregateSpecifications = new ArrayList<AggregateSpecification>();
         
-        aggregateSpecifications.add(new MultiOccurrenceToMultiOccurrence(mapperFactory));
+        aggregateSpecifications.add(new MultiOccurrenceToMultiOccurrence());
         
+    }
+    
+    public void setMapperFactory(MapperFactory mapperFactory) {
+        for (Specification spec: this.specifications) {
+            spec.setMapperFactory(mapperFactory);
+        }
+        for (AggregateSpecification spec: this.aggregateSpecifications) {
+            spec.setMapperFactory(mapperFactory);
+        }
     }
     
     /* (non-Javadoc)

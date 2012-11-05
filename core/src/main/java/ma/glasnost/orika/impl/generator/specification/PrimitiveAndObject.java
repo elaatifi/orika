@@ -1,6 +1,5 @@
 package ma.glasnost.orika.impl.generator.specification;
 
-import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
@@ -12,10 +11,6 @@ import ma.glasnost.orika.metadata.Property;
  *
  */
 public class PrimitiveAndObject extends AbstractSpecification {
-
-    public PrimitiveAndObject(MapperFactory mapperFactory) {
-        super(mapperFactory);
-    }
 
     public boolean appliesTo(FieldMap fieldMap) {
         return fieldMap.getSource().getType().isPrimitive() || fieldMap.getDestination().getType().isPrimitive();

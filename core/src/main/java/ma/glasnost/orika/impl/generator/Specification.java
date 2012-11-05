@@ -1,5 +1,6 @@
 package ma.glasnost.orika.impl.generator;
 
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 
@@ -11,6 +12,8 @@ import ma.glasnost.orika.metadata.Property;
  *
  */
 public interface Specification {
+    
+    void setMapperFactory(MapperFactory mapperFactory);
     
     /**
      * Tests whether this Specification applies to the specified MappedTypePair

@@ -2,7 +2,6 @@ package ma.glasnost.orika.impl.generator.specification;
 
 import static java.lang.String.format;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
-import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
@@ -10,10 +9,6 @@ import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 
 public class ObjectToObject extends AbstractSpecification {
-
-    public ObjectToObject(MapperFactory mapperFactory) {
-        super(mapperFactory);
-    }
 
     public boolean appliesTo(FieldMap fieldMap) {
         return true;

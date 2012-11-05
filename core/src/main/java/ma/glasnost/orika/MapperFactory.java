@@ -21,7 +21,6 @@ package ma.glasnost.orika;
 import java.util.Set;
 
 import ma.glasnost.orika.converter.ConverterFactory;
-import ma.glasnost.orika.impl.generator.CodeGenerationStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.MapperKey;
@@ -290,16 +289,6 @@ public interface MapperFactory {
      */
     ConverterFactory getConverterFactory();
     
-    
-    /**
-     * Get an instance of the CodeGenerationStrategy associated with this MapperFactory;
-     * the CodeGenerationStrategy can be used to customize specific aspects of the code generation
-     * for this MapperFactory.
-     * 
-     * @return the CodeGenerationStrategy associated with this mapper
-     */
-    CodeGenerationStrategy getCodeGenerationStrategy();
-    
     /**
      * Builds this MapperFactory.
      * 
@@ -377,7 +366,5 @@ public interface MapperFactory {
      * @return
      */
     public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Class<B> bType);
-    
-    public <A, B> ClassMapBuilder<A, B> expand(Type<A> aType, Type<B> bType);
     
 }

@@ -323,8 +323,9 @@ abstract class TypeUtil {
                 }
             } else {
                 int lastDot = name.lastIndexOf('.');
+                String modifiedName = name;
                 while (lastDot > 0) {
-                    String modifiedName = name.substring(0, lastDot) + "$" + name.substring(lastDot+1);
+                    modifiedName = modifiedName.substring(0, lastDot) + "$" + modifiedName.substring(lastDot+1);
                     try {
                         return Class.forName(modifiedName, false, cl);
                     } catch (ClassNotFoundException e2) {

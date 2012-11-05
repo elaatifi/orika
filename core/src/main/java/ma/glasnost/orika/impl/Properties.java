@@ -22,5 +22,11 @@ package ma.glasnost.orika.impl;
  *
  */
 public enum Properties {
-    SHOULD_MAP_NULLS;
+    SHOULD_MAP_NULLS,
+    LOG_DETAILS,
+    MAPPER_FACTORY,
+    CODE_GENERATION_STRATEGY,
+    PROPERTY_RESOLVER_STRATEGY,
+    COMPILER_STRATEGY
+    ;
 }
