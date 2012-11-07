@@ -1,4 +1,4 @@
-Orika ![Build status](https://secure.travis-ci.org/elaatifi/orika.png)
+Orika ![![Build Status](https://secure.travis-ci.org/elaatifi/orika.png)](http://travis-ci.org/elaatifi/orika)
 -----------------------------------------------------------------------
 
 *NEW* We are pleased to announce the release of Orika *1.3.5*! _This version is available on Maven central repository_ 
