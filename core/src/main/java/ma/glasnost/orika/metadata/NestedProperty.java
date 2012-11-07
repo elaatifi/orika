@@ -18,15 +18,40 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import ma.glasnost.orika.property.PropertyResolver;
 
 public class NestedProperty extends Property {
     
     private final Property[] path;
+    private final Property tail;
     
     public NestedProperty(String expression, Property property, Property[] path) {
         super(expression,property.getName(),property.getGetter(),property.getSetter(),property.getType(),property.getElementType());
-        this.path = path;
+        this.path = collapse(path);
+        this.tail = property;
+    }
+    
+    private static Property[] collapse(Property[] path) {
+        List<Property> collapsed = new ArrayList<Property>();
+        collapsed.addAll(Arrays.asList(path));
+        int i = 0;
+        while (i < collapsed.size()) {
+            Property p = collapsed.get(i);
+            if (p instanceof NestedProperty) {
+                collapsed.remove(i);
+                for (Property element: p.getPath()) {
+                    collapsed.add(i++, element);
+                }
+                Property tail = ((NestedProperty)p).tail;
+                collapsed.add(i, tail);
+            }
+            ++i;
+        }
+        return collapsed.toArray(path);
     }
     
     @Override
@@ -56,6 +81,18 @@ public class NestedProperty extends Property {
     
     public int hashCode() {
     	return super.hashCode();
+    }
+    
+    public boolean isListElement() {
+        return tail.isListElement();
+    }
+    
+    public boolean isArrayElement() {
+        return tail.isArrayElement();
+    }
+    
+    public boolean isMapKey() {
+        return tail.isMapKey();
     }
     
     static class Builder extends Property.Builder {

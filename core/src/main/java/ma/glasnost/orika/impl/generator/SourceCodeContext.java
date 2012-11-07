@@ -78,6 +78,7 @@ public class SourceCodeContext {
     private final UsedConvertersContext usedConverters;
     private final UsedMapperFacadesContext usedMapperFacades;
     private final MapperFactory mapperFactory;
+    private final CodeGenerationStrategy codeGenerationStrategy;
     private final StringBuilder logDetails;
     private final PropertyResolverStrategy propertyResolver;
     private final Map<AggregateSpecification, List<FieldMap>> aggregateFieldMaps;
@@ -93,16 +94,13 @@ public class SourceCodeContext {
      * @param mapperFactory
      * @param logDetails
      */
-    public SourceCodeContext(final String baseClassName, Class<?> superClass,
-            CompilerStrategy compilerStrategy, PropertyResolverStrategy propertyResolver, 
-            MapperFactory mapperFactory, MappingContext mappingContext, StringBuilder logDetails) {
+    public SourceCodeContext(final String baseClassName, Class<?> superClass, 
+            MappingContext mappingContext, StringBuilder logDetails) {
         
         String safeBaseClassName = baseClassName.replace("[]", "$Array");
-        this.compilerStrategy = compilerStrategy;
         this.sourceBuilder = new StringBuilder();
         this.classSimpleName = safeBaseClassName + System.identityHashCode(this);
         this.superClass = superClass;
-        this.propertyResolver = propertyResolver;
 
         int namePos = safeBaseClassName.lastIndexOf(".");
         if (namePos > 0) {
@@ -122,7 +120,13 @@ public class SourceCodeContext {
         
         this.usedTypes = new UsedTypesContext();
         this.usedConverters = new UsedConvertersContext();
-        this.mapperFactory = mapperFactory;
+        
+        this.mapperFactory = (MapperFactory) mappingContext.getProperty(Properties.MAPPER_FACTORY);
+        this.codeGenerationStrategy = (CodeGenerationStrategy) mappingContext.getProperty(Properties.CODE_GENERATION_STRATEGY);
+        this.compilerStrategy = (CompilerStrategy) mappingContext.getProperty(Properties.COMPILER_STRATEGY);
+        this.propertyResolver = (PropertyResolverStrategy) mappingContext.getProperty(Properties.PROPERTY_RESOLVER_STRATEGY);
+        
+        
         this.mappingContext = mappingContext;
         this.usedMapperFacades = new UsedMapperFacadesContext();
         this.logDetails = logDetails;
@@ -338,11 +342,11 @@ public class SourceCodeContext {
         StringBuilder out = new StringBuilder();
         for (final VariableRef ref : propertyRef.getPath()) {
             
-            if (!ClassUtil.isConcrete(ref.type())) {
+            if (!ClassUtil.isConcrete(ref.type()) && !ref.type().isMultiOccurrence()) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
             
-            out.append(statement("if(%s == null) %s", ref,
+            out.append(statement("if(%s) %s", ref.isNull(),
                     ref.assign("(%s)%s(source, mappingContext)", ref.typeName(), usedMapperFacadeNewObjectCall(ref,source))));
         }
         return out.toString();
@@ -562,7 +566,7 @@ public class SourceCodeContext {
      * @return
      */
     public boolean aggregateSpecsApply(FieldMap fieldMap) {
-        for (AggregateSpecification spec: mapperFactory.getCodeGenerationStrategy().getAggregateSpecifications()) {
+        for (AggregateSpecification spec: codeGenerationStrategy.getAggregateSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 List<FieldMap> fieldMaps = this.aggregateFieldMaps.get(spec);
                 if (fieldMaps == null) {
@@ -630,7 +634,7 @@ public class SourceCodeContext {
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
         sourceProperty.setConverter(converter);
         
-        for (Specification spec: mapperFactory.getCodeGenerationStrategy().getSpecifications()) {
+        for (Specification spec: codeGenerationStrategy.getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 String code = spec.generateMappingCode(sourceProperty, destinationProperty, fieldMap.getInverse(), this);
                 if (code == null || "".equals(code)) {
@@ -679,7 +683,7 @@ public class SourceCodeContext {
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
         sourceProperty.setConverter(converter);
         
-        for (Specification spec: mapperFactory.getCodeGenerationStrategy().getSpecifications()) {
+        for (Specification spec: codeGenerationStrategy.getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 String code = spec.generateEqualityTestCode(sourceProperty, destinationProperty, fieldMap.getInverse(), this);
                 if (code == null || "".equals(code)) {

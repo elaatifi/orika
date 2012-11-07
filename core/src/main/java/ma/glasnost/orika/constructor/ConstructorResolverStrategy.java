@@ -48,8 +48,21 @@ public interface ConstructorResolverStrategy {
     	private List<FieldMap> mappedFields;
     	private boolean parameterNameInfoAvailable;
     	private String[] declaredParameters;
+    	private Type<?>[] parameterTypes;
     	
-		public boolean isParameterNameInfoAvailable() {
+		/**
+         * @return the parameterTypes
+         */
+        public Type<?>[] getParameterTypes() {
+            return parameterTypes;
+        }
+        /**
+         * @param parameterTypes the parameterTypes to set
+         */
+        public void setParameterTypes(Type<?>[] parameterTypes) {
+            this.parameterTypes = parameterTypes;
+        }
+        public boolean isParameterNameInfoAvailable() {
 			return parameterNameInfoAvailable;
 		}
 		public void setParameterNameInfoAvailable(boolean parameterNameInfoAvailable) {

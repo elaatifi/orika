@@ -161,21 +161,4 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
         return new MapKeyProperty(expr, propertyType.getNestedType(1));
     }
     
-    /**
-     * MapKeyProperty is a special Property instance used to represent a value
-     * which associated with a key within a Map.
-     * 
-     * @author matt.deboer@gmail.com
-     *
-     */
-    public static final class MapKeyProperty extends Property {
-        
-        public MapKeyProperty(String key, Type<?> type) {
-            super(key,key,"get(\"" + key + "\")","put(\"" + key + "\",%s)",type,null);
-        }
-        
-        public boolean isMapKey() {
-            return true;
-        }
-    }
 }

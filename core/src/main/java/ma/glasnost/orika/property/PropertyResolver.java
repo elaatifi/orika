@@ -36,6 +36,9 @@ import java.util.regex.Pattern;
 
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.metadata.ArrayElementProperty;
+import ma.glasnost.orika.metadata.ListElementProperty;
+import ma.glasnost.orika.metadata.MapKeyProperty;
 import ma.glasnost.orika.metadata.NestedElementProperty;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
@@ -111,6 +114,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                             types.add(type.getSuperclass());
                         }
                         
+                        @SuppressWarnings("unchecked")
                         List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                         types.addAll(interfaces);
                     }
@@ -318,7 +322,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return true of the expression represents a nested property
      */
     protected boolean isNestedPropertyExpression(String expression) {
-        return expression.replaceAll("\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
+        return expression.replaceAll("\\{" + NON_NESTED_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
     }
     
     /**
@@ -345,7 +349,9 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return "".equals(expr);
     }
     
-    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.=\"\\|\\%,\\(\\)\\$ ]+";
+    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$ ]+";
+    private static final String NON_NESTED_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\[\\] ]+";
+    
     
     private static final String NESTED_PROPERTY_SPLITTER = "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS
             + "\\})";
@@ -382,7 +388,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                 i++;
                 if (i < ps.length) {
                     path.add(property);
-                    expression.append(property.getName() + ".");
+                    expression.append(property.getExpression() + ".");
                 } else {
                     expression.append(property.getExpression());
                 }
@@ -413,16 +419,40 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         
         Property elementProperty;
         if (owningProperty.isMap()) {
-            // elementType = MapEntry.entryType((Type<Map<Object,Object>>)
-            // owningProperty.getType());
             elementType = MapEntry.concreteEntryType((Type<Map<Object, Object>>) owningProperty.getType());
-            elementProperty = getProperty(elementType, elementPropertyExpression);
+            if (elementPropertyExpression.matches("(^'[.\\w]*')|(^\"[.\\w]*\")")) {
+                String key = elementPropertyExpression.substring(1, elementPropertyExpression.length()-1);
+                elementProperty = new MapKeyProperty(key, elementType.getNestedType(1)); 
+                return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
+            } else {
+                elementProperty = getProperty(elementType, elementPropertyExpression); 
+            }
         } else if (owningProperty.isCollection()) {
             elementType = owningProperty.getType().getNestedType(0);
-            elementProperty = getProperty(elementType, elementPropertyExpression);
+            if (elementPropertyExpression.matches("[\\d+]")) {
+                try {
+                    int index = Integer.valueOf(elementPropertyExpression);
+                    elementProperty = new ListElementProperty(index, elementType); 
+                    return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
+                }
+            } else {
+                elementProperty = getProperty(elementType, elementPropertyExpression);
+            }
         } else if (owningProperty.isArray()) {
             elementType = owningProperty.getType().getComponentType();
-            elementProperty = getProperty(elementType, elementPropertyExpression);
+            if (elementPropertyExpression.matches("[\\d+]")) {
+                try {
+                    int index = Integer.valueOf(elementPropertyExpression);
+                    elementProperty = new ArrayElementProperty(index, elementType); 
+                    return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
+                }
+            } else {
+                elementProperty = getProperty(elementType, elementPropertyExpression);
+            }
         } else {
             throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
         }
@@ -454,10 +484,10 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         
         if (isSelfReferenceExpression(expr)) {
             property = new Property.Builder().name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type)).build(this);
-        } else if (isElementPropertyExpression(expr)) {
-            property = getElementProperty(type, expr);
         } else if (isNestedPropertyExpression(expr)) {
             property = getNestedProperty(type, expr);
+        } else if (isElementPropertyExpression(expr)) {
+            property = getElementProperty(type, expr);
         } else {
             // TODO: perhaps in-line properties should be isolated to a given
             // ClassMapBuilder instance, rather than made available for other
@@ -490,7 +520,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return property;
     }
     
-    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
+    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)'\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)'\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
     
     /**
      * Determines whether the provided string is a valid in-line property

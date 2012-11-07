@@ -1,5 +1,6 @@
 package ma.glasnost.orika.test.generator;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.Assert;
@@ -118,6 +119,90 @@ public class BeanToMapGenerationTestCase {
         Assert.assertEquals(student.grade.point, mapBack.grade.point);
         
     }
+	
+	@Test
+	public void testMapElementProperties() {
+	    
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        factory.classMap(Person.class, PersonDto.class)
+                .field("name.first", "names['first']")
+                .field("name.last", "names[\"last\"]")
+                .register();
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Person person = new Person();
+        person.name = new Name();
+        person.name.first = "Chuck";
+        person.name.last = "Testa";
+        
+        PersonDto result = mapper.map(person, PersonDto.class);
+        
+        Assert.assertNotNull(result.names);
+        Assert.assertEquals(person.name.first, result.names.get("first"));
+        Assert.assertEquals(person.name.last, result.names.get("last"));
+        
+        Person mapBack = mapper.map(result, Person.class);
+        
+        Assert.assertNotNull(mapBack.name.first);
+        Assert.assertEquals(person.name.first, mapBack.name.first);
+        Assert.assertEquals(person.name.last, mapBack.name.last);
+	        
+	}
+	
+	@Test
+    public void testNestedMapElement() {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        factory.classMap(Person.class, PersonDto2.class)
+                .field("name.first", "names['self'].first")
+                .field("name.last", "names['self'].last")
+                .field("father.first", "names['father'].first")
+                .field("father.last", "names['father'].last")
+                .register();
+        
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Person person = new Person();
+        person.name = new Name();
+        person.name.first = "Chuck";
+        person.name.last = "Testa";
+        person.father = new Name();
+        person.father.first = "Buck";
+        person.father.last = "Testa";
+        
+        PersonDto2 result = mapper.map(person, PersonDto2.class);
+        
+        Assert.assertNotNull(result.names);
+        Assert.assertEquals(person.name.first, result.names.get("self").first);
+        Assert.assertEquals(person.name.last, result.names.get("self").last);
+        Assert.assertEquals(person.father.first, result.names.get("father").first);
+        Assert.assertEquals(person.father.last, result.names.get("father").last);
+        
+        Person mapBack = mapper.map(result, Person.class);
+        
+        Assert.assertNotNull(mapBack.name.first);
+        Assert.assertEquals(person.name.first, mapBack.name.first);
+        Assert.assertEquals(person.name.last, mapBack.name.last);
+        Assert.assertEquals(person.father.first, mapBack.father.first);
+        Assert.assertEquals(person.father.last, mapBack.father.last);
+            
+    }
+	
+	public static class Person {
+	    public Name name;
+	    public Name father;
+	}
+	
+	public static class PersonDto {
+	    public Map<String, String> names = new HashMap<String, String>();
+	}
+	
+	public static class PersonDto2 {
+	    public Map<String, Name> names = new HashMap<String, Name>();
+	}
 	
 	public static class Student {
 	    public Grade grade;

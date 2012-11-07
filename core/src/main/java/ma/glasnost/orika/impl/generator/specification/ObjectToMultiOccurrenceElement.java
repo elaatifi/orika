@@ -2,7 +2,6 @@ package ma.glasnost.orika.impl.generator.specification;
 
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
-import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.impl.util.ClassUtil;
@@ -10,10 +9,6 @@ import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 
 public class ObjectToMultiOccurrenceElement extends AbstractSpecification {
-
-    public ObjectToMultiOccurrenceElement(MapperFactory mapperFactory) {
-        super(mapperFactory);
-    }
 
     public boolean appliesTo(FieldMap fieldMap) {
         return (fieldMap.getDestination().isMapKey() || fieldMap.getDestination().isArrayElement() || fieldMap.getDestination().isListElement())

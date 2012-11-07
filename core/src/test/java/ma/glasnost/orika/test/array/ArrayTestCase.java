@@ -65,4 +65,43 @@ public class ArrayTestCase {
         Assert.assertArrayEquals(new byte[] {(byte)1,(byte)2,(byte)3,(byte)4}, destination.getBuffer());
     	
     }
+    
+    @Test
+    public void testMappingArrayOfString() {
+
+        Product p = new Product();
+        p.setTags(new String[] { "music", "sport" });
+
+        ProductDTO productDTO = MappingUtil.getMapperFactory().getMapperFacade().map(p, ProductDTO.class);
+
+        Assert.assertArrayEquals(p.getTags(), productDTO.getTags());
+    }
+
+    public static class Product {
+
+        private String[] tags;
+
+        public String[] getTags() {
+            return tags;
+        }
+
+        public void setTags(String[] tags) {
+            this.tags = tags;
+        }
+
+    }
+
+    public static class ProductDTO {
+
+        private String[] tags;
+
+        public String[] getTags() {
+            return tags;
+        }
+
+        public void setTags(String[] tags) {
+            this.tags = tags;
+        }
+
+    }
 }

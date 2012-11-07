@@ -74,22 +74,4 @@ public class ClassMapBuilderForArrays<A, B> extends ClassMapBuilderForLists<A,B>
         int index = Integer.valueOf(expr.replaceAll("[\\[\\]]", ""));
         return new ArrayElementProperty(index, propertyType.getComponentType());
     }
-    
-    /**
-     * ListElementProperty is a special Property instance used to represent a value
-     * which associated with a particular index in a list.
-     * 
-     * @author matt.deboer@gmail.com
-     *
-     */
-    public static final class ArrayElementProperty extends Property {
-        
-        public ArrayElementProperty(int index, Type<?> propertyType) {
-            super("["+index + "]","["+index + "]","["+index + "]","["+index + "] = %s",propertyType,null);
-        }
-        
-        public boolean isArrayElement() {
-            return true;
-        }
-    }
 }

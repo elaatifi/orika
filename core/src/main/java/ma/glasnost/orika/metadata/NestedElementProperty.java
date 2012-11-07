@@ -1,8 +1,5 @@
 package ma.glasnost.orika.metadata;
 
-import java.util.List;
-
-import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
@@ -44,13 +41,8 @@ public class NestedElementProperty extends Property {
             boolean nested = false;
             for (int i = parts.length -2; i >= 0; --i) {
                 String part = parts[i];
-//                if (nested) {
                     containerExpression.insert(0, "[" + part);
-//                }
-                //containerExpression.insert(0, part);
-//                if (nested) {
                     containerExpression.append("]");
-//                }
                 nested = true;
             }
             return resolver.getProperty(owningProperty.getType(), containerExpression.toString());

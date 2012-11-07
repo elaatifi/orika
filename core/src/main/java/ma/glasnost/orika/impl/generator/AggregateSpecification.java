@@ -2,6 +2,7 @@ package ma.glasnost.orika.impl.generator;
 
 import java.util.List;
 
+import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.FieldMap;
 
 /**
@@ -12,6 +13,8 @@ import ma.glasnost.orika.metadata.FieldMap;
  *
  */
 public interface AggregateSpecification {
+    
+    void setMapperFactory(MapperFactory mapperFactory);
     
     /**
      * Tests whether this Specification applies to the specified MappedTypePair

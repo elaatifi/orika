@@ -1,17 +1,12 @@
 package ma.glasnost.orika.impl.generator.specification;
 
 import static java.lang.String.format;
-import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 
 public class ArrayOrCollectionToArray extends AbstractSpecification {
-
-    public ArrayOrCollectionToArray(MapperFactory mapperFactory) {
-        super(mapperFactory);
-    }
 
     public boolean appliesTo(FieldMap fieldMap) {
         return fieldMap.getDestination().isArray() && (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection());

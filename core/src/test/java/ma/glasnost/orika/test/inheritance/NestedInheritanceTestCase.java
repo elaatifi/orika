@@ -18,9 +18,11 @@
 
 package ma.glasnost.orika.test.inheritance;
 
+import java.util.Arrays;
+import java.util.List;
+
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
@@ -29,13 +31,11 @@ public class NestedInheritanceTestCase {
     
     @Test
     public void testNestedInheritance() {
-        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
         
-        factory.registerClassMap(ClassMapBuilder.map(Person.class, PersonDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(Client.class, ClientDTO.class).byDefault().toClassMap());
-        factory.registerClassMap(ClassMapBuilder.map(Subscription.class, SubscriptionDTO.class).field("client", "person").toClassMap());
-        
-        factory.build();
+        factory.registerClassMap(factory.classMap(Person.class, PersonDTO.class).byDefault().toClassMap());
+        factory.registerClassMap(factory.classMap(Client.class, ClientDTO.class).byDefault().toClassMap());
+        factory.registerClassMap(factory.classMap(Subscription.class, SubscriptionDTO.class).field("client", "person").toClassMap());
         
         Client client = new Client();
         client.setName("Khalil Gebran");
@@ -48,6 +48,40 @@ public class NestedInheritanceTestCase {
         Assert.assertNotNull(dto);
         Assert.assertNotNull(dto.getPerson());
         Assert.assertEquals(client.getName(), dto.getPerson().getName());
+    }
+    
+    @Test
+    public void testNestedPolymorphicInheritance() {
+        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        
+        factory.registerClassMap(factory.classMap(Person.class, PersonDTO.class).byDefault().toClassMap());
+        factory.registerClassMap(factory.classMap(Client.class, ClientDTO.class).byDefault().toClassMap());
+        factory.registerClassMap(factory.classMap(Employee.class, EmployeeDTO.class).byDefault().toClassMap());
+        factory.registerClassMap(factory.classMap(Subscription.class, SubscriptionDTO.class).field("client", "person").toClassMap());
+        
+        Client client = new Client();
+        client.setName("Khalil Gebran");
+        
+        Employee employee = new Employee();
+        employee.setName("Kuipje Anders");
+        
+        Subscription clientSubscription = new Subscription();
+        clientSubscription.setClient(client);
+        
+        Subscription employeeSubscription = new Subscription();
+        employeeSubscription.setClient(employee);
+        
+        List<Subscription> subscriptions = Arrays.asList(clientSubscription, employeeSubscription);
+        
+        List<SubscriptionDTO> dto = factory.getMapperFacade().mapAsList(subscriptions, SubscriptionDTO.class);
+        
+        Assert.assertNotNull(dto);
+        Assert.assertEquals(2, dto.size());
+        Assert.assertNotNull(dto.get(0).getPerson());
+        Assert.assertEquals(client.getName(), dto.get(0).getPerson().getName());
+        Assert.assertEquals(employee.getName(), dto.get(1).getPerson().getName());
+        Assert.assertEquals(ClientDTO.class, dto.get(0).getPerson().getClass());
+        Assert.assertEquals(EmployeeDTO.class, dto.get(1).getPerson().getClass());
     }
     
     public abstract static class Person {
@@ -64,6 +98,10 @@ public class NestedInheritanceTestCase {
     }
     
     public static class Client extends Person {
+        
+    }
+    
+    public static class Employee extends Person {
         
     }
     
@@ -96,6 +134,10 @@ public class NestedInheritanceTestCase {
     }
     
     public static class ClientDTO extends PersonDTO {
+        
+    }
+    
+    public static class EmployeeDTO extends PersonDTO {
         
     }
     

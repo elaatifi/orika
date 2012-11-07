@@ -1,6 +1,5 @@
 package ma.glasnost.orika.impl.generator.specification;
 
-import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
@@ -15,10 +14,6 @@ import ma.glasnost.orika.metadata.Property;
  *
  */
 public class UnmappableEnum extends AbstractSpecification {
-
-    public UnmappableEnum(MapperFactory mapperFactory) {
-        super(mapperFactory);
-    }
 
     public boolean appliesTo(FieldMap fieldMap) {
         return fieldMap.getBType().isEnum() && !fieldMap.getAType().isEnum() && !fieldMap.getAType().isString();

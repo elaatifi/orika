@@ -321,7 +321,20 @@ abstract class TypeUtil {
                          */
                     }
                 }
+            } else {
+                int lastDot = name.lastIndexOf('.');
+                String modifiedName = name;
+                while (lastDot > 0) {
+                    modifiedName = modifiedName.substring(0, lastDot) + "$" + modifiedName.substring(lastDot+1);
+                    try {
+                        return Class.forName(modifiedName, false, cl);
+                    } catch (ClassNotFoundException e2) {
+                        lastDot = modifiedName.lastIndexOf('.');
+                    }
+                }
+                
             }
+            
             throw new IllegalArgumentException("'" + name + "' is non-existent or inaccessible");
         }
     }

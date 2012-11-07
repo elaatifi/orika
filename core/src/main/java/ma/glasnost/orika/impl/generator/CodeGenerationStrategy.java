@@ -19,6 +19,8 @@ package ma.glasnost.orika.impl.generator;
 
 import java.util.List;
 
+import ma.glasnost.orika.MapperFactory;
+
 /**
  * CodeGenerationStrategy is an encapsulation of the collection of individual 
  * field mapping scenarios for which code is generated. It allows reordering,
@@ -36,6 +38,13 @@ public interface CodeGenerationStrategy {
         FIRST,
         LAST
     }
+    
+    /**
+     * Set the MapperFactory on this CodeGenerationStrategy
+     * 
+     * @param mapperFactory the MapperFactory to apply
+     */
+    public void setMapperFactory(MapperFactory mapperFactory);
     
     /**
      * Convenience method to add a specification at a relative position with respect to

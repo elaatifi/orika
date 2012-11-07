@@ -30,15 +30,7 @@ import ma.glasnost.orika.metadata.Type;
  */
 public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification {
     
-    private final MapperFactory mapperFactory;
-    
-    /**
-     * @param mapperFactory
-     * @param propertyResolver
-     */
-    public MultiOccurrenceToMultiOccurrence(MapperFactory mapperFactory) {
-        this.mapperFactory = mapperFactory;
-    }
+    protected MapperFactory mapperFactory;
     
     /**
      * Generates the code to support a (potentially parallel) mapping from one
@@ -297,5 +289,12 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
      */
     public String generateMappingCode(List<FieldMap> fieldMappings, SourceCodeContext code) {
         return this.fromMultiOccurrenceToMultiOccurrence(fieldMappings, code);
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.generator.AggregateSpecification#setMapperFactory(ma.glasnost.orika.MapperFactory)
+     */
+    public void setMapperFactory(MapperFactory mapperFactory) {
+        this.mapperFactory = mapperFactory;
     }
 }

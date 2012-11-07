@@ -15,18 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.impl;
+package ma.glasnost.orika.metadata;
 
 /**
+ * ListElementProperty is a special Property instance used to represent a value
+ * which associated with a particular index in a list.
+ * 
  * @author matt.deboer@gmail.com
  *
  */
-public enum Properties {
-    SHOULD_MAP_NULLS,
-    LOG_DETAILS,
-    MAPPER_FACTORY,
-    CODE_GENERATION_STRATEGY,
-    PROPERTY_RESOLVER_STRATEGY,
-    COMPILER_STRATEGY
-    ;
+public class ListElementProperty extends Property {
+    
+    public ListElementProperty(int index, Type<?> propertyType) {
+        super(""+index,""+index,"get(" + index + ")","add(" + index + ", %s)",propertyType,null);
+    }
+    
+    public boolean isListElement() {
+        return true;
+    }
 }

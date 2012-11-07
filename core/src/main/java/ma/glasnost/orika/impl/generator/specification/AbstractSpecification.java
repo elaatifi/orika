@@ -11,7 +11,7 @@ public abstract class AbstractSpecification implements Specification {
 
     protected MapperFactory mapperFactory;
     
-    public AbstractSpecification(MapperFactory mapperFactory) {
+    public void setMapperFactory(MapperFactory mapperFactory) {
         this.mapperFactory = mapperFactory;
     }
     

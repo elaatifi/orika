@@ -3,7 +3,6 @@ package ma.glasnost.orika.impl.generator.specification;
 import static java.lang.String.format;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
-import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
@@ -12,10 +11,6 @@ import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 
 public class ArrayOrCollectionToCollection extends AbstractSpecification {
-
-    public ArrayOrCollectionToCollection(MapperFactory mapperFactory) {
-        super(mapperFactory);
-    }
 
     public boolean appliesTo(FieldMap fieldMap) {
         return (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection()) && fieldMap.getDestination().isCollection();

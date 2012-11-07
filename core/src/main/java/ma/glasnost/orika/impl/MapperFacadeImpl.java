@@ -238,7 +238,10 @@ public class MapperFacadeImpl implements MapperFacade {
         } catch (MappingException e) {
             /* don't wrap our own exceptions */
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if (!ExceptionUtility.originatedByOrika(e)) {
+                throw e;
+            } 
             throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
                     + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) + "\nsourceType=" + sourceType
                     + "\ndestinationType=" + destinationType, e);
@@ -298,7 +301,10 @@ public class MapperFacadeImpl implements MapperFacade {
         } catch (MappingException e) {
             /* don't wrap our own exceptions */
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if (!ExceptionUtility.originatedByOrika(e)) {
+                throw e;
+            } 
             throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
                     + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) + "\nsourceType=" + sourceType
                     + "\nrawDestination=" + destinationObject + "\ndestinationClass="
@@ -336,7 +342,10 @@ public class MapperFacadeImpl implements MapperFacade {
         } catch (MappingException e) {
             /* don't wrap our own exceptions */
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if (!ExceptionUtility.originatedByOrika(e)) {
+                throw e;
+            } 
             throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
                     + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) 
                     + "\nrawDestination=" + destinationObject + "\ndestinationClass="
@@ -673,7 +682,10 @@ public class MapperFacadeImpl implements MapperFacade {
         } catch (MappingException e) {
             /* don't wrap our own exceptions */
             throw e;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            if (!ExceptionUtility.originatedByOrika(e)) {
+                throw e;
+            } 
             throw new MappingException("Error encountered while mapping for the following inputs: " + "\nrawSource=" + sourceObject
                     + "\nsourceClass=" + (sourceObject != null ? sourceObject.getClass() : null) 
                     + "\ndestinationClass=" + destinationClass, e);
