@@ -31,10 +31,13 @@ public class Convert extends AbstractSpecification {
         
         String statement = destination.assign("%s.convert(%s, %s)", code.usedConverter(source.getConverter()), source.asWrapper(), code.usedType(destination));
         
+        boolean shouldSetNull = code.shouldMapNulls() && !destination.isPrimitive();
+        
         if (source.isPrimitive()) {
             return statement(statement);
         } else {
-            return statement(source.ifNotNull() + statement);
+        	String elseSetNull   = shouldSetNull ? ("else " + destination.assign("null")) : "";
+            return statement(source.ifNotNull() + statement) + statement(elseSetNull);
         }
     }
     
