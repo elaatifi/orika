@@ -84,7 +84,7 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultMapperFactory.class);
     
-    private final MapperFacadeImpl mapperFacade;
+    private final MapperFacade mapperFacade;
     private final MapperGenerator mapperGenerator;
     private final ObjectFactoryGenerator objectFactoryGenerator;
     
@@ -128,7 +128,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
         this.unenhanceStrategy = buildUnenhanceStrategy(builder.unenhanceStrategy, builder.superTypeStrategy);
         this.contextFactory = new MappingContext.Factory();
-        this.mapperFacade = new MapperFacadeImpl(this, contextFactory, unenhanceStrategy);
+        this.mapperFacade = buildMapperFacade(contextFactory, unenhanceStrategy);
         this.concreteTypeRegistry = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
         
         if (builder.classMaps != null) {
@@ -175,7 +175,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.registerConcreteType(Map.class, LinkedHashMap.class);
         this.registerConcreteType(Map.Entry.class, MapEntry.class);
     }
-    
+
     /**
      * MapperFactoryBuilder provides an extensible Builder definition usable for
      * providing your own Builder class for subclasses of DefaultMapperFactory.<br>
@@ -556,6 +556,20 @@ public class DefaultMapperFactory implements MapperFactory {
         return unenhancer;
         
     }
+    
+    /**
+	 * Builds the MapperFacade for this factory. Subclasses can override this
+	 * method to build a custom MapperFacade. Please note that this method is
+	 * called from the constructor and as such properties of the factory may not
+	 * yet be initialized.
+	 * 
+	 * @param contextFactory
+	 * @param unenhanceStrategy
+	 * @return the MapperFacade to use
+	 */
+	protected MapperFacade buildMapperFacade(MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {
+		return new MapperFacadeImpl(this, contextFactory, unenhanceStrategy);
+	}
     
     /*
      * (non-Javadoc)
