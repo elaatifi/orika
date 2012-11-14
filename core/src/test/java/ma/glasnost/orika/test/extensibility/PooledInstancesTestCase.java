@@ -63,21 +63,22 @@ public class PooledInstancesTestCase {
 				return wrapped.mapReverse(instanceB, context);
 			}
 
-			public void map(A instanceA, B instanceB) {
-				pool.get(((SourcePoolView) instanceA).getName());
+			@SuppressWarnings("unchecked")
+			public B map(A instanceA, B instanceB) {
+				return (B) pool.get(((SourcePoolView) instanceA).getName());
 			}
 
-			public void map(A instanceA, B instanceB, MappingContext context) {
-				pool.get(((SourcePoolView) instanceA).getName());
+			@SuppressWarnings("unchecked")
+			public B map(A instanceA, B instanceB, MappingContext context) {
+				return (B) pool.get(((SourcePoolView) instanceA).getName());
 			}
 
-			public void mapReverse(B instanceB, A instanceA) {
-				wrapped.mapReverse(instanceB, instanceA);
+			public A mapReverse(B instanceB, A instanceA) {
+				return wrapped.mapReverse(instanceB, instanceA);
 			}
 
-			public void mapReverse(B instanceB, A instanceA,
-					MappingContext context) {
-				wrapped.mapReverse(instanceB, instanceA, context);
+			public A mapReverse(B instanceB, A instanceA, MappingContext context) {
+				return wrapped.mapReverse(instanceB, instanceA, context);
 			}
 
 			public B newObject(A source, MappingContext context) {
