@@ -73,7 +73,7 @@ public interface BoundMapperFacade<A, B> extends MappedTypePair<A, B> {
      * @param source
      * @param destination
      */
-    void map(A instanceA, B instanceB);
+    B map(A instanceA, B instanceB);
     
     /**
      * 
@@ -84,7 +84,7 @@ public interface BoundMapperFacade<A, B> extends MappedTypePair<A, B> {
      * @param context
      * @param destination
      */
-    void map(A instanceA, B instanceB, MappingContext context);
+    B map(A instanceA, B instanceB, MappingContext context);
     
     /**
      * Maps properties (in place) from the instance of 'B' to the provided
@@ -93,7 +93,7 @@ public interface BoundMapperFacade<A, B> extends MappedTypePair<A, B> {
      * @param destination
      * @param source
      */
-    void mapReverse(B instanceB, A instanceA);
+    A mapReverse(B instanceB, A instanceA);
     
     /**
      * Maps properties (in place) from the instance of 'B' to the provided
@@ -103,7 +103,7 @@ public interface BoundMapperFacade<A, B> extends MappedTypePair<A, B> {
      * @param context
      * @param source
      */
-    void mapReverse(B instanceB, A instanceA, MappingContext context);
+    A mapReverse(B instanceB, A instanceA, MappingContext context);
     
     
     /**
