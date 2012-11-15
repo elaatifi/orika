@@ -161,10 +161,11 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     @SuppressWarnings("unchecked")
     public B map(A instanceA, B instanceB, MappingContext context) {
-        if (context.getMappedObject(instanceA, bType) == null && instanceA != null) {
-            return (B) aToBInPlace.getStrategy(instanceA, context).map(instanceA, instanceB, context);
+        B result = (B) context.getMappedObject(instanceA, bType);
+		if (result == null && instanceA != null) {
+            result = (B) aToBInPlace.getStrategy(instanceA, context).map(instanceA, instanceB, context);
         }
-        return null;
+        return result;
     }
     
     /*
@@ -175,10 +176,11 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     @SuppressWarnings("unchecked")
     public A mapReverse(B instanceB, A instanceA, MappingContext context) {
-        if (context.getMappedObject(instanceB, aType) == null && instanceB != null) {
-            return (A) bToAInPlace.getStrategy(instanceB, context).map(instanceB, instanceA, context);
+    	A result = (A) context.getMappedObject(instanceB, aType);
+		if (result == null && instanceB != null) {
+            result = (A) bToAInPlace.getStrategy(instanceB, context).map(instanceB, instanceA, context);
         }
-        return null;
+        return result;
     }
     
     public String toString() {
