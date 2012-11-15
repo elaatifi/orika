@@ -160,15 +160,16 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
                 }
             }
             
-            String resourceName = type.getName();
+            String className = type.getName();
             if (type.isArray()) {
                 // Strip off the "[L" prefix from the internal name
-                resourceName = resourceName.substring(2, resourceName.length()-1);
+                className = type.getComponentType().getName();
             }
-            resourceName = resourceName.replace('.', '/') + ".class";
-            URL resource = Thread.currentThread().getContextClassLoader().getResource(resourceName);
-            if (resource == null) {
-                throw new SourceCodeGenerationException(type + " is not accessible");
+            
+            try {
+                classPool.get(className);
+            } catch (NotFoundException e) {
+                throw new SourceCodeGenerationException(type + " is not accessible", e);
             }
         }  
     }

@@ -20,7 +20,6 @@ package ma.glasnost.orika.impl.generator;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +41,7 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jdt.internal.compiler.Compiler;
 import org.eclipse.jdt.internal.compiler.DefaultErrorHandlingPolicies;
 import org.eclipse.jdt.internal.compiler.env.ICompilationUnit;
-import org.eclipse.jdt.internal.compiler.env.INameEnvironment;
+import org.eclipse.jdt.internal.compiler.env.NameEnvironmentAnswer;
 import org.eclipse.jdt.internal.compiler.impl.CompilerOptions;
 import org.eclipse.jdt.internal.compiler.problem.DefaultProblemFactory;
 import org.eclipse.jface.text.Document;
@@ -70,12 +69,12 @@ public class EclipseJdtCompiler {
 
 	private final ByteCodeClassLoader byteCodeClassLoader;
 	private final CodeFormatter formatter;
-	private final INameEnvironment compilerNameEnvironment;
+	private final NameEnvironment compilerNameEnvironment;
 	private final CompilerRequestor compilerRequester;
 	private final Compiler compiler;
 
 	public EclipseJdtCompiler() {
-		this(EclipseJdtCompiler.class.getClassLoader());
+		this(EclipseJdtCompiler.class.getClassLoader()/*Thread.currentThread().getContextClassLoader()*/);
 	}
 
 	public EclipseJdtCompiler(ClassLoader parentLoader) {
@@ -171,18 +170,25 @@ public class EclipseJdtCompiler {
 	public void assertTypeAccessible(Class<?> type)  throws IllegalStateException {
 	
 		if (!type.isPrimitive() && type.getClassLoader() != null) {
-			String resourceName;
+			String className;
 			if (type.isArray()) {
-				resourceName = type.getComponentType().getName();
+			    className = type.getComponentType().getName();
 			} else {
-				resourceName = type.getName();
+			    className = type.getName();
 			}
-			resourceName = resourceName.replace('.', '/') + ".class";
 			
-			URL url = byteCodeClassLoader.getResource(resourceName);
-			if (url == null) {
-				throw new IllegalStateException(type + " is not accessible");
-			}
+			try {
+			    byteCodeClassLoader.loadClass(className);
+			    
+            } catch (ClassNotFoundException e) {
+                throw new IllegalStateException(type + " is not accessible", e);
+            }
+			
+			NameEnvironmentAnswer answer = compilerNameEnvironment.findType(className);
+            if (answer == null) {
+                throw new IllegalStateException(type + " is not accessible");
+            }
+			
 		}
     }
 

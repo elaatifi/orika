@@ -73,7 +73,7 @@ public class NameEnvironment implements INameEnvironment {
 		return findType(result);
 	}
 
-	private NameEnvironmentAnswer findType(String className) {
+	public NameEnvironmentAnswer findType(String className) {
 		try {
 			String resourceName = className.replace('.', '/') + ".class";
 

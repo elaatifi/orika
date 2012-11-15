@@ -531,14 +531,8 @@ public class DefaultMapperFactory implements MapperFactory {
             public boolean isTypeAccessible(Type<?> type) {
                 
                 try {
-                    Class<?> loadedType = Thread.currentThread().getContextClassLoader().loadClass(type.getName());
-                    if (!type.getRawType().equals(loadedType)) {
-                        return false;
-                    }
                     compilerStrategy.assureTypeIsAccessible(type.getRawType());
                     return true;
-                } catch (ClassNotFoundException e) {
-                    return false;
                 } catch (SourceCodeGenerationException e) {
                     return false;
                 }

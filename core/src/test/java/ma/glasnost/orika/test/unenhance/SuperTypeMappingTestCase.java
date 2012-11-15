@@ -28,11 +28,13 @@ import java.util.GregorianCalendar;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompiler;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
+import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.MavenProjectUtil;
 import ma.glasnost.orika.test.unenhance.SuperTypeTestCaseClasses.Author;
@@ -283,23 +285,21 @@ public class SuperTypeMappingTestCase {
     public void testSuperTypeForInaccessibleClassWithAccessibleSupertype() throws Exception {
         
         MapperFactory factory = MappingUtil.getMapperFactory();
-        MappingHint myHint =
+        DefaultFieldMapper myHint =
         /**
          * This sample hint converts "myProperty" to "property", and vis-versa.
          */
-        new MappingHint() {
+        new DefaultFieldMapper() {
             
-            public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
+            public String suggestMappedField(String fromProperty, Type<?> fromPropertyType) {
                 if (fromProperty.startsWith("my")) {
                     return fromProperty.substring(2, 3).toLowerCase() + fromProperty.substring(3);
                 } else {
                     return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
                 }
             }
-            
         };
-        factory.registerMappingHint(myHint);
-        factory.build();
+        factory.registerDefaultFieldMapper(myHint);
         
         MapperFacade mapper = factory.getMapperFacade();
         
