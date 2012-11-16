@@ -105,19 +105,19 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         }
     }
     
-    public void map(A instanceA, B instanceB) {
+    public B map(A instanceA, B instanceB) {
         MappingContext context = contextFactory.getContext();
         try {
-            map(instanceA, instanceB, context);
+           return map(instanceA, instanceB, context);
         } finally {
             contextFactory.release(context);
         }
     }
     
-    public void mapReverse(B instanceB, A instanceA) {
+    public A mapReverse(B instanceB, A instanceA) {
         MappingContext context = contextFactory.getContext();
         try {
-            mapReverse(instanceB, instanceA, context);
+           return mapReverse(instanceB, instanceA, context);
         } finally {
             contextFactory.release(context);
         }
@@ -159,10 +159,13 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * @see ma.glasnost.orika.DedicatedMapperFacade#mapAtoB(java.lang.Object,
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
-    public void map(A instanceA, B instanceB, MappingContext context) {
-        if (context.getMappedObject(instanceA, bType) == null && instanceA != null) {
-            aToBInPlace.getStrategy(instanceA, context).map(instanceA, instanceB, context);
+    @SuppressWarnings("unchecked")
+    public B map(A instanceA, B instanceB, MappingContext context) {
+        B result = (B) context.getMappedObject(instanceA, bType);
+		if (result == null && instanceA != null) {
+            result = (B) aToBInPlace.getStrategy(instanceA, context).map(instanceA, instanceB, context);
         }
+        return result;
     }
     
     /*
@@ -171,10 +174,13 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      * @see ma.glasnost.orika.DedicatedMapperFacade#mapBtoA(java.lang.Object,
      * java.lang.Object, ma.glasnost.orika.MappingContext)
      */
-    public void mapReverse(B instanceB, A instanceA, MappingContext context) {
-        if (context.getMappedObject(instanceB, aType) == null && instanceB != null) {
-            bToAInPlace.getStrategy(instanceB, context).map(instanceB, instanceA, context);
+    @SuppressWarnings("unchecked")
+    public A mapReverse(B instanceB, A instanceA, MappingContext context) {
+    	A result = (A) context.getMappedObject(instanceB, aType);
+		if (result == null && instanceB != null) {
+            result = (A) bToAInPlace.getStrategy(instanceB, context).map(instanceB, instanceA, context);
         }
+        return result;
     }
     
     public String toString() {

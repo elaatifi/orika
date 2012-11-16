@@ -21,7 +21,7 @@ public class ObjectToObject extends AbstractSpecification {
     public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
         
         String mapNewObject = destination.assign(format("(%s)%s(%s, mappingContext)", destination.typeName(), code.usedMapperFacadeCall(source, destination), source));
-        String mapExistingObject = format("%s(%s, %s, mappingContext)", code.usedMapperFacadeCall(source, destination), source, destination);
+        String mapExistingObject = destination.assign(format("(%s)%s(%s, %s, mappingContext)", destination.typeName(), code.usedMapperFacadeCall(source, destination), source, destination));
         String mapStmt = format(" %s { %s; } else { %s; }", destination.ifNull(), mapNewObject, mapExistingObject);
         
         String ipStmt = "";
