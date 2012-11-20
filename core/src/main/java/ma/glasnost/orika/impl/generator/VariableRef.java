@@ -523,6 +523,8 @@ public class VariableRef {
     }
     
     protected static String getGetter(final Property property, String variableExpression) {
+    	if(property.getGetter() == null)
+    		return null;
         String var = variableExpression;
         if (property.hasPath()) {
             for (final Property p : property.getPath()) {
