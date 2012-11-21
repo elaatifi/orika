@@ -22,7 +22,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.net.URL;
 import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;

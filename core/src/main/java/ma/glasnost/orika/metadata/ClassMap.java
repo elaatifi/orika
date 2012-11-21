@@ -44,6 +44,9 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
     private final String[] constructorB;
     private final MapperKey mapperKey;
     
+    private final Boolean sourcesMappedOnNull;
+    private final Boolean destinationsMappedOnNull;
+    
     /**
      * Constructs a new ClassMap
      * 
@@ -56,7 +59,7 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
      * @param constructorB a description of the parameter names of the constructor to use for type 'B'
      */
     public ClassMap(Type<A> aType, Type<B> bType, Set<FieldMap> fieldsMapping, Mapper<A, B> customizedMapper, Set<MapperKey> usedMappers,
-            String[] constructorA, String[] constructorB) {
+            String[] constructorA, String[] constructorB, Boolean sourcesMappedOnNull, Boolean destinationsMappedOnNull) {
         this.aType = aType;
         this.bType = bType;
         
@@ -66,6 +69,9 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
         this.usedMappers = Collections.unmodifiableSet(usedMappers);
         
         this.mapperKey = new MapperKey(aType, bType);
+        
+        this.sourcesMappedOnNull = sourcesMappedOnNull;
+        this.destinationsMappedOnNull = destinationsMappedOnNull;
         
         if (constructorA != null) {
             this.constructorA = constructorA.clone();
@@ -86,7 +92,7 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
         String[] constructorA = this.constructorA == null ? null : this.constructorA.clone();
         String[] constructorB = this.constructorB == null ? null : this.constructorB.clone();
         
-        return new ClassMap<A,B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
+        return new ClassMap<A,B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     public MapperKey getMapperKey() {

@@ -38,12 +38,10 @@ public class NestedElementProperty extends Property {
         String[] parts = propertyExpression.replace("]","").split("\\[");
         if (parts.length > 1) {
             StringBuilder containerExpression = new StringBuilder("");
-            boolean nested = false;
             for (int i = parts.length -2; i >= 0; --i) {
                 String part = parts[i];
-                    containerExpression.insert(0, "[" + part);
-                    containerExpression.append("]");
-                nested = true;
+                containerExpression.insert(0, "[" + part);
+                containerExpression.append("]");
             }
             return resolver.getProperty(owningProperty.getType(), containerExpression.toString());
         } else {

@@ -62,10 +62,6 @@ public class FieldMap implements MappedTypePair<Object, Object> {
         return property != null ? property.copy() : null;
     }
     
-    private FieldMap copy(FieldMap fieldMap) {
-    	return fieldMap != null ? fieldMap.copy() : null;
-    }
-    
     public Property getSource() {
         return source;
     }

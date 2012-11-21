@@ -77,6 +77,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     private final PropertyResolverStrategy propertyResolver;
     private final MapperFactory mapperFactory;
     private final DefaultFieldMapper[] defaults;
+    private Boolean sourcesMappedOnNull;
+    private Boolean destinationsMappedOnNull;
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ClassMapBuilder.class);
     
@@ -258,7 +260,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB, byDefault);
+        return new FieldMapBuilder<A,B>(this, resolvePropertyForA(fieldNameA), fieldB, byDefault);
     }
     
     /**
@@ -270,7 +272,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property fieldA, String fieldNameB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA, fieldNameB, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA, resolvePropertyForB(fieldNameB), byDefault);
     }
     
     /**
@@ -294,7 +296,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property.Builder fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB.build((PropertyResolver)propertyResolver), byDefault);
+        return new FieldMapBuilder<A,B>(this, resolvePropertyForA(fieldNameA), fieldB.build((PropertyResolver)propertyResolver), byDefault);
     }
     
     /**
@@ -306,7 +308,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, String fieldNameB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldNameB, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), resolvePropertyForB(fieldNameB), byDefault);
     }
     
     /**
@@ -578,8 +580,36 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
         	LOGGER.debug("ClassMap created:\n\t" + describeClassMap());
         }
     	
-        return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB);
+        return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB, sourcesMappedOnNull, destinationsMappedOnNull);
     }
+    
+    
+    /**
+     * @param sourcesMappedOnNull true|false to indicate whether the source properties of
+     * this class map's fields should be set to null (when mapping in the reverse direction)
+     * if the destination property's value is null
+     * 
+     * @return this FieldMapBuilder
+     */
+    public ClassMapBuilder<A, B> sourcesMappedOnNull(boolean sourcesMappedOnNull) {
+        this.sourcesMappedOnNull = sourcesMappedOnNull;
+        
+        return this;
+    }
+    
+    /**
+     * @param destinationsMappedOnNull true|false to indicate whether the destination
+     * properties of this class map's fields should be set to null (when mapping in the forward 
+     * direction) if the source property's value is null
+     * 
+     * @return this FieldMapBuilder
+     */
+    public ClassMapBuilder<A, B> destinationMappedOnNull(boolean destinationsMappedOnNull) {
+        this.destinationsMappedOnNull = destinationsMappedOnNull;
+        
+        return this;
+    }
+    
     
     /**
      * Registers the ClassMap defined by this builder with it's initiating MapperFactory
