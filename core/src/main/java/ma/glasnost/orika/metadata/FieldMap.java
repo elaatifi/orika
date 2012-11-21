@@ -97,14 +97,16 @@ public class FieldMap implements MappedTypePair<Object, Object> {
     }
     
     /**
-     * @return the sourceMappedOnNull
+     * @return the sourceMappedOnNull; can be null, which indicates no preference and
+     * that the global value should be used.
      */
     public Boolean isSourceMappedOnNull() {
         return sourceMappedOnNull;
     }
 
     /**
-     * @return the destinationMappedOnNull
+     * @return destinationMappedOnNull; can be null, which indicates no preference and
+     * that the global value should be used.
      */
     public Boolean isDestinationMappedOnNull() {
         return destinationMappedOnNull;

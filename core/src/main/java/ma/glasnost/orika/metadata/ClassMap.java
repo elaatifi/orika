@@ -169,6 +169,24 @@ public class ClassMap<A, B> implements MappedTypePair<A, B>{
         return constructorB;
     }
     
+    
+    
+    /**
+     * @return sourcesMappedOnNull for this ClassMap; can be null, which indicates that
+     * no preference is specified, and the global default should be used
+     */
+    public Boolean areSourcesMappedOnNull() {
+        return sourcesMappedOnNull;
+    }
+
+    /**
+     * @return destinationsMappedOnNull for this ClassMap; can be null, which indicates
+     * that no preference is specified, and the global default should be used
+     */
+    public Boolean areDestinationsMappedOnNull() {
+        return destinationsMappedOnNull;
+    }
+
     @Override
     public int hashCode() {
         int result = 31;
