@@ -4,7 +4,6 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.Property;
 
 /**
  * UnmappableEnum is a place-holder specification to catch types which
@@ -19,7 +18,7 @@ public class UnmappableEnum extends AbstractSpecification {
         return fieldMap.getBType().isEnum() && !fieldMap.getAType().isEnum() && !fieldMap.getAType().isString();
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         throw new MappingException("Encountered mapping of enum to object (or vise-versa); sourceType="+
                 source.type() + ", destinationType=" + destination.type());
     }

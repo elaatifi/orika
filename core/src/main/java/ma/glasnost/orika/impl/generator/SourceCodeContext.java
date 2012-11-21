@@ -636,7 +636,7 @@ public class SourceCodeContext {
         
         for (Specification spec: codeGenerationStrategy.getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
-                String code = spec.generateMappingCode(sourceProperty, destinationProperty, fieldMap.getInverse(), this);
+                String code = spec.generateMappingCode(fieldMap, sourceProperty, destinationProperty, this);
                 if (code == null || "".equals(code)) {
                     throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty + 
                             ", destinationProperty = " + destinationProperty);
@@ -685,7 +685,7 @@ public class SourceCodeContext {
         
         for (Specification spec: codeGenerationStrategy.getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
-                String code = spec.generateEqualityTestCode(sourceProperty, destinationProperty, fieldMap.getInverse(), this);
+                String code = spec.generateEqualityTestCode(fieldMap, sourceProperty, destinationProperty, this);
                 if (code == null || "".equals(code)) {
                     throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty + 
                             ", destinationProperty = " + destinationProperty);

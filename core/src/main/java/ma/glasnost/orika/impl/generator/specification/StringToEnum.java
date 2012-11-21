@@ -5,7 +5,6 @@ import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.Property;
 
 public class StringToEnum extends AbstractSpecification {
 
@@ -13,11 +12,11 @@ public class StringToEnum extends AbstractSpecification {
         return fieldMap.getBType().isEnum() && fieldMap.getAType().isString();
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         return "(Enum.valueOf(%s.class, \"\"+%s) == " + destination +")";
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         String assignEnum = destination.assign("Enum.valueOf(%s.class, \"\"+%s)", destination.typeName(), source);
         String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", destination.assignIfPossible("null")): "";
         return statement("%s { %s; } %s", source.ifNotNull(), assignEnum, mapNull);

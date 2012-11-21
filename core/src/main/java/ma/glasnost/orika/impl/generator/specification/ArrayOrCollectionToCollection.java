@@ -8,7 +8,6 @@ import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.Property;
 
 public class ArrayOrCollectionToCollection extends AbstractSpecification {
 
@@ -16,12 +15,12 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
         return (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection()) && fieldMap.getDestination().isCollection();
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         // TODO:
         return "";
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         
         StringBuilder out = new StringBuilder();
         
@@ -59,10 +58,10 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
                     format("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext))", d, d.collectionType(), s,
                             code.usedType(s.elementType()), code.usedType(d.elementType())));
         }
-        if (inverseProperty != null) {
-            final MultiOccurrenceVariableRef inverse = new MultiOccurrenceVariableRef(inverseProperty, "orikaCollectionItem");
+        if (fieldMap.getInverse() != null) {
+            final MultiOccurrenceVariableRef inverse = new MultiOccurrenceVariableRef(fieldMap.getInverse(), "orikaCollectionItem");
             
-            if (inverseProperty.isCollection()) {
+            if (fieldMap.getInverse().isCollection()) {
                 append(out,
                           format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", d),
                           format("    %s orikaCollectionItem = (%s) orikaIterator.next();", d.elementTypeName(), d.elementTypeName()),
@@ -70,7 +69,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
                           format("    %s.add(%s)", inverse, d.owner()),
                           "}");
                 
-            } else if (inverseProperty.isArray()) {
+            } else if (fieldMap.getInverse().isArray()) {
                 out.append(" // TODO support array");
             } else {
                 append(out,

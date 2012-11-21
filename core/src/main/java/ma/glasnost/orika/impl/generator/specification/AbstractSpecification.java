@@ -17,11 +17,12 @@ public abstract class AbstractSpecification implements Specification {
     
     public abstract boolean appliesTo(FieldMap fieldMap);
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         return source + ".equals(" + destination + ")";
     }
 
-    public abstract String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code);
+    public abstract String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code);
+    
     
     
 }

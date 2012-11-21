@@ -13,7 +13,6 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.FieldMapBuilder;
-import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.TypeFactory;
 
 public class MapToMap extends AbstractSpecification {
@@ -22,11 +21,11 @@ public class MapToMap extends AbstractSpecification {
         return fieldMap.getSource().isMap() && fieldMap.getDestination().isMap();
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         return source + " == " + destination;
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         
         MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(destination);
         MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(source);

@@ -4,7 +4,6 @@ import static java.lang.String.format;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.Property;
 
 public class ArrayOrCollectionToArray extends AbstractSpecification {
 
@@ -12,11 +11,11 @@ public class ArrayOrCollectionToArray extends AbstractSpecification {
         return fieldMap.getDestination().isArray() && (fieldMap.getSource().isArray() || fieldMap.getSource().isCollection());
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         return "";
     }
 
-    public String generateMappingCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         
         final VariableRef arrayVar = destination.elementRef(destination.name());
         String newArray = format("%s[] %s = new %s[%s]", destination.elementTypeName(), destination.name(), destination.elementTypeName(), source.size());
