@@ -246,7 +246,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property fieldA, Property fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA, fieldB, null, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA, fieldB, byDefault);
     }
     
     /**
@@ -258,7 +258,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB, null, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB, byDefault);
     }
     
     /**
@@ -270,7 +270,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property fieldA, String fieldNameB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA, fieldNameB, null, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA, fieldNameB, byDefault);
     }
     
     /**
@@ -282,7 +282,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, Property.Builder fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldB.build((PropertyResolver)propertyResolver), null, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldB.build((PropertyResolver)propertyResolver), byDefault);
     }
     
     /**
@@ -294,7 +294,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property.Builder fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB.build((PropertyResolver)propertyResolver), null, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldNameA, fieldB.build((PropertyResolver)propertyResolver), byDefault);
     }
     
     /**
@@ -306,7 +306,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, String fieldNameB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldNameB, null, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldNameB, byDefault);
     }
     
     /**
@@ -600,25 +600,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     	for (FieldMap f: fieldsMapping) {
     		if (f.isExcluded()) {
     			output.append("\n\t .exclude('" + f.getSourceName() + "')");
-    		} else if (f.getElementMap() == null){
-    			output.append("\n\t .field( " + f.getSource() + ", " + f.getDestination() + " )");
     		} else {
-    			StringBuilder source = new StringBuilder(""+f.getSource().getExpression());
-    			StringBuilder dest = new StringBuilder(""+f.getDestination().getExpression());
-    			StringBuilder suffix = new StringBuilder();
-    			FieldMap elementMap = f.getElementMap();
-    			
-    			while (elementMap != null) {
-    				source.append("[" + elementMap.getSource().getExpression());
-    				dest.append("[" + elementMap.getDestination().getExpression());
-    				suffix.append("]");
-    				f = elementMap;
-    				elementMap = elementMap.getElementMap();
-    			}
-    			source.append("(" + f.getSource().getType() + ")");
-    			dest.append("(" + f.getDestination().getType() + ")");
-    			
-    			output.append("\n\t .field( " + source + suffix + ", " + dest + suffix + " )");
+    			output.append("\n\t .field( " + f.getSource() + ", " + f.getDestination() + " )");
     		}
     	}	
     	if (constructorA != null) {

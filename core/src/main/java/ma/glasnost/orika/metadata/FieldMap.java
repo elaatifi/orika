@@ -33,14 +33,11 @@ public class FieldMap implements MappedTypePair<Object, Object> {
     private final boolean byDefault;
     private final String sourceExpression;
     private final String destinationExpression;
-    private final FieldMap elementMap;
-    private final Property sourceLeaf;
-    private final Property destinationLeaf;
-    
-    private FieldMap base;
+    private final Boolean sourceMappedOnNull;
+    private final Boolean destinationMappedOnNull;
     
     public FieldMap(Property a, Property b, Property aInverse, Property bInverse, MappingDirection mappingDirection,
-            boolean excluded, String converterId, FieldMap elementMap, boolean byDefault) {
+            boolean excluded, String converterId, boolean byDefault, Boolean sourceMappedOnNull, Boolean destinationMappedOnNull) {
         this.source = a;
         this.destination = b;
         this.aInverse = aInverse;
@@ -48,26 +45,17 @@ public class FieldMap implements MappedTypePair<Object, Object> {
         this.mappingDirection = mappingDirection;
         this.converterId = converterId;
         this.excluded = excluded;
-        this.elementMap = elementMap;
         this.byDefault = byDefault;
-        if (elementMap != null && !"".equals(elementMap.getSourceExpression())) {
-            this.sourceExpression = this.source.getExpression() + "[" + elementMap.getSourceExpression() + "]";
-        } else {
-            this.sourceExpression = this.source.getExpression();
-        }
-        if (elementMap != null && !"".equals(elementMap.getDestinationExpression())) {
-            this.destinationExpression = this.destination.getExpression() + "[" + elementMap.getDestinationExpression() + "]";
-        } else {
-            this.destinationExpression = this.destination.getExpression();
-        }
-        this.sourceLeaf = elementMap != null ? elementMap.getSourceLeaf() : this.source;
-        this.destinationLeaf = elementMap != null ? elementMap.getDestinationLeaf() : this.destination;
+        this.sourceMappedOnNull = sourceMappedOnNull;
+        this.destinationMappedOnNull = destinationMappedOnNull;
+        this.sourceExpression = this.source.getExpression();
+        this.destinationExpression = this.destination.getExpression();
     }
     
     public FieldMap copy() {
         
         return new FieldMap(copy(source), copy(destination), copy(aInverse), copy(bInverse), 
-        		mappingDirection, excluded, converterId, copy(elementMap), byDefault);
+        		mappingDirection, excluded, converterId, byDefault, sourceMappedOnNull, destinationMappedOnNull);
     }
     
     private Property copy(Property property) {
@@ -112,14 +100,20 @@ public class FieldMap implements MappedTypePair<Object, Object> {
         return destinationExpression;
     }
     
-    public Property getSourceLeaf() {
-        return sourceLeaf;
+    /**
+     * @return the sourceMappedOnNull
+     */
+    public boolean isSourceMappedOnNull() {
+        return sourceMappedOnNull;
     }
-    
-    public Property getDestinationLeaf() {
-        return destinationLeaf;
+
+    /**
+     * @return the destinationMappedOnNull
+     */
+    public boolean isDestinationMappedOnNull() {
+        return destinationMappedOnNull;
     }
-    
+
     public Property getInverse() {
         return bInverse;
     }
@@ -130,7 +124,7 @@ public class FieldMap implements MappedTypePair<Object, Object> {
     
     public FieldMap flip() {
         return new FieldMap(destination, source, bInverse, aInverse, mappingDirection.flip(), excluded, converterId, 
-        		elementMap != null ? elementMap.flip() : null, byDefault);
+        		byDefault, destinationMappedOnNull, sourceMappedOnNull);
     }
     
     public boolean is(Specification specification) {
@@ -153,22 +147,6 @@ public class FieldMap implements MappedTypePair<Object, Object> {
         return excluded;
     }
     
-    public FieldMap getElementMap() {
-    	return elementMap;
-    }
-    
-    public FieldMap getBaseFieldMap() {
-    	if (base == null) {
-    		if (elementMap == null) {
-    			base = this;
-    		} else {
-    			base = new FieldMap(source, destination, aInverse, bInverse, 
-    	        		mappingDirection, excluded, converterId, null, byDefault);
-    		}
-    	}
-    	return base;
-    }
-    
     @Override
     public String toString() {
         return "FieldMap [destination=" + getDestinationExpression() + ", source=" + getSourceExpression() + "]";
@@ -186,8 +164,6 @@ public class FieldMap implements MappedTypePair<Object, Object> {
 				+ ((converterId == null) ? 0 : converterId.hashCode());
 		result = prime * result
 				+ ((destination == null) ? 0 : destination.hashCode());
-		result = prime * result
-				+ ((elementMap == null) ? 0 : elementMap.hashCode());
 		result = prime * result + (excluded ? 1231 : 1237);
 		result = prime
 				* result
@@ -234,13 +210,6 @@ public class FieldMap implements MappedTypePair<Object, Object> {
 				return false;
 			}
 		} else if (!destination.equals(other.destination)) {
-			return false;
-		}
-		if (elementMap == null) {
-			if (other.elementMap != null) {
-				return false;
-			}
-		} else if (!elementMap.equals(other.elementMap)) {
 			return false;
 		}
 		if (excluded != other.excluded) {

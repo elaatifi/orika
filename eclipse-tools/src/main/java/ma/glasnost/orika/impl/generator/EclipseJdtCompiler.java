@@ -74,7 +74,7 @@ public class EclipseJdtCompiler {
 	private final Compiler compiler;
 
 	public EclipseJdtCompiler() {
-		this(EclipseJdtCompiler.class.getClassLoader()/*Thread.currentThread().getContextClassLoader()*/);
+		this(Thread.currentThread().getContextClassLoader());
 	}
 
 	public EclipseJdtCompiler(ClassLoader parentLoader) {

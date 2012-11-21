@@ -199,7 +199,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
     		    .build();
 		FieldMap fieldMap = new FieldMap(existing.getSource(), destProp, null,
 				null, MappingDirection.A_TO_B, false, existing.getConverterId(), 
-				null, byDefault);
+				byDefault, null, null);
 		return fieldMap;
 	}
 }

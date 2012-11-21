@@ -20,7 +20,6 @@ package ma.glasnost.orika;
 
 import java.lang.reflect.ParameterizedType;
 
-import ma.glasnost.orika.impl.GeneratedObjectBase;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 
