@@ -226,7 +226,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     public FieldMapBuilder<A, B> fieldMap(String fieldNameA, String fieldNameB, boolean byDefault) {
     
     	try {
-	    	final FieldMapBuilder<A, B> fieldMapBuilder = new FieldMapBuilder<A, B>(this, fieldNameA, fieldNameB, byDefault);
+	    	final FieldMapBuilder<A, B> fieldMapBuilder = new FieldMapBuilder<A, B>(this, fieldNameA, fieldNameB, byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
 	        
 	        return fieldMapBuilder;
 	    } catch (MappingException e) {
@@ -248,7 +248,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property fieldA, Property fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA, fieldB, byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA, fieldB, byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     /**
@@ -260,7 +260,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, resolvePropertyForA(fieldNameA), fieldB, byDefault);
+        return new FieldMapBuilder<A,B>(this, resolvePropertyForA(fieldNameA), fieldB, byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     /**
@@ -272,7 +272,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property fieldA, String fieldNameB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA, resolvePropertyForB(fieldNameB), byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA, resolvePropertyForB(fieldNameB), byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     /**
@@ -284,7 +284,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, Property.Builder fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldB.build((PropertyResolver)propertyResolver), byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), fieldB.build((PropertyResolver)propertyResolver), byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     /**
@@ -296,7 +296,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(String fieldNameA, Property.Builder fieldB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, resolvePropertyForA(fieldNameA), fieldB.build((PropertyResolver)propertyResolver), byDefault);
+        return new FieldMapBuilder<A,B>(this, resolvePropertyForA(fieldNameA), fieldB.build((PropertyResolver)propertyResolver), byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     /**
@@ -308,7 +308,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return
      */
     public FieldMapBuilder<A,B> fieldMap(Property.Builder fieldA, String fieldNameB, boolean byDefault) {
-        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), resolvePropertyForB(fieldNameB), byDefault);
+        return new FieldMapBuilder<A,B>(this, fieldA.build((PropertyResolver)propertyResolver), resolvePropertyForB(fieldNameB), byDefault, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
     /**

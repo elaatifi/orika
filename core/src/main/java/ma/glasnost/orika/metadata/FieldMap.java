@@ -99,14 +99,14 @@ public class FieldMap implements MappedTypePair<Object, Object> {
     /**
      * @return the sourceMappedOnNull
      */
-    public boolean isSourceMappedOnNull() {
+    public Boolean isSourceMappedOnNull() {
         return sourceMappedOnNull;
     }
 
     /**
      * @return the destinationMappedOnNull
      */
-    public boolean isDestinationMappedOnNull() {
+    public Boolean isDestinationMappedOnNull() {
         return destinationMappedOnNull;
     }
 

@@ -134,9 +134,6 @@ public class MultiThreadedTestCase {
 			 * be cleared).
 			 */
 			++c;
-			if (c == i) {
-				forceClearSoftAndWeakReferences();
-			}
 			Type<?> aType;
 			try {
 				aType = TypeFactory.valueOf(aClass);
@@ -153,7 +150,10 @@ public class MultiThreadedTestCase {
 				} else {
 					throw new IllegalStateException(aType + " is not an instance of " + aClass);
 				}
-			} 
+			}
+			if (c == i) {
+                forceClearSoftAndWeakReferences();
+            }
 		}
 		
 		Assert.assertEquals(classes.size(), types.size());

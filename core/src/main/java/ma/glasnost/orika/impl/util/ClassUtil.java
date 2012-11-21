@@ -21,9 +21,7 @@ package ma.glasnost.orika.impl.util;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 import ma.glasnost.orika.metadata.Type;
