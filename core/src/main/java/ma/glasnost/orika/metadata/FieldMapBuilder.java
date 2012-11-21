@@ -161,7 +161,7 @@ public class FieldMapBuilder<A, B> {
      * 
      * @return this FieldMapBuilder
      */
-    public FieldMapBuilder<A, B> sourceMappedOnNull(boolean sourceMappedOnNull) {
+    public FieldMapBuilder<A, B> mapNullsInReverse(boolean sourceMappedOnNull) {
         this.sourceMappedOnNull = sourceMappedOnNull;
         
         return this;
@@ -175,7 +175,7 @@ public class FieldMapBuilder<A, B> {
      * 
      * @return this FieldMapBuilder
      */
-    public FieldMapBuilder<A, B> destinationMappedOnNull(boolean destinationMappedOnNull) {
+    public FieldMapBuilder<A, B> mapNulls(boolean destinationMappedOnNull) {
         this.destinationMappedOnNull = destinationMappedOnNull;
         
         return this;

@@ -117,7 +117,7 @@ public class MapNullsTestCase {
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder().mapNulls(false).build();
         
         mapperFactory.classMap(Container.class, Container2.class)
-            .destinationMappedOnNull(true).byDefault().register();
+            .mapNulls(true).byDefault().register();
         
         Container a = new Container();
         Container2 b = new Container2();
@@ -148,7 +148,7 @@ public class MapNullsTestCase {
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder().mapNulls(true).build();
         
         mapperFactory.classMap(Container.class, Container2.class)
-        .destinationMappedOnNull(false).byDefault().register();
+        .mapNulls(false).byDefault().register();
     
         Container a = new Container();
         Container2 b = new Container2();
@@ -177,8 +177,8 @@ public class MapNullsTestCase {
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder().mapNulls(false).build();
         
         mapperFactory.classMap(Container.class, Container2.class)
-            .destinationMappedOnNull(false)
-            .fieldMap("arrayOfString").destinationMappedOnNull(true).add()
+            .mapNulls(false)
+            .fieldMap("arrayOfString").mapNulls(true).add()
             .byDefault().register();
     
         Container a = new Container();

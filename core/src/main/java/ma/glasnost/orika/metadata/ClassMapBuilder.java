@@ -583,6 +583,18 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
         return new ClassMap<A, B>(aType, bType, fieldsMapping, customizedMapper, usedMappers, constructorA, constructorB, sourcesMappedOnNull, destinationsMappedOnNull);
     }
     
+    /**
+     * @param destinationsMappedOnNull true|false to indicate whether the destination
+     * properties of this class map's fields should be set to null (when mapping in the forward 
+     * direction) if the source property's value is null
+     * 
+     * @return this FieldMapBuilder
+     */
+    public ClassMapBuilder<A, B> mapNulls(boolean destinationsMappedOnNull) {
+        this.destinationsMappedOnNull = destinationsMappedOnNull;
+        
+        return this;
+    }
     
     /**
      * @param sourcesMappedOnNull true|false to indicate whether the source properties of
@@ -591,25 +603,11 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * 
      * @return this FieldMapBuilder
      */
-    public ClassMapBuilder<A, B> sourcesMappedOnNull(boolean sourcesMappedOnNull) {
+    public ClassMapBuilder<A, B> mapNullsInReverse(boolean sourcesMappedOnNull) {
         this.sourcesMappedOnNull = sourcesMappedOnNull;
         
         return this;
     }
-    
-    /**
-     * @param destinationsMappedOnNull true|false to indicate whether the destination
-     * properties of this class map's fields should be set to null (when mapping in the forward 
-     * direction) if the source property's value is null
-     * 
-     * @return this FieldMapBuilder
-     */
-    public ClassMapBuilder<A, B> destinationMappedOnNull(boolean destinationsMappedOnNull) {
-        this.destinationsMappedOnNull = destinationsMappedOnNull;
-        
-        return this;
-    }
-    
     
     /**
      * Registers the ClassMap defined by this builder with it's initiating MapperFactory
