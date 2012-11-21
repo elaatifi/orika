@@ -44,11 +44,11 @@ public class NonCyclicBoundMapperFacade<A, B> extends DefaultBoundMapperFacade<A
         return super.mapReverse(source, nonCyclicContext);
     }
     
-    public void map(A source, B destination) {
-        super.map(source, destination, nonCyclicContext);
+    public B map(A source, B destination) {
+        return super.map(source, destination, nonCyclicContext);
     }
     
-    public void mapReverse(B destination, A source) {
-        super.mapReverse(destination, source, nonCyclicContext);
+    public A mapReverse(B destination, A source) {
+        return super.mapReverse(destination, source, nonCyclicContext);
     }
 }
