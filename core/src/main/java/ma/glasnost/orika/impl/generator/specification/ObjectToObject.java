@@ -39,7 +39,7 @@ public class ObjectToObject extends AbstractSpecification {
             }
         }
         
-        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}\n", destination.assign("null")): "";
+        String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}\n", destination.assign("null")): "";
         return statement("%s { %s;  %s } %s", source.ifNotNull(), mapStmt, ipStmt, mapNull);
         
     }

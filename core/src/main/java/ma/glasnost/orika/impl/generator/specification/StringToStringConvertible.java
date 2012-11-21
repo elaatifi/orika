@@ -25,7 +25,7 @@ public class StringToStringConvertible extends AbstractSpecification {
         if (destination.isPrimitive()) {
             return statement(destination.assign("%s.valueOf(%s)", destination.wrapperTypeName(), value));
         } else {
-            String mapNull = code.shouldMapNulls() ? format(" else { %s; }", destination.assignIfPossible("null")): "";
+            String mapNull = shouldMapNulls(fieldMap, code) ? format(" else { %s; }", destination.assignIfPossible("null")): "";
             return statement(format("%s {\n %s; } %s", source.ifNotNull(), destination.assign("%s.valueOf(%s)", destination.typeName(), value), mapNull));
         }
     }

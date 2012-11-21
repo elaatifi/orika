@@ -19,7 +19,11 @@ public class AnyTypeToString extends AbstractSpecification {
         if (source.isPrimitive()) {
             return statement(destination.assign("\"\"+ %s", source));
         } else {
-            return statement(source.ifNotNull() + destination.assign("%s.toString()", source));
+            if (shouldMapNulls(fieldMap, code)) {
+                return statement("if (" + source.notNull() + ") {" + destination.assign("%s.toString()", source) + "} else {" + destination.assign("null") + "}");
+            } else {
+                return statement(source.ifNotNull() + destination.assign("%s.toString()", source));
+            }
         }
     }
 }

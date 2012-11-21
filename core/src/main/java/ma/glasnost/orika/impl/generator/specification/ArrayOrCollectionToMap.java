@@ -61,7 +61,7 @@ public class ArrayOrCollectionToMap extends AbstractSpecification {
                 format("%s.put(%s, %s)", d, newKey, newVal),
                 "}");
         
-        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
+        String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
         
         append(out, "}" + mapNull);
         

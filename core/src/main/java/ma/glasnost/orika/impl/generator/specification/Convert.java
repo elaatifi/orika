@@ -25,7 +25,7 @@ public class Convert extends AbstractSpecification {
         
         String statement = destination.assign("%s.convert(%s, %s)", code.usedConverter(source.getConverter()), source.asWrapper(), code.usedType(destination));
         
-        boolean shouldSetNull = code.shouldMapNulls() && !destination.isPrimitive();
+        boolean shouldSetNull = shouldMapNulls(fieldMap, code) && !destination.isPrimitive();
         
         if (source.isPrimitive()) {
             return statement(statement);

@@ -29,7 +29,7 @@ public class ObjectToMultiOccurrenceElement extends AbstractSpecification {
         out.append(statement(destination.assign(source)));
         if (!source.isPrimitive()) {
             out.append("}");
-            if (code.shouldMapNulls() && !destination.isPrimitive()) {
+            if (shouldMapNulls(fieldMap, code) && !destination.isPrimitive()) {
                 append(out, 
                         " else {\n",
                         destination.assignIfPossible("null"),

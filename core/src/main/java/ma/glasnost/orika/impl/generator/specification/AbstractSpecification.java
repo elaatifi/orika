@@ -5,7 +5,6 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.Specification;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.Property;
 
 public abstract class AbstractSpecification implements Specification {
 
@@ -13,6 +12,21 @@ public abstract class AbstractSpecification implements Specification {
     
     public void setMapperFactory(MapperFactory mapperFactory) {
         this.mapperFactory = mapperFactory;
+    }
+    
+    /**
+     * Tests whether this fieldMap should map nulls;
+     * 
+     * @param fieldMap
+     * @param context
+     * @return
+     */
+    protected boolean shouldMapNulls(FieldMap fieldMap, SourceCodeContext context) {
+        Boolean mapNull = fieldMap.isDestinationMappedOnNull();
+        if (mapNull == null) {
+            mapNull = context.shouldMapNulls();
+        }
+        return mapNull;
     }
     
     public abstract boolean appliesTo(FieldMap fieldMap);

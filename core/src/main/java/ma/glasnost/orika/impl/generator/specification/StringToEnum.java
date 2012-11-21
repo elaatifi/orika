@@ -18,7 +18,7 @@ public class StringToEnum extends AbstractSpecification {
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         String assignEnum = destination.assign("Enum.valueOf(%s.class, \"\"+%s)", destination.typeName(), source);
-        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", destination.assignIfPossible("null")): "";
+        String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}", destination.assignIfPossible("null")): "";
         return statement("%s { %s; } %s", source.ifNotNull(), assignEnum, mapNull);
     }
 }

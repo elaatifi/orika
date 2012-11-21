@@ -82,7 +82,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
         }
         // End check if source property ! = null
         
-        String mapNull = code.shouldMapNulls() ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
+        String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
         
         append(out, "}" + mapNull);
         
