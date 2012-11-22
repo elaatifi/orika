@@ -63,6 +63,8 @@ public abstract class BuiltinConverters {
          */
         converterFactory.registerConverter(new ConstructorConverter());
         
+        converterFactory.registerConverter(new EnumConverter());
+        
         /*
          * Register to/from string converters
          */

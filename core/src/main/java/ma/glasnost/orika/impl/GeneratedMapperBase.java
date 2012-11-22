@@ -30,7 +30,6 @@ public abstract class GeneratedMapperBase extends GeneratedObjectBase implements
     private Mapper<Object, Object>[] usedMappers;
     private Type<Object> aType;
     private Type<Object> bType;
-    private boolean fromAutoMapping;
     
     public Type<Object> getAType() {
         return aType;
@@ -48,14 +47,6 @@ public abstract class GeneratedMapperBase extends GeneratedObjectBase implements
     @SuppressWarnings("unchecked")
     public void setBType(Type<?> bType) {
         this.bType = (Type<Object>) bType;
-    }
-    
-    public boolean isFromAutoMapping() {
-        return fromAutoMapping;
-    }
-    
-    public void setFromAutoMapping(boolean fromAutoMapping) {
-        this.fromAutoMapping = fromAutoMapping;
     }
     
     public void setCustomMapper(Mapper<Object, Object> customMapper) {

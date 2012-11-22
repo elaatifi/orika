@@ -36,6 +36,7 @@ public abstract class GeneratedObjectBase {
     protected Converter<Object, Object>[] usedConverters;
     protected BoundMapperFacade<Object, Object>[] usedMapperFacades;
     protected MapperFacade mapperFacade;
+    protected boolean fromAutoMapping;
     
     public void setMapperFacade(MapperFacade mapper) {
         this.mapperFacade = mapper;
@@ -51,6 +52,14 @@ public abstract class GeneratedObjectBase {
     
     public void setUsedMapperFacades(BoundMapperFacade<Object, Object>[] usedMapperFacades) {
         this.usedMapperFacades = usedMapperFacades;
+    }
+    
+    public boolean isFromAutoMapping() {
+        return fromAutoMapping;
+    }
+    
+    public void setFromAutoMapping(boolean fromAutoMapping) {
+        this.fromAutoMapping = fromAutoMapping;
     }
     
     protected int min(int[] sizes) {

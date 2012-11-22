@@ -227,7 +227,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     }
     
     public boolean isEnum() {
-    	return getRawType().isEnum();
+    	return getRawType().isEnum() || Enum.class.equals(getRawType());
     }
    
     public boolean isArray() {

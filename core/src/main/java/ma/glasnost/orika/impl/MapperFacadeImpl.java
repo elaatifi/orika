@@ -673,7 +673,7 @@ public class MapperFacadeImpl implements MapperFacade {
             
             D result = (D) context.getMappedObject(sourceObject, destinationClass);
             if (result == null) {
-                MappingStrategy strategy = resolveMappingStrategy(sourceObject, null /*TypeFactory.typeOf(sourceObject)*/, destinationClass /*TypeFactory.valueOf(destinationClass)*/, false, context);
+                MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationClass, false, context);
                 result = (D) strategy.map(sourceObject, null, context); 
                 context.setResolvedMappingStrategy(strategy);
             }
