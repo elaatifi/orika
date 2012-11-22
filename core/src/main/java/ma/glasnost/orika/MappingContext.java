@@ -111,8 +111,16 @@ public class MappingContext {
 		if (localCache == null) {
 			localCache = new IdentityHashMap<Object, Object>(2);
 			cache.put(destinationType, localCache);
+			
 		}
 		localCache.put(source, destination);
+		
+		// Quick fix for Issue 68
+		Type<D> dest = TypeFactory.valueOf(destinationType);
+		for (Type<?> t : dest.getInterfaces()) {
+			cacheMappedObject(source, t, destination);
+		}
+		
 		isNew = false;
 	}
 
@@ -209,19 +217,23 @@ public class MappingContext {
             super(null);
         }
         
-        public <S, D> void cacheMappedObject(S source, D destination) {
+        @Override
+		public <S, D> void cacheMappedObject(S source, D destination) {
             // No-op
         }
         
-        public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType, D destination) {
+        @Override
+		public <S, D> void cacheMappedObject(S source, java.lang.reflect.Type destinationType, D destination) {
             // No-op
         }
         
-        public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
+        @Override
+		public <S, D> boolean isAlreadyMapped(S source, java.lang.reflect.Type destinationType) {
             return false;
         }
         
-        public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
+        @Override
+		public <D> D getMappedObject(Object source, java.lang.reflect.Type destinationType) {
             return null;
         }
     }
