@@ -20,6 +20,7 @@ package ma.glasnost.orika.test.collection;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -69,6 +70,17 @@ public class CollectionTestCase {
 
         Assert.assertNull(destination.getNames());
     }
+	
+	@Test
+	public void unmodifiableCollection() {
+	    Source3 source = new Source3();
+        source.setNames(Arrays.asList("soa", "java", "rest"));
+
+        Destination3 destination = MappingUtil.getMapperFactory().getMapperFacade().map(source, Destination3.class);
+
+        Assert.assertNotNull(destination.getNames());
+        Assert.assertEquals(3, destination.getNames().size());
+	}
 	
 	
 	static public class A {
@@ -167,4 +179,41 @@ public class CollectionTestCase {
             this.names = names;
         }
     }
+	
+	public static class Source3 {
+        private List<String> names;
+
+        /**
+         * @return the names
+         */
+        public List<String> getNames() {
+            return Collections.unmodifiableList(names);
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(List<String> names) {
+            this.names = names;
+        }
+    }
+    
+    public static class Destination3 {
+        private List<String> names;
+
+        /**
+         * @return the names
+         */
+        public List<String> getNames() {
+            return Collections.unmodifiableList(names);
+        }
+
+        /**
+         * @param names the names to set
+         */
+        public void setNames(List<String> names) {
+            this.names = names;
+        }
+    }
+	
 }

@@ -38,24 +38,30 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
         // Start check if source property ! = null
         out.append(s.ifNotNull() + " {\n");
         
+        /*
+         *  TODO: migrate this to create a new destination variable first; 
+         *  fill it, and then assign it to the destination using the setter. 
+         */
+        MultiOccurrenceVariableRef newDest = new MultiOccurrenceVariableRef(d.type(), "new_" + d.name());
         if (d.isAssignable()) {
-            out.append(statement("if (%s == null) %s", d, d.assign(d.newInstance(source.size()))));
+            out.append(statement(newDest.declare(d.newInstance(source.size()))));
+        } else {
+            out.append(statement(newDest.declare(""+d)));
+            out.append(statement("%s.clear()", newDest));
         }
         
         if (s.isArray()) {
             if (s.elementType().isPrimitive()) {
                 out.append("\n");
-                out.append(statement("%s.addAll(asList(%s));", d, s));
+                out.append(statement("%s.addAll(asList(%s));", newDest, s));
             } else {
                 out.append("\n");
-                out.append(statement("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class, mappingContext));", d, s, d.typeName()));
+                out.append(statement("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class, mappingContext));", newDest, s, d.typeName()));
             }
         } else {
             append(out,
                     "\n",
-                    format("%s.clear()", d),
-                    "\n",
-                    format("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext))", d, d.collectionType(), s,
+                    format("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext))", newDest, d.collectionType(), s,
                             code.usedType(s.elementType()), code.usedType(d.elementType())));
         }
         if (fieldMap.getInverse() != null) {
@@ -63,7 +69,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
             
             if (fieldMap.getInverse().isCollection()) {
                 append(out,
-                          format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", d),
+                          format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", newDest),
                           format("    %s orikaCollectionItem = (%s) orikaIterator.next();", d.elementTypeName(), d.elementTypeName()),
                           format("    %s { %s; }", inverse.ifNull(), inverse.assignIfPossible(inverse.newCollection())),
                           format("    %s.add(%s)", inverse, d.owner()),
@@ -73,7 +79,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
                 out.append(" // TODO support array");
             } else {
                 append(out,
-                        format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", d),
+                        format("for (java.util.Iterator orikaIterator = %s.iterator(); orikaIterator.hasNext();) { ", newDest),
                         format("    %s orikaCollectionItem = (%s) orikaIterator.next();", d.elementTypeName(), d.elementTypeName()),
                         inverse.assign(d.owner()),
                         "}");
@@ -81,6 +87,9 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
             }
         }
         // End check if source property ! = null
+        if (d.isAssignable()) {
+            out.append(statement(d.assign(newDest)));
+        }
         
         String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
         

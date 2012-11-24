@@ -1,6 +1,7 @@
 package ma.glasnost.orika.impl.generator.specification;
 
 import static java.lang.String.format;
+import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -19,6 +20,7 @@ public class ArrayOrCollectionToArray extends AbstractSpecification {
         
         final VariableRef arrayVar = destination.elementRef(destination.name());
         String newArray = format("%s[] %s = new %s[%s]", destination.elementTypeName(), destination.name(), destination.elementTypeName(), source.size());
+        
         String mapArray;
         if (destination.elementType().isPrimitive()) {
             mapArray = format("mapArray(%s, asList(%s), %s.class, mappingContext)", arrayVar, source, arrayVar.typeName());

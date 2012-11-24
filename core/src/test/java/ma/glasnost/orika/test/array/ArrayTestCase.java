@@ -82,7 +82,7 @@ public class ArrayTestCase {
         private String[] tags;
 
         public String[] getTags() {
-            return tags;
+            return tags.clone();
         }
 
         public void setTags(String[] tags) {
@@ -96,7 +96,7 @@ public class ArrayTestCase {
         private String[] tags;
 
         public String[] getTags() {
-            return tags;
+            return tags.clone();
         }
 
         public void setTags(String[] tags) {

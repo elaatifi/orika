@@ -308,7 +308,7 @@ public class ConstructorMappingTestCase {
     	
     	Library library = new LibraryImpl("Library #1", books);
     	
-    	MapperFactory factory = MappingUtil.getMapperFactory();
+    	MapperFactory factory = MappingUtil.getMapperFactory(true);
     	MapperFacade mapper = factory.getMapperFacade();
     	
     	LibraryDTO mapped = mapper.map(library, LibraryDTO.class);

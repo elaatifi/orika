@@ -35,16 +35,20 @@ public class MapToMap extends AbstractSpecification {
         out.append(s.ifNotNull());
         out.append("{\n");
         
+        MultiOccurrenceVariableRef newDest = new MultiOccurrenceVariableRef(destination.type(), "new_" + destination.name());
         if (d.isAssignable()) {
-            out.append(statement("if (%s == null) %s", d, d.assign(d.newMap())));
+            out.append(statement(newDest.declare(d.newMap())));
+        } else {
+            out.append(statement(newDest.declare(d)));
+            out.append(statement("%s.clear()", newDest));
         }
         
-        out.append(statement("%s.clear()", d));
+        
         if (d.mapKeyType().equals(s.mapKeyType()) && d.mapValueType().equals(s.mapValueType())) {
             /*
              * Simple map-to-map case: both key and value types are identical
              */
-            out.append(statement("%s.putAll(mapperFacade.mapAsMap(%s, %s, %s, mappingContext));", d, s, code.usedType(s.type()), code.usedType(d.type())));
+            out.append(statement("%s.putAll(mapperFacade.mapAsMap(%s, %s, %s, mappingContext));", newDest, s, code.usedType(s.type()), code.usedType(d.type())));
         } else {
             VariableRef newKey = new VariableRef(d.mapKeyType(), "_$_key");
             VariableRef newVal = new VariableRef(d.mapValueType(), "_$_val");
@@ -62,8 +66,12 @@ public class MapToMap extends AbstractSpecification {
                     newVal.declare(),
                     code.mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null),
                     code.mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null),
-                    format("%s.put(%s, %s)", d, newKey, newVal),
+                    format("%s.put(%s, %s)", newDest, newKey, newVal),
                     "}\n");
+        }
+        
+        if (d.isAssignable()) {
+            out.append(statement(d.assign(newDest)));
         }
         
         String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";

@@ -1,6 +1,7 @@
 package ma.glasnost.orika.test.map;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -395,7 +396,8 @@ public class MapGenerationTestCase {
 		private Map<String, Integer> testScores;
 
 		public Map<String, Integer> getTestScores() {
-			return testScores;
+		    return Collections.unmodifiableMap(testScores);
+			//return testScores;
 		}
 
 		public void setTestScores(Map<String, Integer> testScores) {

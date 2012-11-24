@@ -327,6 +327,18 @@ public class VariableRef {
         return format("\n%s %s = %s", typeName(), name(), valueExpr);
     }
     
+    
+    /**
+     * Returns Java code which declares this variable, initialized with the provided value.
+     *
+     * @param value the value to assign
+     * @param args any replacement arguments to applied to value via String.format()
+     * @return the code which declares this variable, and explicitly assigns the provided value.
+     */
+    public String declare(VariableRef ref) {
+        return declare(ref.getter());
+    }
+    
     public boolean isDeclared() {
         return declared;
     }

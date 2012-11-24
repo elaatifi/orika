@@ -94,22 +94,18 @@ public class Issue68TestCase {
 		private String name;
 		private Set<ProjectItem> projectItems = new HashSet<ProjectItem>();
 
-		@Override
 		public String getName() {
 			return name;
 		}
 
-		@Override
 		public void setName(String name) {
 			this.name = name;
 		}
 
-		@Override
 		public Set<ProjectItemProxy> getProjectItems() {
 			return convertSet(projectItems, ProjectItemProxy.class);
 		}
 
-		@Override
 		public void setProjectItems(Set<ProjectItemProxy> projectItems) {
 			this.projectItems = castSet(projectItems, ProjectItem.class);
 		}
@@ -124,7 +120,6 @@ public class Issue68TestCase {
 		 * = new ProjectItem(); return personDto; }
 		 */
 
-		@Override
 		public ProjectItemProxy create(Object source, MappingContext context) {
 			ProjectItemProxy personDto = new ProjectItem();
 			return personDto;
@@ -154,32 +149,26 @@ public class Issue68TestCase {
 
 		private Set<InvoiceItem> invoiceItems = new HashSet<InvoiceItem>();
 
-		@Override
 		public String getName() {
 			return name;
 		}
 
-		@Override
 		public void setName(String name) {
 			this.name = name;
 		}
 
-		@Override
 		public ProjectProxy getProject() {
 			return project;
 		}
 
-		@Override
 		public void setProject(ProjectProxy project) {
 			this.project = (Project) project;
 		}
 
-		@Override
 		public Set<InvoiceItemProxy> getInvoiceItems() {
 			return convertSet(invoiceItems, InvoiceItemProxy.class);
 		}
 
-		@Override
 		public void setInvoiceItems(Set<InvoiceItemProxy> invoiceItems) {
 			this.invoiceItems = castSet(invoiceItems, InvoiceItem.class);
 		}
@@ -204,22 +193,18 @@ public class Issue68TestCase {
 
 		private Set<ProjectItem> projectItems = new HashSet<Issue68TestCase.ProjectItem>();
 
-		@Override
 		public ProjectProxy getProject() {
 			return project;
 		}
 
-		@Override
 		public void setProject(ProjectProxy project) {
 			this.project = (Project) project;
 		}
 
-		@Override
 		public Set<ProjectItemProxy> getProjectItems() {
 			return convertSet(projectItems, ProjectItemProxy.class);
 		}
 
-		@Override
 		public void setProjectItems(Set<ProjectItemProxy> projectItems) {
 			this.projectItems = castSet(projectItems, ProjectItem.class);
 		}

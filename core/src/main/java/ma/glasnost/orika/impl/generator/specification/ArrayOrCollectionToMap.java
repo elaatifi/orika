@@ -32,14 +32,17 @@ public class ArrayOrCollectionToMap extends AbstractSpecification {
         
         MultiOccurrenceVariableRef d = MultiOccurrenceVariableRef.from(destination);
         MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(source);
+        MultiOccurrenceVariableRef newDest = new MultiOccurrenceVariableRef(d.type(), "new_" + d.name());
         
         append(out,
                 s.ifNotNull() + " {");
         
         if (d.isAssignable()) {
-            out.append(statement("if (%s == null) %s", d, d.assign(d.newMap())));
+            out.append(statement(newDest.declare(newDest.newInstance(d.newMap()))));
+        } else {
+            out.append(statement(newDest.declare(d)));
+            out.append(statement("%s.clear()", newDest));
         }
-        out.append(statement("%s.clear()", d));
         
         VariableRef element = new VariableRef(s.elementType(), "_$_element");
         
@@ -58,8 +61,12 @@ public class ArrayOrCollectionToMap extends AbstractSpecification {
                 element.declare("_o"),
                 newEntry.declare("mapperFacade.map(%s, %s, %s, mappingContext)", element, code.usedType(element), code.usedType(newEntry)),
                 "\n",
-                format("%s.put(%s, %s)", d, newKey, newVal),
+                format("%s.put(%s, %s)", newDest, newKey, newVal),
                 "}");
+        
+        if (d.isAssignable()) {
+            out.append(statement(d.assign(newDest)));
+        }
         
         String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}", d.assignIfPossible("null")): "";
         
