@@ -11,6 +11,7 @@ import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
+import ma.glasnost.orika.impl.util.StringUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.FieldMapBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -50,24 +51,25 @@ public class MapToMap extends AbstractSpecification {
              */
             out.append(statement("%s.putAll(mapperFacade.mapAsMap(%s, %s, %s, mappingContext));", newDest, s, code.usedType(s.type()), code.usedType(d.type())));
         } else {
-            VariableRef newKey = new VariableRef(d.mapKeyType(), "_$_key");
-            VariableRef newVal = new VariableRef(d.mapValueType(), "_$_val");
-            VariableRef entry = new VariableRef(TypeFactory.valueOf(Map.Entry.class), "_$_entry");
-            VariableRef sourceKey = new MapEntryRef(s.mapKeyType(), "_$_entry", EntryPart.KEY);
-            VariableRef sourceVal = new MapEntryRef(s.mapValueType(), "_$_entry", EntryPart.VALUE);
+            VariableRef newKey = new VariableRef(d.mapKeyType(), "new" + StringUtil.capitalize(d.name()) + "Key");
+            VariableRef newVal = new VariableRef(d.mapValueType(), "new" + StringUtil.capitalize(d.name()) + "Val");
+            VariableRef entry = new VariableRef(TypeFactory.valueOf(Map.Entry.class), "source" + StringUtil.capitalize(d.name()) + "Entry");
+            VariableRef sourceKey = new MapEntryRef(s.mapKeyType(), entry.name(), EntryPart.KEY);
+            VariableRef sourceVal = new MapEntryRef(s.mapValueType(), entry.name(), EntryPart.VALUE);
             /*
              * Loop through the individual entries, map key/value and then put
              * them into the destination
              */
             append(out,
-                    format("for( Object _$_o: %s.entrySet()) {\n", s),
-                    entry.declare("_$_o"),
+                    format("for( java.util.Iterator entryIter = %s.entrySet().iterator(); entryIter.hasNext(); ) {\n", s),
+                    entry.declare("entryIter.next()"),
                     newKey.declare(),
                     newVal.declare(),
                     code.mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null),
                     code.mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null),
                     format("%s.put(%s, %s)", newDest, newKey, newVal),
-                    "}\n");
+                    "\n",
+                    "}");
         }
         
         if (d.isAssignable()) {

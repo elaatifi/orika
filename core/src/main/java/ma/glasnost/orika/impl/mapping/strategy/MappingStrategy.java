@@ -19,6 +19,7 @@
 package ma.glasnost.orika.impl.mapping.strategy;
 
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.metadata.Type;
 
 /**
  * MappingStrategy defines the contract for a pre-resolved classification of mapping
@@ -40,4 +41,8 @@ public interface MappingStrategy {
      */
     public Object map(Object sourceObject, Object destinationObject, MappingContext context);
  
+    public Type<?> getSoureType();
+    
+    public Type<?> getDestinationType();
+    
 }

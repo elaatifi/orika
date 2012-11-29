@@ -7,6 +7,7 @@ import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
 import ma.glasnost.orika.metadata.ScoringClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
@@ -48,6 +49,7 @@ public class ExpanderTestCase {
         Type<List<Year>> typeOf_Year = new TypeBuilder<List<Year>>(){}.build();
         
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
+            .compilerStrategy(new EclipseJdtCompilerStrategy())
             .classMapBuilderFactory(new ScoringClassMapBuilder.Factory())
             .build();
         

@@ -31,7 +31,7 @@ public class NestedInheritanceTestCase {
     
     @Test
     public void testNestedInheritance() {
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(factory.classMap(Person.class, PersonDTO.class).byDefault().toClassMap());
         factory.registerClassMap(factory.classMap(Client.class, ClientDTO.class).byDefault().toClassMap());
@@ -52,7 +52,7 @@ public class NestedInheritanceTestCase {
     
     @Test
     public void testNestedPolymorphicInheritance() {
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(factory.classMap(Person.class, PersonDTO.class).byDefault().toClassMap());
         factory.registerClassMap(factory.classMap(Client.class, ClientDTO.class).byDefault().toClassMap());

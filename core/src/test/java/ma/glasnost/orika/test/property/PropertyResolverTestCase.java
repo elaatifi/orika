@@ -95,7 +95,7 @@ public class PropertyResolverTestCase {
 	@Test
     public void testAdHocResolution() {
 	    
-	    Property prop = propertyResolver.getProperty(A.class, "name{readTheNameForThisBean|assignTheName}.firstName");
+	    Property prop = propertyResolver.getProperty(A.class, "name:{readTheNameForThisBean|assignTheName}.firstName");
 	    
 	    Assert.assertNotNull(prop);
 	    Assert.assertEquals("firstName", prop.getName());
@@ -107,7 +107,7 @@ public class PropertyResolverTestCase {
 	@Test
     public void testAdHocResolution_withType() {
         
-        Property prop = propertyResolver.getProperty(A.class, "name{readTheNameForThisBean|assignTheName|type=ma.glasnost.orika.test.property.TestCaseClasses$Name}.firstName");
+        Property prop = propertyResolver.getProperty(A.class, "name:{readTheNameForThisBean|assignTheName|type=ma.glasnost.orika.test.property.TestCaseClasses$Name}.firstName");
         
         Assert.assertNotNull(prop);
         Assert.assertEquals("firstName", prop.getName());
@@ -126,8 +126,8 @@ public class PropertyResolverTestCase {
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         factory.registerClassMap(
                 factory.classMap(A.class, B.class)
-                    .field("name{readTheNameForThisBean|assignTheName}.firstName", "givenName")
-                    .field("name{readTheNameForThisBean|assignTheName}.lastName", "sirName")
+                    .field("name:{readTheNameForThisBean|assignTheName}.firstName", "givenName")
+                    .field("name:{readTheNameForThisBean|assignTheName}.lastName", "sirName")
                     .field("address.city", "city")
                     .field("address.street", "street")
                     .field("address.postalCode", "postalCode")
@@ -170,7 +170,7 @@ public class PropertyResolverTestCase {
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         factory.registerClassMap(
                 factory.classMap(A.class, B.class)
-                    .field("name{readTheNameForThisBean|assignTheName}.firstName", "givenName")
+                    .field("name:{readTheNameForThisBean|assignTheName}.firstName", "givenName")
                     .field("name.lastName", "sirName")
                     .field("address.city", "city")
                     .field("address.street", "street")
@@ -211,7 +211,7 @@ public class PropertyResolverTestCase {
     @Test
     public void testAdHocResolution_integration_programmaticPropertyBuilder() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         ClassMapBuilder<Element,PersonDto> builder = factory.classMap(Element.class, PersonDto.class);
         
@@ -292,16 +292,16 @@ public class PropertyResolverTestCase {
     @Test
     public void testAdHocResolution_integration_declarativeProperties() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         {
-            String employmentDef = "employment{getAttribute(\"employment\")|setAttribute(\"employment\", %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
-            String jobTitleDef = "jobTitle{getAttribute(\"jobTitle\")|setAttribute(\"jobTitle\", %s)|type=java.util.List}";
-            String salaryDef = "salary{getAttribute(\"salary\")|setAttribute(\"salary\", %s)|type=java.lang.Long}";
+            String employmentDef = "employment:{getAttribute(\"employment\")|setAttribute(\"employment\", %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String jobTitleDef = "jobTitle:{getAttribute(\"jobTitle\")|setAttribute(\"jobTitle\", %s)|type=java.util.List}";
+            String salaryDef = "salary:{getAttribute(\"salary\")|setAttribute(\"salary\", %s)|type=java.lang.Long}";
             
-            String nameDef = "name{getAttribute(\"name\")|setAttribute(\"name\",%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
-            String firstNameDef = "first{getAttribute(\"first\")|setAttribute(\"first\", %s)|type=java.lang.String}";
-            String lastNameDef = "last{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
+            String nameDef = "name:{getAttribute(\"name\")|setAttribute(\"name\",%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String firstNameDef = "first:{getAttribute(\"first\")|setAttribute(\"first\", %s)|type=java.lang.String}";
+            String lastNameDef = "last:{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
             
             factory.classMap(Element.class, PersonDto.class)
                 .field(employmentDef + "." + jobTitleDef, "jobTitles")
@@ -359,16 +359,16 @@ public class PropertyResolverTestCase {
     @Test
     public void testAdHocResolution_integration_declarativePropertiesNestedTypes() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         {
-            String employmentDef = "employment{getAttribute(\"employment\")|setAttribute(\"employment\", %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
-            String jobTitleDef = "jobTitle{getAttribute(\"jobTitle\")|setAttribute(\"jobTitle\", %s)|type=List<String>}";
-            String salaryDef = "salary{getAttribute(\"salary\")|setAttribute(\"salary\", %s)|type=java.lang.Long}";
+            String employmentDef = "employment:{getAttribute(\"employment\")|setAttribute(\"employment\", %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String jobTitleDef = "jobTitle:{getAttribute(\"jobTitle\")|setAttribute(\"jobTitle\", %s)|type=List<String>}";
+            String salaryDef = "salary:{getAttribute(\"salary\")|setAttribute(\"salary\", %s)|type=java.lang.Long}";
             
-            String nameDef = "name{getAttribute(\"name\")|setAttribute(\"name\",%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
-            String firstNameDef = "first{getAttribute(\"first\")|setAttribute(\"first\", %s)|type=java.lang.String}";
-            String lastNameDef = "last{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
+            String nameDef = "name:{getAttribute(\"name\")|setAttribute(\"name\",%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase$Element}";
+            String firstNameDef = "first:{getAttribute(\"first\")|setAttribute(\"first\", %s)|type=java.lang.String}";
+            String lastNameDef = "last:{getAttribute(\"last\")|setAttribute(\"last\", %s)|type=java.lang.String}";
             
             factory.classMap(Element.class, PersonDto.class)
                 .field(employmentDef + "." + jobTitleDef, "jobTitles")
@@ -421,16 +421,16 @@ public class PropertyResolverTestCase {
     @Test
     public void testAdHocResolution_integration_declarativePropertiesNestedTypesSingleQuote() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         {
-            String employmentDef = "employment{getAttribute('employment')|setAttribute('employment', %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase.Element}";
-            String jobTitleDef = "jobTitle{getAttribute(\"job's Title\")|setAttribute(\"job's Title\", %s)|type=List<String>}";
-            String salaryDef = "salary{getAttribute(\"'salary'\")|setAttribute(\"'salary'\", %s)|type=java.lang.Long}";
+            String employmentDef = "employment:{getAttribute('employment')|setAttribute('employment', %s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase.Element}";
+            String jobTitleDef = "jobTitle:{getAttribute(\"job's Title\")|setAttribute(\"job's Title\", %s)|type=List<String>}";
+            String salaryDef = "salary:{getAttribute(\"'salary'\")|setAttribute(\"'salary'\", %s)|type=java.lang.Long}";
             
-            String nameDef = "name{getAttribute('name')|setAttribute('name',%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase.Element}";
-            String firstNameDef = "first{getAttribute('first')|setAttribute('first', %s)|type=java.lang.String}";
-            String lastNameDef = "last{getAttribute('last')|setAttribute('last', %s)|type=java.lang.String}";
+            String nameDef = "name:{getAttribute('name')|setAttribute('name',%s)|type=ma.glasnost.orika.test.property.PropertyResolverTestCase.Element}";
+            String firstNameDef = "first:{getAttribute('first')|setAttribute('first', %s)|type=java.lang.String}";
+            String lastNameDef = "last:{getAttribute('last')|setAttribute('last', %s)|type=java.lang.String}";
             
             factory.classMap(Element.class, PersonDto.class)
                 .field(employmentDef + "." + jobTitleDef, "jobTitles")
@@ -484,13 +484,13 @@ public class PropertyResolverTestCase {
      */
     public static class ElementPropertyResolver extends IntrospectorPropertyResolver {
         
-        protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup) throws MappingException {
+        protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup, Property owner) throws MappingException {
             Property property = null;
             try {
-                property = super.getProperty(type, expr, isNestedLookup);
+                property = super.getProperty(type, expr, isNestedLookup, null);
             } catch (MappingException e) {
                 try {
-                    property = super.resolveInlineProperty(type, expr + "{getAttribute(\""+ expr+"\")|setAttribute(\""+ expr+"\",%s)|type=" + 
+                    property = super.resolveInlineProperty(type, expr + ":{getAttribute(\""+ expr+"\")|setAttribute(\""+ expr+"\",%s)|type=" + 
                             (isNestedLookup? "ma.glasnost.orika.test.property.PropertyResolverTestCase$Element" : "Object") + "}");
                 } catch (MappingException e2) {
                     throw e; // throw the original exception

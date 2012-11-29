@@ -278,21 +278,21 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
                         Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getNestedType(1));
                         for (Entry<String, Property> prop: valueProperties.entrySet()) {
                             Property elementProp = new NestedElementProperty(entry.getValue(), prop.getValue(), propertyResolver);
-                            String key = entry.getKey() + "[" + prop.getKey() + "]";
+                            String key = entry.getKey() + PropertyResolver.ELEMENT_PROPERT_PREFIX + prop.getKey() + PropertyResolver.ELEMENT_PROPERT_SUFFIX;
                             toProcess.put(key, elementProp);
                         }
                     } else if (propertyType.isList()) {
                         Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getNestedType(0));
                         for (Entry<String, Property> prop: valueProperties.entrySet()) {
                             Property elementProp = new NestedElementProperty(owningProperty, prop.getValue(), propertyResolver);
-                            String key = entry.getKey() + "[" + prop.getValue().getExpression() + "]";
+                            String key = entry.getKey() + PropertyResolver.ELEMENT_PROPERT_PREFIX + prop.getValue().getExpression() + PropertyResolver.ELEMENT_PROPERT_SUFFIX;
                             toProcess.put(key, elementProp);
                         }
                     } else if (propertyType.isArray()) {
                         Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getComponentType());
                         for (Entry<String, Property> prop: valueProperties.entrySet()) {
                             Property elementProp = new NestedElementProperty(entry.getValue(), prop.getValue(), propertyResolver);
-                            String key = entry.getKey() + "[" + prop.getKey() + "]";
+                            String key = entry.getKey() + PropertyResolver.ELEMENT_PROPERT_PREFIX + prop.getKey() + PropertyResolver.ELEMENT_PROPERT_SUFFIX;
                             toProcess.put(key, elementProp);
                         }
                     } else if (!props.isEmpty()) {
@@ -638,6 +638,48 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
             public String toString() {
                 return "[" + aWord + "],[" + bWord + "] = " + score;
             }
+            /* (non-Javadoc)
+             * @see java.lang.Object#hashCode()
+             */
+            @Override
+            public int hashCode() {
+                final int prime = 31;
+                int result = 1;
+                result = prime * result + ((aWord == null) ? 0 : aWord.hashCode());
+                result = prime * result + ((bWord == null) ? 0 : bWord.hashCode());
+                long temp;
+                temp = Double.doubleToLongBits(score);
+                result = prime * result + (int) (temp ^ (temp >>> 32));
+                return result;
+            }
+            /* (non-Javadoc)
+             * @see java.lang.Object#equals(java.lang.Object)
+             */
+            @Override
+            public boolean equals(Object obj) {
+                if (this == obj)
+                    return true;
+                if (obj == null)
+                    return false;
+                if (getClass() != obj.getClass())
+                    return false;
+                WordPair other = (WordPair) obj;
+                if (aWord == null) {
+                    if (other.aWord != null)
+                        return false;
+                } else if (!aWord.equals(other.aWord))
+                    return false;
+                if (bWord == null) {
+                    if (other.bWord != null)
+                        return false;
+                } else if (!bWord.equals(other.bWord))
+                    return false;
+                if (Double.doubleToLongBits(score) != Double.doubleToLongBits(other.score))
+                    return false;
+                return true;
+            }
+            
+            
         }
         
         /**

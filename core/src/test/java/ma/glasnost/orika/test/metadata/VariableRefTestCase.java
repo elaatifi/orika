@@ -5,6 +5,7 @@ import java.util.List;
 
 import junit.framework.Assert;
 
+import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
 
@@ -39,9 +40,10 @@ public class VariableRefTestCase {
     @Test
     public void testGetter() {
      
-        Property prop = new IntrospectorPropertyResolver().getProperty(Year.class, "months[days[dayOfWeek]]");
+        Property prop = UtilityResolver.getDefaultPropertyResolverStrategy().getProperty(Year.class, "months{days{dayOfWeek}}");
         Assert.assertNotNull(prop);
-        
+        Assert.assertNotNull(prop.getContainer());
+        Assert.assertNotNull(prop.getContainer().getContainer());
         
     }
 }

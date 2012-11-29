@@ -44,33 +44,33 @@ public class NameEnvironment implements INameEnvironment {
 	}
 
 	public NameEnvironmentAnswer findType(char[][] compoundTypeName) {
-		String result = "";
+		StringBuilder result = new StringBuilder();
 
 		String sep = "";
 
 		for (int i = 0; i < compoundTypeName.length; i++) {
-			result += sep;
-			result += new String(compoundTypeName[i]);
+			result.append(sep);
+			result.append(compoundTypeName[i]);
 			sep = ".";
 		}
 
-		return findType(result);
+		return findType(result.toString());
 	}
 
 	public NameEnvironmentAnswer findType(char[] typeName, char[][] packageName) {
-		String result = "";
+		StringBuilder result = new StringBuilder();
 
 		String sep = "";
 
 		for (int i = 0; i < packageName.length; i++) {
-			result += sep;
-			result += new String(packageName[i]);
+		    result.append(sep);
+			result.append(packageName[i]);
 			sep = ".";
 		}
 
-		result += sep;
-		result += new String(typeName);
-		return findType(result);
+		result.append(sep);
+		result.append(typeName);
+		return findType(result.toString());
 	}
 
 	public NameEnvironmentAnswer findType(String className) {
@@ -117,14 +117,14 @@ public class NameEnvironment implements INameEnvironment {
 	}
 
 	public boolean isPackage(char[][] parentPackageName, char[] packageName) {
-		String result = "";
+		StringBuilder result = new StringBuilder();
 
 		String sep = "";
 
 		if (parentPackageName != null) {
 			for (int i = 0; i < parentPackageName.length; i++) {
-				result += sep;
-				result += new String(parentPackageName[i]);
+				result.append(sep);
+				result.append(parentPackageName[i]);
 				sep = ".";
 			}
 		}
@@ -133,11 +133,10 @@ public class NameEnvironment implements INameEnvironment {
 			return false;
 		}
 
-		String str = new String(packageName);
-		result += sep;
-		result += str;
+		result.append(sep);
+		result.append(packageName);
 
-		return isPackage(result);
+		return isPackage(result.toString());
 	}
 
 	public void cleanup() {

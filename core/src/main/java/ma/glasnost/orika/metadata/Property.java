@@ -42,8 +42,9 @@ public class Property {
     private final String setter;
     private final Type<?> type;
     private final Type<?> elementType;
+    private final Property container;
     
-    protected Property(String expression, String name, String getter, String setter, Type<?> type, Type<?> elementType) {
+    protected Property(String expression, String name, String getter, String setter, Type<?> type, Type<?> elementType, Property container) {
         super();
         this.expression = expression;
         this.name = name;
@@ -56,6 +57,7 @@ public class Property {
         } else {
             this.elementType = elementType;
         }
+        this.container = container;
     }
 
     public Property copy() {
@@ -71,6 +73,7 @@ public class Property {
             .elementType(this.elementType)
             .build(null);
     }
+    
     
     /**
      * @return the expression describing this property
@@ -214,6 +217,10 @@ public class Property {
     }
     
     public Property getContainer() {
+        return container;
+    }
+    
+    public Property getElement() {
         return null;
     }
     
@@ -252,6 +259,7 @@ public class Property {
         protected Type<?> owningType;
         private String name;
         private String expression;
+        private Property container;
         
         public Builder(Type<?> owningType, String name) {
             this.owningType = owningType;
@@ -278,6 +286,10 @@ public class Property {
             if (propertyType == null || (property.type != null && propertyType.isAssignableFrom(property.type))) {
                 propertyType = property.type;
             }
+            if (container == null || property.container != null) {
+                container = property.container;
+            }
+            
             name = property.name;
             expression = property.expression;
             
@@ -330,6 +342,15 @@ public class Property {
                 }
             }
             return output.toString();
+        }
+        
+        /**
+         * @param container
+         *            the container to set
+         */
+        public Builder container(Property container) {
+            this.container = container;
+            return this;
         }
         
         /**
@@ -417,7 +438,7 @@ public class Property {
             if (setterMethod != null) {
                 setter = setterMethod.getName() + "(%s)";
             } 
-            return new Property(expression != null ? expression : name,name,getter,setter,propertyType,elementType);
+            return new Property(expression != null ? expression : name,name,getter,setter,propertyType,elementType, container);
         }
         
         private void validate(PropertyResolver propertyResolver) {

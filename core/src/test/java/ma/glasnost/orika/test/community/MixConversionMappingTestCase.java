@@ -18,7 +18,7 @@ public class MixConversionMappingTestCase {
     @Test
     public void testMixMapConvert() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(ClassMapBuilder.map(B.class, D.class).fieldMap("instanceSet").add().byDefault().toClassMap());
         

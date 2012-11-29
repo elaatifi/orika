@@ -60,7 +60,7 @@ public class UsedMapperFacadesContext {
             if (dedicatedFacade.getAType().equals(sourceType) && dedicatedFacade.getBType().equals(destinationType)) {
                 result.index = i;
                 break;
-            } else if (dedicatedFacade.getAType().equals(sourceType) && dedicatedFacade.getBType().equals(destinationType)) {
+            } else if (dedicatedFacade.getAType().equals(destinationType) && dedicatedFacade.getBType().equals(sourceType)) {
                 result.index = i;
                 result.isReversed = true;
                 break;

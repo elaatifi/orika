@@ -33,7 +33,7 @@ public class InverseMappingTestCase {
     
     @Test
     public void testInverseOneToOneMapping() {
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
         
         ClassMapBuilder<PersonDTO, Person> classMapBuilder = ClassMapBuilder.map(PersonDTO.class, Person.class);
         classMapBuilder.fieldMap("address").bInverse("person").add();

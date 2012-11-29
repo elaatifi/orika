@@ -33,7 +33,7 @@ public class NestedPropertyTestCase {
     
     @Before
     public void setUp() {
-        mapperFactory = MappingUtil.getMapperFactory(true);
+        mapperFactory = MappingUtil.getMapperFactory();
         
         ClassMap<LineDTO, Line> classMap = ClassMapBuilder.map(LineDTO.class, Line.class).field("x0", "start.x").field("y0", "start.y")
                 .field("x1", "end.x").field("y1", "end.y").toClassMap();

@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import ma.glasnost.orika.MapEntry;
+import ma.glasnost.orika.impl.util.StringUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
@@ -29,10 +30,12 @@ public class Node {
     private Node(Property property, FieldMap fieldMap, Node parent, NodeList nodes, boolean isSource, int uniqueIndex) {
         
         this.isSource = isSource;
-        String name = isSource ? "source" : "destination";
+        String name = (isSource ? "source" : "destination"); 
+        String propertySuffix = StringUtil.capitalize(property.getName());
         this.value = fieldMap;
         this.parent = parent;
         this.property = property;
+        
         
         if (property.isMultiOccurrence()) {
             Type<?> elementType = null;
@@ -63,17 +66,17 @@ public class Node {
                 destinationType = property.getType();
             }
             
-            this.newDestination = new MultiOccurrenceVariableRef(destinationType, "new_" + name + uniqueIndex);  
+            this.newDestination = new MultiOccurrenceVariableRef(destinationType, "new_" + name + propertySuffix + uniqueIndex);  
             String multiOccurrenceName;
             if (parent != null) {
-                multiOccurrenceName = name(parent.elementRef.name(),name);
+                multiOccurrenceName = name(parent.elementRef.name(),name + propertySuffix);
             } else {
                 multiOccurrenceName = name;
             } 
             this.multiOccurrenceVar = new MultiOccurrenceVariableRef(property, multiOccurrenceName);
-            this.elementRef = new VariableRef(elementType, property.getName() + "_" + name+ "Element");
-            if (elementType.isPrimitive()) {
-                this.nullCheck = new VariableRef(TypeFactory.valueOf(Boolean.TYPE), property.getName() + "_" + name+ "ElementIsNull");
+            this.elementRef = new VariableRef(elementType, property.getName() + "_" + name + uniqueIndex + "Element");
+            if (elementType != null && elementType.isPrimitive()) {
+                this.nullCheck = new VariableRef(TypeFactory.valueOf(Boolean.TYPE), property.getName() + "_" + name+ uniqueIndex + "ElementIsNull");
             }
         } 
         
@@ -95,7 +98,6 @@ public class Node {
             return type;
         }
     }
-    
     
     private Node(Property property, Node parent, boolean isSource, int uniqueIndex) {
         this(property, null, parent, null, isSource, uniqueIndex);

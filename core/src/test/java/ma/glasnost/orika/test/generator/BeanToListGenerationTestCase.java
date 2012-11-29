@@ -15,7 +15,7 @@ public class BeanToListGenerationTestCase {
 	public void testBeanToListGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 	
 		factory.classMap(Student.class, List.class)
 				.field("grade.letter", "0")
@@ -67,7 +67,7 @@ public class BeanToListGenerationTestCase {
 	
 	@Test
 	public void nestedListElement() {
-	    MapperFactory factory = MappingUtil.getMapperFactory(true);
+	    MapperFactory factory = MappingUtil.getMapperFactory();
 	    
         factory.classMap(Person.class, PersonDto.class)
                 .field("name.first", "names[0].name")

@@ -12,6 +12,7 @@ import ma.glasnost.orika.impl.generator.MapEntryRef.EntryPart;
 import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
+import ma.glasnost.orika.impl.util.StringUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Type;
 
@@ -44,25 +45,35 @@ public class ArrayOrCollectionToMap extends AbstractSpecification {
             out.append(statement("%s.clear()", newDest));
         }
         
-        VariableRef element = new VariableRef(s.elementType(), "_$_element");
+        VariableRef element = new VariableRef(s.elementType(), "source" + StringUtil.capitalize(s.name()) + "Element");
         
         @SuppressWarnings("unchecked")
         Type<MapEntry<Object, Object>> entryType = MapEntry.concreteEntryType((Type<? extends Map<Object, Object>>) d.type());
         
-        VariableRef newEntry = new VariableRef(entryType, "_$_entry");
+        VariableRef newEntry = new VariableRef(entryType, "source" + StringUtil.capitalize(s.name()) + "Entry");
         VariableRef newKey = new MapEntryRef(newEntry.type(), newEntry.name(), EntryPart.KEY);
         VariableRef newVal = new MapEntryRef(newEntry.type(), newEntry.name(), EntryPart.VALUE);
         /*
          * Loop through the individual entries, map key/value and then put them
          * into the destination
          */
-        append(out,
-                format("for( Object _o : %s) {", s),
-                element.declare("_o"),
-                newEntry.declare("mapperFacade.map(%s, %s, %s, mappingContext)", element, code.usedType(element), code.usedType(newEntry)),
-                "\n",
-                format("%s.put(%s, %s)", newDest, newKey, newVal),
-                "}");
+        if (s.isArray()) {
+            append(out,
+                    format("for( int entryIndex = 0, entryLen = %s.length; entryIndex < entryLen; ++entryIndex ) {\n", s),
+                    element.declare("%s[entryIndex]", s),
+                    newEntry.declare("mapperFacade.map(%s, %s, %s, mappingContext)", element, code.usedType(element), code.usedType(newEntry)),
+                    "\n",
+                    format("%s.put(%s, %s)", newDest, newKey, newVal),
+                    "}");
+        } else {
+            append(out,
+                    format("for( java.util.Iterator entryIter = %s.iterator(); entryIter.hasNext(); ) {\n", s),
+                    element.declare("entryIter.next()"),
+                    newEntry.declare("mapperFacade.map(%s, %s, %s, mappingContext)", element, code.usedType(element), code.usedType(newEntry)),
+                    "\n",
+                    format("%s.put(%s, %s)", newDest, newKey, newVal),
+                    "}");
+        }
         
         if (d.isAssignable()) {
             out.append(statement(d.assign(newDest)));

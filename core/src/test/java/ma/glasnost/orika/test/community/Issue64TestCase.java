@@ -53,7 +53,7 @@ public class Issue64TestCase {
         supplier.setContacts(new ArrayList<Contact>());
         supplier.getContacts().add(ct);
         
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
         MapperFacade mapper = mapperFactory.getMapperFacade();
         
         SupplierDto result = mapper.map(supplier, SupplierDto.class);

@@ -30,8 +30,8 @@ public class Convert extends AbstractSpecification {
         if (source.isPrimitive()) {
             return statement(statement);
         } else {
-        	String elseSetNull   = shouldSetNull ? ("else " + destination.assign("null")) : "";
-            return statement(source.ifNotNull() + statement) + statement(elseSetNull);
+        	String elseSetNull   = shouldSetNull ? (" else { \n" + destination.assignIfPossible("null")) + ";\n }" : "";
+            return statement(source.ifNotNull() + "{ \n" + statement) + "\n}" + elseSetNull;
         }
     }
     

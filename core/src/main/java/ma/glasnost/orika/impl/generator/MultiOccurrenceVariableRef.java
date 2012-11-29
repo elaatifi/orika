@@ -17,6 +17,8 @@
  */
 package ma.glasnost.orika.impl.generator;
 
+import static java.lang.String.format;
+
 import java.util.Map;
 import java.util.Set;
 
@@ -70,10 +72,18 @@ public class MultiOccurrenceVariableRef extends VariableRef {
     
     private String getIteratorName() {
         if (iteratorName == null) {
+            String prefix = this.name();
+            if (this.property() != null && this.property().getName().matches("[\\w$]+")) {
+                prefix = this.property().getName();
+            }
+            if ("".equals(prefix) && !"".equals(this.name)) {
+                prefix = this.name;
+            }
+            
             if (isArray()) {
-                iteratorName = name() + "_$_index";
+                iteratorName = prefix + "_$_index";
             } else {
-                iteratorName = name() + "_$_iter";
+                iteratorName = prefix + "_$_iter";
             }
         }
         return iteratorName;
@@ -146,7 +156,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
             if (type().getComponentType().isPrimitive()) {
                 return assign("%sArray(%s)", type().getComponentType().getCanonicalName(), value);
             } else {
-                return assign("%s.toArray(new %s{})", value, type().getCanonicalName());
+                return assign("listToArray(%s, %s.class)", value, type().getCanonicalName());
             }
         } else if (isCollection() && value.isArray()) {
             if (value.type().getComponentType().isPrimitive()) {
@@ -171,7 +181,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         } else if (isMap() && value.isMapEntry()) {
             return getter() + ".put(" + value + ".getKey(), " + value + ".getValue())";
         } else if (isCollection()) {
-            return getter() + ".add(" + value + ")";
+            return getter() + ".add(" + cast(value, type().getNestedType(0)) + ")";
         } else {
             throw new IllegalArgumentException(type() + " does not support adding elements of type " + value.type());
         }
@@ -187,7 +197,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         } else if (isMap()) {
             return getter() + ".put(" + value + ".getKey(), " + value + ".getValue())";
         } else if (isCollection()) {
-            return getter() + ".add(" + value + ")";
+            return getter() + ".add(" + cast(value, type().getNestedType(0)) + ")";
         } else {
             throw new IllegalArgumentException(type() + " does not support adding of elements");
         }

@@ -6,9 +6,13 @@ import java.util.Map;
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.UtilityResolver;
+import ma.glasnost.orika.impl.generator.VariableRef;
+import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.property.PropertyResolverStrategy;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
@@ -19,7 +23,7 @@ public class BeanToMapGenerationTestCase {
 	public void testBeanToMapGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 	
 		factory.classMap(Student.class, Map.class)
 				.field("grade.letter", "letterGrade")
@@ -71,7 +75,7 @@ public class BeanToMapGenerationTestCase {
     public void testBeanToCustomMapGeneration() throws Exception {
         
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         Type<Map<String, String>> mapType = new TypeBuilder<Map<String, String>>(){}.build();
         Type<Student> studentType = TypeFactory.valueOf(Student.class);
@@ -121,9 +125,23 @@ public class BeanToMapGenerationTestCase {
     }
 	
 	@Test
+	public void testResolveMapKeys() {
+	    
+	    PropertyResolverStrategy propertyResolver = UtilityResolver.getDefaultPropertyResolverStrategy();
+	    Property namesFirst = propertyResolver.getProperty(PersonDto.class, "names['first']");
+	    
+	    Assert.assertNotNull(namesFirst);
+	    Assert.assertEquals(TypeFactory.valueOf(String.class), namesFirst.getType());
+	    Assert.assertNull(namesFirst.getContainer());
+	    
+	    VariableRef ref = new VariableRef(namesFirst, "destination");
+	    Assert.assertEquals("((java.lang.String)((java.util.Map)destination.names).get(\"first\"))", ref.toString());
+	}
+	
+	@Test
 	public void testMapElementProperties() {
 	    
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.classMap(Person.class, PersonDto.class)
                 .field("name.first", "names['first']")
@@ -154,7 +172,7 @@ public class BeanToMapGenerationTestCase {
 	@Test
     public void testNestedMapElement() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.classMap(Person.class, PersonDto2.class)
                 .field("name.first", "names['self'].first")

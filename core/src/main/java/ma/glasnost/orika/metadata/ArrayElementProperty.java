@@ -26,8 +26,8 @@ package ma.glasnost.orika.metadata;
  */
 public class ArrayElementProperty extends Property {
     
-    public ArrayElementProperty(int index, Type<?> propertyType) {
-        super("["+index + "]","["+index + "]","["+index + "]","["+index + "] = %s",propertyType,null);
+    public ArrayElementProperty(int index, Type<?> propertyType, Property container) {
+        super("["+index + "]","["+index + "]","["+index + "]","["+index + "] = %s",propertyType,null, container);
     }
     
     public boolean isArrayElement() {

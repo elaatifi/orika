@@ -29,7 +29,7 @@ public class Issue53TestCase {
     
     @Test
     public void subClassSetterOrikaTest() {
-        final MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);/*new DefaultMapperFactory.Builder().build();*/
+        final MapperFactory mapperFactory = MappingUtil.getMapperFactory();/*new DefaultMapperFactory.Builder().build();*/
         final MapperFacade mapper = mapperFactory.getMapperFacade();
         
         final SearchRecord sr = new SearchRecord();

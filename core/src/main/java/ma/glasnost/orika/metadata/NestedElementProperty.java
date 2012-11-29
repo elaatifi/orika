@@ -11,7 +11,7 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
  */
 public class NestedElementProperty extends Property {
 
-    private final Property container;
+    private final Property elementProperty;
     
     /**
      * @param owningProperty
@@ -21,8 +21,15 @@ public class NestedElementProperty extends Property {
     public NestedElementProperty(Property owningProperty, Property elementProperty, PropertyResolverStrategy resolver) {
         super(getElementExpression(owningProperty, elementProperty), 
                 elementProperty.getName(), elementProperty.getGetter(), elementProperty.getSetter(),
-                elementProperty.getType(), elementProperty.getElementType());
-        this.container = initContainer(owningProperty, elementProperty.getExpression(), resolver);
+                elementProperty.getType(), elementProperty.getElementType(),
+                initContainer(owningProperty, elementProperty.getExpression(), resolver)
+                );
+
+        Property element =  initElement(getContainer(), elementProperty.getExpression(), resolver);
+        if (element == null) {
+            element = elementProperty;
+        }
+        this.elementProperty = element;
     }
     
     /**
@@ -31,36 +38,52 @@ public class NestedElementProperty extends Property {
      * @return the element expression for this property
      */
     private static String getElementExpression(Property owningProperty, Property elementProperty) {
-        return owningProperty.getExpression() + "[" + elementProperty.getExpression() + "]";
+        int splitIndex = owningProperty.getExpression().lastIndexOf("{");
+        if (splitIndex >= 0) {
+            return owningProperty.getExpression().substring(0, splitIndex + 1) + 
+                    "{" + elementProperty.getExpression() + "}" +
+                    owningProperty.getExpression().substring(splitIndex + 1);
+        } else {
+            return owningProperty.getExpression() + "{" + elementProperty.getExpression() + "}";
+        }
     }
     
     private static Property initContainer(Property owningProperty, String propertyExpression, PropertyResolverStrategy resolver) {
-        String[] parts = propertyExpression.replace("]","").split("\\[");
+        String[] parts = propertyExpression.replace("}","").split("\\{");
         if (parts.length > 1) {
             StringBuilder containerExpression = new StringBuilder("");
             for (int i = parts.length -2; i >= 0; --i) {
                 String part = parts[i];
-                containerExpression.insert(0, "[" + part);
-                containerExpression.append("]");
+                containerExpression.insert(0, "{" + part);
+                containerExpression.append("}");
             }
-            return resolver.getProperty(owningProperty.getType(), containerExpression.toString());
+            Property container = "".equals(containerExpression.toString()) ? owningProperty : resolver.getProperty(owningProperty, containerExpression.toString());
+            return container;
         } else {
             return owningProperty;
         }
     }
     
-    /**
-     * @return the containing property of this NestedElementProperty
-     */
-    public Property getContainer() {
-        return container;
+    private static Property initElement(Property container, String propertyExpression, PropertyResolverStrategy resolver) {
+        String[] parts = propertyExpression.replace("}","").split("\\{");
+        if (parts.length > 1) {
+            return resolver.getProperty(container, "{" + parts[parts.length-1] + "}");
+        } else {
+            return null;
+        }
     }
-    
+  
+    /**
+     * @return the nested element property 
+     */
+    public Property getElement() {
+        return elementProperty;
+    }
     /**
      * @return the root container of this property
      */
     public Property getRootContainer() {
-        Property container = this.container;
+        Property container = getContainer();
         while (container.getContainer() != null) {
             container = container.getContainer();
         }

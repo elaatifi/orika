@@ -211,6 +211,14 @@ public class MapperFacadeImpl implements MapperFacade {
             }
             strategyCache.put(key, strategy);
         }
+        
+        /*
+         * Set the resolved types on the current mapping context; this can be used
+         * by downstream Mappers to determine the originally resolved types
+         */
+        context.setResolvedSourceType(strategy.getSoureType());
+        context.setResolvedDestinationType(strategy.getDestinationType());
+        
         return strategy;
     }
     
@@ -231,7 +239,6 @@ public class MapperFacadeImpl implements MapperFacade {
             if (existingResult == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, false, context);
                 existingResult = (D) strategy.map(sourceObject, null, context);
-                context.setResolvedMappingStrategy(strategy);    
             }
             return existingResult;
             
@@ -295,7 +302,6 @@ public class MapperFacadeImpl implements MapperFacade {
             if (context.getMappedObject(sourceObject, destinationType) == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, true, context);
                 strategy.map(sourceObject, destinationObject, context);
-                context.setResolvedMappingStrategy(strategy);
             }
 
         } catch (MappingException e) {
@@ -336,7 +342,6 @@ public class MapperFacadeImpl implements MapperFacade {
             if (context.getMappedObject(sourceObject, destinationObject.getClass()) == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
                 strategy.map(sourceObject, destinationObject, context);
-                context.setResolvedMappingStrategy(strategy);
             }
 
         } catch (MappingException e) {
@@ -675,7 +680,6 @@ public class MapperFacadeImpl implements MapperFacade {
             if (result == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationClass, false, context);
                 result = (D) strategy.map(sourceObject, null, context); 
-                context.setResolvedMappingStrategy(strategy);
             }
             return result;
             

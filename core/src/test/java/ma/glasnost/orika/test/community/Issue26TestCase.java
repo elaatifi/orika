@@ -33,7 +33,7 @@ public class Issue26TestCase {
 
 	@Test
 	public void testMapping() {
-		MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
+		MapperFactory mapperFactory = MappingUtil.getMapperFactory();
 		
 		mapperFactory.registerClassMap(
 		        mapperFactory.classMap(Order.class, OrderData.class)

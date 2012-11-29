@@ -282,7 +282,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
     public Type<?> getPrimitiveType() {
         if (!ClassUtil.isPrimitiveWrapper(rawType)) {
-            throw new IllegalStateException(rawType + " is not primitive");
+            throw new IllegalStateException(rawType + " is not a primitive wrapper");
         }
         return TypeFactory.valueOf(ClassUtil.getPrimitiveType(rawType));
     }

@@ -24,7 +24,7 @@ public class MapGenerationTestCase {
 	public void testMapToMapGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithSetter.class, MapWithSetterDto.class)
 				.field("testScores", "scores").byDefault());
@@ -54,7 +54,7 @@ public class MapGenerationTestCase {
 	public void testMapToMapGeneration_noSetter() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithSetter.class, MapWithoutSetter.class)
 				.field("testScores", "scores").byDefault());
@@ -84,7 +84,7 @@ public class MapGenerationTestCase {
 	public void testMapToArrayGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithSetter.class, GenericDto.class)
 				.field("testScores", "stringArray").byDefault());
@@ -121,7 +121,7 @@ public class MapGenerationTestCase {
 	public void testMapToListGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithSetter.class, GenericDto.class)
 				.field("testScores", "stringList").byDefault());
@@ -158,7 +158,7 @@ public class MapGenerationTestCase {
 	public void testListToMapGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithoutSetter.class, GenericDto.class)
 				.field("scores", "stringList").byDefault());
@@ -204,7 +204,7 @@ public class MapGenerationTestCase {
 	public void testArrayToMapGeneration() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithoutSetter.class, GenericDto.class)
 				.field("scores", "stringArray").byDefault());
@@ -249,11 +249,11 @@ public class MapGenerationTestCase {
 	public void testNewSyntax_mapToArrays() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithoutSetter.class, GenericDto.class)
-				.field("scores[key]", "stringArray[]")
-				.field("scores[value]", "intArray[]")
+				.field("scores{key}", "stringArray{}")
+				.field("scores{value}", "intArray{}")
 				.byDefault());
         /*
          * Tell Orika how we should convert the list element type to map entry
@@ -282,11 +282,11 @@ public class MapGenerationTestCase {
 	public void testNewSyntax_mapToArraysWithUnequalSize() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithoutSetter.class, GenericDto.class)
-				.field("scores[key]", "stringArray[]")
-				.field("scores[value]", "intArray[]")
+				.field("scores{key}", "stringArray{}")
+				.field("scores{value}", "intArray{}")
 				.byDefault());
 		
         /*
@@ -325,13 +325,13 @@ public class MapGenerationTestCase {
 	public void testNewSyntax_multipleParallel() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.registerClassMap(
 				factory.classMap(MapWithoutSetter.class, GenericDto.class)
-				.field("scores[key]", "stringArray[]")
-				.field("scores[value]", "intArray[]")
-				.field("scores[key]", "gradeList[letterGrade]")
-				.field("scores[value]", "gradeList[minimumScore]")
+				.field("scores{key}", "stringArray{}")
+				.field("scores{value}", "intArray{}")
+				.field("scores{key}", "gradeList{letterGrade}")
+				.field("scores{value}", "gradeList{minimumScore}")
 				.byDefault());
         
 		MapWithoutSetter source = new MapWithoutSetter();

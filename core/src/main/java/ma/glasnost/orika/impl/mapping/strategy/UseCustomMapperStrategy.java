@@ -95,4 +95,18 @@ public abstract class UseCustomMapperStrategy implements MappingStrategy {
             return customMapper.getClass().getSimpleName() + ".mapBtoA";
         }
     }
+    
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getSoureType()
+     */
+    public Type<?> getSoureType() {
+        return sourceType;
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getDestinationType()
+     */
+    public Type<?> getDestinationType() {
+        return destinationType;
+    }
 }

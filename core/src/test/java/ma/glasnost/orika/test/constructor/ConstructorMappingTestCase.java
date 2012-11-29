@@ -58,7 +58,7 @@ public class ConstructorMappingTestCase {
     public void testSimpleCase() throws Throwable {
     	
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
                 //.constructorA()
@@ -308,7 +308,7 @@ public class ConstructorMappingTestCase {
     	
     	Library library = new LibraryImpl("Library #1", books);
     	
-    	MapperFactory factory = MappingUtil.getMapperFactory(true);
+    	MapperFactory factory = MappingUtil.getMapperFactory();
     	MapperFacade mapper = factory.getMapperFacade();
     	
     	LibraryDTO mapped = mapper.map(library, LibraryDTO.class);

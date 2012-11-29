@@ -128,7 +128,7 @@ public class CoreMappingFunctionsTestCase {
         Type<MapEntry<String, Integer>> entryType = MapEntry.concreteEntryType(mapType);
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         factory.registerClassMap(factory.classMap(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
@@ -177,7 +177,7 @@ public class CoreMappingFunctionsTestCase {
          * from the element type in the collection to the special type MapEntry which
          * represents map entries.
          */
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         factory.registerClassMap(factory.classMap(Ranking.class, new TypeBuilder<MapEntry<String, Integer>>(){}.build())
                 .field("name", "key")
                 .field("rank", "value")
@@ -212,7 +212,7 @@ public class CoreMappingFunctionsTestCase {
         Type<MapEntry<String, Integer>> entryType = MapEntry.concreteEntryType(mapType);
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         factory.registerClassMap(factory.classMap(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")
@@ -246,7 +246,7 @@ public class CoreMappingFunctionsTestCase {
         Type<Ranking> rankingType = TypeFactory.valueOf(Ranking.class);
         
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         factory.registerClassMap(factory.classMap(rankingType, entryType)
                 .field("name", "key")
                 .field("rank", "value")

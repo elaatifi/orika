@@ -102,9 +102,15 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
             if (!sourceFile.exists() && !sourceFile.createNewFile()) {
                 throw new IOException("Could not write source file for " + sourceCode.getClassName());
             }
-            FileWriter fw = new FileWriter(sourceFile);
-            fw.append(sourceCode.toSourceFile());
-            fw.close();
+           
+            FileWriter fw = null; 
+            try {
+                fw = new FileWriter(sourceFile);
+                fw.append(sourceCode.toSourceFile());
+            } finally {
+                if (fw != null)
+                    fw.close();
+            }
         }
     }
     
@@ -182,16 +188,16 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
      */
     public Class<?> compileClass(SourceCodeContext sourceCode) throws SourceCodeGenerationException {
         
-        String className = sourceCode.getClassName();
+        StringBuilder className = new StringBuilder(sourceCode.getClassName());
         CtClass byteCodeClass = null;
         int attempts = 0;
         Random rand = new Random();
         while (byteCodeClass==null) {
 	        try {
-	        	byteCodeClass = classPool.makeClass(className);
+	        	byteCodeClass = classPool.makeClass(className.toString());
 			} catch (RuntimeException e) {
 				if (attempts < 5) {
-					className = className + Integer.toHexString(rand.nextInt());
+					className.append(Integer.toHexString(rand.nextInt()));
 				} else {
 					// No longer likely to be accidental name collision; propagate the error
 					throw e;

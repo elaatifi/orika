@@ -33,7 +33,7 @@ public class InverseMappingTestCase {
     
     @Test
     public void testInverseOneToOneMapping() {
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         ClassMapBuilder<PersonDTO, Person> classMapBuilder = factory.classMap(PersonDTO.class, Person.class);
         classMapBuilder.fieldMap("address").bInverse("person").add();
@@ -117,7 +117,7 @@ public class InverseMappingTestCase {
     
     @Test
     public void testInverseManyToManyMapping() {
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         ClassMapBuilder<ReaderDTO, Reader> classMapBuilder = factory.classMap(ReaderDTO.class, Reader.class);
         classMapBuilder.fieldMap("books").bInverse("readers").add();

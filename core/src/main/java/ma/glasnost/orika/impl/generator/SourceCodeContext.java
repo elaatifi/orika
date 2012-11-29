@@ -42,9 +42,9 @@ import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.Properties;
 import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.impl.GeneratedObjectBase;
-import ma.glasnost.orika.impl.Properties;
 import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.impl.generator.Node.NodeList;
 import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
@@ -255,11 +255,7 @@ public class SourceCodeContext {
         return "((" + Type.class.getCanonicalName() + ")usedTypes[" + index + "])";
     }
     
-    public String usedMapperFacadeCall(VariableRef source, VariableRef destination) {
-        return usedMapperFacadeCall(source.type(), destination.type());
-    }
-    
-    public String usedMapperFacadeCall(Type<?> sourceType, Type<?> destinationType) {
+    private String usedMapperFacadeCall(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
         String mapInDirection = usedFacade.isReversed ? "mapReverse" : "map";
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
@@ -287,7 +283,7 @@ public class SourceCodeContext {
     
     public String newObjectFromMapper(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
-        String instantiateMethod = usedFacade.isReversed ? "newObject" : "newObjectReverse";
+        String instantiateMethod = usedFacade.isReversed ? "newObjectReverse" : "newObject";
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
     }
     
@@ -299,7 +295,7 @@ public class SourceCodeContext {
      * @return a code snippet to generate a new instance of the destination type from a mapper
      */
     public String newObjectFromMapper(VariableRef source, Type<?> destinationType) {
-        return newObjectFromMapper(source.type(), destinationType) + "(" + source + ", mappingContext)";
+        return newObjectFromMapper(source.type(), destinationType) + "(" + source.asWrapper() + ", mappingContext)";
     }
     
     /**
@@ -320,6 +316,8 @@ public class SourceCodeContext {
     public String newObject(VariableRef source, Type<?> destinationType) {
         if (destinationType.isPrimitive()) {
             return VariableRef.getDefaultValue(destinationType.getRawType());
+        } else if (destinationType.isString()){
+            return "null";
         } else {
             return newObjectFromMapper(source, destinationType);
         }
@@ -345,9 +343,10 @@ public class SourceCodeContext {
             if (!ClassUtil.isConcrete(ref.type()) && !ref.type().isMultiOccurrence()) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
-            
-            out.append(statement("if(%s) %s", ref.isNull(),
-                    ref.assign("(%s)%s(source, mappingContext)", ref.typeName(), usedMapperFacadeNewObjectCall(ref,source))));
+            append(out,
+                    format("if(%s) { \n", ref.isNull()),
+                    ref.assign(newObject(source, ref.type())),
+                    "}");
         }
         return out.toString();
     }
@@ -365,14 +364,16 @@ public class SourceCodeContext {
             String expr = format(str, args);
             String prefix = "";
             String suffix = "";
-            if (!expr.startsWith("\n")) {
+            if (!expr.startsWith("\n") || expr.startsWith("}")) {
                 prefix = "\n";
             }
             String trimmed = expr.trim();
             if (!"".equals(trimmed) && !trimmed.endsWith(";") && !trimmed.endsWith("}") && !trimmed.endsWith("{") && !trimmed.endsWith("(")) {
-                suffix = ";";
+                suffix = "; ";
             }
             return prefix + expr + suffix;
+        } else if (str != null) {
+            return str;
         }
         return "";
     }

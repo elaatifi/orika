@@ -229,7 +229,7 @@ public class ClassLoaderLeakageTestCase {
 		
 		SoftReference<ClassLoader> childLoaderRef = null;
 		
-		MapperFactory factory = MappingUtil.getMapperFactory(true);
+		MapperFactory factory = MappingUtil.getMapperFactory();
 		
 		try {
 			File projectRoot = MavenProjectUtil.findProjectRoot();

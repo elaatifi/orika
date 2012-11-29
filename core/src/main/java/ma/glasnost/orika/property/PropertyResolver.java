@@ -55,6 +55,15 @@ import ma.glasnost.orika.metadata.TypeFactory;
  */
 public abstract class PropertyResolver implements PropertyResolverStrategy {
     
+    /**
+     * The prefix used to begin a nested element property
+     */
+    public static final String ELEMENT_PROPERT_PREFIX = "{";
+    /**
+     * The suffix used to complete a nested element property
+     */
+    public static final String ELEMENT_PROPERT_SUFFIX = "}";
+    
     private final boolean includePublicFields;
     
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
@@ -322,7 +331,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return true of the expression represents a nested property
      */
     protected boolean isNestedPropertyExpression(String expression) {
-        return expression.replaceAll("\\{" + NON_NESTED_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
+        return expression.replaceAll("\\:\\{" + NON_NESTED_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
     }
     
     /**
@@ -334,7 +343,21 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return true if the expression represents an element property
      */
     protected boolean isElementPropertyExpression(String expression) {
-        return expression.replaceAll("\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('[') != -1;
+        return expression.replaceAll("\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('{') != -1;
+    }
+    
+    
+    /**
+     * Determines whether the provided string is a valid element property
+     * expression
+     * 
+     * @param expression
+     *            the expression to evaluate
+     * @return true if the expression represents an element property
+     */
+    protected boolean isIndividualElementExpression(String expression) {
+        String normalized = expression.replaceAll("\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "");
+        return normalized.contains("[") && normalized.endsWith("]");
     }
     
     /**
@@ -349,15 +372,15 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return "".equals(expr);
     }
     
-    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$ ]+";
-    private static final String NON_NESTED_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\[\\] ]+";
+    private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\<\\> ]+";
+    private static final String NON_NESTED_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\[\\]\\{\\} ]+";
     
     
-    private static final String NESTED_PROPERTY_SPLITTER = "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS
+    private static final String NESTED_PROPERTY_SPLITTER = "(?!\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS
             + "\\})";
     
-    private static final String ELEMENT_PROPERTY_SPLITTER = "(?!\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[\\[](?!"
-            + DYNAMIC_PROPERTY_CHARACTERS + "\\})";
+    private static final String ELEMENT_PROPERTY_SPLITTER = "(?!\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")\\{";
+    
     
     /*
      * (non-Javadoc)
@@ -367,19 +390,31 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * (java.lang.reflect.Type, java.lang.String)
      */
     public NestedProperty getNestedProperty(java.lang.reflect.Type type, String p) {
+        return getNestedProperty(type, p, null);
+    }
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.property.PropertyResolverStrategy#getNestedProperty
+     * (java.lang.reflect.Type, java.lang.String)
+     */
+    protected NestedProperty getNestedProperty(java.lang.reflect.Type type, String p, Property owner) {
         
         String typeName = type.toString();
         Property property = null;
         java.lang.reflect.Type propertyType = type;
         final List<Property> path = new ArrayList<Property>();
         final StringBuilder expression = new StringBuilder();
+        Property container = owner;
         if (p.indexOf('.') != -1) {
             final String[] ps = p.split(NESTED_PROPERTY_SPLITTER);
             int i = 0;
             while (i < ps.length) {
                 try {
-                    property = getProperty(propertyType, ps[i], (i < ps.length - 1));
+                    property = getProperty(propertyType, ps[i], (i < ps.length - 1), container);
                     propertyType = property.getType();
+                    container = null;
                 } catch (MappingException e) {
                     throw new MappingException("could not resolve nested property [" + p + "] on " + type + ", because "
                             + e.getLocalizedMessage());
@@ -402,6 +437,10 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return new NestedProperty(expression.toString(), property, path.toArray(new Property[path.size()]));
     }
     
+    public Property getElementProperty(java.lang.reflect.Type type, String p) {
+        return getElementProperty(type, p, null);
+    }
+    
     /**
      * @param type
      * @param p
@@ -409,50 +448,36 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      *         expression
      */
     @SuppressWarnings("unchecked")
-    public Property getElementProperty(java.lang.reflect.Type type, String p) {
+    public Property getElementProperty(java.lang.reflect.Type type, String p, Property owner) {
         
         String[] ps = p.split(ELEMENT_PROPERTY_SPLITTER, 2);
         String elementPropertyExpression = ps[1].substring(0, ps[1].length() - 1);
         
-        Property owningProperty = getProperty(type, ps[0]);
+        Property owningProperty;
+        if (owner != null) {
+            if (type.equals(owner.getType())) {
+                owningProperty = owner; 
+            } else {
+                owningProperty = getProperty(type, ps[0], false, owner);
+            }
+        } else {
+            owningProperty = getProperty(type, ps[0]);
+        }
+        
         Type<?> elementType;
         
         Property elementProperty;
-        if (owningProperty.isMap()) {
+        /*if (isIndividualElementExpression(elementPropertyExpression)) {
+            elementProperty = getProperty(owningProperty.getType(), elementPropertyExpression, false, owningProperty);
+        } else*/ if (owningProperty.isMap()) {
             elementType = MapEntry.concreteEntryType((Type<Map<Object, Object>>) owningProperty.getType());
-            if (elementPropertyExpression.matches("(^'[.\\w]*')|(^\"[.\\w]*\")")) {
-                String key = elementPropertyExpression.substring(1, elementPropertyExpression.length()-1);
-                elementProperty = new MapKeyProperty(key, elementType.getNestedType(1)); 
-                return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
-            } else {
-                elementProperty = getProperty(elementType, elementPropertyExpression); 
-            }
+            elementProperty = getProperty(elementType, elementPropertyExpression, false, owningProperty); 
         } else if (owningProperty.isCollection()) {
             elementType = owningProperty.getType().getNestedType(0);
-            if (elementPropertyExpression.matches("[\\d+]")) {
-                try {
-                    int index = Integer.valueOf(elementPropertyExpression);
-                    elementProperty = new ListElementProperty(index, elementType); 
-                    return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
-                }
-            } else {
-                elementProperty = getProperty(elementType, elementPropertyExpression);
-            }
+            elementProperty = getProperty(elementType, elementPropertyExpression, false, owningProperty);
         } else if (owningProperty.isArray()) {
             elementType = owningProperty.getType().getComponentType();
-            if (elementPropertyExpression.matches("[\\d+]")) {
-                try {
-                    int index = Integer.valueOf(elementPropertyExpression);
-                    elementProperty = new ArrayElementProperty(index, elementType); 
-                    return new NestedProperty(p, elementProperty, new Property[]{owningProperty});
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
-                }
-            } else {
-                elementProperty = getProperty(elementType, elementPropertyExpression);
-            }
+            elementProperty = getProperty(elementType, elementPropertyExpression, false, owningProperty);
         } else {
             throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
         }
@@ -460,10 +485,75 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return new NestedElementProperty(owningProperty, elementProperty, this);
     }
     
+    /**
+     * @param type
+     * @param p
+     * @return the Property represented by the specified element property
+     *         expression
+     */
+    @SuppressWarnings("unchecked")
+    public Property getIndividualElementProperty(java.lang.reflect.Type type, String p, Property owner) {
+        
+        String[] ps = p.split("\\[", 2);
+        String elementPropertyExpression = ps[1].substring(0, ps[1].length()-1);
+        
+//        Property owningProperty = owner != null ? owner : getProperty(type, ps[0]);
+        Property owningProperty;
+        if (owner != null) {
+            if (type.equals(owner.getType())) {
+                owningProperty = owner; 
+            } else {
+                owningProperty = getProperty(type, ps[0], false, owner);
+            }
+        } else {
+            owningProperty = getProperty(type, ps[0]);
+        }
+        
+        
+        Type<?> elementType;
+        Property elementProperty;
+        if (owningProperty.isMap()) {
+            elementType = MapEntry.concreteEntryType((Type<Map<Object, Object>>) owningProperty.getType());
+            String key = elementPropertyExpression.substring(1, elementPropertyExpression.length()-1);
+            elementProperty = new MapKeyProperty(key, elementType.getNestedType(1), null); 
+        } else if (owningProperty.isCollection()) {
+            elementType = owningProperty.getType().getNestedType(0);
+            try {
+                int index = Integer.valueOf(elementPropertyExpression.replaceAll("[\\[\\]]", ""));
+                elementProperty = new ListElementProperty(index, elementType, null); 
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
+            }
+        } else if (owningProperty.isArray()) {
+            elementType = owningProperty.getType().getComponentType();
+            try {
+                int index = Integer.valueOf(elementPropertyExpression);
+                elementProperty = new ArrayElementProperty(index, elementType, null); 
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
+            }
+        } else {
+            throw new IllegalArgumentException("'" + p + "' is not a valid element property for " + type);
+        }
+        
+        if (!"".equals(owningProperty.getName())) {
+            elementProperty = new NestedProperty(p, elementProperty, new Property[]{owningProperty});
+        } 
+        return elementProperty;
+        
+    }
+    
+    
     public Property getProperty(java.lang.reflect.Type type, String expr) {
         
-        return getProperty(type, expr, false);
+        return getProperty(type, expr, false, null);
     }
+    
+    public Property getProperty(Property owner, String expr) {
+        
+        return getProperty(owner.getType(), expr, false, owner);
+    }
+    
     
     /**
      * Resolves the specified property expression
@@ -479,15 +569,17 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      *             if the expression cannot be resolved to a property for the
      *             type
      */
-    protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup) throws MappingException {
+    protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup, Property owner) throws MappingException {
         Property property = null;
         
         if (isSelfReferenceExpression(expr)) {
-            property = new Property.Builder().name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type)).build(this);
+            property = new Property.Builder().name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type)).container(owner).build(this);
         } else if (isNestedPropertyExpression(expr)) {
-            property = getNestedProperty(type, expr);
+            property = getNestedProperty(type, expr, owner);
         } else if (isElementPropertyExpression(expr)) {
-            property = getElementProperty(type, expr);
+            property = getElementProperty(type, expr, owner);
+        } else if (isIndividualElementExpression(expr)) {
+            property = getIndividualElementProperty(type, expr, owner);
         } else {
             // TODO: perhaps in-line properties should be isolated to a given
             // ClassMapBuilder instance, rather than made available for other
@@ -515,12 +607,16 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                 } else {
                     throw new MappingException(expr + " does not belong to " + type);
                 }
+                
+                if (owner != null) {
+                    property = new Property.Builder().merge(property).container(owner).build();
+                }
             }
         }
         return property;
     }
     
-    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\{\\s*([\\w\\(\\)'\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)'\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
+    private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\:\\{\\s*([\\w\\(\\)'\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)'\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
     
     /**
      * Determines whether the provided string is a valid in-line property

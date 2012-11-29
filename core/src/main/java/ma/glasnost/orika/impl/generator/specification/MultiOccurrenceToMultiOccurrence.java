@@ -60,6 +60,8 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                 Node.addFieldMap(map, destNodes, false);
             }    
               
+            registerClassMaps(sourceNodes, destNodes);
+            
             out.append(generateMultiOccurrenceMapping(sourceNodes, destNodes, associated, code));
         }
         return out.toString();
@@ -88,7 +90,11 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         
         StringBuilder out = new StringBuilder();
         
-        Map<MapperKey, ClassMapBuilder<?,?>> builders = new HashMap<MapperKey, ClassMapBuilder<?,?>>();
+        /*
+         * Construct size/length expressions used to limit the parallel iteration
+         * of multiple source variables; only keep iterating so long as all variables
+         * in a parallel set are non-empty
+         */
         List<String> sourceSizes = new ArrayList<String>();
         for (Node ref : sourceNodes) {
             if (!ref.isLeaf()) {
@@ -101,6 +107,10 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             sizeExpr = "min(new int[]{" + sizeExpr + "})";
         }
         
+        /*
+         * Declare "collector" elements and their iterators; used for aggregating
+         * results which are finally assigned/copied back into their final destination(s)
+         */
         for (Node destRef : destNodes) {
             
             if (!destRef.isLeaf()) {
@@ -128,6 +138,7 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         
         StringBuilder endWhiles = new StringBuilder();
         StringBuilder addLastElement = new StringBuilder();
+        
         iterateSources(sourceNodes, destNodes, out, endWhiles);
         
         LinkedList<Node> stack = new LinkedList<Node>(destNodes);
@@ -148,6 +159,10 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             if (!currentNode.isLeaf() && srcNode != null) { 
                 
                 String currentElementNull = currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.toString() : currentNode.elementRef.isNull();
+                
+                // TODO: classmap needs to be registered before attempting
+                // to generate an element comparator
+                
                 String currentElementComparator = code.currentElementComparator(srcNode, currentNode, sourceNodes, destNodes);
                 String or = (!"".equals(currentElementNull) && !"".equals(currentElementComparator)) ? " || " : "";
                 
@@ -156,7 +171,7 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                         "if ( !(" + currentElementNull + ")) {\n",
                         (currentNode.isRoot() ? currentNode.newDestination.add(currentNode.elementRef) : currentNode.multiOccurrenceVar.add(currentNode.elementRef)),
                         "}\n",
-                        currentNode.elementRef.assign(code.newObject(currentNode.elementRef, currentNode.elementRef.type())),
+                        currentNode.elementRef.assign(code.newObject(srcNode.elementRef, currentNode.elementRef.type())),
                         (currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.assign("false") : ""),
                         "}");
                 
@@ -168,42 +183,34 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             
             if (currentNode.value != null) {
                     
-                    
+                /*
+                 * If we have a fieldMap for the current node, attempt to map the fields
+                 */
                 String srcName = srcNode.parent != null ? srcNode.parent.elementRef.name() : "source";
                 Property srcProp = new Property.Builder().merge(currentNode.value.getSource()).expression(currentNode.value.getSource().getName()).build();
                 VariableRef s = new VariableRef(srcProp, srcName);
                 
-                String dstName = currentNode.parent != null ? currentNode.parent.elementRef.name() : "destination";
-                Property dstProp = new Property.Builder().merge(currentNode.value.getDestination()).expression(currentNode.value.getDestination().getName()).build();
+                Property dstProp = new Property.Builder().merge(currentNode.value.getDestination()).expression(currentNode.value.getDestination().getExpression()).build();
+                String dstName =  "destination";
+                if (currentNode.parent != null ) {
+                    dstName = currentNode.parent.elementRef.name();
+                }
+                
                 VariableRef d = new VariableRef(dstProp, dstName);
                 
                 Type<?> destType = currentNode.parent != null ? currentNode.parent.elementRef.type() : null;
                 
                 out.append(statement(code.mapFields(currentNode.value, s, d, destType, null)));
-                    
-                if (srcNode.parent != null 
-                        && srcNode.parent.elementRef != null 
-                        && currentNode.parent != null 
-                        && currentNode.parent.elementRef != null) {
-                    
-                    MapperKey key = new MapperKey(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type());
-                    if (!ClassUtil.isImmutable(key.getAType()) 
-                            && !ClassUtil.isImmutable(key.getBType()) 
-                            && !mapperFactory.existsRegisteredMapper(key.getAType(), key.getBType(), true)) {
-                        ClassMapBuilder<?,?> builder = builders.get(key);
-                        if (builder == null) {
-                            builder = mapperFactory.classMap(key.getAType(), key.getBType());
-                            builders.put(key, builder);
-                        }
-                        builder.fieldMap(currentNode.value.getSource().getName(), currentNode.value.getDestination().getName()).add();
-                    }
-                }
             }
         }  
         
         out.append(endWhiles.toString());
         out.append(addLastElement.toString());
         
+        /*
+         * Finally, we loop over the destination nodes and assign/copy all of the temporary 
+         * "collector" variables back into their final destination
+         */
         for (Node destRef : destNodes) {
             if (destRef.isRoot() && !destRef.isLeaf()) {
                 if (destRef.multiOccurrenceVar.isArray()) {
@@ -215,7 +222,7 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                     append(out,
                             format("if (%s && %s) {",destRef.newDestination.notNull(), destRef.newDestination.notEmpty()),
                             format("if (%s) {", destRef.multiOccurrenceVar.isNull()),
-                            destRef.multiOccurrenceVar.assign(destRef.multiOccurrenceVar.newInstance(sizeExpr)),
+                            destRef.multiOccurrenceVar.assignIfPossible(destRef.multiOccurrenceVar.newInstance(sizeExpr)),
                             "} else {\n",
                             destRef.multiOccurrenceVar + ".clear()",
                             "}\n",
@@ -225,13 +232,71 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             }
         }
         
-        for (ClassMapBuilder<?,?> builder: builders.values()) {
-            builder.register();
-        }
-        
         return out.toString();
     }
     
+    /**
+     * Register the ClassMaps needed to map this pair of source and
+     * destination nodes.
+     * 
+     * @param sourceNodes
+     * @param destNodes
+     */
+    private void registerClassMaps(NodeList sourceNodes, NodeList destNodes) {
+        /*
+         * Register all of the subordinate ClassMaps needed by this multi-occurrence
+         * mapping 
+         */
+        Map<MapperKey, ClassMapBuilder<?,?>> builders = new HashMap<MapperKey, ClassMapBuilder<?,?>>();
+        
+        LinkedList<Node> stack = new LinkedList<Node>(destNodes);
+        while (!stack.isEmpty()) {
+            
+            Node currentNode = stack.removeFirst();
+            stack.addAll(0, currentNode.children);
+            Node srcNode = null;
+            if (currentNode.value != null) {
+                srcNode = Node.findFieldMap(currentNode.value, sourceNodes, true);
+            } else {
+                FieldMap fieldMap = currentNode.getMap();
+                if (fieldMap != null) {
+                    srcNode = Node.findFieldMap(fieldMap, sourceNodes, true).parent;
+                }
+            }
+        
+            if (srcNode.parent != null 
+                    && srcNode.parent.elementRef != null 
+                    && currentNode.parent != null 
+                    && currentNode.parent.elementRef != null) {
+                
+                MapperKey key = new MapperKey(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type());
+                if (!ClassUtil.isImmutable(key.getAType()) 
+                        && !ClassUtil.isImmutable(key.getBType()) 
+                        && !mapperFactory.existsRegisteredMapper(key.getAType(), key.getBType(), true)) {
+                    ClassMapBuilder<?,?> builder = builders.get(key);
+                    if (builder == null) {
+                        builder = mapperFactory.classMap(key.getAType(), key.getBType());
+                        builders.put(key, builder);
+                    }
+                    builder.fieldMap(currentNode.value.getSource().getName(), currentNode.value.getDestination().getName()).add();
+                }
+            }
+        }
+        
+        
+        for (ClassMapBuilder<?,?> builder: builders.values()) {
+            builder.register();
+        }
+    }
+    
+    /**
+     * Creates the looping constructs for nested source variables
+     * 
+     * @param sourceNodes
+     * @param destNodes
+     * @param out
+     * @param endWhiles
+     */
     private void iterateSources(NodeList sourceNodes, NodeList destNodes, StringBuilder out, StringBuilder endWhiles) {
         
         if (!sourceNodes.isEmpty()) {

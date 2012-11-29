@@ -30,12 +30,12 @@ public class CopyByReference extends AbstractSpecification {
         }
         out.append(statement(destination.assign(source)));
         if (!source.isPrimitive()) {
-            out.append("}");
+            out.append("\n }");
             if (shouldMapNulls(fieldMap, code) && !destination.isPrimitive()) {
                 append(out, 
-                        " else {\n",
+                        " else {",
                         destination.assignIfPossible("null"),
-                        "}\n");
+                        "\n }");
             }
         }
         return out.toString();

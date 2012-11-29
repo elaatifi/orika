@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import ma.glasnost.orika.impl.mapping.strategy.MappingStrategy;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
@@ -39,9 +38,11 @@ public class MappingContext {
 	private List<Map<MapperKey, ClassMap<?,?>>> mappersSeen;
 	private Map<Object, Object> properties;
 	private Map<Object, Object> globalProperties;
-	private MappingStrategy strategy;
+//	private MappingStrategy strategy;
 	private boolean isNew = true;
 	private int depth;
+	private Type<?> resolvedSourceType;
+	private Type<?> resolvedDestinationType;
 	
 	public static class Factory implements MappingContextFactory {
 
@@ -73,13 +74,13 @@ public class MappingContext {
 		this.globalProperties = globalProperties;
 	}
 	
-	public void setResolvedMappingStrategy(MappingStrategy strategy) {
-	    this.strategy = strategy;
-	}
-	
-	public MappingStrategy getResolvedMappingStrategy() {
-	    return this.strategy;
-	}
+//	public void setResolvedMappingStrategy(MappingStrategy strategy) {
+//	    this.strategy = strategy;
+//	}
+//	
+//	public MappingStrategy getResolvedMappingStrategy() {
+//	    return this.strategy;
+//	}
 	
 	@SuppressWarnings("unchecked")
 	public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType,
@@ -191,7 +192,6 @@ public class MappingContext {
         if (mappersSeen != null) {
             mappersSeen.clear();
         }
-        strategy = null;
         isNew = true;
         depth = 0;
     }
@@ -211,6 +211,34 @@ public class MappingContext {
         return result;
     }
     
+    /**
+     * @return the resolvedSourceType in the current context
+     */
+    public Type<?> getResolvedSourceType() {
+        return resolvedSourceType;
+    }
+
+    /**
+     * @param resolvedSourceType the resolvedSourceType to set
+     */
+    public void setResolvedSourceType(Type<?> resolvedSourceType) {
+        this.resolvedSourceType = resolvedSourceType;
+    }
+
+    /**
+     * @return the resolvedDestinationType in the current context
+     */
+    public Type<?> getResolvedDestinationType() {
+        return resolvedDestinationType;
+    }
+
+    /**
+     * @param resolvedDestinationType the resolvedDestinationType to set
+     */
+    public void setResolvedDestinationType(Type<?> resolvedDestinationType) {
+        this.resolvedDestinationType = resolvedDestinationType;
+    }
+
     public static final class NonCyclicMappingContext extends MappingContext {
         
         public NonCyclicMappingContext() {

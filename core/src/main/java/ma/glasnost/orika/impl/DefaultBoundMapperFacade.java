@@ -262,6 +262,14 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
                     strategies.put(sourceObject.getClass(), strategy);
                 }
             }
+            
+            /*
+             * Set the resolved types on the current mapping context; this can be used
+             * by downstream Mappers to determine the originally resolved types
+             */
+            context.setResolvedSourceType(strategy.getSoureType());
+            context.setResolvedDestinationType(strategy.getDestinationType());
+            
             return strategy;
         }
     }

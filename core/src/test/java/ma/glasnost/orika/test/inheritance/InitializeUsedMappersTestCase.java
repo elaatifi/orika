@@ -59,7 +59,7 @@ public class InitializeUsedMappersTestCase {
     @Test
     public void testParentLookup() {
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.registerClassMap(
                 factory.classMap(B2.class, A2.class)

@@ -97,9 +97,14 @@ public class EclipseJdtCompilerStrategy extends CompilerStrategy {
                     + packageName + "." + className);
         }
 
-        FileWriter fw = new FileWriter(outputSourceFile);
-        fw.append(sourceText);
-        fw.close();
+        FileWriter fw = null; 
+        try {
+            fw = new FileWriter(outputSourceFile);
+            fw.append(sourceText);
+        } finally {
+            if (fw != null)
+                fw.close();
+        }
 
     }
     

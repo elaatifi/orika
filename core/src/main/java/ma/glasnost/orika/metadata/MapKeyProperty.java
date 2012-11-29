@@ -26,8 +26,8 @@ package ma.glasnost.orika.metadata;
  */
 public class MapKeyProperty extends Property {
     
-    public MapKeyProperty(String key, Type<?> type) {
-        super(key,key,"get(\"" + key + "\")","put(\"" + key + "\",%s)",type,null);
+    public MapKeyProperty(String key, Type<?> type, Property owner) {
+        super(key,key,"get(\"" + key + "\")","put(\"" + key + "\",%s)",type,null, owner);
     }
     
     public boolean isMapKey() {

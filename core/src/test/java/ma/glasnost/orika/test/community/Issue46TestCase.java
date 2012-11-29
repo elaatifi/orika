@@ -105,7 +105,7 @@ public class Issue46TestCase {
     public void test() {
         System.setProperty(OrikaSystemProperties.WRITE_SOURCE_FILES, "true");
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         MapperFacade facade = factory.getMapperFacade();
         
         List<Parent> parents = new ArrayList<Parent>();

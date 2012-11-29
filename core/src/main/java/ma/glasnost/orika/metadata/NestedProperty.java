@@ -30,7 +30,7 @@ public class NestedProperty extends Property {
     private final Property tail;
     
     public NestedProperty(String expression, Property property, Property[] path) {
-        super(expression,property.getName(),property.getGetter(),property.getSetter(),property.getType(),property.getElementType());
+        super(expression,property.getName(),property.getGetter(),property.getSetter(),property.getType(),property.getElementType(), property.getContainer());
         this.path = collapse(path);
         this.tail = property;
     }

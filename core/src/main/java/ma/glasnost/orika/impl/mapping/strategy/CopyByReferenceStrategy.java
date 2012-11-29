@@ -19,6 +19,7 @@
 package ma.glasnost.orika.impl.mapping.strategy;
 
 import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.metadata.Type;
 
 public class CopyByReferenceStrategy implements MappingStrategy {
     
@@ -38,4 +39,17 @@ public class CopyByReferenceStrategy implements MappingStrategy {
         return sourceObject;
     }
     
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getSoureType()
+     */
+    public Type<?> getSoureType() {
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getDestinationType()
+     */
+    public Type<?> getDestinationType() {
+        return null;
+    }
 }

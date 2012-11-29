@@ -18,6 +18,7 @@
 
 package ma.glasnost.orika.impl;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -375,4 +376,9 @@ public abstract class GeneratedObjectBase {
         return primitives;
     }
     
+    public static Object listToArray(List<?> list, Class<?> arrayClass) {
+        Object array = Array.newInstance(arrayClass.getComponentType(), list.size());
+        list.toArray((Object[]) array);
+        return array;
+    }
 }

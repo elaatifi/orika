@@ -13,7 +13,7 @@ public class BeanToArrayGenerationTestCase {
 	public void testBeanToArrayGeneration() throws Exception {
 		
 		
-	    MapperFactory factory = MappingUtil.getMapperFactory(true);
+	    MapperFactory factory = MappingUtil.getMapperFactory();
 	    
         factory.classMap(Student.class, Object[].class)
                 .field("grade.letter", "0")
@@ -65,7 +65,7 @@ public class BeanToArrayGenerationTestCase {
     public void testBeanToStringArrayGeneration() throws Exception {
         
         
-        MapperFactory factory = MappingUtil.getMapperFactory(true);
+        MapperFactory factory = MappingUtil.getMapperFactory();
         
         factory.classMap(Student.class, String[].class)
                 .field("grade.letter", "0")

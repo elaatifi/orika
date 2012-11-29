@@ -28,7 +28,7 @@ public class TestCase {
     @Ignore
     public void test() {
         
-        MapperFacade mapper = MappingUtil.getMapperFactory(true).getMapperFacade();
+        MapperFacade mapper = MappingUtil.getMapperFactory().getMapperFacade();
         
         S source = new S();
         D dest = new D();

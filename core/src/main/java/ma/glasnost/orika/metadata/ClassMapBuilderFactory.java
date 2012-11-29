@@ -90,7 +90,7 @@ public abstract class ClassMapBuilderFactory {
      * @param bType
      * @return
      */
-    private final <A, B> ClassMapBuilder<A, B> getNewClassMapBuilder(Type<A> aType, Type<B> bType) {
+    private synchronized final <A, B> ClassMapBuilder<A, B> getNewClassMapBuilder(Type<A> aType, Type<B> bType) {
         return newClassMapBuilder(aType, bType, mapperFactory, propertyResolver, defaults);
     }
     

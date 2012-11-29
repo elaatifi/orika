@@ -63,4 +63,14 @@ public interface PropertyResolverStrategy {
      * @return the property (of any format)
      */
     Property getProperty(java.lang.reflect.Type type, String dynamicPropertyExpression);
+    
+    /**
+     * Resolves a property for the specified type; nested and dynamically defined properties
+     * should be handled automatically.
+     * 
+     * @param owner
+     * @param dynamicPropertyExpression
+     * @return the property (of any format)
+     */
+    Property getProperty(Property owner, String dynamicPropertyExpression);
 }

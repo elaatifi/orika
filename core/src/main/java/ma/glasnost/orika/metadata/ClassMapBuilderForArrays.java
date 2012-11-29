@@ -72,6 +72,6 @@ public class ClassMapBuilderForArrays<A, B> extends ClassMapBuilderForLists<A,B>
      
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
         int index = Integer.valueOf(expr.replaceAll("[\\[\\]]", ""));
-        return new ArrayElementProperty(index, propertyType.getComponentType());
+        return new ArrayElementProperty(index, propertyType.getComponentType(), null);
     }
 }

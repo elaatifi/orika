@@ -36,15 +36,15 @@ import ma.glasnost.orika.metadata.Type;
 import java.util.Collection;
 
 /**
- * VariableRef represents a reference to a given variable or property;
- * it contains various helper methods to properly set it's value and
- * interrogate it's underlying property or type. It also returns a properly 
- * type-safe cast of it as the toString() method, so it can safely be
- * used directly as a replacement parameter for source code statements.
+ * VariableRef represents a reference to a given variable or property; it
+ * contains various helper methods to properly set it's value and interrogate
+ * it's underlying property or type. It also returns a properly type-safe cast
+ * of it as the toString() method, so it can safely be used directly as a
+ * replacement parameter for source code statements.
  * 
  * 
  * @author matt.deboer@gmail.com
- *
+ * 
  */
 public class VariableRef {
     
@@ -53,7 +53,7 @@ public class VariableRef {
     private VariableRef owner;
     private Type<?> type;
     private boolean declared;
-    private Converter<?,?> converter;
+    private Converter<?, ?> converter;
     
     public VariableRef(Property property, String name) {
         this.name = name;
@@ -70,18 +70,18 @@ public class VariableRef {
         this.type = type;
     }
     
-    public void setConverter(Converter<?,?> converter) {
+    public void setConverter(Converter<?, ?> converter) {
         this.converter = converter;
     }
     
-    public Converter<?,?> getConverter() {
+    public Converter<?, ?> getConverter() {
         return converter;
     }
     
     public void setOwner(VariableRef owner) {
         this.owner = owner;
     }
-   
+    
     public VariableRef getOwner() {
         return owner;
     }
@@ -95,11 +95,11 @@ public class VariableRef {
     }
     
     public boolean isReadable() {
-    	return getter() != null;
+        return getter() != null;
     }
     
     public boolean isAssignable() {
-    	return setter() != null;
+        return setter() != null;
     }
     
     public Class<?> rawType() {
@@ -130,19 +130,19 @@ public class VariableRef {
     }
     
     public boolean isList() {
-    	return property != null ? property.isList() : List.class.isAssignableFrom(rawType());
+        return property != null ? property.isList() : List.class.isAssignableFrom(rawType());
     }
     
     public boolean isSet() {
-    	return property != null ? property.isSet() : Set.class.isAssignableFrom(rawType());
+        return property != null ? property.isSet() : Set.class.isAssignableFrom(rawType());
     }
     
     public boolean isMap() {
-    	return property != null ? property.isMap() : Map.class.isAssignableFrom(rawType());
+        return property != null ? property.isMap() : Map.class.isAssignableFrom(rawType());
     }
     
     public boolean isMapEntry() {
-    	return Entry.class.isAssignableFrom(rawType());
+        return Entry.class.isAssignableFrom(rawType());
     }
     
     public boolean isWrapper() {
@@ -167,34 +167,34 @@ public class VariableRef {
         } else if (type.isMap()) {
             return type.getNestedType(1);
         } else {
-            return type.getNestedType(0); 
+            return type.getNestedType(0);
         }
     }
     
     @SuppressWarnings("unchecked")
-	public Type<?> elementType() {
-       
+    public Type<?> elementType() {
+        
         if (type.getRawType().isArray()) {
             return type.getComponentType();
         } else if (type.isMap()) {
-        	return MapEntry.concreteEntryType((Type<Map<Object,Object>>) type);
+            return MapEntry.concreteEntryType((Type<Map<Object, Object>>) type);
         } else {
-            return property != null ? property.getElementType() : ((Type<?>)type.getActualTypeArguments()[0]); 
+            return property != null ? property.getElementType() : ((Type<?>) type.getActualTypeArguments()[0]);
         }
     }
     
     public Type<?> mapKeyType() {
-    	if (isMap()) {
-    		return type().getNestedType(0);
-    	}
-    	return null;
+        if (isMap()) {
+            return type().getNestedType(0);
+        }
+        return null;
     }
     
     public Type<?> mapValueType() {
-    	if (isMap()) {
-    		return type().getNestedType(1);
-    	}
-    	return null;
+        if (isMap()) {
+            return type().getNestedType(1);
+        }
+        return null;
     }
     
     public String typeName() {
@@ -216,31 +216,27 @@ public class VariableRef {
      * @param replacements
      * @return
      */
-    public String assign(String value, Object...replacements) {
+    public String assign(String value, Object... replacements) {
         if (setter() != null) {
             return assignIfPossible(value, replacements);
         } else {
-            throw new IllegalArgumentException("Attempt was made to generate assignment/setter code for [" + name + "." + (property != null ? property : type) +"] which has no setter/assignment method");
+            throw new IllegalArgumentException("Attempt was made to generate assignment/setter code for [" + name + "."
+                    + (property != null ? property : type) + "] which has no setter/assignment method");
         }
     }
     
     /**
-     * Generates code to perform assignment to this VariableRef, if it is assignable.
+     * Generates code to perform assignment to this VariableRef, if it is
+     * assignable.
      * 
      * @param value
      * @param replacements
      * @return
      */
-    public String assignIfPossible(String value, Object...replacements) {
+    public String assignIfPossible(String value, Object... replacements) {
         if (setter() != null) {
             String expr = format(value, replacements);
-            if (type.isPrimitive()) {
-                String wrapperClass = ClassUtil.getWrapperType(rawType()).getCanonicalName();
-                expr = format("((%s)%s).%sValue()", wrapperClass, expr, primitiveType(rawType()));
-            } else {
-                if (!expr.equals("null"))
-                    expr = cast(expr);
-            }
+            expr = cast(expr);
             return format(setter(), expr);
         } else {
             return "";
@@ -248,7 +244,8 @@ public class VariableRef {
     }
     
     /**
-     * Returns java code which assigns the value of the provided PropertyRef to this PropertyRef
+     * Returns java code which assigns the value of the provided PropertyRef to
+     * this PropertyRef
      * 
      * @param value
      * @return
@@ -260,53 +257,103 @@ public class VariableRef {
                 String wrapperClass = ClassUtil.getWrapperType(rawType()).getCanonicalName();
                 expr = format("(%s) %s.valueOf(%s)", wrapperClass, wrapperClass, expr);
             } else if (type.isPrimitive() && value.type().isPrimitiveWrapper()) {
-                expr = format("((%s)%s).%sValue()", ClassUtil.getWrapperType(rawType()).getCanonicalName(), expr,
-                        primitiveType(rawType()));
+                expr = format("((%s)%s).%sValue()", ClassUtil.getWrapperType(rawType()).getCanonicalName(), expr, primitiveType(rawType()));
             } else if (type.isArray() && value.isCollection()) {
-            	if (type.getComponentType().isPrimitive() && value.elementType().isPrimitiveWrapper()) {
+                if (type.getComponentType().isPrimitive() && value.elementType().isPrimitiveWrapper()) {
                     String wrapperType = ClassUtil.getWrapperType(rawType().getComponentType()).getCanonicalName();
                     expr = format("(%s[])%s.toArray(new %s[0])", wrapperType, expr, wrapperType);
                 } else {
-                	expr = format("(%s[])%s.toArray(new %s[0])", value.elementType().getCanonicalName(), 
-                			expr, value.elementType().getCanonicalName());
+                    expr = format("(%s[])%s.toArray(new %s[0])", value.elementType().getCanonicalName(), expr, value.elementType()
+                            .getCanonicalName());
                 }
+            } else if (!type.isArray() && value.type().isPrimitive() && !type.isPrimitive()) {
+                expr = format("%s.valueOf(%s)", value.type.getWrapperType().getCanonicalName(), expr);
             }
-            return format(setter(),expr);
+            return format(setter(), expr);
         } else {
             return "";
         }
     }
     
-    public String cast(VariableRef ref) {  
-        return cast(""+ref);
+    public String cast(VariableRef ref) {
+        return cast(ref, type());
     }
     
     /**
-     * Returns Java code which provides a cast of the specified value to the type of this property ref
+     * Returns Java code which provides a cast of the specified value to the
+     * type of this property ref
      * 
      * @param value
      * @return
      */
     public String cast(String value) {
-        String castValue = value;
-        String typeName = typeName();
+        return cast(value, type());
+    }
+    
+    /**
+     * Returns Java code which provides a cast of the specified value to the
+     * type of this property ref
+     * 
+     * @param value
+     * @return
+     */
+    protected static String cast(String value, Type<?> type) {
+        String castValue = value.trim();
+        String typeName = type.getCanonicalName();
         /*
          * Avoid double-cast
          */
-        if (isPrimitive()) {
-            castValue = format("((%s)%s).%sValue()", wrapperTypeName(), castValue, primitiveType());
-        } else if (type().isString()) {
-            castValue = "\"\" + " + castValue;
-        } else if (!value.startsWith("(" + typeName + ")")) {
-            castValue = "((" + typeName() + ")" + castValue + ")";
+        if (!"null".equals(value)) {
+            if (type.isPrimitive()) {
+                if (!isPrimitiveLiteral(castValue, type)) {
+                    castValue = format("%s.valueOf(\"\"+%s).%sValue()", type.getWrapperType().getCanonicalName(), castValue, type);
+                }
+            } else if (type.isPrimitiveWrapper() && isPrimitiveLiteral(castValue, type)) {
+                castValue = format("%s.valueOf(%s)", type.getWrapperType().getCanonicalName(), castValue);
+            } else if (type.isString()) {
+                castValue = "\"\" + " + castValue;
+            } else if (!value.startsWith("(" + typeName + ")")) {
+                castValue = "((" + typeName + ")" + castValue + ")";
+            }
         }
         return castValue;
     }
     
     /**
-     * Returns Java code which declares this variable, initialized with it's default value.
+     * Returns Java code which provides a cast of the specified value to the
+     * type of this property ref
      * 
-     * @return the code which declares this variable, and explicitly assigns it's default value.
+     * @param value
+     * @return
+     */
+    protected static String cast(VariableRef value, Type<?> type) {
+        String castValue = value.toString();
+        String typeName = type.getCanonicalName();
+        
+        if (type.isPrimitive()) {
+            if (value.isWrapper()) {
+                castValue = format("%s.%sValue()", castValue, type);
+            } else if (!value.isPrimitive()) {
+                castValue = format("%s.valueOf(\"\"+%s).%sValue()", type.getWrapperType().getCanonicalName(), castValue, typeName);
+            }
+        } else if (type.isPrimitiveWrapper()) {
+            if (value.isPrimitive()) {
+                castValue = format("%s.valueOf(%s)", type.getCanonicalName(), castValue);
+            }
+        } else if (type.isString()) {
+            castValue = "\"\" + " + castValue;
+        } else {
+            castValue = "((" + typeName + ")" + castValue + ")";
+        }
+        return castValue;
+    }
+    
+    /**
+     * Returns Java code which declares this variable, initialized with it's
+     * default value.
+     * 
+     * @return the code which declares this variable, and explicitly assigns
+     *         it's default value.
      */
     public String declare() {
         declared = true;
@@ -314,29 +361,38 @@ public class VariableRef {
     }
     
     /**
-     * Returns Java code which declares this variable, initialized with the provided value.
-   	 *
-     * @param value the value to assign
-     * @param args any replacement arguments to applied to value via String.format()
-     * @return the code which declares this variable, and explicitly assigns the provided value.
+     * Returns Java code which declares this variable, initialized with the
+     * provided value.
+     * 
+     * @param value
+     *            the value to assign
+     * @param args
+     *            any replacement arguments to applied to value via
+     *            String.format()
+     * @return the code which declares this variable, and explicitly assigns the
+     *         provided value.
      */
-    public String declare(String value, Object...args) {
+    public String declare(String value, Object... args) {
         String valueExpr = format(value, args);
         valueExpr = cast(valueExpr);
         declared = true;
         return format("\n%s %s = %s", typeName(), name(), valueExpr);
     }
     
-    
     /**
-     * Returns Java code which declares this variable, initialized with the provided value.
-     *
-     * @param value the value to assign
-     * @param args any replacement arguments to applied to value via String.format()
-     * @return the code which declares this variable, and explicitly assigns the provided value.
+     * Returns Java code which declares this variable, initialized with the
+     * provided value.
+     * 
+     * @param value
+     *            the value to assign
+     * @param args
+     *            any replacement arguments to applied to value via
+     *            String.format()
+     * @return the code which declares this variable, and explicitly assigns the
+     *         provided value.
      */
     public String declare(VariableRef ref) {
-        return declare(ref.getter());
+        return declare(cast(ref));
     }
     
     public boolean isDeclared() {
@@ -344,7 +400,8 @@ public class VariableRef {
     }
     
     /**
-     * Returns the Java code which represents the default value for the specified type
+     * Returns the Java code which represents the default value for the
+     * specified type
      * 
      * @param clazz
      * @return
@@ -357,7 +414,7 @@ public class VariableRef {
         else if (clazz.isPrimitive())
             return "0";
         else
-        	return "null";
+            return "null";
     }
     
     public String primitiveType() {
@@ -395,7 +452,7 @@ public class VariableRef {
     private static String unwrap(String expression) {
         // TODO: should write a getParentGetter() instead of unwrapping
         if (expression.startsWith("((")) {
-            expression = expression.substring(expression.indexOf(")") +1, expression.length()-1);
+            expression = expression.substring(expression.indexOf(")") + 1, expression.length() - 1);
             if (expression.endsWith("]")) {
                 expression = expression.substring(0, expression.lastIndexOf("["));
             } else {
@@ -411,16 +468,14 @@ public class VariableRef {
         } else {
             String getterNull = getGetter(property, name) + " == null";
             if (property.isListElement()) {
-                return "(" + unwrap(getGetter(property, name)) + ".size() <= " + 
-                        property.getName().replaceAll("[\\[\\]]", "") +
-                        " || " + getterNull + ")";
+                return "(" + unwrap(getGetter(property, name)) + ".size() <= " + property.getName().replaceAll("[\\[\\]]", "") + " || "
+                        + getterNull + ")";
             } else if (property.isArrayElement()) {
-                return "(" + unwrap(getGetter(property, name))  + ".length <= " + 
-                        property.getName().replaceAll("[\\[\\]]", "") +
-                        " || " + getterNull + ")";
+                return "(" + unwrap(getGetter(property, name)) + ".length <= " + property.getName().replaceAll("[\\[\\]]", "") + " || "
+                        + getterNull + ")";
             } else {
                 return getterNull;
-            } 
+            }
         }
     }
     
@@ -442,7 +497,7 @@ public class VariableRef {
                     first = false;
                 }
                 
-                path.append(format("!(%s)", isNull(p,expression)));
+                path.append(format("!(%s)", isNull(p, expression)));
                 expression = getGetter(p, expression);
             }
         }
@@ -467,12 +522,11 @@ public class VariableRef {
         return getter();
     }
     
-    
     /**
      * @return whether or not this VariableRef represents a nested property
      */
     public boolean isNestedProperty() {
-    	return property != null && property.hasPath();
+        return property != null && property.hasPath();
     }
     
     public List<VariableRef> getPath() {
@@ -480,21 +534,21 @@ public class VariableRef {
             Property[] propPath = property.getPath();
             List<VariableRef> path;
             if (propPath.length > 1) {
-            
-	            path = new ArrayList<VariableRef>(propPath.length);
-	            path.add(new VariableRef(propPath[0], name));
-	            String[] expr = property.getExpression().split("\\.");
-	            for (int i=1; i < propPath.length; ++i) {
-	            	Property[] nestedPath = new Property[i];
-	            	System.arraycopy(propPath, 0, nestedPath, 0, i);
-	            	path.add(new VariableRef(new NestedProperty(join(expr, ".", 0, i+1),propPath[i],nestedPath), name));
-	            }  
+                
+                path = new ArrayList<VariableRef>(propPath.length);
+                path.add(new VariableRef(propPath[0], name));
+                String[] expr = property.getExpression().split("\\.");
+                for (int i = 1; i < propPath.length; ++i) {
+                    Property[] nestedPath = new Property[i];
+                    System.arraycopy(propPath, 0, nestedPath, 0, i);
+                    path.add(new VariableRef(new NestedProperty(join(expr, ".", 0, i + 1), propPath[i], nestedPath), name));
+                }
             } else {
-            	path = Collections.singletonList(new VariableRef(propPath[0], name));
+                path = Collections.singletonList(new VariableRef(propPath[0], name));
             }
             return path;
         } else {
-            return Collections.emptyList(); 
+            return Collections.emptyList();
         }
     }
     
@@ -506,10 +560,10 @@ public class VariableRef {
         if (bufSize <= 0) {
             return "";
         }
-
+        
         bufSize *= ((array[startIndex] == null ? 16 : array[startIndex].toString().length()) + 1);
         StringBuilder buf = new StringBuilder(bufSize);
-
+        
         for (int i = startIndex; i < endIndex; i++) {
             if (i > startIndex) {
                 buf.append(separator);
@@ -522,12 +576,13 @@ public class VariableRef {
     }
     
     public String assertType() {
-        return "if(!(" + name + " instanceof " + typeName() + ")) throw new IllegalStateException(\"[" + 
-                name + "] is not an instance of " + typeName() + " \");";
+        return "if(!(" + name + " instanceof " + typeName() + ")) throw new IllegalStateException(\"[" + name + "] is not an instance of "
+                + typeName() + " \");";
     }
     
     /**
      * Generates java code for a reference to the "size" of this VariableRef
+     * 
      * @return
      */
     public String size() {
@@ -535,8 +590,8 @@ public class VariableRef {
     }
     
     protected static String getGetter(final Property property, String variableExpression) {
-    	if(property.getGetter() == null)
-    		return null;
+        if (property.getGetter() == null)
+            return null;
         String var = variableExpression;
         if (property.hasPath()) {
             for (final Property p : property.getPath()) {
@@ -544,7 +599,7 @@ public class VariableRef {
             }
         }
         String getter = "((" + property.getType().getCanonicalName() + ")" + var;
-        if ( !property.isArrayElement() && !"".equals(property.getName())) {
+        if (!property.isArrayElement() && !"".equals(property.getName()) && !property.getGetter().startsWith("[")) {
             getter += "." + property.getGetter() + ")";
         } else {
             getter += property.getGetter() + ")";
@@ -553,7 +608,7 @@ public class VariableRef {
     }
     
     public String isInstanceOf(Type<?> type) {
-    	return format("(%s instanceof %s)", getter(), type.getCanonicalName());
+        return format("(%s instanceof %s)", getter(), type.getCanonicalName());
     }
     
     /**
@@ -577,12 +632,15 @@ public class VariableRef {
                 var = getGetter(p, var);
             }
         }
-        return var + ( property.isArrayElement() || "".equals(property.getName()) ? "" : ".") + property.getSetter();
+        
+        return var + (property.isArrayElement() || "".equals(property.getName()) || property.getSetter().startsWith("[") ? "" : ".")
+                + property.getSetter();
     }
-
+    
     /**
-     * Return Java code which avoids a NullPointerException when accessing this variable reference;
-     * if it is not backed by a nested property, this method returns the empty string. 
+     * Return Java code which avoids a NullPointerException when accessing this
+     * variable reference; if it is not backed by a nested property, this method
+     * returns the empty string.
      * 
      * @return
      */
@@ -607,8 +665,27 @@ public class VariableRef {
         return path.toString();
     }
     
+    protected static boolean isPrimitiveLiteral(String expr, Type<?> type) {
+        if (type.isPrimitive()) {
+            String primitiveType = type.getCanonicalName();
+            if ("boolean".equals(primitiveType)) {
+                return expr.matches("(true|false)");
+            } else if ("char".equals(primitiveType)) {
+                return expr.matches("^'\\w+'$");
+            } else if ("int".equals(primitiveType) || "short".equals(primitiveType)) {
+                return expr.matches("\\d+");
+            } else if ("long".equals(primitiveType)) {
+                return expr.matches("\\d+(l|L)?");
+            } else if ("float".equals(primitiveType)) {
+                return expr.matches("\\d*(\\.\\d*)?(f|F)?");
+            } else if ("double".equals(primitiveType)) {
+                return expr.matches("\\d+(\\.\\d*)?");
+            }
+            
+        }
+        return false;
+    }
     
-
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -618,7 +695,7 @@ public class VariableRef {
         result = prime * result + ((type == null) ? 0 : type.hashCode());
         return result;
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -654,6 +731,5 @@ public class VariableRef {
         }
         return true;
     }
-    
     
 }

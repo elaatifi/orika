@@ -158,7 +158,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
     }
     
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
-        return new MapKeyProperty(expr, propertyType.getNestedType(1));
+        return new MapKeyProperty(expr, propertyType.getNestedType(1), null);
     }
     
 }

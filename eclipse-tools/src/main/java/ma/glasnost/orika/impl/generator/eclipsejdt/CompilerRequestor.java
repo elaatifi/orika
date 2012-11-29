@@ -63,17 +63,17 @@ public class CompilerRequestor implements ICompilerRequestor {
 			for (int i = 0; i < classFiles.length; i++) {
 				ClassFile classFile = classFiles[i];
 				char[][] compoundName = classFile.getCompoundName();
-				String className = "";
+				StringBuilder className = new StringBuilder();
 				String sep = "";
 
 				for (int j = 0; j < compoundName.length; j++) {
-					className += sep;
-					className += new String(compoundName[j]);
+					className.append(sep);
+					className.append(new String(compoundName[j]));
 					sep = ".";
 				}
 
 				byte[] bytes = classFile.getBytes();
-				compiledClassFiles.put(className, bytes);
+				compiledClassFiles.put(className.toString(), bytes);
 			}
 
 		}

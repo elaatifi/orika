@@ -96,7 +96,7 @@ public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
      
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
         int index = Integer.valueOf(expr.replaceAll("[\\[\\]]", ""));
-        return new ListElementProperty(index, propertyType.getNestedType(0));
+        return new ListElementProperty(index, propertyType.getNestedType(0), null);
     }
     
 }

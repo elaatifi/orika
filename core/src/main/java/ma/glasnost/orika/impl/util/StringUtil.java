@@ -15,18 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.impl;
+package ma.glasnost.orika.impl.util;
 
 /**
  * @author matt.deboer@gmail.com
  *
  */
-public enum Properties {
-    SHOULD_MAP_NULLS,
-    LOG_DETAILS,
-    MAPPER_FACTORY,
-    CODE_GENERATION_STRATEGY,
-    PROPERTY_RESOLVER_STRATEGY,
-    COMPILER_STRATEGY
-    ;
+public abstract class StringUtil {
+    
+    public static String capitalize(String string) {
+        if ("".equals(string)) {
+            return "";
+        } else if (string.length() == 1) {
+            return string.substring(0,1).toUpperCase();
+        } else {
+            return string.substring(0,1).toUpperCase() + string.substring(1);
+        }
+    }
+    
+    
 }

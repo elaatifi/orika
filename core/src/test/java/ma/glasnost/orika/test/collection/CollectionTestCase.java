@@ -57,7 +57,7 @@ public class CollectionTestCase {
     public void nullSourceCollection_toCollection() {
         Source source = new Source();
 
-        Destination destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination.class);
+        Destination destination = MappingUtil.getMapperFactory().getMapperFacade().map(source, Destination.class);
 
         Assert.assertNull(destination.getNames());
     }
@@ -66,7 +66,7 @@ public class CollectionTestCase {
     public void nullSourceCollection_toArray() {
         Source source = new Source();
 
-        Destination2 destination = MappingUtil.getMapperFactory(true).getMapperFacade().map(source, Destination2.class);
+        Destination2 destination = MappingUtil.getMapperFactory().getMapperFacade().map(source, Destination2.class);
 
         Assert.assertNull(destination.getNames());
     }

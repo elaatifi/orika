@@ -103,7 +103,8 @@ public final class ClassUtil {
     	}
     	
     	try {
-			return type.getMethod("valueOf", String.class)!=null;
+			type.getMethod("valueOf", String.class);
+			return true;
 		} catch (NoSuchMethodException e) {
 			return false;
 		} catch (SecurityException e) {
