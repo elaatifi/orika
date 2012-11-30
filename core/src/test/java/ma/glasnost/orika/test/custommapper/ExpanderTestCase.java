@@ -7,13 +7,27 @@ import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
 import ma.glasnost.orika.metadata.ScoringClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 
 import org.junit.Test;
 
+/**
+ * This test case demonstrates two things together:
+ * 
+ * 1) The usage of the ScoringClassMapBuilder to automagically guess
+ * the right mapping of various fields based on their "sameness"
+ * 
+ * 2) The usage of built-in nested field mapping functionality
+ *  to handle mapping these objects, resulting in the mapping of a
+ *  flat list structure into an expanded object graph by guessing
+ *  how the fields should line up.
+ * 
+ * 
+ * @author matt.deboer@gmail.com
+ *
+ */
 public class ExpanderTestCase {
     
     public static class Year {
@@ -49,7 +63,6 @@ public class ExpanderTestCase {
         Type<List<Year>> typeOf_Year = new TypeBuilder<List<Year>>(){}.build();
         
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
-            .compilerStrategy(new EclipseJdtCompilerStrategy())
             .classMapBuilderFactory(new ScoringClassMapBuilder.Factory())
             .build();
         

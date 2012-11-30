@@ -20,16 +20,16 @@ package ma.glasnost.orika.metadata;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.TreeSet;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFactory;
@@ -332,7 +332,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * For our custom 'byDefault' method, we're going to try and match
          * fields by their Levenshtein distance
          */
-        TreeSet<FieldMatchScore> matchScores = new TreeSet<FieldMatchScore>();
+        PriorityQueue<FieldMatchScore> matchScores = new PriorityQueue<FieldMatchScore>();
         
         Map<String, Property> propertiesForA = getPropertyExpressions(getAType());
         Map<String, Property> propertiesForB = getPropertyExpressions(getBType());
@@ -348,7 +348,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
             }
         }
         
-        Set<String> unmatchedFields = new HashSet<String>(this.getPropertiesForTypeA());
+        Set<String> unmatchedFields = new LinkedHashSet<String>(this.getPropertiesForTypeA());
         unmatchedFields.remove("class");
         
         for (FieldMatchScore score : matchScores) {
@@ -360,7 +360,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
                 }
                 if (score.meetsMinimumScore()) {
                     fieldMap(score.propertyA.getExpression(), score.propertyB.getExpression()).add();
-                    unmatchedFields.remove(score.propertyA);
+                    unmatchedFields.remove(score.propertyA.getExpression());
                 }
             }
         }
@@ -426,8 +426,6 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         
     }
     
-    
-    
     /**
      * FieldMatchScore is used to score the match of a pair of property expressions
      * 
@@ -475,8 +473,8 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
             String propertyALower = propertyA.getName().toLowerCase();
             String propertyBLower = propertyB.getName().toLowerCase();
             
-            List<String[]> aWords = splitIntoLowerCaseWords(propertyA.getExpression());
-            List<String[]> bWords = splitIntoLowerCaseWords(propertyB.getExpression());
+            List<List<String>> aWords = splitIntoLowerCaseWords(propertyA.getExpression());
+            List<List<String>> bWords = splitIntoLowerCaseWords(propertyB.getExpression());
             
             aWords.removeAll(IGNORED_WORDS);
             bWords.removeAll(IGNORED_WORDS);
@@ -519,17 +517,17 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
                 "}";
         }
         
-        private <T> Set<T> intersection(Collection<T[]> setA, Collection<T[]> setB) {
+        private <T> Set<T> intersection(List<List<T>> setA, List<List<T>> setB) {
             Set<T> intersection = flatten(setA);
             Set<T> temp = flatten(setB);
             intersection.retainAll(temp);
             return intersection;
         }
 
-        private <T> Set<T> flatten(Collection<T[]> arrays) {
+        private <T> Set<T> flatten(List<List<T>> aWords) {
             Set<T> set = new LinkedHashSet<T>();
-            for (T[] array: arrays) {
-                for (T item: array) {
+            for (List<T> collection: aWords) {
+                for (T item: collection) {
                     set.add(item);
                 }
             }
@@ -552,19 +550,19 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * @param bWords
          * @return
          */
-        double computeWordMatchScore(List<String[]> aWords, List<String[]> bWords) {
+        double computeWordMatchScore(List<List<String>> aWords, List<List<String>> bWords) {
             
             Set<String> aWordsRemaining = new LinkedHashSet<String>(flatten(aWords));
             Set<String> bWordsRemaining = new LinkedHashSet<String>(flatten(bWords));
             
-            TreeSet<WordPair> orderedPairs = new TreeSet<WordPair>();
+            PriorityQueue<WordPair> orderedPairs = new PriorityQueue<WordPair>();
             double aDepth = 0;
-            for (String[] aWordArray : aWords) {
+            for (List<String> aWordList : aWords) {
                 ++aDepth;
-                for (String aWord : aWordArray) {
+                for (String aWord : aWordList) {
                     double bDepth = 0;
-                    for (String[] bWordArray: bWords) {
-                        for (String bWord : bWordArray) {
+                    for (List<String> bWordList: bWords) {
+                        for (String bWord : bWordList) {
                             ++bDepth;
                             orderedPairs.add(new WordPair(aWord, bWord, (aDepth/aWords.size()), (bDepth/bWords.size()), matchingWeights));
                         }
@@ -751,8 +749,8 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         /**
          * Pattern is used to split a string into words on camel-case word boundaries
          */
-        private static final String WORD_SPLITTER = String.format("%s|%s|%s", 
-                "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])",
+        private static final String WORD_SPLITTER = String.format("%s|%s|%s|%s", 
+                "([\\{\\}\\]\\[-_])", "(?<=[A-Z])(?=[A-Z][a-z])", "(?<=[^A-Z])(?=[A-Z])",
                 "(?<=[A-Za-z])(?=[^A-Za-z])");
         
         /**
@@ -763,14 +761,17 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
          * @param s
          * @return
          */
-        private static List<String[]> splitIntoLowerCaseWords(String s) {
-            List<String[]> results = new ArrayList<String[]>();
+        private static List<List<String>> splitIntoLowerCaseWords(String s) {
+            List<List<String>> results = new ArrayList<List<String>>();
             for (String property: s.split("[.]")) {
-                String[] words = property.split(WORD_SPLITTER);
-                for (int i=0; i < words.length; ++i) {
-                    words[i] = words[i].toLowerCase();
-                }
+                List<String> words = new LinkedList<String>(Arrays.asList(property.toLowerCase().split(WORD_SPLITTER)));
                 results.add(words);
+                for (Iterator<String> iter = words.iterator(); iter.hasNext(); ) {
+                    String current = iter.next();
+                    if (current == null || current.trim().length() == 0) {
+                        iter.remove();
+                    }
+                }
             }
             return results;
         }

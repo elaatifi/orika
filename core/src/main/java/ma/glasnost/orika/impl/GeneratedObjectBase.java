@@ -376,6 +376,13 @@ public abstract class GeneratedObjectBase {
         return primitives;
     }
     
+    /**
+     * Function to help with list to Array conversion to support Javassist
+     * 
+     * @param list the list to convert
+     * @param arrayClass the array type to construct
+     * @return
+     */
     public static Object listToArray(List<?> list, Class<?> arrayClass) {
         Object array = Array.newInstance(arrayClass.getComponentType(), list.size());
         list.toArray((Object[]) array);

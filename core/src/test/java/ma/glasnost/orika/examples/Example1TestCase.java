@@ -39,13 +39,15 @@ import org.junit.Test;
  */
 public class Example1TestCase {
     
+    private static final String NESTED_OPEN = PropertyResolver.ELEMENT_PROPERT_PREFIX;
+    private static final String NESTED_CLOSE = PropertyResolver.ELEMENT_PROPERT_SUFFIX;
     
     @Test
     public void resolveProperties() {
         
         PropertyResolver propertyResolver = new IntrospectorPropertyResolver();
         
-        Property aliasesFirst = propertyResolver.getProperty(TypeFactory.valueOf(PersonDto.class), "aliases{[0]}");
+        Property aliasesFirst = propertyResolver.getProperty(TypeFactory.valueOf(PersonDto.class), "aliases" + NESTED_OPEN + "[0]" + NESTED_CLOSE);
         
         Assert.assertNotNull(aliasesFirst);
         Assert.assertEquals(TypeFactory.valueOf(String.class), aliasesFirst.getType());
@@ -64,8 +66,8 @@ public class Example1TestCase {
         mapperFactory.classMap(Person.class, PersonDto.class)
                 .field("name.first", "firstName")
                 .field("name.last", "lastName")
-                .field("knownAliases{first}", "aliases{[0]}")
-                .field("knownAliases{last}", "aliases{[1]}")
+                .field("knownAliases" + NESTED_OPEN + "first" + NESTED_CLOSE, "aliases" + NESTED_OPEN + "[0]" + NESTED_CLOSE)
+                .field("knownAliases" + NESTED_OPEN + "last" + NESTED_CLOSE, "aliases" + NESTED_OPEN + "[1]" + NESTED_CLOSE)
                 .byDefault()
                 .register();
         
