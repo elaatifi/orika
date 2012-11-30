@@ -21,7 +21,6 @@ package ma.glasnost.orika.metadata;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -764,12 +763,11 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
         private static List<List<String>> splitIntoLowerCaseWords(String s) {
             List<List<String>> results = new ArrayList<List<String>>();
             for (String property: s.split("[.]")) {
-                List<String> words = new LinkedList<String>(Arrays.asList(property.toLowerCase().split(WORD_SPLITTER)));
+                List<String> words = new LinkedList<String>();
                 results.add(words);
-                for (Iterator<String> iter = words.iterator(); iter.hasNext(); ) {
-                    String current = iter.next();
-                    if (current == null || current.trim().length() == 0) {
-                        iter.remove();
+                for (String word : property.split(WORD_SPLITTER)) {
+                    if (word != null && word.trim().length() > 0) {
+                        words.add(word.toLowerCase());
                     }
                 }
             }

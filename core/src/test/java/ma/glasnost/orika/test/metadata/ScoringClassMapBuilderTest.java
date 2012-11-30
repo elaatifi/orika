@@ -17,8 +17,9 @@
  */
 package ma.glasnost.orika.test.metadata;
 
+import static java.util.Arrays.asList;
+
 import java.lang.reflect.Method;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,37 +112,36 @@ public class ScoringClassMapBuilderTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testSplittingWords() throws Throwable {
-        Map<String, List<String[]>> tests = new HashMap<String, List<String[]>>() {
+        Map<String, List<List<String>>> tests = new HashMap<String, List<List<String>>>() {
             private static final long serialVersionUID = 1L;
             {
-                put("lowercase", Arrays.<String[]>asList(new String[]{"lowercase"}));
-                put("Class", Arrays.<String[]>asList(new String[]{"class"}));
-                put("MyClass", Arrays.<String[]>asList(new String[]{"my", "class"}));
-                put("HTML", Arrays.<String[]>asList(new String[]{"html"}));
-                put("PDFLoader", Arrays.<String[]>asList(new String[]{"pdf", "loader"}));
-                put("AString", Arrays.<String[]>asList(new String[]{"a", "string"}));
-                put("SimpleXMLParser", Arrays.<String[]>asList(new String[]{"Simple", "xml", "parser"}));
-                put("GL11Version", Arrays.<String[]>asList(new String[]{"gl", "11", "version"}));
-                put("99Bottles", Arrays.<String[]>asList(new String[]{"99", "bottles"}));
-                put("May5", Arrays.<String[]>asList(new String[]{"may", "5"}));
-                put("BFG9000", Arrays.<String[]>asList(new String[]{"bfg", "9000"}));
-                put("SimpleXMLParser", Arrays.<String[]>asList(new String[]{"simple", "xml", "parser"}));
-                put("postalAddress.country", Arrays.<String[]>asList(new String[]{"postal", "address"}, new String[]{"country"}));
-                put("aVeryLongWord.name.first", Arrays.<String[]>asList(new String[]{"a", "very", "long", "word"}, new String[]{"name"}, new String[]{"first"}));
+                put("lowercase", asList(asList("lowercase")));
+                put("Class", asList(asList("class")));
+                put("MyClass", asList(asList("my", "class")));
+                put("HTML", asList(asList("html")));
+                put("PDFLoader", asList(asList("pdf", "loader")));
+                put("AString", asList(asList("a", "string")));
+                put("SimpleXMLParser", asList(asList("Simple", "xml", "parser")));
+                put("GL11Version", asList(asList("gl", "11", "version")));
+                put("99Bottles", asList(asList("99", "bottles")));
+                put("May5", asList(asList("may", "5")));
+                put("BFG9000", asList(asList("bfg", "9000")));
+                put("SimpleXMLParser", asList(asList("simple", "xml", "parser")));
+                put("postalAddress.country", asList(asList("postal", "address"), asList("country")));
+                put("aVeryLongWord.name.first", asList(asList("a", "very", "long", "word"), asList("name"), asList("first")));
             }
         };
         
         Method splitIntoWords = ScoringClassMapBuilder.FieldMatchScore.class.getDeclaredMethod("splitIntoLowerCaseWords", String.class);
         splitIntoWords.setAccessible(true);
         
-        for (Entry<String, List<String[]>> test : tests.entrySet()) {
+        for (Entry<String, List<List<String>>> test : tests.entrySet()) {
             
-            List<String[]> testValue = test.getValue();
-            List<String[]> result = (List<String[]>)splitIntoWords.invoke(null, test.getKey());
+            List<List<String>> testValue = test.getValue();
+            List<List<String>> result = (List<List<String>>)splitIntoWords.invoke(null, test.getKey());
             Assert.assertEquals(testValue.size(), result.size());
             for (int i=0, len = testValue.size(); i < len; ++i) {
-                Assert.assertTrue("Expected <"+Arrays.toString(testValue.get(i)) + ">, found <" + Arrays.toString(result.get(i))+">",
-                        Arrays.deepEquals(testValue.get(i), result.get(i)));
+                Assert.assertEquals(testValue.get(i), result.get(i));
             }
         }
         
