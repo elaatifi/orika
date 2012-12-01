@@ -157,34 +157,22 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             }
             
             if (!currentNode.isLeaf() && srcNode != null) { 
-                
+                /*
+                 * Add a comparison for the next source element; if it is "different" than 
+                 * it's destination (determined by custom comparator we've generated), then
+                 * we create a new element and add it to the destination collector.
+                 */
                 String currentElementNull = currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.toString() : currentNode.elementRef.isNull();
                 String currentElementComparator = code.currentElementComparator(srcNode, currentNode, sourceNodes, destNodes);
                 String or = (!"".equals(currentElementNull) && !"".equals(currentElementComparator)) ? " || " : "";
                 
-                /*append(out,
-                        "if ( " + currentElementNull + or + currentElementComparator + ") {\n",
-                        "if ( !(" + currentElementNull + ")) {\n",
-                        (currentNode.isRoot() ? currentNode.newDestination.add(currentNode.elementRef) : currentNode.multiOccurrenceVar.add(currentNode.elementRef)),
-                        "}\n",
-                        currentNode.elementRef.assign(code.newObject(srcNode.elementRef, currentNode.elementRef.type())),
-                        (currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.assign("false") : ""),
-                        "}");*/
-                
                 append(out,
                         "if ( " + currentElementNull + or + currentElementComparator + ") {\n",
-//                        "if ( !(" + currentElementNull + ")) {\n",
-//                        (currentNode.isRoot() ? currentNode.newDestination.add(currentNode.elementRef) : currentNode.multiOccurrenceVar.add(currentNode.elementRef)),
-//                        "}\n",
                         currentNode.elementRef.assign(code.newObject(srcNode.elementRef, currentNode.elementRef.type())),
                         (currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.assign("false") : ""),
                         (currentNode.isRoot() ? currentNode.newDestination.add(currentNode.elementRef) : currentNode.multiOccurrenceVar.add(currentNode.elementRef)),
                         "}");
                 
-//                append(addLastElement,
-//                        "if ( !(" + currentElementNull + ")) {\n",
-//                        (currentNode.isRoot() ? currentNode.newDestination.add(currentNode.elementRef) : currentNode.multiOccurrenceVar.add(currentNode.elementRef)),
-//                        "}\n");
             }
             
             if (currentNode.value != null) {
@@ -220,6 +208,9 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         for (Node destRef : destNodes) {
             if (destRef.isRoot() && !destRef.isLeaf()) {
                 if (destRef.multiOccurrenceVar.isArray() || destRef.multiOccurrenceVar.isMap()) {
+                    /*
+                     * We use a List as the temporary collector element for Arrays and Maps
+                     */
                     append(out,
                             format("if (%s && %s) {",destRef.newDestination.notNull(), destRef.newDestination.notEmpty()),
                             destRef.multiOccurrenceVar.addAll(destRef.newDestination),
