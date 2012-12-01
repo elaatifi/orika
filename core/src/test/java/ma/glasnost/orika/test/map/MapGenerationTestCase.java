@@ -282,7 +282,7 @@ public class MapGenerationTestCase {
 	public void testNewSyntax_mapToArraysWithUnequalSize() throws Exception {
 		
 		
-		MapperFactory factory = MappingUtil.getMapperFactory();
+		MapperFactory factory = MappingUtil.getMapperFactory(true);
 		factory.registerClassMap(
 				factory.classMap(MapWithoutSetter.class, GenericDto.class)
 				.field("scores{key}", "stringArray{}")

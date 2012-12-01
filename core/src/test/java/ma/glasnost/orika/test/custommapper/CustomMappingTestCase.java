@@ -19,10 +19,9 @@
 package ma.glasnost.orika.test.custommapper;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.MapperBase;
+import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
@@ -33,15 +32,16 @@ public class CustomMappingTestCase {
     public void testCustomMapping() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(PersonDTO.class, Person.class).customize(new MapperBase<PersonDTO, Person>() {
-            @Override
-            public void mapBtoA(Person b, PersonDTO a, MappingContext context) {
-                a.setName(b.getFirstName() + " " + b.getLastName());
-            }
-            
-        }).toClassMap());
-        
-        factory.build();
+        factory.classMap(PersonDTO.class, Person.class)
+                .customize(
+                        new CustomMapper<PersonDTO, Person>() {
+                            @Override
+                            public void mapBtoA(Person b, PersonDTO a, MappingContext context) {
+                                a.setName(b.getFirstName() + " " + b.getLastName());
+                            }
+                            
+                        })
+               .register();
         
         Person person = new Person();
         person.setFirstName("Abdelkrim");

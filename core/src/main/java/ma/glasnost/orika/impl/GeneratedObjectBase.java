@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.Converter;
@@ -387,5 +388,27 @@ public abstract class GeneratedObjectBase {
         Object array = Array.newInstance(arrayClass.getComponentType(), list.size());
         list.toArray((Object[]) array);
         return array;
+    }
+    
+    /**
+     * Function to help with list to Map conversion to support Javassist;<br>
+     * 
+     * @param entries a list of Map.Entry
+     * @param mapClass the type of Map to instantiate
+     */
+    @SuppressWarnings("unchecked")
+    public static <K,V> Map<K,V> listToMap(List<?> entries, Class<?> mapClass) {
+        try {
+            Map<K, V> map = (Map<K, V>) mapClass.newInstance();
+            for (Map.Entry<K, V> entry: (List<Map.Entry<K, V>>)entries) {
+                ((Map<K,V>)map).put(entry.getKey(), entry.getValue());
+            }
+            return map;
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+        
     }
 }

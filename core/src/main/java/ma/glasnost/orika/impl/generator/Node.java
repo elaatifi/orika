@@ -58,10 +58,16 @@ public class Node {
             /*
              * Use a List for storing elements intended for an Array; this allows flexibility in case we
              * can't (or it's too difficult to) determine the total size up front.
+             * 
+             * Also, use a List (of Map.Entry) for elements intended for a Map; since we need to add the
+             * Entry as soon as it's created (while it has null key and value), we can't put() it into
+             * it's destination map until the other properties have been given values.
              */
             Type<?> destinationType;
             if (property.getType().isArray()) {
                 destinationType = TypeFactory.valueOf(ArrayList.class, primitiveSafeListType(property.getType().getComponentType()));
+            } else if (property.getType().isMap()) {
+                destinationType = TypeFactory.valueOf(ArrayList.class, elementType);
             } else {
                 destinationType = property.getType();
             }

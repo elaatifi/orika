@@ -20,7 +20,8 @@ package ma.glasnost.orika.test.enums;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.converter.TypeConverter;
+import ma.glasnost.orika.CustomConverter;
+import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.enums.EnumsTestCaseClasses.Book;
 import ma.glasnost.orika.test.enums.EnumsTestCaseClasses.BookDTOWithAltCaseEnum;
@@ -72,9 +73,9 @@ public class EnumsTestCase {
     public void testMapAltCaseEnumWithConverter() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.getConverterFactory().registerConverter(new TypeConverter<PublicationFormat, PublicationFormatDTOAltCase>() {
-            public PublicationFormatDTOAltCase convert(PublicationFormat source,
-                    Class<? extends PublicationFormatDTOAltCase> destinationClass) {
+        factory.getConverterFactory().registerConverter(new CustomConverter<PublicationFormat, PublicationFormatDTOAltCase>() {
+
+            public PublicationFormatDTOAltCase convert(PublicationFormat source, Type<? extends PublicationFormatDTOAltCase> destinationType) {
                 switch (source) {
                 case HARDBACK:
                     return PublicationFormatDTOAltCase.hardBack;
@@ -87,7 +88,6 @@ public class EnumsTestCase {
                 }
             }
         });
-        factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -101,9 +101,10 @@ public class EnumsTestCase {
     @Test
     public void testMapAlternateEnumWithConverter() {
         MapperFactory factory = MappingUtil.getMapperFactory();
-        factory.getConverterFactory().registerConverter(new TypeConverter<PublicationFormat, PublicationFormatDTOAlternate>() {
+        factory.getConverterFactory().registerConverter(new CustomConverter<PublicationFormat, PublicationFormatDTOAlternate>() {
+
             public PublicationFormatDTOAlternate convert(PublicationFormat source,
-                    Class<? extends PublicationFormatDTOAlternate> destinationClass) {
+                    Type<? extends PublicationFormatDTOAlternate> destinationType) {
                 switch (source) {
                 case HARDBACK:
                     return PublicationFormatDTOAlternate.PUB_HARDBACK;
@@ -116,7 +117,6 @@ public class EnumsTestCase {
                 }
             }
         });
-        factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         

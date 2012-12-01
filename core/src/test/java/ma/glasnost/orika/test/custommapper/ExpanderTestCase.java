@@ -7,10 +7,15 @@ import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
+import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
 import ma.glasnost.orika.metadata.ScoringClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
 import org.junit.Test;
 
 /**
@@ -34,17 +39,44 @@ public class ExpanderTestCase {
         public int yearNumber;
         public String yearAnimal;
         public List<Month> months = new ArrayList<Month>();
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        }
+        public boolean equals(Object that) {
+            return EqualsBuilder.reflectionEquals(this, that);
+        }
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
     }
     
     public static class Month {
         public int monthNumber;
         public String monthName;
         public List<Day> days = new ArrayList<Day>();
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        }
+        public boolean equals(Object that) {
+            return EqualsBuilder.reflectionEquals(this, that);
+        }
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
     }
     
     public static class Day {
         public int dayNumber;
         public String dayOfWeek;
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        }
+        public boolean equals(Object that) {
+            return EqualsBuilder.reflectionEquals(this, that);
+        }
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
     }
     
     public static class FlatData {
@@ -54,6 +86,15 @@ public class ExpanderTestCase {
         public String yearAnimal;
         public int monthNumber;
         public String monthName;
+        public String toString() {
+            return ToStringBuilder.reflectionToString(this, ToStringStyle.SHORT_PREFIX_STYLE);
+        }
+        public boolean equals(Object that) {
+            return EqualsBuilder.reflectionEquals(this, that);
+        }
+        public int hashCode() {
+            return HashCodeBuilder.reflectionHashCode(this);
+        }
     }
     
     @Test
@@ -63,6 +104,7 @@ public class ExpanderTestCase {
         Type<List<Year>> typeOf_Year = new TypeBuilder<List<Year>>(){}.build();
         
         MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
+            .compilerStrategy(new EclipseJdtCompilerStrategy())
             .classMapBuilderFactory(new ScoringClassMapBuilder.Factory())
             .build();
         
@@ -95,8 +137,31 @@ public class ExpanderTestCase {
         Assert.assertNotNull(years);
         Assert.assertFalse(years.isEmpty());
         Assert.assertEquals(1, years.size());
+        
         Year year = years.get(0);
         Assert.assertEquals(2011, year.yearNumber);
         Assert.assertEquals(2, year.months.size());
+        
+        Month m1 = year.months.get(0);
+        Assert.assertEquals("October", m1.monthName);
+        Assert.assertEquals(10,m1.monthNumber);
+        
+        Day m1d1 = m1.days.get(0); 
+        Assert.assertEquals("Monday", m1d1.dayOfWeek);
+        Assert.assertEquals(1,m1d1.dayNumber);
+        
+        Month m2 = year.months.get(1);
+        Assert.assertEquals("December", m2.monthName);
+        Assert.assertEquals(12, m2.monthNumber);
+        
+        Day m2d1 = m2.days.get(0); 
+        Assert.assertEquals("Tuesday", m2d1.dayOfWeek);
+        Assert.assertEquals(2,m2d1.dayNumber);
+        
+        
+        List<FlatData> mapBack = mapper.map(years, typeOf_Year, typeOf_FlatData);
+        
+        Assert.assertEquals(flatData, mapBack);
+        
     }
 }

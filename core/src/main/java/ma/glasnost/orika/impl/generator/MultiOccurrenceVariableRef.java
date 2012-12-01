@@ -17,8 +17,6 @@
  */
 package ma.glasnost.orika.impl.generator;
 
-import static java.lang.String.format;
-
 import java.util.Map;
 import java.util.Set;
 
@@ -148,6 +146,8 @@ public class MultiOccurrenceVariableRef extends VariableRef {
     }
     
     /**
+     * A convenience function for adding all of one multi-occurrence type to another
+     * 
      * @param value
      * @return
      */
@@ -158,6 +158,8 @@ public class MultiOccurrenceVariableRef extends VariableRef {
             } else {
                 return assign("listToArray(%s, %s.class)", value, type().getCanonicalName());
             }
+        } else if (isMap() && value.isList()) {
+            return assign("listToMap(%s, java.util.LinkedHashMap.class)", value);
         } else if (isCollection() && value.isArray()) {
             if (value.type().getComponentType().isPrimitive()) {
                 return getter() + ".addAll(asList(" + value + "))";
