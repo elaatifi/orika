@@ -27,7 +27,6 @@ import java.util.Map;
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.NestedProperty;
@@ -475,80 +474,6 @@ public class PropertyResolverTestCase {
         
     }
     
-    /**
-     * For my next trick, this is a custom Property Resolver which automatically attempts
-     * a dynamic definition of type Element (after normal resolution has failed)
-     * 
-     * @author matt.deboer@gmail.com
-     *
-     */
-    public static class ElementPropertyResolver extends IntrospectorPropertyResolver {
-        
-        protected Property getProperty(java.lang.reflect.Type type, String expr, boolean isNestedLookup, Property owner) throws MappingException {
-            Property property = null;
-            try {
-                property = super.getProperty(type, expr, isNestedLookup, null);
-            } catch (MappingException e) {
-                try {
-                    property = super.resolveInlineProperty(type, expr + ":{getAttribute(\""+ expr+"\")|setAttribute(\""+ expr+"\",%s)|type=" + 
-                            (isNestedLookup? "ma.glasnost.orika.test.property.PropertyResolverTestCase$Element" : "Object") + "}");
-                } catch (MappingException e2) {
-                    throw e; // throw the original exception
-                }
-            }
-            return property;
-        }
-            
-    }
-    
-    /**
-     *  This test demonstrates how you might implement a custom property resolver which provides
-     *  a proprietary definition of properties
-     */
-    @Test
-    public void testAdHocResolution_integration_customResolverUsingDeclarativeProperties() {
-        
-        MapperFactory factory = 
-                new DefaultMapperFactory.Builder()
-                    .propertyResolverStrategy(new ElementPropertyResolver())
-                    .build();
-        
-        factory.classMap(Element.class, PersonDto2.class)
-            .field("employment.jobTitle", "jobTitle")
-            .field("employment.salary", "salary") 
-            .field("name.first", "firstName")
-            .field("name.last", "lastName") 
-            .register();
-        
-        MapperFacade mapper = factory.getMapperFacade();
-        
-        Element person = new Element();
-        Element employment = new Element();
-        employment.setAttribute("jobTitle", "manager");
-        employment.setAttribute("salary", 50000L);
-        person.setAttribute("employment", employment);
-        Element name = new Element();
-        name.setAttribute("first", "Chuck");
-        name.setAttribute("last", "Testa");
-        person.setAttribute("name", name);
-        
-        PersonDto2 result = mapper.map(person, PersonDto2.class);
-        
-        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), result.firstName);
-        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), result.lastName);
-        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary")+"", result.salary);
-        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), result.jobTitle);
-        
-        Element mapBack = mapper.map(result, Element.class);
-        
-        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("first"), ((Element)mapBack.getAttribute("name")).getAttribute("first"));
-        Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), ((Element)mapBack.getAttribute("name")).getAttribute("last"));
-        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary")+"", ((Element)mapBack.getAttribute("employment")).getAttribute("salary"));
-        Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("jobTitle"), ((Element)mapBack.getAttribute("employment")).getAttribute("jobTitle"));
-        
-        
-    }
-    
     public static class Element {
         
         Map<String,Object> attributes = new HashMap<String,Object>();
@@ -568,14 +493,6 @@ public class PropertyResolverTestCase {
         public List<String> jobTitles;
         public long salary;
     }
-    
-    public static class PersonDto2 {
-        public String firstName;
-        public String lastName;
-        public String jobTitle;
-        public String salary;
-    }
-    
     
 	public static class Point {
 		private int x, y;

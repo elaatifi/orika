@@ -20,11 +20,13 @@ public class Node {
     public MultiOccurrenceVariableRef multiOccurrenceVar;
     public MultiOccurrenceVariableRef newDestination;
     public VariableRef elementRef;
-    public VariableRef nullCheck;
+    public VariableRef nullCheckFlag;
+    public VariableRef shouldAddToCollectorFlag;
     public FieldMap value;
     public NodeList children;
     public Node parent;
     public Set<Node> mapped = new HashSet<Node>();
+    public boolean addedToCollector;
     private boolean isSource;
     
     private Node(Property property, FieldMap fieldMap, Node parent, NodeList nodes, boolean isSource, int uniqueIndex) {
@@ -82,8 +84,10 @@ public class Node {
             this.multiOccurrenceVar = new MultiOccurrenceVariableRef(property, multiOccurrenceName);
             this.elementRef = new VariableRef(elementType, property.getName() + "_" + name + uniqueIndex + "Element");
             if (elementType != null && elementType.isPrimitive()) {
-                this.nullCheck = new VariableRef(TypeFactory.valueOf(Boolean.TYPE), property.getName() + "_" + name+ uniqueIndex + "ElementIsNull");
+                this.nullCheckFlag = new VariableRef(TypeFactory.valueOf(Boolean.TYPE), property.getName() + "_" + name+ uniqueIndex + "ElementIsNull");
             }
+            this.shouldAddToCollectorFlag = new VariableRef(TypeFactory.valueOf(Boolean.TYPE), 
+                    property.getName() + "_" + name+ uniqueIndex + "ElementShouldBeAddedToCollector");
         } 
         
         if (nodes !=null) {
@@ -277,12 +281,22 @@ public class Node {
          * Finally add a node for the fieldMap at the end
          */
         if (parentNode == null) {
+            root = innermostElement(root);
             currentNode = new Node(root, map, nodes, useSource, nodes.getTotalNodeCount());
         } else {
+            root = innermostElement(root);
             currentNode = new Node(root, map, parentNode, useSource, nodes.getTotalNodeCount());
         }
             
         return currentNode;
+    }
+    
+    private static Property innermostElement(final Property p) {
+        Property result = p;
+        while (result.getElement() != null) {
+            result = result.getElement();
+        }
+        return result;
     }
     
     public static class NodeList extends ArrayList<Node> {

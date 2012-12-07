@@ -57,6 +57,9 @@ public abstract class BuiltinConverters {
      */
     public static void register(ConverterFactory converterFactory) {
         
+        converterFactory.registerConverter(new CopyByReferenceConverter());
+//        converterFactory.registerConverter(new WrapperToPrimitiveConverter());
+//        converterFactory.registerConverter(new StringToCharacterConverter());
         /*
          * Register converter to instantiate by using a constructor on
          * the destination which takes the source as argument

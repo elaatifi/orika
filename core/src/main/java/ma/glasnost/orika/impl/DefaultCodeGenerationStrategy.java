@@ -40,8 +40,6 @@ import ma.glasnost.orika.impl.generator.specification.MultiOccurrenceToMultiOccu
 import ma.glasnost.orika.impl.generator.specification.ObjectToMultiOccurrenceElement;
 import ma.glasnost.orika.impl.generator.specification.ObjectToObject;
 import ma.glasnost.orika.impl.generator.specification.PrimitiveAndObject;
-import ma.glasnost.orika.impl.generator.specification.PrimitiveOrWrapperToPrimitive;
-import ma.glasnost.orika.impl.generator.specification.PrimitiveToWrapper;
 import ma.glasnost.orika.impl.generator.specification.StringToEnum;
 import ma.glasnost.orika.impl.generator.specification.StringToStringConvertible;
 import ma.glasnost.orika.impl.generator.specification.UnmappableEnum;
@@ -59,10 +57,8 @@ public class DefaultCodeGenerationStrategy implements CodeGenerationStrategy {
         
         this.specifications = new ArrayList<Specification>();
         
-        specifications.add(new CopyByReference());
-        specifications.add(new PrimitiveOrWrapperToPrimitive());
-        specifications.add(new PrimitiveToWrapper());
         specifications.add(new Convert());
+        specifications.add(new CopyByReference());
         specifications.add(new ApplyRegisteredMapper());
         specifications.add(new EnumToEnum());
         specifications.add(new StringToEnum());

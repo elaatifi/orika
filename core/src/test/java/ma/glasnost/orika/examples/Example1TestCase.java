@@ -59,9 +59,9 @@ public class Example1TestCase {
      * !
      */
     @Test
-    public void example() {
+    public void nestedElements() {
         
-        MapperFactory mapperFactory = MappingUtil.getMapperFactory();
+        MapperFactory mapperFactory = MappingUtil.getMapperFactory(true);
         
         mapperFactory.classMap(Person.class, PersonDto.class)
                 .field("name.first", "firstName")

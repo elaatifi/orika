@@ -129,12 +129,19 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                             out.append(statement(child.multiOccurrenceVar.declareIterator()));
                         }
                         if (child.elementRef.isPrimitive()) {
-                            out.append(statement(child.nullCheck.declare("true")));
+                            out.append(statement(child.nullCheckFlag.declare("true")));
                         }
+                        out.append(statement(child.shouldAddToCollectorFlag.declare("false")));
                     }
                 }
             }
         }
+        
+        // TODO: need to create a flag variable to mark whether destination has been added
+        // to it's collector; it should be set to false upon new destination element creation
+        
+        
+//        MapperFactory mapperFactory = (MapperFactory) code.getMappingContext().getProperty(Properties.MAPPER_FACTORY);
         
         StringBuilder endWhiles = new StringBuilder();
         StringBuilder addLastElement = new StringBuilder();
@@ -162,39 +169,53 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                  * it's destination (determined by custom comparator we've generated), then
                  * we create a new element and add it to the destination collector.
                  */
-                String currentElementNull = currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.toString() : currentNode.elementRef.isNull();
+                String currentElementNull = currentNode.elementRef.isPrimitive() ? currentNode.nullCheckFlag.toString() : currentNode.elementRef.isNull();
                 String currentElementComparator = code.currentElementComparator(srcNode, currentNode, sourceNodes, destNodes);
                 String or = (!"".equals(currentElementNull) && !"".equals(currentElementComparator)) ? " || " : "";
                 
-                append(out,
-                        "if ( " + currentElementNull + or + currentElementComparator + ") {\n",
-                        currentNode.elementRef.assign(code.newObject(srcNode.elementRef, currentNode.elementRef.type())),
-                        (currentNode.elementRef.isPrimitive() ? currentNode.nullCheck.assign("false") : ""),
-                        (currentNode.isRoot() ? currentNode.newDestination.add(currentNode.elementRef) : currentNode.multiOccurrenceVar.add(currentNode.elementRef)),
-                        "}");
+                if (mapperFactory.getConverterFactory().canConvert(srcNode.elementRef.type(), currentNode.elementRef.type()) //) {
+                        || ClassUtil.isImmutable(currentNode.elementRef.type())) {
+                
+                    append(out,
+                            (currentNode.elementRef.isPrimitive() ? currentNode.nullCheckFlag.assign("false") : ""),
+                            currentNode.shouldAddToCollectorFlag.assign("true")
+                            );
+                    
+                
+                } else {
+                
+                    append(out,
+                            "if ( " + currentElementNull + or + currentElementComparator + ") {\n",
+                            currentNode.elementRef.assign(code.newObject(srcNode.elementRef, currentNode.elementRef.type())),
+                            currentNode.shouldAddToCollectorFlag.assign("true"),
+                            "}");
+                }
                 
             }
             
             if (currentNode.value != null) {
-                    
+                
                 /*
                  * If we have a fieldMap for the current node, attempt to map the fields
                  */
-                String srcName = srcNode.parent != null ? srcNode.parent.elementRef.name() : "source";
-                Property srcProp = new Property.Builder().merge(currentNode.value.getSource()).expression(currentNode.value.getSource().getName()).build();
-                VariableRef s = new VariableRef(srcProp, srcName);
-                
-                Property dstProp = new Property.Builder().merge(currentNode.value.getDestination()).expression(currentNode.value.getDestination().getExpression()).build();
-                String dstName =  "destination";
-                if (currentNode.parent != null ) {
-                    dstName = currentNode.parent.elementRef.name();
+                boolean wasConverted = mapFields(currentNode, srcNode, out, code);
+                if (!currentNode.parent.addedToCollector) {
+                    String assignNull = (currentNode.parent.elementRef.isPrimitive() ? currentNode.parent.nullCheckFlag.assign("true") : currentNode.parent.elementRef.assign("null"));
+                    if (mapperFactory.getConverterFactory().canConvert(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type())) {
+                        append(out,
+                                (currentNode.parent.isRoot() ? currentNode.parent.newDestination.add(currentNode.parent.elementRef) : currentNode.parent.multiOccurrenceVar.add(currentNode.parent.elementRef)),
+                                assignNull
+                                );
+                    } else {
+                        append(out,
+                                format("if (%s) {", currentNode.parent.shouldAddToCollectorFlag),
+                                (currentNode.parent.isRoot() ? currentNode.parent.newDestination.add(currentNode.parent.elementRef) : currentNode.parent.multiOccurrenceVar.add(currentNode.parent.elementRef)),
+                                currentNode.parent.shouldAddToCollectorFlag.assign("false"),
+                                (wasConverted ? assignNull : ""),
+                                "}");
+                    }
+                    currentNode.parent.addedToCollector = true;
                 }
-                
-                VariableRef d = new VariableRef(dstProp, dstName);
-                
-                Type<?> destType = currentNode.parent != null ? currentNode.parent.elementRef.type() : null;
-                
-                out.append(statement(code.mapFields(currentNode.value, s, d, destType, null)));
             }
         }  
         
@@ -231,6 +252,39 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         
         return out.toString();
     }
+    
+    private Property innermostElement(final Property p) {
+        Property result = p;
+        while (result.getElement() != null) {
+            result = result.getElement();
+        }
+        return result;
+    }
+    
+    private boolean mapFields(Node currentNode, Node srcNode, StringBuilder out, SourceCodeContext code) {
+        
+        String srcName = srcNode.parent != null ? srcNode.parent.elementRef.name() : "source";
+        
+        Property sp = innermostElement(currentNode.value.getSource());
+        Property srcProp = new Property.Builder().merge(sp).expression(innermostElement(currentNode.value.getSource()).getExpression()).build();
+        VariableRef s = new VariableRef(srcProp, srcName);
+        
+        Property dp = innermostElement(currentNode.value.getDestination());
+        Property dstProp = new Property.Builder().merge(dp).expression(innermostElement(currentNode.value.getDestination()).getExpression()).build();
+        String dstName =  "destination";
+        if (currentNode.parent != null ) {
+            dstName = currentNode.parent.elementRef.name();
+        }
+        
+        VariableRef d = new VariableRef(dstProp, dstName);
+        
+        Type<?> destType = currentNode.parent != null ? currentNode.parent.elementRef.type() : null;
+        
+        out.append(statement(code.mapFields(currentNode.value, s, d, destType, null)));
+        
+        return d.type().equals(currentNode.parent.elementRef.type()) && mapperFactory.getConverterFactory().canConvert(s.type(), d.type());
+    }
+    
     
     /**
      * Register the ClassMaps needed to map this pair of source and
@@ -275,7 +329,9 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                         builder = mapperFactory.classMap(key.getAType(), key.getBType());
                         builders.put(key, builder);
                     }
-                    builder.fieldMap(currentNode.value.getSource().getName(), currentNode.value.getDestination().getName()).add();
+                    Property sp = innermostElement(currentNode.value.getSource());
+                    Property dp = innermostElement(currentNode.value.getDestination()); 
+                    builder.fieldMap(sp.getExpression(), dp.getExpression()).add();
                 }
             }
         }

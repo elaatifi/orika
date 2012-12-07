@@ -38,7 +38,6 @@ public class MappingContext {
 	private List<Map<MapperKey, ClassMap<?,?>>> mappersSeen;
 	private Map<Object, Object> properties;
 	private Map<Object, Object> globalProperties;
-//	private MappingStrategy strategy;
 	private boolean isNew = true;
 	private int depth;
 	private Type<?> resolvedSourceType;
@@ -73,14 +72,6 @@ public class MappingContext {
 		this.cache = new HashMap<java.lang.reflect.Type, Map<Object, Object>>();
 		this.globalProperties = globalProperties;
 	}
-	
-//	public void setResolvedMappingStrategy(MappingStrategy strategy) {
-//	    this.strategy = strategy;
-//	}
-//	
-//	public MappingStrategy getResolvedMappingStrategy() {
-//	    return this.strategy;
-//	}
 	
 	@SuppressWarnings("unchecked")
 	public <S, D> Type<? extends D> getConcreteClass(Type<S> sourceType,

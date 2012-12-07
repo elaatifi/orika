@@ -87,6 +87,10 @@ public class MapEntry<K, V> implements Map.Entry<K, V> {
         return (Type<MapEntry<K, V>>)type; 
     }
     
+    public String toString() {
+        return "[" + getKey() + "=" + getValue() + "]";
+    }
+    
     /**
      * Returns the <code>Map.Entry&lt;K,V&gt;</code> type that represents the entries of the given map
      * 

@@ -42,6 +42,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
          *  TODO: migrate this to create a new destination variable first; 
          *  fill it, and then assign it to the destination using the setter. 
          */
+       
         MultiOccurrenceVariableRef newDest = new MultiOccurrenceVariableRef(d.type(), "new_" + d.name());
         if (d.isAssignable()) {
             out.append(statement(newDest.declare(d.newInstance(source.size()))));

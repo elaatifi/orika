@@ -53,6 +53,10 @@ public class ConverterKey {
         return destinationType;
     }
     
+    public String toString() {
+        return "[" + sourceType + ", " + destinationType + "]";
+    }
+    
     @Override
     public int hashCode() {
         final int prime = 31;

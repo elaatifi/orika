@@ -101,7 +101,6 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                         Property.Builder builder = collectedMethods.get(name);
                         if (builder == null) {
                             builder = new Property.Builder(TypeFactory.resolveValueOf(type, referenceType), name);
-                            //builder.name(name);
                             collectedMethods.put(name, builder);
                         }
                         builder.getter(m);
@@ -120,7 +119,6 @@ public class RegexPropertyResolver extends IntrospectorPropertyResolver {
                         Property.Builder builder = collectedMethods.get(name);
                         if (builder == null) {
                             builder = new Property.Builder(TypeFactory.resolveValueOf(type, referenceType), name);
-                            //builder.name(name);
                             collectedMethods.put(name, builder);
                         }
                         builder.setter(m);

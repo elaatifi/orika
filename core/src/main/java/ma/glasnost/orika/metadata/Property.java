@@ -24,13 +24,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.property.PropertyResolver;
 
 /**
- * Property is an immutable representation of an accessor/mutator pair
- * (either of which may be null) that is used to generate code needed to
- * copy data from one type to another.
- *
+ * Property is an immutable representation of an accessor/mutator pair (either
+ * of which may be null) that is used to generate code needed to copy data from
+ * one type to another.
+ * 
  */
 public class Property {
     
@@ -51,29 +52,47 @@ public class Property {
         this.getter = getter;
         this.setter = setter;
         this.type = type;
-        //this.declared = declared;
-        if (type.getActualTypeArguments().length>0 && elementType == null) {
-            this.elementType = (Type<?>)type.getActualTypeArguments()[0];
+        
+        if (type.getActualTypeArguments().length > 0 && elementType == null) {
+            this.elementType = (Type<?>) type.getActualTypeArguments()[0];
+        } else if (type.isCollection()) {
+            Type<?> collectionElementType = elementType;
+            Type<?> collection = type.findAncestor(Collection.class);
+            if (collection != null) {
+                 collectionElementType = (Type<?>) collection.getActualTypeArguments()[0];
+            }
+            this.elementType = collectionElementType;
+            
+        } else if (type.isMap()) {    
+            
+            Type<?> mapElementType = elementType;
+            Type<?> map = type.findAncestor(Map.class);
+            if (map != null) {
+                @SuppressWarnings("unchecked")
+                Type<? extends Map<Object, Object>> mapType = (Type<? extends Map<Object, Object>>) map;
+                mapElementType = MapEntry.entryType(mapType);
+            }
+            this.elementType = mapElementType;
+            
         } else {
             this.elementType = elementType;
         }
+        
         this.container = container;
     }
-
+    
     public Property copy() {
         return copy(this.type);
     }
     
     public Property copy(Type<?> newType) {
-        return new Property.Builder()
-            .name(this.name)
-            .getter(this.getter)
-            .setter(this.setter)
-            .type(newType)
-            .elementType(this.elementType)
-            .build(null);
+        return new Property.Builder().name(this.name)
+                .getter(this.getter)
+                .setter(this.setter)
+                .type(newType)
+                .elementType(this.elementType)
+                .build(null);
     }
-    
     
     /**
      * @return the expression describing this property
@@ -95,14 +114,14 @@ public class Property {
     public Type<?> getType() {
         return type;
     }
-
+    
     /**
      * @return the string description of the accessor for this property
      */
     public String getGetter() {
         return getter;
     }
- 
+    
     /**
      * @return the string description of the mutator for this property
      */
@@ -135,7 +154,7 @@ public class Property {
      * @return the raw type of this property
      */
     public Class<?> getRawType() {
-    	return getType().getRawType();
+        return getType().getRawType();
     }
     
     @Override
@@ -186,7 +205,7 @@ public class Property {
     }
     
     public boolean isMap() {
-    	return Map.class.isAssignableFrom(type.getRawType());
+        return Map.class.isAssignableFrom(type.getRawType());
     }
     
     public boolean isMapKey() {
@@ -237,15 +256,14 @@ public class Property {
     public String toString() {
         return expression + "(" + type + ")";
     }
-
+    
     public boolean isEnum() {
         return type.getRawType().isEnum();
     }
     
-    
     /**
      * Builder is used to construct immutable Property instances
-     *
+     * 
      */
     public static class Builder {
         
@@ -260,6 +278,7 @@ public class Property {
         private String name;
         private String expression;
         private Property container;
+        private Property[] path;
         
         public Builder(Type<?> owningType, String name) {
             this.owningType = owningType;
@@ -289,7 +308,9 @@ public class Property {
             if (container == null || property.container != null) {
                 container = property.container;
             }
-            
+            if (property.getPath().length > 0 ) {
+                path = property.getPath();
+            }
             name = property.name;
             expression = property.expression;
             
@@ -320,7 +341,7 @@ public class Property {
                 int currentSingle = expression.indexOf("'");
                 if (currentSingle > 0 && (currentSingle < currentDouble || currentDouble == -1)) {
                     output.append(expression.subSequence(0, currentSingle));
-                    expression = expression.substring(currentSingle+1);
+                    expression = expression.substring(currentSingle + 1);
                     
                     int nextSingle = expression.indexOf("'");
                     if (nextSingle == 1) {
@@ -328,14 +349,14 @@ public class Property {
                     } else {
                         output.append("\"" + expression.substring(0, nextSingle) + "\"");
                     }
-                    expression = expression.substring(nextSingle+1);
+                    expression = expression.substring(nextSingle + 1);
                 } else if (currentDouble > 0) {
                     output.append(expression.subSequence(0, currentDouble));
-                    expression = expression.substring(currentDouble+1);
+                    expression = expression.substring(currentDouble + 1);
                     
                     int nextDouble = expression.indexOf('"');
                     output.append("\"" + expression.substring(0, nextDouble) + "\"");
-                    expression = expression.substring(nextDouble+1);
+                    expression = expression.substring(nextDouble + 1);
                 } else {
                     output.append(expression);
                     expression = "";
@@ -350,6 +371,16 @@ public class Property {
          */
         public Builder container(Property container) {
             this.container = container;
+            return this;
+        }
+        
+        /**
+         * @param path
+         *            the path to set
+         * @return
+         */
+        public Builder path(Property[] path) {
+            this.path = path;
             return this;
         }
         
@@ -434,24 +465,28 @@ public class Property {
             }
             if (getterMethod != null) {
                 getter = getterMethod.getName() + "()";
-            } 
+            }
             if (setterMethod != null) {
                 setter = setterMethod.getName() + "(%s)";
-            } 
-            return new Property(expression != null ? expression : name,name,getter,setter,propertyType,elementType, container);
+            }
+            Property p = new Property(expression != null ? expression : name, name, getter, setter, propertyType, elementType, container);
+            if (path != null) {
+                p = new NestedProperty(expression, p, path);
+            }
+            return p;
         }
         
         private void validate(PropertyResolver propertyResolver) {
             
             if (getterMethod == null && setterMethod == null && getter == null && setter == null) {
-                throw new IllegalArgumentException("property " + (owningType!= null ? owningType.getCanonicalName() : "") + "[" + name + "]"
-                        + " cannot be read or written");
+                throw new IllegalArgumentException("property " + (owningType != null ? owningType.getCanonicalName() : "") + "[" + name
+                        + "]" + " cannot be read or written");
             } else {
                 
                 if (owningType != null && (!"".equals(getter) || !"".equals(setter))) {
                     for (Method m : owningType.getRawType().getMethods()) {
                         if (getter != null && m.getName().equals(getter) && m.getParameterTypes().length == 0) {
-                            getter(m); 
+                            getter(m);
                         } else if (setter != null && m.getName().endsWith(setter) && m.getParameterTypes().length == 1) {
                             setter(m);
                         }
@@ -468,36 +503,36 @@ public class Property {
                 }
                 
                 if (setterMethod != null && setterMethod.getParameterTypes().length != 1) {
-                    throw new IllegalArgumentException("writeMethod (" + setterMethod.getName() + ") for " + owningType.getCanonicalName() + "["
-                            + name + "] does not have exactly 1 input argument ");
+                    throw new IllegalArgumentException("writeMethod (" + setterMethod.getName() + ") for " + owningType.getCanonicalName()
+                            + "[" + name + "] does not have exactly 1 input argument ");
                 }
                 
                 if (getterMethod != null
                         && (getterMethod.getReturnType() == null || getterMethod.getReturnType().equals(Void.TYPE) || getterMethod.getReturnType()
                                 .equals(Void.class))) {
-                    throw new IllegalArgumentException("readMethod (" + getterMethod.getName() + ") for " + owningType.getCanonicalName() + "["
-                            + name + "] does not return a value ");
+                    throw new IllegalArgumentException("readMethod (" + getterMethod.getName() + ") for " + owningType.getCanonicalName()
+                            + "[" + name + "] does not return a value ");
                 }
                 
                 if (getterMethod != null && setterMethod != null && propertyType != null) {
                     
                     if (!getterMethod.getReturnType().isAssignableFrom(propertyType.getRawType())) {
                         /*
-                         * If we've already parsed the write method, and the read
-                         * method type is not a sub-type of the write method's type,
-                         * the two should not be considered to form a 'property'.
+                         * If we've already parsed the write method, and the
+                         * read method type is not a sub-type of the write
+                         * method's type, the two should not be considered to
+                         * form a 'property'.
                          */
-                        throw new IllegalArgumentException("write method (" + setterMethod.getName() + ") for " + owningType.getCanonicalName()
-                                + "[" + name + "]" + " has type (" + setterMethod.getParameterTypes()[0].getCanonicalName() + ") "
-                                + "is not assignable from the type (" + getterMethod.getReturnType().getCanonicalName() + ") for "
-                                + "the corresponding read method (" + getterMethod.getName() + ")");
+                        throw new IllegalArgumentException("write method (" + setterMethod.getName() + ") for "
+                                + owningType.getCanonicalName() + "[" + name + "]" + " has type ("
+                                + setterMethod.getParameterTypes()[0].getCanonicalName() + ") " + "is not assignable from the type ("
+                                + getterMethod.getReturnType().getCanonicalName() + ") for " + "the corresponding read method ("
+                                + getterMethod.getName() + ")");
                     }
                 }
             }
         }
         
-    }   
-    
-    
+    }
     
 }

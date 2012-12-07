@@ -818,4 +818,8 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
         return this;
     }
     
+    public String toString() {
+        return getClass().getSimpleName() + "[" + getAType() + ", " + getBType() + "]";
+    }
+    
 }

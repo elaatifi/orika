@@ -2,8 +2,10 @@ package ma.glasnost.orika.metadata;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.List;
 
@@ -170,6 +172,8 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         return this.rawType.getCanonicalName();
     }
     
+    
+    
     /**
      * Test whether this type is assignable from the other type.
      * 
@@ -278,6 +282,66 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
             throw new IllegalStateException(rawType + " is not primitive");
         }
         return TypeFactory.valueOf(ClassUtil.getWrapperType(rawType));
+    }
+    
+    /**
+     * Finds a class or interface which is an ancestor of this type
+     * 
+     * @param ancestor
+     * @return
+     */
+    public Type<?> findAncestor(Type<?> ancestor) {
+        return findAncestor(ancestor.getRawType());
+    }
+    
+    /**
+     * Finds a class or interface which is an ancestor of this type
+     * 
+     * @param ancestor
+     * @return
+     */
+    public Type<?> findAncestor(Class<?> ancestor) {
+        if (ancestor.isInterface()) {
+            return findInterface(ancestor);
+        } else {
+            if (this.getRawType().equals(ancestor)) {
+                return this;
+            } else if (!TypeFactory.TYPE_OF_OBJECT.equals(this)) {
+                return getSuperType().findAncestor(ancestor);
+            } else {
+                return null;
+            }
+        }
+    }
+    
+    /**
+     * Locates a particular interface within the type's object hierarchy
+     * 
+     * @param type
+     * @param theInterface
+     * @return
+     */
+    private Type<?> findInterface(Class<?> theInterface) {
+       
+        Type<?> theInterfaceType = null;
+        LinkedList<Type<?>> types = new LinkedList<Type<?>>();
+        types.add(this);
+        while (theInterfaceType == null && !types.isEmpty()) {
+            
+            Type<?> currentType = types.removeFirst();
+            if (theInterface.equals(currentType.getRawType())) {
+                theInterfaceType = currentType;
+            } else if (!currentType.equals(TypeFactory.TYPE_OF_OBJECT)){
+                types.addAll(Arrays.asList(currentType.getInterfaces()));
+                types.add(currentType.getSuperType());
+            }
+        }
+        return theInterfaceType;
+    }
+    
+    public Type<?> findInterface(Type<?> theInterface) {
+        
+        return findInterface(theInterface.rawType);
     }
     
     public Type<?> getPrimitiveType() {

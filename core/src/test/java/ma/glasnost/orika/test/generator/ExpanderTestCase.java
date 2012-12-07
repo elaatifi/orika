@@ -1,4 +1,4 @@
-package ma.glasnost.orika.test.custommapper;
+package ma.glasnost.orika.test.generator;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -22,7 +22,7 @@ import ma.glasnost.orika.metadata.Type;
 
 
 /**
- * A custom converter 
+ * A custom converter that can be extended for mapping from one type to another in both directions
  * 
  * @author matt.deboer@gmail.com
  *
@@ -37,7 +37,6 @@ public abstract class BidirectionalConverter<S, D> extends CustomConverter<Objec
     
     @SuppressWarnings("unchecked")
     public Object convert(Object source, Type<? extends Object> destinationType) {
-        //if (destinationType.equals(this.destinationType)) {
         if (this.destinationType.isAssignableFrom(destinationType) || this.destinationType.isWrapperFor(destinationType) || this.destinationType.isPrimitiveFor(destinationType)) {
             return convertTo((S) source, (Type<D>) destinationType);
         } else {

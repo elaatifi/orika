@@ -33,20 +33,20 @@ import ma.glasnost.orika.metadata.Type;
  * @author matt.deboer@gmail.com
  *
  */
-public class FromStringConverter extends CustomConverter<String, Object> {
+public class FromStringConverter extends CustomConverter<Object, Object> {
 
 	
 	public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
 		return String.class == sourceType.getRawType() && destinationType.isConvertibleFromString();
 	}
 	
-	public Object convert(String source, Type<? extends Object> destinationType) {
+	public Object convert(Object source, Type<? extends Object> destinationType) {
 		if (destinationType.isEnum()) {
-			return convertToEnum(source, destinationType);
+			return convertToEnum((String)source, destinationType);
 		} else if (destinationType.isPrimitive()) {
-			return convertToPrimitive(source, destinationType);
+			return convertToPrimitive((String)source, destinationType);
 		} else {
-			return convertToWrapper(source, destinationType);
+			return convertToWrapper((String)source, destinationType);
 		} 
 	}
 	

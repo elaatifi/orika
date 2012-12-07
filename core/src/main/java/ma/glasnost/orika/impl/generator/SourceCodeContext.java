@@ -169,6 +169,10 @@ public class SourceCodeContext {
     public boolean shouldMapNulls() {
         return (Boolean)mappingContext.getProperty(Properties.SHOULD_MAP_NULLS);
     }
+    
+    public MappingContext getMappingContext() {
+        return mappingContext;
+    }
     /**
      * Adds a method definition to the class based on the provided source.
      * 

@@ -573,7 +573,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         
         if (isSelfReferenceExpression(expr)) {
             property = new Property.Builder().name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type)).container(owner).build(this);
-        } else if (isNestedPropertyExpression(expr)) {
+        } else if (isNestedPropertyExpression(expr) && !isElementPropertyExpression(expr)) {
             property = getNestedProperty(type, expr, owner);
         } else if (isElementPropertyExpression(expr)) {
             property = getElementProperty(type, expr, owner);

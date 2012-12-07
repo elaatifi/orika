@@ -17,22 +17,29 @@
  */
 package ma.glasnost.orika.converter.builtin;
 
-import ma.glasnost.orika.CustomConverter;
+import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
-
 /**
- * Converts any object to string
  * 
- * @author matt.deboer@gmail.com
+ *
  */
-public class ToStringConverter extends CustomConverter<Object, Object> {
+public class StringToCharacterConverter extends BidirectionalConverter<String, Character> {
 
-    public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
-        return destinationType.isString();
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.converter.BidirectionalConverter#convertTo(java.lang.Object, ma.glasnost.orika.metadata.Type)
+     */
+    @Override
+    public Character convertTo(String source, Type<Character> destinationType) {
+        return source.charAt(0);
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.converter.BidirectionalConverter#convertFrom(java.lang.Object, ma.glasnost.orika.metadata.Type)
+     */
+    @Override
+    public String convertFrom(Character source, Type<String> destinationType) {
+        return "" + source;
     }
     
-	public Object convert(Object source, Type<? extends Object> destinationType) {
-		return "" + source;
-	}
 }

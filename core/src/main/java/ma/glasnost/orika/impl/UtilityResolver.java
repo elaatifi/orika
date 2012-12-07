@@ -25,6 +25,7 @@ import ma.glasnost.orika.converter.ConverterFactory;
 import ma.glasnost.orika.converter.DefaultConverterFactory;
 import ma.glasnost.orika.impl.generator.CompilerStrategy;
 import ma.glasnost.orika.impl.generator.JavassistCompilerStrategy;
+import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.ClassMapBuilderFactory;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
@@ -86,7 +87,7 @@ public abstract class UtilityResolver {
      * @return
      */
     public static ClassMapBuilderFactory getDefaultClassMapBuilderFactory() {
-        return resolveUtility(OrikaSystemProperties.CLASSMAP_BUILDER_FACTORY, ma.glasnost.orika.metadata.ClassMapBuilder.Factory.class);
+        return resolveUtility(OrikaSystemProperties.CLASSMAP_BUILDER_FACTORY, ClassMapBuilder.Factory.class);
     }
     
     /**

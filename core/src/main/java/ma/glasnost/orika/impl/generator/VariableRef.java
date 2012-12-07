@@ -244,6 +244,22 @@ public class VariableRef {
     }
     
     /**
+     * Generates code to perform assignment to this VariableRef, if it is
+     * assignable.
+     * 
+     * @param value
+     * @param replacements
+     * @return
+     */
+    public String assignIfPossible(VariableRef value) {
+        if (setter() != null) {
+            return format(setter(), cast(value));
+        } else {
+            return "";
+        }
+    }
+    
+    /**
      * Returns java code which assigns the value of the provided PropertyRef to
      * this PropertyRef
      * 
@@ -305,7 +321,9 @@ public class VariableRef {
          */
         if (!"null".equals(value)) {
             if (type.isPrimitive()) {
-                if (!isPrimitiveLiteral(castValue, type)) {
+                if (type.getRawType() == Character.TYPE) {
+                    castValue = format("(\"\"+%s).charAt(0)", castValue);
+                } else if (!isPrimitiveLiteral(castValue, type)) {
                     castValue = format("%s.valueOf(\"\"+%s).%sValue()", type.getWrapperType().getCanonicalName(), castValue, type);
                 }
             } else if (type.isPrimitiveWrapper() && isPrimitiveLiteral(castValue, type)) {
@@ -333,6 +351,8 @@ public class VariableRef {
         if (type.isPrimitive()) {
             if (value.isWrapper()) {
                 castValue = format("%s.%sValue()", castValue, type);
+            } else if (Character.TYPE == type.getRawType() && value.type().isString()) { 
+                castValue = format("%s.charAt(0)", value);
             } else if (!value.isPrimitive()) {
                 castValue = format("%s.valueOf(\"\"+%s).%sValue()", type.getWrapperType().getCanonicalName(), castValue, typeName);
             }
@@ -488,7 +508,7 @@ public class VariableRef {
         if (property() != null && property().hasPath()) {
             boolean first = true;
             
-            String expression = "source";
+            String expression = this.name;
             
             for (final Property p : property().getPath()) {
                 if (!first) {
@@ -649,7 +669,7 @@ public class VariableRef {
         if (property.hasPath()) {
             boolean first = true;
             path.append("if(");
-            String expression = "source";
+            String expression = this.name;
             
             for (final Property p : property.getPath()) {
                 if (!first) {

@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.MapEntry;
+import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -228,13 +229,38 @@ public class MultiOccurrenceVariableRef extends VariableRef {
     }
     
     public String newInstance(String sizeExpr) {
+        
         if (isArray()) {
             return "new " + rawType().getComponentType().getCanonicalName() + "[" + sizeExpr + "]";
         } else if (isMap()) {
             return "new java.util.LinkedHashMap(" + sizeExpr + ")";
         } else if ("Set".equals(collectionType())) {
+            if (ClassUtil.isConcrete(type())) {
+                try {
+                    if (type().getRawType().getConstructor() != null) {
+                        return "new " + type().getCanonicalName() + "()";
+                    }
+                } catch (NoSuchMethodException e) {
+                    
+                } catch (SecurityException e) {
+                    
+                }
+                
+            } 
             return "new java.util.LinkedHashSet(" + sizeExpr + ")";
+            
         } else {
+            if (ClassUtil.isConcrete(type())) {
+                try {
+                    if (type().getRawType().getConstructor() != null) {
+                        return "new " + type().getCanonicalName() + "()";
+                    }
+                } catch (NoSuchMethodException e) {
+                    
+                } catch (SecurityException e) {
+                    
+                }
+            } 
             return "new java.util.ArrayList(" + sizeExpr + ")";
         }
     }

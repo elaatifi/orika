@@ -18,11 +18,11 @@ public class BeanToListGenerationTestCase {
 		MapperFactory factory = MappingUtil.getMapperFactory();
 	
 		factory.classMap(Student.class, List.class)
-				.field("grade.letter", "0")
-				.field("grade.point", "1")
-				.field("grade.percentage", "2")
-				.field("name.first", "3")
-				.field("name.last", "4")
+				.field("grade.letter", "[0]")
+				.field("grade.point", "[1]")
+				.field("grade.percentage", "[2]")
+				.field("name.first", "[3]")
+				.field("name.last", "[4]")
 				.byDefault()
 				.register();
 		

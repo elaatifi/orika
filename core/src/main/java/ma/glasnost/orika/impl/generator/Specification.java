@@ -5,7 +5,7 @@ import ma.glasnost.orika.metadata.FieldMap;
 
 /**
  * Specification encapsulates the logic to generate code for mapping
- * comparing a pair of types
+ * and comparing a pair of types
  * 
  * @author mattdeboer
  *
@@ -39,10 +39,11 @@ public interface Specification {
     
     
     /**
-     * Generates code for
+     * Generates code to map the provided field map
      * 
-     * @param source
-     * @param destination
+     * @param fieldMap the fieldMap for which source code should be generated
+     * @param source a convenience wrapper around the source field which can be used facilitate code generation
+     * @param destination a convenience wrapper around the destination field which can be used facilitate code generation
      * @param inverseProperty 
      * @param code 
      * @return the code snippet which represents mapping from the source to destination
