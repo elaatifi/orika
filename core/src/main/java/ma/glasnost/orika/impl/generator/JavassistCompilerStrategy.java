@@ -71,7 +71,6 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
         
         this.classPool = new ClassPool();
         this.classPool.appendSystemPath();
-        this.classPool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
     }
     
     /**
@@ -134,6 +133,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
     			found = referencedLoaders.get(cl);
     			if (found==null) {
     				referencedLoaders.put(cl,Boolean.TRUE);
+    				classPool.insertClassPath(new LoaderClassPath(cl));
     			}
     		}
     	}
@@ -175,7 +175,16 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
             try {
                 classPool.get(className);
             } catch (NotFoundException e) {
-                throw new SourceCodeGenerationException(type + " is not accessible", e);
+                
+                if (registerClassLoader(type.getClassLoader())) {
+                    try {
+                        classPool.get(className);
+                    } catch (NotFoundException e2) {
+                        throw new SourceCodeGenerationException(type + " is not accessible", e2);
+                    }
+                } else {
+                    throw new SourceCodeGenerationException(type + " is not accessible", e);
+                }
             }
         }  
     }
