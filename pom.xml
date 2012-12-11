@@ -343,6 +343,7 @@
     <modules>
         <module>eclipse-tools</module>
         <module>core</module>
+        <module>tests</module>
     </modules>
 
     <profiles>

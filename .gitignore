@@ -15,6 +15,11 @@
 /eclipse-tools/.settings/.*
 /eclipse-tools/target
 
+# /core/
+/tests/.*
+/tests/target
+/tests/orika-tests.iml
+
 /benchmarks/target
 /benchmarks/.settings/.*
 /benchmarks/.project

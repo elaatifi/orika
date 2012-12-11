@@ -16,18 +16,24 @@
  * limitations under the License.
  */
 
-package ma.glasnost.orika.test.boundmapperfacade;
+package ma.glasnost.orika.test.unenhance;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.util.Date;
+import java.util.GregorianCalendar;
 
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingHint;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompiler;
+import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.MavenProjectUtil;
@@ -90,18 +96,19 @@ public class SuperTypeMappingTestCase {
         
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(Library.class, LibraryMyDTO.class)
+        factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class)
                 .field("title", "myTitle")
                 .field("books", "myBooks")
                 .byDefault()
                 .toClassMap());
         
-        factory.registerClassMap(factory.classMap(Author.class, AuthorMyDTO.class).field("name", "myName").byDefault().toClassMap());
-        factory.registerClassMap(factory.classMap(Book.class, BookMyDTO.class)
+        factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class).field("name", "myName").byDefault().toClassMap());
+        factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class)
                 .field("title", "myTitle")
                 .field("author", "myAuthor")
                 .byDefault()
                 .toClassMap());
+        factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -121,18 +128,19 @@ public class SuperTypeMappingTestCase {
     public void testMappingInterfaceImplementationWithExistingInheritedMapping() throws Exception {
         
         MapperFactory factory = MappingUtil.getMapperFactory();
-        factory.registerClassMap(factory.classMap(Library.class, LibraryMyDTO.class)
+        factory.registerClassMap(ClassMapBuilder.map(Library.class, LibraryMyDTO.class)
                 .field("title", "myTitle")
                 .field("books", "myBooks")
                 .byDefault()
                 .toClassMap());
         
-        factory.registerClassMap(factory.classMap(Author.class, AuthorMyDTO.class).field("name", "myName").byDefault().toClassMap());
-        factory.registerClassMap(factory.classMap(Book.class, BookMyDTO.class)
+        factory.registerClassMap(ClassMapBuilder.map(Author.class, AuthorMyDTO.class).field("name", "myName").byDefault().toClassMap());
+        factory.registerClassMap(ClassMapBuilder.map(Book.class, BookMyDTO.class)
                 .field("title", "myTitle")
                 .field("author", "myAuthor")
                 .byDefault()
                 .toClassMap());
+        factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -154,13 +162,13 @@ public class SuperTypeMappingTestCase {
     public void testMappingSubclassImplementationWithoutExistingMapping() throws Exception {
         
         MapperFactory factory = MappingUtil.getMapperFactory();
-        DefaultFieldMapper myHint =
+        MappingHint myHint =
         /**
          * This sample hint converts "myProperty" to "property", and vis-versa.
          */
-        new DefaultFieldMapper() {
-
-            public String suggestMappedField(String fromProperty, Type<?> fromPropertyType) {
+        new MappingHint() {
+            
+            public String suggestMappedField(String fromProperty, Class<?> fromPropertyType) {
                 if (fromProperty.startsWith("my")) {
                     return fromProperty.substring(2, 1).toLowerCase() + fromProperty.substring(3);
                 } else {
@@ -169,7 +177,8 @@ public class SuperTypeMappingTestCase {
             }
             
         };
-        factory.registerDefaultFieldMapper(myHint);
+        factory.registerMappingHint(myHint);
+        factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -187,15 +196,16 @@ public class SuperTypeMappingTestCase {
         
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(AuthorParent.class, AuthorMyDTO.class)
+        factory.registerClassMap(ClassMapBuilder.map(AuthorParent.class, AuthorMyDTO.class)
                 .field("name", "myName")
                 .byDefault()
                 .toClassMap());
-        factory.registerClassMap(factory.classMap(BookParent.class, BookMyDTO.class)
+        factory.registerClassMap(ClassMapBuilder.map(BookParent.class, BookMyDTO.class)
                 .field("title", "myTitle")
                 .field("author", "myAuthor")
                 .byDefault()
                 .toClassMap());
+        factory.build();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -238,6 +248,28 @@ public class SuperTypeMappingTestCase {
         }
     }
     
+    @Test
+    public void testSuperTypeConverterMapping() throws Exception {
+        
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        
+        factory.getConverterFactory().registerConverter(new XMLGregorianCalendarToDateConverter());
+        
+        factory.build();
+        
+        A a = new A();
+        Date date = new Date();
+        GregorianCalendar c = new GregorianCalendar();
+        c.setTime(date);
+        a.setTime(DatatypeFactory.newInstance().newXMLGregorianCalendar(c));
+        
+        B mapped = factory.getMapperFacade().map(a, B.class);
+        
+        assertNotNull(mapped);
+        assertEquals(date, mapped.getTime());
+        
+    }
+    
     /**
      * This test is a bit complicated: it verifies that super-type lookup occurs
      * properly if presented with a class that is not accessible from the
@@ -266,12 +298,10 @@ public class SuperTypeMappingTestCase {
                     return "my" + fromProperty.substring(0, 1).toUpperCase() + fromProperty.substring(1);
                 }
             }
-            
         };
         factory.registerDefaultFieldMapper(myHint);
-
         
-        BoundMapperFacade<Library, LibraryMyDTO> mapper = factory.getMapperFacade(Library.class, LibraryMyDTO.class);
+        MapperFacade mapper = factory.getMapperFacade();
         
         // -----------------------------------------------------------------------------
         File projectRoot = MavenProjectUtil.findProjectRoot();
@@ -279,7 +309,7 @@ public class SuperTypeMappingTestCase {
         ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
         
         EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
-		ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
+		ClassLoader childLoader = complier.compile(new File(projectRoot, "src/main/java-hidden"),threadContextLoader);
         
         @SuppressWarnings("unchecked")
         Class<? extends Author> hiddenAuthorType = (Class<? extends Author>) childLoader.loadClass("types.AuthorHidden");
@@ -314,7 +344,7 @@ public class SuperTypeMappingTestCase {
         Library lib = createLibrary(hiddenLibraryType);
         lib.getBooks().add(book);
         
-        LibraryMyDTO mappedLib = mapper.map(lib);
+        LibraryMyDTO mappedLib = mapper.map(lib, LibraryMyDTO.class);
         
         Assert.assertEquals(lib.getTitle(), mappedLib.getMyTitle());
         Assert.assertEquals(book.getTitle(), mappedLib.getMyBooks().get(0).getMyTitle());

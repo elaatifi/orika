@@ -52,7 +52,7 @@ public class ClassLoaderLeakageTestCase {
 		ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 		
 		EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
-		ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
+		ClassLoader childLoader = complier.compile(new File(projectRoot, "src/main/java-hidden"),threadContextLoader);
 		
 		
 		@SuppressWarnings("unchecked")
@@ -148,7 +148,7 @@ public class ClassLoaderLeakageTestCase {
 			ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 			
 			EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
-			ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
+			ClassLoader childLoader = complier.compile(new File(projectRoot, "src/main/java-hidden"),threadContextLoader);
 			
 			@SuppressWarnings("unchecked")
 			Class<? extends Author> hiddenAuthorType = (Class<? extends Author>)childLoader.loadClass("types.AuthorHidden");
@@ -237,7 +237,7 @@ public class ClassLoaderLeakageTestCase {
 			ClassLoader threadContextLoader = Thread.currentThread().getContextClassLoader();
 			
 			EclipseJdtCompiler complier = new EclipseJdtCompiler(threadContextLoader);
-			ClassLoader childLoader = complier.compile(new File(projectRoot, "src/test/java-hidden"),threadContextLoader);
+			ClassLoader childLoader = complier.compile(new File(projectRoot, "src/main/java-hidden"),threadContextLoader);
 			
 			@SuppressWarnings("unchecked")
 			Class<?> runnerType = (Class<? extends Library>)childLoader.loadClass("types.Runner");

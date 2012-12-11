@@ -71,6 +71,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
         
         this.classPool = new ClassPool();
         this.classPool.appendSystemPath();
+        this.classPool.insertClassPath(new LoaderClassPath(Thread.currentThread().getContextClassLoader()));
     }
     
     /**

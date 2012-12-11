@@ -29,7 +29,6 @@ import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.Properties;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
@@ -181,7 +180,7 @@ public class CustomMergerTest {
                                                                                 // in
                                                                                 // merge
                 } else {
-                    mapperFacade.map(memberEntity, memberDto);
+                    mapperFacade.map(memberDto, memberEntity);
                 }
                 ids.add(memberDto.getId());
             }
