@@ -74,6 +74,7 @@ public class CloneableConverterTestCase {
     }
 
     
+    
     /**
      * This test method demonstrates that you can decide to treat one of the default cloneable types
      * as immutable if desired by registering your own PassThroughConverter for that type
@@ -112,7 +113,7 @@ public class CloneableConverterTestCase {
         
     }
     
-    
+  
     
     public static class ClonableHolder {
         public SampleCloneable value;
@@ -156,6 +157,5 @@ public class CloneableConverterTestCase {
         }
         
     }
-    
-    
+
 }
