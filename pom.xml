@@ -3,7 +3,7 @@
     <groupId>ma.glasnost.orika</groupId>
     <artifactId>orika-parent</artifactId>
     <name>Orika - parent</name>
-    <version>1.4.0</version>
+    <version>1.4.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <description>Orika parent project</description>
     <url>http://code.google.com/p/orika</url>
