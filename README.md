@@ -1,7 +1,7 @@
 Orika ! [![Build Status](https://secure.travis-ci.org/elaatifi/orika.png)](http://travis-ci.org/elaatifi/orika)
 -----------------------------------------------------------------------
 
-*NEW* We are pleased to announce the release of Orika *1.3.5*! _This version is available on Maven central repository_ 
+**NEW** We are pleased to announce the release of Orika **1.4.0**! _This version is available on Maven central repository_ 
 
 
 Also, check out our new [FAQ](https://github.com/elaatifi/orika/wiki/FAQ)
@@ -26,7 +26,7 @@ Orika enables the developer to :
  * Handle proxies or enhanced objects (like those of Hibernate, or the various mock frameworks)
  * Apply bi-directional mapping with one configuration
  * Map to instances of an appropriate concrete class for a target abstract class or interface
-
+ 
 How?
 =====
 
