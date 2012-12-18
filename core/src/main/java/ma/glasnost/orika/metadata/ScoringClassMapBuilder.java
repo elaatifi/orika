@@ -65,7 +65,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
     private final PropertyMatchingWeights matchingWeights;
     
     /**
-     * PropertyMatchingHint is a class used to describe how different
+     * PropertyMatchingWeights  is a class used to describe how different
      * matching scenarios should be weighted when computing a match
      * score for a set of properties.
      * 
