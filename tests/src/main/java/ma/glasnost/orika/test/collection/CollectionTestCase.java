@@ -21,6 +21,7 @@ package ma.glasnost.orika.test.collection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -40,8 +41,27 @@ public class CollectionTestCase {
 
 		Assert.assertNotNull(destination.getTags());
 		Assert.assertEquals(3, destination.getTags().size());
+		
+		Set<String> sourceSet = new HashSet<String>(source.getTags());
+		Set<String> destSet = new HashSet<String>(destination.getTags());
+		Assert.assertEquals(sourceSet, destSet);
 	}
 
+	@Test
+	public void testListToSet() {
+	    A source = new A();
+        source.setTags(new HashSet<String>(Arrays.asList("soa", "java", "rest")));
+        
+        D destination = MappingUtil.getMapperFactory().getMapperFacade().map(source, D.class);
+        
+        Assert.assertNotNull(destination.getTags());
+        Assert.assertEquals(3, destination.getTags().size());
+        
+        Set<String> sourceSet = new HashSet<String>(source.getTags());
+        Set<String> destSet = new HashSet<String>(destination.getTags());
+        Assert.assertEquals(sourceSet, destSet);
+	}
+	
 	@Test
 	public void testStringToStringWithGetterOnlyCollection() {
 		D source = new D();
@@ -51,6 +71,10 @@ public class CollectionTestCase {
 
 		Assert.assertNotNull(destination.getTags());
 		Assert.assertEquals(3, destination.getTags().size());
+		
+		Set<String> sourceSet = new HashSet<String>(source.getTags());
+        Set<String> destSet = new HashSet<String>(destination.getTags());
+        Assert.assertEquals(sourceSet, destSet);
 	}
 	
 	@Test
