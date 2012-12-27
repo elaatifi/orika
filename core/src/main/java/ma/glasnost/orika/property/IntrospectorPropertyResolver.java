@@ -18,16 +18,16 @@
 
 package ma.glasnost.orika.property;
 
+import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.metadata.Property;
+import ma.glasnost.orika.metadata.Type;
+
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Map;
-
-import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.metadata.Property;
-import ma.glasnost.orika.metadata.Type;
 
 /**
  * IntrospectionPropertyResolver leverages JavaBeans introspector to resolve
@@ -87,6 +87,7 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
                     } else {
                         readMethod = pd.getReadMethod();
                     }
+					readMethod = getNonBridgeAccessor(readMethod);
                     Method writeMethod = pd.getWriteMethod();
                     if (writeMethod == null) {
                         /*
@@ -115,5 +116,29 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
             throw new MappingException(e);
         }
     }
-    
+
+	/**
+	 * Get a real accessor from a bridge method. work around to http://bugs.sun.com/view_bug.do?bug_id=6788525
+	 *
+	 * @param bridgeMethod any method that can potentially be a bridge method
+	 * @return
+	 * if it is not a problematic method, it is returned back immediately
+	 * if we can find a non-bridge method with the same name we return that
+	 * if we cannot find a non-bridge method we return the bridge method back (to prevent any unintended breakage)
+	 */
+	private static Method getNonBridgeAccessor(Method bridgeMethod) {
+		if (bridgeMethod == null || !bridgeMethod.isBridge()) {
+			return bridgeMethod;
+		}
+		Method realMethod = bridgeMethod;
+		Method[] otherMethods = bridgeMethod.getDeclaringClass().getMethods();
+		for (Method possibleRealMethod : otherMethods) {
+			if (possibleRealMethod.getName().equals(bridgeMethod.getName()) && !possibleRealMethod.isBridge() && possibleRealMethod.getParameterTypes().length == 0) {
+				realMethod = possibleRealMethod;
+				break;
+			}
+		}
+		return realMethod;
+	}
+
 }
