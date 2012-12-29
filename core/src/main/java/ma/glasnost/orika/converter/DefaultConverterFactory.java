@@ -29,19 +29,19 @@ import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
-import ma.glasnost.orika.util.Cache;
-import ma.glasnost.orika.util.CacheLRULinkedHashMap;
 import ma.glasnost.orika.util.SortedSet;
+
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
 public class DefaultConverterFactory implements ConverterFactory {
     
     private static final int CACHE_SIZE = 2000;
-    private final Cache<ConverterKey, Converter<Object, Object>> converterCache;
+    private final Map<ConverterKey, Converter<Object, Object>> converterCache;
     private final Set<Converter<Object, Object>> converters;
     private final Map<String, Converter<Object, Object>> convertersMap;
     private MapperFacade mapperFacade;
     
-    public DefaultConverterFactory(Cache<ConverterKey, Converter<Object, Object>> converterCache, Set<Converter<Object, Object>> converters) {
+    public DefaultConverterFactory(Map<ConverterKey, Converter<Object, Object>> converterCache, Set<Converter<Object, Object>> converters) {
         super();
         this.converterCache = converterCache;
         this.converters = new SortedSet<Converter<Object,Object>>(converters, Comparators.CONVERTER);
@@ -49,7 +49,7 @@ public class DefaultConverterFactory implements ConverterFactory {
     }
     
     public DefaultConverterFactory() {
-        this(new CacheLRULinkedHashMap<ConverterKey, Converter<Object, Object>>(CACHE_SIZE), new LinkedHashSet<Converter<Object, Object>>());
+        this(new ConcurrentLinkedHashMap.Builder<ConverterKey, Converter<Object, Object>>().maximumWeightedCapacity(CACHE_SIZE).build(), new LinkedHashSet<Converter<Object, Object>>());
     }
     
     public void setMapperFacade(MapperFacade mapperFacade) {
@@ -106,7 +106,7 @@ public class DefaultConverterFactory implements ConverterFactory {
         for (@SuppressWarnings("rawtypes")
         Converter converter : converters) {
             if (converter.canConvert(sourceType, destinationType)) {
-                converterCache.cache(key, converter);
+                converterCache.put(key, converter);
                 canConvert = true;
                 break;
             }
@@ -170,7 +170,7 @@ public class DefaultConverterFactory implements ConverterFactory {
         
         for (Converter<Object, Object> converter : converters) {
             if (converter.canConvert(sourceClass, destinationClass)) {
-                converterCache.cache(key, converter);
+                converterCache.put(key, converter);
                 return converter;
             }
         }

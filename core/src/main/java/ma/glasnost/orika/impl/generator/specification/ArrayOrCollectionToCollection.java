@@ -52,6 +52,10 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
         }
         
         if (s.isArray()) {
+            if (code.isDebugEnabled()) {
+                code.debug("mapping " + s.elementTypeName() + "[] to Collection<" + d.elementTypeName() + ">");
+            }
+            
             if (s.elementType().isPrimitive()) {
                 out.append("\n");
                 out.append(statement("%s.addAll(asList(%s));", newDest, s));
@@ -60,6 +64,9 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
                 out.append(statement("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class, mappingContext));", newDest, s, d.typeName()));
             }
         } else {
+            if (code.isDebugEnabled()) {
+                code.debug("mapping Collection<" + s.elementTypeName() + "> to Collection<" + d.elementTypeName() + ">");
+            }
             append(out,
                     "\n",
                     format("%s.addAll(mapperFacade.mapAs%s(%s, %s, %s, mappingContext))", newDest, d.collectionType(), s,

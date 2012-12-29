@@ -16,9 +16,18 @@ public class AnyTypeToString extends AbstractSpecification {
     }
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
+        
         if (source.isPrimitive()) {
+            if (code.isDebugEnabled()) {
+                code.debug("converting primitive to String");
+            }
+            
             return statement(destination.assign("\"\"+ %s", source));
         } else {
+            if (code.isDebugEnabled()) {
+                code.debug("converting " + source.typeName() + " using toString()");
+            }
+            
             if (shouldMapNulls(fieldMap, code)) {
                 return statement("if (" + source.notNull() + ") {" + destination.assign("%s.toString()", source) + "} else {" + destination.assign("null") + "}");
             } else {

@@ -123,6 +123,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                             types.add(type.getSuperclass());
                         }
                         
+                        @SuppressWarnings("unchecked")
                         List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                         types.addAll(interfaces);
                     }

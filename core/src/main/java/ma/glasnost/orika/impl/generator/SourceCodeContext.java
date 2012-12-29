@@ -134,6 +134,18 @@ public class SourceCodeContext {
         this.aggregateFieldMaps = new LinkedHashMap<AggregateSpecification, List<FieldMap>>();
     }
     
+    /**
+     * @return true if debug logging is enabled for this context
+     */
+    public boolean isDebugEnabled() {
+        return logDetails != null;
+    }
+    
+    public void debug(String msg) {
+        if (isDebugEnabled()) {
+            logDetails.append(msg);
+        }
+    }
     
     /**
      * @return the StringBuilder containing the current accumulated source.
