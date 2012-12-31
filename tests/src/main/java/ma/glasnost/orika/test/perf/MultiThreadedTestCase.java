@@ -172,6 +172,8 @@ public class MultiThreadedTestCase {
 		Assert.assertEquals(book.getTitle(),mappedLib.getBooks().get(0).getTitle());
 		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getBooks().get(0).getAuthor().getName());
 	
+		Library mapBack = mapper.map(mappedLib, Library.class);
+		Assert.assertEquals(lib, mapBack);
 	}
 	
 	
@@ -194,6 +196,17 @@ public class MultiThreadedTestCase {
         Assert.assertEquals(person.getLastName(), vo.getLastName());
         Assert.assertTrue(person.getAge() == vo.getAge());
         Assert.assertEquals(cal.getTime(), vo.getDateOfBirth());
+        
+        Person mapBack = mapper.map(vo, Person.class);
+        Assert.assertEquals(person, mapBack);
+	}
+	
+	
+	@Test
+	@Concurrent(20)
+	public void generateAll() {
+	    testGenerateMappers();
+	    testGenerateObjectFactories();
 	}
 	
 	public static class Person {
@@ -233,6 +246,55 @@ public class MultiThreadedTestCase {
         
         public void setDateOfBirth(Date date) {
             this.date = date;
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Object#hashCode()
+         */
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((age == null) ? 0 : age.hashCode());
+            result = prime * result + ((date == null) ? 0 : date.hashCode());
+            result = prime * result + ((firstName == null) ? 0 : firstName.hashCode());
+            result = prime * result + ((lastName == null) ? 0 : lastName.hashCode());
+            return result;
+        }
+
+        /* (non-Javadoc)
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            Person other = (Person) obj;
+            if (age == null) {
+                if (other.age != null)
+                    return false;
+            } else if (!age.equals(other.age))
+                return false;
+            if (date == null) {
+                if (other.date != null)
+                    return false;
+            } else if (!date.equals(other.date))
+                return false;
+            if (firstName == null) {
+                if (other.firstName != null)
+                    return false;
+            } else if (!firstName.equals(other.firstName))
+                return false;
+            if (lastName == null) {
+                if (other.lastName != null)
+                    return false;
+            } else if (!lastName.equals(other.lastName))
+                return false;
+            return true;
         }
         
     }

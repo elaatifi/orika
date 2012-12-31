@@ -47,6 +47,10 @@ public class Convert extends AbstractSpecification {
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
 
+        if (code.isDebugEnabled()) {
+            code.debug("converting using " + source.getConverter());
+        }
+        
         if (source.getConverter() instanceof CopyByReferenceConverter) {
             
             String statement = destination.assignIfPossible(source);
@@ -62,7 +66,6 @@ public class Convert extends AbstractSpecification {
             
         } else {
         
-    //        String statement = destination.assign("%s.convert(%s, %s)", code.usedConverter(source.getConverter()), source.asWrapper(), code.usedType(destination));
             String statement = destination.assignIfPossible("%s.convert(%s, %s)", code.usedConverter(source.getConverter()), source.asWrapper(), code.usedType(destination));
             
             boolean shouldSetNull = shouldMapNulls(fieldMap, code) && !destination.isPrimitive();

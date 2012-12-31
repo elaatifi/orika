@@ -185,6 +185,12 @@
             </dependency>
 
             <dependency>
+              <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+              <artifactId>concurrentlinkedhashmap-lru</artifactId>
+              <version>1.2_jdk5</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>

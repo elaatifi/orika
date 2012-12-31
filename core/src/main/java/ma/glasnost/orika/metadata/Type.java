@@ -111,11 +111,12 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     	if (this.interfaces == null) {
     		synchronized(this) {
 	    		if (this.interfaces == null) {
-	    			this.interfaces = new Type<?>[rawType.getGenericInterfaces().length];
+	    		    Type<?>[] interfaces = new Type<?>[rawType.getGenericInterfaces().length];
 		    		int i=0;
 		    		for (java.lang.reflect.Type interfaceType: rawType.getGenericInterfaces()) {
-		    			this.interfaces[i++] = resolveGenericAncestor(interfaceType);
+		    			interfaces[i++] = resolveGenericAncestor(interfaceType);
 		    		}
+		    		this.interfaces = interfaces;
 	    		}
     		}
     	}

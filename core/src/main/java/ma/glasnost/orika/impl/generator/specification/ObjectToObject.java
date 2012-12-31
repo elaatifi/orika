@@ -20,8 +20,12 @@ public class ObjectToObject extends AbstractSpecification {
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         
-        String mapNewObject = destination.assign(format("(%s)%s"/*(%s, mappingContext)"*/, destination.typeName(), code.callMapper(source, destination.type()), source));
-        String mapExistingObject = destination.assign(format("(%s)%s"/*(%s, %s, mappingContext)"*/, destination.typeName(), code.callMapper(source, destination), source, destination));
+        if (code.isDebugEnabled()) {
+            code.debug("mapping object to object");
+        }
+        
+        String mapNewObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination.type()), source));
+        String mapExistingObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination), source, destination));
         String mapStmt = format(" %s { %s; } else { %s; }", destination.ifNull(), mapNewObject, mapExistingObject);
         
         String ipStmt = "";
