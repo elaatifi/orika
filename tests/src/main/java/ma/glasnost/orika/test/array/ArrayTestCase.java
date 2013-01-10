@@ -53,6 +53,21 @@ public class ArrayTestCase {
     }
     
     @Test
+        public void testWrapperArrayToList() {
+           MapperFacade mapperFacade = MappingUtil.getMapperFactory().getMapperFacade();
+           
+           ArrayTestCaseClasses.C source =  new ArrayTestCaseClasses.C();
+            Byte[] buffer = new Byte[]{1,2,3,4};
+             source.setBuffer(buffer);
+    
+     
+             ArrayTestCaseClasses.D destination = mapperFacade.map(source, ArrayTestCaseClasses.D.class);
+     
+             Assert.assertEquals(Arrays.asList((byte)1,(byte)2,(byte)3,(byte)4), destination.getBuffer());
+           
+         }
+    
+    @Test
     public void testListToArray() {
     	MapperFacade mapperFacade = MappingUtil.getMapperFactory().getMapperFacade();
     	

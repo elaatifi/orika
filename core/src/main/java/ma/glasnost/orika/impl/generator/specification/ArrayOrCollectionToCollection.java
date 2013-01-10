@@ -61,7 +61,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
                 out.append(statement("%s.addAll(asList(%s));", newDest, s));
             } else {
                 out.append("\n");
-                out.append(statement("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class, mappingContext));", newDest, s, d.typeName()));
+                out.append(statement("%s.addAll(mapperFacade.mapAsList(asList(%s), %s.class, mappingContext));", newDest, s, d.elementTypeName()));
             }
         } else {
             if (code.isDebugEnabled()) {
