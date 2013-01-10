@@ -211,7 +211,7 @@ public class MultiThreadedTestCase {
     
     @Test
     @Concurrent(50)
-    public void testBuildMapper() {
+    public void testGetMapperFacade() {
         
         ClassMap<A, B> classMap = factory.classMap(A.class, B.class).byDefault().toClassMap();
         
@@ -222,6 +222,18 @@ public class MultiThreadedTestCase {
         from.setProperty("test");
         B to = mapper.map(from, B.class);
     }
+    
+    @Test
+    @Concurrent(50)
+    public void testBuildMapper() {
+        
+        MapperFactory factory = new DefaultMapperFactory.Builder().build();
+        ClassMap<A, B> classMap = factory.classMap(A.class, B.class).byDefault().toClassMap();
+        
+        factory.registerClassMap(classMap);
+        MapperFacade mapper = factory.getMapperFacade();
+    }
+    
     
     public static class Person {
         private String firstName;

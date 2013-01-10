@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javassist.CannotCompileException;
 import ma.glasnost.orika.BoundMapperFacade;
@@ -64,6 +65,8 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
  * 
  */
 public class SourceCodeContext {
+    
+    private static final AtomicInteger UNIQUE_CLASS_INDEX = new AtomicInteger();
     
     private StringBuilder sourceBuilder;
     private String classSimpleName;
@@ -97,9 +100,13 @@ public class SourceCodeContext {
     public SourceCodeContext(final String baseClassName, Class<?> superClass, 
             MappingContext mappingContext, StringBuilder logDetails) {
         
+        this.mapperFactory = (MapperFactory) mappingContext.getProperty(Properties.MAPPER_FACTORY);
+        this.codeGenerationStrategy = (CodeGenerationStrategy) mappingContext.getProperty(Properties.CODE_GENERATION_STRATEGY);
+        this.compilerStrategy = (CompilerStrategy) mappingContext.getProperty(Properties.COMPILER_STRATEGY);
+        this.propertyResolver = (PropertyResolverStrategy) mappingContext.getProperty(Properties.PROPERTY_RESOLVER_STRATEGY);
+        
         String safeBaseClassName = baseClassName.replace("[]", "$Array");
         this.sourceBuilder = new StringBuilder();
-        this.classSimpleName = safeBaseClassName + System.identityHashCode(this);
         this.superClass = superClass;
 
         int namePos = safeBaseClassName.lastIndexOf(".");
@@ -108,7 +115,10 @@ public class SourceCodeContext {
             this.classSimpleName = safeBaseClassName.substring(namePos + 1);
         } else {
             this.packageName = "ma.glasnost.orika.generated";
+            this.classSimpleName = safeBaseClassName;
         }
+        
+        this.classSimpleName = this.classSimpleName + System.identityHashCode(mapperFactory) + "$" + UNIQUE_CLASS_INDEX.getAndIncrement();
         this.className = this.packageName + "." + this.classSimpleName;
         this.methods = new ArrayList<String>();
         this.fields = new ArrayList<String>();
@@ -121,11 +131,6 @@ public class SourceCodeContext {
         this.usedTypes = new UsedTypesContext();
         this.usedConverters = new UsedConvertersContext();
         
-        this.mapperFactory = (MapperFactory) mappingContext.getProperty(Properties.MAPPER_FACTORY);
-        this.codeGenerationStrategy = (CodeGenerationStrategy) mappingContext.getProperty(Properties.CODE_GENERATION_STRATEGY);
-        this.compilerStrategy = (CompilerStrategy) mappingContext.getProperty(Properties.COMPILER_STRATEGY);
-        this.propertyResolver = (PropertyResolverStrategy) mappingContext.getProperty(Properties.PROPERTY_RESOLVER_STRATEGY);
-        
         
         this.mappingContext = mappingContext;
         this.usedMapperFacades = new UsedMapperFacadesContext();
@@ -133,6 +138,9 @@ public class SourceCodeContext {
         
         this.aggregateFieldMaps = new LinkedHashMap<AggregateSpecification, List<FieldMap>>();
     }
+    
+    
+    
     
     /**
      * @return true if debug logging is enabled for this context
