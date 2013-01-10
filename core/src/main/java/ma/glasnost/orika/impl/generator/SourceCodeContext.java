@@ -118,7 +118,7 @@ public class SourceCodeContext {
             this.classSimpleName = safeBaseClassName;
         }
         
-        this.classSimpleName = this.classSimpleName + System.identityHashCode(mapperFactory) + "$" + UNIQUE_CLASS_INDEX.getAndIncrement();
+        this.classSimpleName = makeUniqueClassName(this.classSimpleName);
         this.className = this.packageName + "." + this.classSimpleName;
         this.methods = new ArrayList<String>();
         this.fields = new ArrayList<String>();
@@ -139,7 +139,10 @@ public class SourceCodeContext {
         this.aggregateFieldMaps = new LinkedHashMap<AggregateSpecification, List<FieldMap>>();
     }
     
-    
+    private String makeUniqueClassName(String name) {
+        return name + 
+                System.nanoTime() + "$" + UNIQUE_CLASS_INDEX.getAndIncrement();
+    }
     
     
     /**
@@ -231,7 +234,11 @@ public class SourceCodeContext {
      * @throws IOException
      */
     protected Class<?> compileClass() throws SourceCodeGenerationException {
-        return compilerStrategy.compileClass(this);
+        try {
+            return compilerStrategy.compileClass(this);
+        } catch (SourceCodeGenerationException e) {
+            throw e;
+        }
     }
 
     /**
