@@ -25,11 +25,12 @@ import java.util.Set;
  * A sorted set implementation based on a Comparator (or type's natural ordering) where the
  * comparison function is allowed to return ordering equivalence (0)
  * which doesn't necessarily imply logical equivalence.
- * <br><br>
+ * <p>
  * This allows for the ordering of a set of items where some are less or greater than
  * others, while others are simply not comparable in an ordering sense (in which case, 0 is
  * returned from their comparison).
- * 
+ * <p>
+ * This class is not thread-safe, with the same caveats for java.util.LinkedList.
  * 
  * @author matt.deboer@gmail.com
  *
@@ -66,17 +67,23 @@ public class SortedSet<V> extends SortedCollection<V> implements Set<V> {
     
     public boolean add(V value) {
         int i = -1;
+        boolean insert = false;
         for (V item: sortedList) {
             ++i;
             int comparison = comparator == null ? toComparable(item).compareTo(value) : comparator.compare(item, value);
             if (comparison == 0 && item.equals(value)) {
                 return false;
             } else if (comparison > 0) {
-                sortedList.add(i, value);
-                return true;
+                insert = true;
+                break;
             }
         }
-        sortedList.addLast(value);
+        
+        if (insert) {
+            sortedList.add(i, value);
+        } else {
+            sortedList.addLast(value);
+        }
         return true;
     }
 }

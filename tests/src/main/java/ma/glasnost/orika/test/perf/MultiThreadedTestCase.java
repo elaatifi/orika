@@ -35,6 +35,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
+import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
+import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.test.ConcurrentRule;
@@ -54,132 +57,128 @@ import org.junit.Test;
 
 /**
  * @author matt.deboer@gmail.com
- *
+ * 
  */
 public class MultiThreadedTestCase {
-
-	
-	/**
-	 * Allows us to run methods concurrently by marking with <code>@Concurrent</code>;
-	 * note that in the current implementation, such methods will have the
-	 * <code>@Before</code> and <code>@After</code> methods also invoked concurrently.
-	 */
-	@Rule
-	public ConcurrentRule concurrentRule = new ConcurrentRule();
-	
-	private volatile Set<Class<?>> classes = getNonAnonymousClasses();
-	
-	
-	private final MapperFacade mapper = MappingUtil.getMapperFactory().getMapperFacade();
-	
-	private static Set<Class<?>> getNonAnonymousClasses() {
-		Set<Class<?>> classes = new HashSet<Class<?>>();
-		File classFolder;
-		try {
-			classFolder = new File(URLDecoder.decode(MultiThreadedTestCase.class.getResource("/")
-					.getFile(), "UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
-		}
-		List<Class<?>> allClasses = DynamicSuite.findTestCases(classFolder, ".*");
-		for (Class<?> aClass: allClasses) {
-			if (!aClass.isAnonymousClass()) {
-				classes.add(aClass);
-			}
-		}
-		return classes;
-	}
-	
-	private final AtomicInteger threadIndex = new AtomicInteger(0);
-	private Type<?>[] typeResults = new Type<?>[15];
-	private CountDownLatch finishLine = new CountDownLatch(15);
-	
-	@Test
-	@Concurrent(15)
-	public void testDefineSingleTypeSimultaneously() throws InterruptedException {
-		
-		int myIndex = threadIndex.getAndAdd(1);
-		typeResults[myIndex] = TypeFactory.valueOf(Integer.class);
-		
-		finishLine.countDown();
-
-		finishLine.await();
-		
-		Type<?> firstType = typeResults[0];
-		for (Type<?> type: typeResults) {
-			Assert.assertEquals(firstType, type);
-		}
-	}
-	
-	
-	AtomicInteger myIndex = new AtomicInteger();
-	
-	/**
-	 * Verifies that multiple threads requesting the type for the same set of classes receive
-	 * the same set of values over a large number of classes.
-	 */
-	@Test
-	@Concurrent(100)
-	public void testDefineTypesSimultaneously() {
-		
-		int i = myIndex.getAndIncrement();
-		int c = 0;
-		Map<Type<?>,Class<?>> types = new HashMap<Type<?>,Class<?>>();
-		for (Class<?> aClass: classes) {
-			
-			/*
-			 * In this section, we force each of the threads to trigger a GC 
-			 * at some point in mid process; this should help shake out any 
-			 * issues with weak references getting cleared (that we didn't expect to
-			 * be cleared).
-			 */
-			++c;
-			Type<?> aType;
-			try {
-				aType = TypeFactory.valueOf(aClass);
-			} catch (StackOverflowError e) {
-				throw new RuntimeException("while trying to evaluate valueOf(" + aClass.getCanonicalName() + ")", e);
-			}
-			if (aType == null) {
-				throw new IllegalStateException("TypeFactory.valueOf() returned null for " + aClass);
-			} else if (types.containsKey(aType)) {
-				throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
-			} else {
-				if (aClass.isAssignableFrom(aType.getRawType())) {
-					types.put(aType, aClass);
-				} else {
-					throw new IllegalStateException(aType + " is not an instance of " + aClass);
-				}
-			}
-			if (c == i) {
+    
+    /**
+     * Allows us to run methods concurrently by marking with
+     * <code>@Concurrent</code>; note that in the current implementation, such
+     * methods will have the <code>@Before</code> and <code>@After</code>
+     * methods also invoked concurrently.
+     */
+    @Rule
+    public ConcurrentRule concurrentRule = new ConcurrentRule();
+    
+    private volatile Set<Class<?>> classes = getNonAnonymousClasses();
+    
+    private final MapperFacade mapper = MappingUtil.getMapperFactory().getMapperFacade();
+    
+    private static Set<Class<?>> getNonAnonymousClasses() {
+        Set<Class<?>> classes = new HashSet<Class<?>>();
+        File classFolder;
+        try {
+            classFolder = new File(URLDecoder.decode(MultiThreadedTestCase.class.getResource("/").getFile(), "UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e);
+        }
+        List<Class<?>> allClasses = DynamicSuite.findTestCases(classFolder, ".*");
+        for (Class<?> aClass : allClasses) {
+            if (!aClass.isAnonymousClass()) {
+                classes.add(aClass);
+            }
+        }
+        return classes;
+    }
+    
+    private final AtomicInteger threadIndex = new AtomicInteger(0);
+    private Type<?>[] typeResults = new Type<?>[15];
+    private CountDownLatch finishLine = new CountDownLatch(15);
+    
+    @Test
+    @Concurrent(15)
+    public void testDefineSingleTypeSimultaneously() throws InterruptedException {
+        
+        int myIndex = threadIndex.getAndAdd(1);
+        typeResults[myIndex] = TypeFactory.valueOf(Integer.class);
+        
+        finishLine.countDown();
+        
+        finishLine.await();
+        
+        Type<?> firstType = typeResults[0];
+        for (Type<?> type : typeResults) {
+            Assert.assertEquals(firstType, type);
+        }
+    }
+    
+    AtomicInteger myIndex = new AtomicInteger();
+    
+    /**
+     * Verifies that multiple threads requesting the type for the same set of
+     * classes receive the same set of values over a large number of classes.
+     */
+    @Test
+    @Concurrent(100)
+    public void testDefineTypesSimultaneously() {
+        
+        int i = myIndex.getAndIncrement();
+        int c = 0;
+        Map<Type<?>, Class<?>> types = new HashMap<Type<?>, Class<?>>();
+        for (Class<?> aClass : classes) {
+            
+            /*
+             * In this section, we force each of the threads to trigger a GC at
+             * some point in mid process; this should help shake out any issues
+             * with weak references getting cleared (that we didn't expect to be
+             * cleared).
+             */
+            ++c;
+            Type<?> aType;
+            try {
+                aType = TypeFactory.valueOf(aClass);
+            } catch (StackOverflowError e) {
+                throw new RuntimeException("while trying to evaluate valueOf(" + aClass.getCanonicalName() + ")", e);
+            }
+            if (aType == null) {
+                throw new IllegalStateException("TypeFactory.valueOf() returned null for " + aClass);
+            } else if (types.containsKey(aType)) {
+                throw new IllegalStateException("mapping already exists for " + aClass + ": " + aType + " = " + types.get(aType));
+            } else {
+                if (aClass.isAssignableFrom(aType.getRawType())) {
+                    types.put(aType, aClass);
+                } else {
+                    throw new IllegalStateException(aType + " is not an instance of " + aClass);
+                }
+            }
+            if (c == i) {
                 forceClearSoftAndWeakReferences();
             }
-		}
-		
-		Assert.assertEquals(classes.size(), types.size());
-	}
-	
-	@Test
-	@Concurrent(20)
-	public void testGenerateMappers() {
-		BookImpl book = new BookImpl("The Book Title", new AuthorImpl("The Author Name"));
-		Library lib = new LibraryImpl("The Library", Arrays.<Book>asList(book));
-		
-		LibraryDTO mappedLib = mapper.map(lib, LibraryDTO.class);
-		
-		// Just to be sure things mapped as expected
-		Assert.assertEquals(lib.getTitle(),mappedLib.getTitle());
-		Assert.assertEquals(book.getTitle(),mappedLib.getBooks().get(0).getTitle());
-		Assert.assertEquals(book.getAuthor().getName(),mappedLib.getBooks().get(0).getAuthor().getName());
-	
-		Library mapBack = mapper.map(mappedLib, Library.class);
-		Assert.assertEquals(lib, mapBack);
-	}
-	
-	
-	@Test
-	@Concurrent(20)
-	public void testGenerateObjectFactories() {
+        }
+        
+        Assert.assertEquals(classes.size(), types.size());
+    }
+    
+    @Test
+    @Concurrent(20)
+    public void testGenerateMappers() {
+        BookImpl book = new BookImpl("The Book Title", new AuthorImpl("The Author Name"));
+        Library lib = new LibraryImpl("The Library", Arrays.<Book> asList(book));
+        
+        LibraryDTO mappedLib = mapper.map(lib, LibraryDTO.class);
+        
+        // Just to be sure things mapped as expected
+        Assert.assertEquals(lib.getTitle(), mappedLib.getTitle());
+        Assert.assertEquals(book.getTitle(), mappedLib.getBooks().get(0).getTitle());
+        Assert.assertEquals(book.getAuthor().getName(), mappedLib.getBooks().get(0).getAuthor().getName());
+        
+        Library mapBack = mapper.map(mappedLib, Library.class);
+        Assert.assertEquals(lib, mapBack);
+    }
+    
+    @Test
+    @Concurrent(20)
+    public void testGenerateObjectFactories() {
         
         Person person = new Person();
         person.setFirstName("Abdelkrim");
@@ -199,17 +198,32 @@ public class MultiThreadedTestCase {
         
         Person mapBack = mapper.map(vo, Person.class);
         Assert.assertEquals(person, mapBack);
-	}
-	
-	
-	@Test
-	@Concurrent(20)
-	public void generateAll() {
-	    testGenerateMappers();
-	    testGenerateObjectFactories();
-	}
-	
-	public static class Person {
+    }
+    
+    @Test
+    @Concurrent(20)
+    public void generateAll() {
+        testGenerateMappers();
+        testGenerateObjectFactories();
+    }
+    
+    private MapperFactory factory = new DefaultMapperFactory.Builder().build();
+    
+    @Test
+    @Concurrent(50)
+    public void testBuildMapper() {
+        
+        ClassMap<A, B> classMap = factory.classMap(A.class, B.class).byDefault().toClassMap();
+        
+        factory.registerClassMap(classMap);
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        A from = new A();
+        from.setProperty("test");
+        B to = mapper.map(from, B.class);
+    }
+    
+    public static class Person {
         private String firstName;
         private String lastName;
         
@@ -247,8 +261,10 @@ public class MultiThreadedTestCase {
         public void setDateOfBirth(Date date) {
             this.date = date;
         }
-
-        /* (non-Javadoc)
+        
+        /*
+         * (non-Javadoc)
+         * 
          * @see java.lang.Object#hashCode()
          */
         @Override
@@ -261,8 +277,10 @@ public class MultiThreadedTestCase {
             result = prime * result + ((lastName == null) ? 0 : lastName.hashCode());
             return result;
         }
-
-        /* (non-Javadoc)
+        
+        /*
+         * (non-Javadoc)
+         * 
          * @see java.lang.Object#equals(java.lang.Object)
          */
         @Override
@@ -331,26 +349,51 @@ public class MultiThreadedTestCase {
     }
     
     /**
-	 * Since the contract for SoftReference states that all soft references
-	 * will be cleared by the garbage collector before OOME is thrown, we
-	 * allocate dummy bytes until we reach OOME.
-	 */
-	private void forceClearSoftAndWeakReferences() {
-		
-		SoftReference<Object> checkReference = new SoftReference<Object>(new Object());
-		Assert.assertNotNull(checkReference.get());
-		try {
-			List<byte[]> byteBucket = new ArrayList<byte[]>();
-			for (int i=0; i < Integer.MAX_VALUE; ++i) {
-				int available = (int)Math.min((long)Integer.MAX_VALUE,Runtime.getRuntime().maxMemory());
-		    	byteBucket.add(new byte[available]);
-			}
-		} catch (Throwable e) {
-		    // Ignore OME; soft references should now have been cleared 
-			Assert.assertNull(checkReference.get());
-		}
-		
-	}
-	
-	
+     * Since the contract for SoftReference states that all soft references will
+     * be cleared by the garbage collector before OOME is thrown, we allocate
+     * dummy bytes until we reach OOME.
+     */
+    private void forceClearSoftAndWeakReferences() {
+        
+        SoftReference<Object> checkReference = new SoftReference<Object>(new Object());
+        Assert.assertNotNull(checkReference.get());
+        try {
+            List<byte[]> byteBucket = new ArrayList<byte[]>();
+            for (int i = 0; i < Integer.MAX_VALUE; ++i) {
+                int available = (int) Math.min((long) Integer.MAX_VALUE, Runtime.getRuntime().maxMemory());
+                byteBucket.add(new byte[available]);
+            }
+        } catch (Throwable e) {
+            // Ignore OME; soft references should now have been cleared
+            Assert.assertNull(checkReference.get());
+        }
+        
+    }
+    
+    static public class A {
+        
+        private String property;
+        
+        public String getProperty() {
+            return property;
+        }
+        
+        public void setProperty(String property) {
+            this.property = property;
+        }
+    }
+    
+    static public class B {
+        
+        private String property;
+        
+        public String getProperty() {
+            return property;
+        }
+        
+        public void setProperty(String property) {
+            this.property = property;
+        }
+    }
+    
 }

@@ -31,7 +31,8 @@ import java.util.LinkedList;
  * and <code>addAll</code> perform in the same time as the backing collection.<br><br>
  * The add method performs in linear time (O(n)), and the addAll method performs in
  * O(n*m) time, where n is the current size of the list, and m is the count being added.
- * 
+ * <p>
+ * This class is not thread-safe, with the same caveats for java.util.LinkedList.
  * 
  * @author matt.deboer@gmail.com
  *
@@ -73,17 +74,25 @@ public class SortedCollection<V> implements Collection<V> {
     }
     
     
+    /* (non-Javadoc)
+     * @see java.util.Collection#add(java.lang.Object)
+     */
     public boolean add(V value) {
         int i = -1;
+        boolean insert = false;
         for (V item: sortedList) {
             ++i;
             int comparison = comparator == null ? toComparable(item).compareTo(value) : comparator.compare(item, value);
             if (comparison > 0) {
-                sortedList.add(i, value);
-                return true;
+                insert = true;
+                break;
             }
         }
-        sortedList.addLast(value);
+        if (insert) {
+            sortedList.add(i, value);
+        } else {
+            sortedList.addLast(value);
+        }
         return true;
     }
 
