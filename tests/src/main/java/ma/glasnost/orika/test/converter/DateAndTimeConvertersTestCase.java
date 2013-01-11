@@ -1,6 +1,7 @@
 package ma.glasnost.orika.test.converter;
 
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -12,7 +13,6 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.builtin.DateAndTimeConverters.CalendarToXmlGregorianCalendarConverter;
 import ma.glasnost.orika.converter.builtin.DateAndTimeConverters.DateToCalendarConverter;
 import ma.glasnost.orika.converter.builtin.DateAndTimeConverters.DateToXmlGregorianCalendarConverter;
-import ma.glasnost.orika.converter.builtin.DateAndTimeConverters.LongToCalendarConverter;
 import ma.glasnost.orika.converter.builtin.DateAndTimeConverters.LongToDateConverter;
 import ma.glasnost.orika.converter.builtin.DateAndTimeConverters.LongToXmlGregorianCalendarConverter;
 import ma.glasnost.orika.test.MappingUtil;
@@ -234,7 +234,6 @@ public class DateAndTimeConvertersTestCase {
 	@Test
 	public void testLongToCalendarConverter() {
 		MapperFactory factory = MappingUtil.getMapperFactory();
-		factory.getConverterFactory().registerConverter(new LongToCalendarConverter());
 		MapperFacade mapper = factory.getMapperFacade();
 		
 		long now = System.currentTimeMillis();
@@ -244,6 +243,86 @@ public class DateAndTimeConvertersTestCase {
 		long reverse = mapper.map(cal, Long.class);
 		Assert.assertEquals(now, reverse);
 	}
+	
+	@Test
+    public void testLongToTimestampConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        long now = System.currentTimeMillis();
+        Timestamp tstamp = mapper.map(now, Timestamp.class);
+        Assert.assertEquals(now, tstamp.getTime());
+        
+        long reverse = mapper.map(tstamp, Long.class);
+        Assert.assertEquals(now, reverse);
+    }
 
+	
+	@Test
+    public void testTimestampToXmlGregorianCalendarConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        XMLGregorianCalendar xml = mapper.map(now, XMLGregorianCalendar.class);
+        
+        Assert.assertEquals(now.getTime(), xml.toGregorianCalendar().getTimeInMillis());
+        
+        Timestamp reverse = mapper.map(xml, Timestamp.class);
+        Assert.assertEquals(now, reverse);
+    }
+    
+    @Test
+    public void testTimestampToDateConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Date date = mapper.map(now, Date.class);
+        Assert.assertEquals(now.getTime(), date.getTime());
+        
+        Timestamp reverse = mapper.map(date, Timestamp.class);
+        Assert.assertEquals(now, reverse);
+    }
+
+    @Test
+    public void testTimestampToTimeConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Time date = mapper.map(now, Time.class);
+        Assert.assertEquals(now.getTime(), date.getTime());
+        
+        Timestamp reverse = mapper.map(date, Timestamp.class);
+        Assert.assertEquals(now, reverse);
+    }
+    
+    @Test
+    public void testTimestampToSqlDateConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        java.sql.Date date = mapper.map(now, java.sql.Date.class);
+        Assert.assertEquals(now.getTime(), date.getTime());
+        
+        Timestamp reverse = mapper.map(date, Timestamp.class);
+        Assert.assertEquals(now, reverse);
+    }
+    
+    @Test
+    public void testTimestampToCalendarConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Calendar cal = mapper.map(now, Calendar.class);
+        Assert.assertEquals(now.getTime(), cal.getTimeInMillis());
+        
+        Timestamp reverse = mapper.map(cal, Timestamp.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
 	
 }

@@ -32,13 +32,14 @@ public abstract class BuiltinConverters {
      * a constructor available on the destination type which takes the source as a single argument.
      * <li>FromStringConverter: able to convert from a String to enum, primitive, or primitive wrapper.
      * <li>ToStringconverter: able to convert any type to String
-     * <li>DateAndTimeConverters: convert between common data/time representations<ul>
-     * <li>CalendarToXmlGregorianCalendarConverter
-     * <li>DateToCalendarConverter
-     * <li>DateToXmlGregorianCalendarConverter
-     * <li>LongToCalendarConverter
-     * <li>LongToDateConverter
-     * <li>LongToXmlGregorianCalendarConverter
+     * <li>DateAndTimeConverters: convert between common date/time representations<ul>
+     * <li>java.util.Calendar
+     * <li>java.util.Date
+     * <li>long / java.lang.Long
+     * <li>javax.xml.datatype.XMLGregorianCalendar
+     * <li>java.sql.Date
+     * <li>java.sql.Time
+     * <li>java.sql.Timestamp
      * </ul>
      * <li>PassThroughConverter registered for the following (additional) immutable types:<ul>
      * <li>java.net.URL
@@ -50,6 +51,11 @@ public abstract class BuiltinConverters {
      * <li>java.net.Inet4Address
      * <li>java.net.Inet6Address
      * <li>java.net.InetSocketAddress
+     * </ul>
+     * <li>CloneableConverter registered for the following cloneable types:<ul>
+     * <li>java.util.Date
+     * <li>java.util.Calendar
+     * <li>javax.xml.datatype.XMLGregorianCalendar
      * </ul>
      * </ul>
      * 
@@ -94,6 +100,8 @@ public abstract class BuiltinConverters {
         converterFactory.registerConverter(new DateAndTimeConverters.XmlGregorianCalendarToTimeConverter());
         converterFactory.registerConverter(new DateAndTimeConverters.CalendarToSqlDateConverter());
         converterFactory.registerConverter(new DateAndTimeConverters.CalendarToTimeConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.XmlGregorianCalendarToTimestampConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.DateToTimestampConverter());
         
         
         

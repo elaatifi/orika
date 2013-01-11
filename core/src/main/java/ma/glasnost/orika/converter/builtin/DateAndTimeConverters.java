@@ -1,6 +1,7 @@
 package ma.glasnost.orika.converter.builtin;
 
 import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -350,6 +351,40 @@ public class DateAndTimeConverters {
             return toLong(source);
         }
     }
+    
+    
+    /**
+     * Provides conversion between Calendar and Time
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class XmlGregorianCalendarToTimestampConverter extends
+        CustomConverter<XMLGregorianCalendar, Timestamp> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Timestamp convert(XMLGregorianCalendar source, Type<? extends Timestamp> destinationType) {
+            return new Timestamp(toLong(source));
+        }
+    }
+    
+    /**
+     * Provides conversion between Calendar and Time
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class DateToTimestampConverter extends
+        CustomConverter<Date, Timestamp> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Timestamp convert(Date source, Type<? extends Timestamp> destinationType) {
+            return new Timestamp(toLong(source));
+        }
+    }
+    
     
 	private static Date toDate(XMLGregorianCalendar source) {
 		return source.toGregorianCalendar().getTime();
