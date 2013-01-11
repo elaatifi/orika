@@ -1,5 +1,6 @@
 package ma.glasnost.orika.test.converter;
 
+import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -50,6 +51,59 @@ public class DateAndTimeConvertersTestCase {
 	}
 	
 	@Test
+    public void testSqlDateToCalendarConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.getConverterFactory().registerConverter(new DateToCalendarConverter());
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
+        Calendar cal = mapper.map(now, Calendar.class);
+        Assert.assertEquals(now.getTime(), cal.getTime().getTime());
+        
+        Date reverse = mapper.map(cal, Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
+    public void testDateToTimeConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Date now = new Date();
+        Time time = mapper.map(now, Time.class);
+        Assert.assertEquals(now.getTime(), time.getTime());
+        
+        Date reverse = mapper.map(time, Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
+    public void testSqlDateToTimeConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
+        Time time = mapper.map(now, Time.class);
+        Assert.assertEquals(now.getTime(), time.getTime());
+        
+        java.sql.Date reverse = mapper.map(time, java.sql.Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
+    public void testSqlDateToDateConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
+        Date date = mapper.map(now, Date.class);
+        Assert.assertEquals(now.getTime(), date.getTime());
+        
+        java.sql.Date reverse = mapper.map(date, java.sql.Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
 	public void testDateToXmlGregorianCalendarConverter() {
 		MapperFactory factory = MappingUtil.getMapperFactory();
 		factory.getConverterFactory().registerConverter(new DateToXmlGregorianCalendarConverter());
@@ -62,6 +116,49 @@ public class DateAndTimeConvertersTestCase {
 		Date reverse = mapper.map(xml, Date.class);
 		Assert.assertEquals(now, reverse);
 	}
+	
+	@Test
+    public void testTimeToXmlGregorianCalendarConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.getConverterFactory().registerConverter(new DateToXmlGregorianCalendarConverter());
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Time now = new Time(System.currentTimeMillis());
+        XMLGregorianCalendar xml = mapper.map(now, XMLGregorianCalendar.class);
+        Assert.assertEquals(now.getTime(), xml.toGregorianCalendar().getTime().getTime());
+        
+        Date reverse = mapper.map(xml, Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
+    public void testSqlDateToXmlGregorianCalendarConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.getConverterFactory().registerConverter(new DateToXmlGregorianCalendarConverter());
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        java.sql.Date now = new java.sql.Date(System.currentTimeMillis());
+        XMLGregorianCalendar xml = mapper.map(now, XMLGregorianCalendar.class);
+        Assert.assertEquals(now.getTime(), xml.toGregorianCalendar().getTime().getTime());
+        
+        java.sql.Date reverse = mapper.map(xml, java.sql.Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
+    public void testTimeToCalendarConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.getConverterFactory().registerConverter(new DateToCalendarConverter());
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Time now = new Time(System.currentTimeMillis());
+        Calendar xml = mapper.map(now, Calendar.class);
+        Assert.assertEquals(now.getTime(), xml.getTime().getTime());
+        
+        Date reverse = mapper.map(xml, Date.class);
+        Assert.assertEquals(now, reverse);
+    }
+    
 	
 	@Test
 	public void testCalendarToXmlGregorianCalendarConverter() {
@@ -106,6 +203,34 @@ public class DateAndTimeConvertersTestCase {
 		Assert.assertEquals(now, reverse);
 	}
 
+	@Test
+    public void testLongToTimeConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.getConverterFactory().registerConverter(new LongToDateConverter());
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        long now = System.currentTimeMillis();
+        Time date = mapper.map(now, Time.class);
+        Assert.assertEquals(now, date.getTime());
+        
+        long reverse = mapper.map(date, Long.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
+	@Test
+    public void testLongToSqlDateConverter() {
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.getConverterFactory().registerConverter(new LongToDateConverter());
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        long now = System.currentTimeMillis();
+        java.sql.Date date = mapper.map(now, java.sql.Date.class);
+        Assert.assertEquals(now, date.getTime());
+        
+        long reverse = mapper.map(date, Long.class);
+        Assert.assertEquals(now, reverse);
+    }
+	
 	@Test
 	public void testLongToCalendarConverter() {
 		MapperFactory factory = MappingUtil.getMapperFactory();

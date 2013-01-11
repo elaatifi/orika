@@ -1,5 +1,6 @@
 package ma.glasnost.orika.converter.builtin;
 
+import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -8,6 +9,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
 
@@ -47,6 +49,134 @@ public class DateAndTimeConverters {
 		}
 	}
 
+	/**
+     * Provides conversion between Date and java.sql.Date
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class DateToSqlDateConverter extends
+        CustomConverter<Date, java.sql.Date> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public java.sql.Date convert(Date source, Type<? extends java.sql.Date> destinationType) {
+            return new java.sql.Date(source.getTime());
+        }
+    }
+	
+    /**
+     * Provides conversion between Date and Time
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class DateToTimeConverter extends
+            CustomConverter<Date, Time> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Time convert(Date source, Type<? extends Time> destinationType) {
+            return new Time(source.getTime());
+        }
+    }
+	
+    /**
+     * Provides conversion between Date and java.sql.Date
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class SqlDateToDateConverter extends
+        CustomConverter<java.sql.Date, Date> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Date convert(java.sql.Date source, Type<? extends Date> destinationType) {
+            return new Date(source.getTime());
+        }
+    }
+    
+    /**
+     * Provides conversion between Date and Time
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class TimeToDateConverter extends
+            CustomConverter<Time, Date> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Date convert(Time source, Type<? extends Date> destinationType) {
+            return new Date(source.getTime());
+        }
+    }
+    
+    /**
+     * Provides conversion between XMLGregorianCalendar and java.sql.Date
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class XmlGregorianCalendarToSqlDateConverter extends
+        CustomConverter<XMLGregorianCalendar, java.sql.Date> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public java.sql.Date convert(XMLGregorianCalendar source, Type<? extends java.sql.Date> destinationType) {
+            return new java.sql.Date(toLong(source));
+        }
+    }
+    
+    /**
+     * Provides conversion between XMLGregorianCalendar and Time
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class XmlGregorianCalendarToTimeConverter extends
+        CustomConverter<XMLGregorianCalendar, Time> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Time convert(XMLGregorianCalendar source, Type<? extends Time> destinationType) {
+            return new Time(toLong(source));
+        }
+    }
+    
+    /**
+     * Provides conversion between Calendar and java.sql.Date
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class CalendarToSqlDateConverter extends
+        CustomConverter<Calendar, java.sql.Date> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public java.sql.Date convert(Calendar source, Type<? extends java.sql.Date> destinationType) {
+            return new java.sql.Date(toLong(source));
+        }
+    }
+    
+    /**
+     * Provides conversion between Calendar and Time
+     * 
+     * @author matt.deboer@gmail.com
+     */
+    public static class CalendarToTimeConverter extends
+        CustomConverter<Calendar, Time> {
+
+        /* (non-Javadoc)
+         * @see ma.glasnost.orika.Converter#convert(java.lang.Object, ma.glasnost.orika.metadata.Type)
+         */
+        public Time convert(Calendar source, Type<? extends Time> destinationType) {
+            return new Time(toLong(source));
+        }
+    }
+    
 	/**
 	 * Provides conversion between Date and XMLGregorianCalendar
 	 * 
@@ -129,6 +259,47 @@ public class DateAndTimeConverters {
 		}
 	}
 
+	
+	/**
+     * Provides conversion between Long and Date
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     */
+    public static class LongToSqlDateConverter extends
+            BidirectionalConverter<Long, java.sql.Date> {
+
+        @Override
+        public java.sql.Date convertTo(Long source, Type<java.sql.Date> destinationType) {
+            return new java.sql.Date(source);
+        }
+
+        @Override
+        public Long convertFrom(java.sql.Date source, Type<Long> destinationType) {
+            return toLong(source);
+        }
+    }
+	
+    /**
+     * Provides conversion between Long and Date
+     * 
+     * @author matt.deboer@gmail.com
+     *
+     */
+    public static class LongToTimeConverter extends
+            BidirectionalConverter<Long, Time> {
+
+        @Override
+        public Time convertTo(Long source, Type<Time> destinationType) {
+            return new Time(source);
+        }
+
+        @Override
+        public Long convertFrom(Time source, Type<Long> destinationType) {
+            return toLong(source);
+        }
+    }
+    
 	/**
 	 * Provides conversion between Long and Calendar
 	 * 

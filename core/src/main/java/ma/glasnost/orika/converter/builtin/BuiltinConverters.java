@@ -84,6 +84,19 @@ public abstract class BuiltinConverters {
         converterFactory.registerConverter(new DateAndTimeConverters.LongToDateConverter());
         converterFactory.registerConverter(new DateAndTimeConverters.LongToXmlGregorianCalendarConverter());
         
+        converterFactory.registerConverter(new DateAndTimeConverters.DateToSqlDateConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.DateToTimeConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.SqlDateToDateConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.TimeToDateConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.LongToSqlDateConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.LongToTimeConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.XmlGregorianCalendarToSqlDateConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.XmlGregorianCalendarToTimeConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.CalendarToSqlDateConverter());
+        converterFactory.registerConverter(new DateAndTimeConverters.CalendarToTimeConverter());
+        
+        
+        
         /*
          * Register numeric type converter
          */
