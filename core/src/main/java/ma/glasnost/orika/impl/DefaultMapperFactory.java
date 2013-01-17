@@ -816,7 +816,19 @@ public class DefaultMapperFactory implements MapperFactory {
          * Look for a match in the dynamically registered types
          */
         destinationSet = dynamicAToBRegistry.get(sourceType);
-        if (destinationSet == null || destinationSet.isEmpty()) {
+        if (destinationSet != null && !destinationSet.isEmpty()) {
+            for (final Type<?> type : destinationSet) {
+                if (destinationType.isAssignableFrom(type) && ClassUtil.isConcrete(type)) {
+                    if (type.equals(destinationType) || existsRegisteredMapper(sourceType, type, false)
+                            || !ClassUtil.isConcrete(destinationType)) {
+                        return (Type<? extends D>) type;
+                    }
+                }
+            }
+        } else {
+            /*
+             * Try the registered mappers for a possible type match
+             */
             Mapper<S, D> registeredMapper = getRegisteredMapper(sourceType, destinationType, true);
             if (registeredMapper != null) {
                 concreteType = (Type<? extends D>) (registeredMapper.getAType().isAssignableFrom(sourceType) ? registeredMapper.getBType()
@@ -829,16 +841,7 @@ public class DefaultMapperFactory implements MapperFactory {
             } else {
                 concreteType = (Type<? extends D>) resolveConcreteType(destinationType, destinationType);
             }
-        } else {
-            for (final Type<?> type : destinationSet) {
-                if (destinationType.isAssignableFrom(type) && ClassUtil.isConcrete(type)) {
-                    if (type.equals(destinationType) || existsRegisteredMapper(sourceType, type, false)
-                            || !ClassUtil.isConcrete(destinationType)) {
-                        return (Type<? extends D>) type;
-                    }
-                }
-            }
-        }
+        } 
         
         if (concreteType == null) {
             concreteType = (Type<? extends D>) resolveConcreteType(destinationType, destinationType);
