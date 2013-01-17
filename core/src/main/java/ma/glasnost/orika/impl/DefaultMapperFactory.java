@@ -93,7 +93,8 @@ public class DefaultMapperFactory implements MapperFactory {
     private final SortedCollection<Mapper<Object, Object>> mappersRegistry;
     private final MappingContextFactory contextFactory;
     private final ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> objectFactoryRegistry;
-    private final Map<Type<?>, Set<Type<?>>> aToBRegistry;
+    private final Map<Type<?>, Set<Type<?>>> explicitAToBRegistry;
+    private final Map<Type<?>, Set<Type<?>>> dynamicAToBRegistry;
     private final List<DefaultFieldMapper> defaultFieldMappers;
     private final UnenhanceStrategy unenhanceStrategy;
     private final ConverterFactory converterFactory;
@@ -123,7 +124,8 @@ public class DefaultMapperFactory implements MapperFactory {
         this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
         this.mappersRegistry = new SortedCollection<Mapper<Object, Object>>(Comparators.MAPPER);
-        this.aToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
+        this.explicitAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
+        this.dynamicAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
@@ -496,23 +498,6 @@ public class DefaultMapperFactory implements MapperFactory {
         if (superTypeStrategy != null) {
             unenhancer.addSuperTypeResolverStrategy(superTypeStrategy);
         } 
-//        else {
-//            
-//            /*
-//             * This strategy attempts to lookup super-type that has a registered
-//             * mapper or converter whenever it is offered a class that is not
-//             * currently mapped
-//             */
-//            final SuperTypeResolverStrategy registeredMappersStrategy = new DefaultSuperTypeResolverStrategy() {
-//                
-//                @Override
-//                public boolean isAcceptable(Type<?> type) {
-//                    return type != null && aToBRegistry.containsKey(type);
-//                }
-//            };
-//            
-//            unenhancer.addSuperTypeResolverStrategy(registeredMappersStrategy);
-//        }
         
         /*
          * This strategy produces super-types whenever the proposed class type
@@ -732,7 +717,8 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     /**
-     * @param targetType
+     * 
+     * @param type
      * @param context
      * @return an ObjectFactory instance which is able to instantiate the specified type
      */
@@ -795,18 +781,41 @@ public class DefaultMapperFactory implements MapperFactory {
     @SuppressWarnings("unchecked")
     public <S, D> Type<? extends D> lookupConcreteDestinationType(Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         
+        /*
+         * Check for a pre-resolved type
+         */
         Type<? extends D> concreteType = context == null ? null : context.getConcreteClass(sourceType, destinationType);
         
         if (concreteType != null) {
             return concreteType;
-        } else if (ClassUtil.isConcrete(destinationType)) {
+        } 
+        
+        /*
+         * Look for a match in the explicitly registered types
+         */
+        Set<Type<?>> destinationSet = explicitAToBRegistry.get(sourceType);
+        if (destinationSet != null && !destinationSet.isEmpty()) {
+            for (final Type<?> type : destinationSet) {
+                if (destinationType.isAssignableFrom(type) && ClassUtil.isConcrete(type)) {
+                    if (type.equals(destinationType) || existsRegisteredMapper(sourceType, type, false)
+                            || !ClassUtil.isConcrete(destinationType)) {
+                        return (Type<? extends D>) type;
+                    }
+                }
+            }
+        }
+        
+        /*
+         * Return the original destinationType if it's concrete
+         */
+        if (ClassUtil.isConcrete(destinationType)) {
             return destinationType;
         }
         
         /*
-         * Locate the destination set by it's resolved mapper
+         * Look for a match in the dynamically registered types
          */
-        Set<Type<?>> destinationSet = aToBRegistry.get(sourceType);
+        destinationSet = dynamicAToBRegistry.get(sourceType);
         if (destinationSet == null || destinationSet.isEmpty()) {
             Mapper<S, D> registeredMapper = getRegisteredMapper(sourceType, destinationType, true);
             if (registeredMapper != null) {
@@ -1038,8 +1047,8 @@ public class DefaultMapperFactory implements MapperFactory {
     @SuppressWarnings("unchecked")
     private GeneratedMapperBase buildMapper(ClassMap<?, ?> classMap, boolean isAutoGenerated, MappingContext context) {
         
-        register(classMap.getAType(), classMap.getBType());
-        register(classMap.getBType(), classMap.getAType());
+        register(classMap.getAType(), classMap.getBType(), isAutoGenerated);
+        register(classMap.getBType(), classMap.getAType(), isAutoGenerated);
         
         final MapperKey mapperKey = new MapperKey(classMap.getAType(), classMap.getBType());
         final GeneratedMapperBase mapper = this.mapperGenerator.build(classMap, context);
@@ -1062,11 +1071,14 @@ public class DefaultMapperFactory implements MapperFactory {
      * @param sourceType
      * @param destinationType
      */
-    protected <S, D> void register(Type<S> sourceType, Type<D> destinationType) {
-        Set<Type<?>> destinationSet = aToBRegistry.get(sourceType);
+    protected <S, D> void register(Type<S> sourceType, Type<D> destinationType, boolean isAutoGenerated) {
+        
+        Map<Type<?>, Set<Type<?>>> registry = isAutoGenerated ? dynamicAToBRegistry : explicitAToBRegistry;
+        
+        Set<Type<?>> destinationSet = registry.get(sourceType);
         if (destinationSet == null) {
             destinationSet = new TreeSet<Type<?>>();
-            aToBRegistry.put(sourceType, destinationSet);
+            registry.put(sourceType, destinationSet);
         }
         destinationSet.add(destinationType);
     }
@@ -1077,7 +1089,20 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public Set<Type<? extends Object>> lookupMappedClasses(Type<?> type) {
-        return aToBRegistry.get(type);
+        /*
+         * Combine the dynamically registered classes with the explicitly registered
+         */
+        TreeSet<Type<?>> mappedClasses = new TreeSet<Type<?>>();
+        Set<Type<? extends Object>> types = explicitAToBRegistry.get(type);
+        if (types != null) {
+            mappedClasses.addAll(types);
+        }
+        types = dynamicAToBRegistry.get(type);
+        if (types != null) {
+            mappedClasses.addAll(types);
+        }
+        
+        return mappedClasses;
     }
     
     public ConverterFactory getConverterFactory() {
@@ -1130,14 +1155,11 @@ public class DefaultMapperFactory implements MapperFactory {
      * ma.glasnost.orika.MapperFactory#registerMapper(ma.glasnost.orika.Mapper)
      */
     @SuppressWarnings("unchecked")
-    public <A, B> void registerMapper(Mapper<A, B> mapper) {
-        synchronized (this) {
-            this.mappersRegistry.add((Mapper<Object, Object>) mapper);
-            mapper.setMapperFacade(this.mapperFacade);
-            register(mapper.getAType(), mapper.getBType());
-            register(mapper.getBType(), mapper.getAType());
-        }
-        
+    public synchronized <A, B> void registerMapper(Mapper<A, B> mapper) {
+        this.mappersRegistry.add((Mapper<Object, Object>) mapper);
+        mapper.setMapperFacade(this.mapperFacade);
+        register(mapper.getAType(), mapper.getBType(), false);
+        register(mapper.getBType(), mapper.getAType(), false);
     }
     
     public <S, D> BoundMapperFacade<S, D> getMapperFacade(Type<S> sourceType, Type<D> destinationType) {

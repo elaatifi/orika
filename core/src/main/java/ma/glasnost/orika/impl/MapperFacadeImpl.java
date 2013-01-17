@@ -135,7 +135,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param rawAType
      * @param rawBType
      * @param context
-     * @return
+     * @return a MappingStrategy suitable to map the source and destination object
      */
     public <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType,
             final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
