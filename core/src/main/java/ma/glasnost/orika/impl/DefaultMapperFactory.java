@@ -1126,7 +1126,11 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         return classMapBuilderFactory;
     }
-    
+
+    public ClassMapBuilderForMaps.Factory getClassMapBuilderForMapsFactory() {
+        return classMapBuilderForMapsFactory;
+    }
+
     public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
         if ((aType.isMap() && !bType.isMap()) || (bType.isMap() && !aType.isMap())) {
             return this.classMapBuilderForMapsFactory.map(aType, bType);

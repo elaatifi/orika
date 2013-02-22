@@ -21,10 +21,7 @@ package ma.glasnost.orika;
 import java.util.Set;
 
 import ma.glasnost.orika.converter.ConverterFactory;
-import ma.glasnost.orika.metadata.ClassMap;
-import ma.glasnost.orika.metadata.ClassMapBuilder;
-import ma.glasnost.orika.metadata.MapperKey;
-import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.*;
 
 /**
  * MapperFactory is used to both configure, register, and generate the
@@ -366,5 +363,6 @@ public interface MapperFactory {
      * @return
      */
     public <A, B> ClassMapBuilder<A, B> classMap(Class<A> aType, Class<B> bType);
-    
+
+    ClassMapBuilderForMaps.Factory getClassMapBuilderForMapsFactory();
 }
