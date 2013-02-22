@@ -16,7 +16,6 @@
 package ma.glasnost.orika.loader;
 
 
-import com.sun.xml.internal.stream.events.AttributeImpl;
 import com.sun.xml.internal.stream.events.XMLEventAllocatorImpl;
 import ma.glasnost.orika.MapperFactory;
 import org.slf4j.Logger;
@@ -26,12 +25,11 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
-import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.XMLEvent;
 import javax.xml.stream.util.XMLEventAllocator;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.Iterator;
+import java.util.Stack;
 
 /**
  * Internal class that parses a raw custom xml mapping file into Map objects.
@@ -60,6 +58,8 @@ public class XMLParser {
             // it is positioned at START_DOCUMENT event.
             int eventType = xmlr.getEventType();
             ILoader loader = new MappingsLoader();
+            Stack<ILoader> loaderStack = new Stack<ILoader>();
+            loaderStack.push(loader);
 /*
             printEventType(eventType);
             printStartDocument(xmlr);
@@ -71,16 +71,18 @@ public class XMLParser {
                 eventType = xmlr.next();
                 XMLEvent event = allocator.allocate(xmlr);
                 if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    loader = loader.startElement(factory, null, event);
+                    loader = loader.startElement(factory, event);
                 } else if (eventType == XMLStreamConstants.END_ELEMENT) {
-                    loader = loader.endElement(factory, null, event);
+                    loader = loader.endElement(factory, event);
                 } else if (eventType == XMLStreamConstants.CHARACTERS) {
-                    loader = loader.character(factory, null, event);
+                    loader = loader.character(factory, event);
                 } else if (eventType == XMLStreamConstants.END_DOCUMENT) {
                     System.out.println("END_DOCUMENT ");
                 } else {
                     System.out.println(eventType);
                 }
+
+                System.out.println(loader.getClass().getSimpleName());
 
 //                printEventType(eventType);
 

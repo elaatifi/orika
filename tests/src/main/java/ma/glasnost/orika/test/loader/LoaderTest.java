@@ -27,7 +27,17 @@ public class LoaderTest {
     @Test
     public void testTupleObject() {
         String fn = getClass().getClassLoader().getResource("config.xml").getFile();
-        XMLParser parser = new XMLParser(MappingUtil.getMapperFactory());
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        XMLParser parser = new XMLParser(factory);
         parser.reader(fn);
+
+        A a = new A();
+        a.setA1("11");
+        a.setA2(12);
+        a.setA3("14");
+
+        B b = factory.getMapperFacade().map(a, B.class);
+
+        System.out.println(b);
     }
 }

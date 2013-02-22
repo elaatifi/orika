@@ -14,12 +14,13 @@ import java.util.Iterator;
  */
 public class DefaultLoader implements ILoader {
     protected static Logger log;
+    protected ILoader parent;
 
     public DefaultLoader() {
         log = LoggerFactory.getLogger(this.getClass());
     }
 
-    public ILoader startElement(MapperFactory factory, ILoader parent, XMLEvent event) {
+    public ILoader startElement(MapperFactory factory, XMLEvent event) {
         System.out.print("START_ELEMENT " + event.asStartElement().getName() +
                 ", att: ");
         for (Iterator it = event.asStartElement().getAttributes(); it.hasNext(); ) {
@@ -30,13 +31,13 @@ public class DefaultLoader implements ILoader {
         return this;
     }
 
-    public ILoader character(MapperFactory factory, ILoader parent, XMLEvent event) {
+    public ILoader character(MapperFactory factory, XMLEvent event) {
         System.out.println("CHARACTERS " + event.asCharacters().getData());
         return this;
     }
 
-    public ILoader endElement(MapperFactory factory, ILoader parent, XMLEvent event) {
+    public ILoader endElement(MapperFactory factory, XMLEvent event) {
         System.out.println("END_ELEMENT " + event.asEndElement().getName());
-        return parent;
+        return this;
     }
 }

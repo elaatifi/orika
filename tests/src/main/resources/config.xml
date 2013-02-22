@@ -11,86 +11,19 @@
 	</configuration>
 
 	<mapping>
-		<class-a>ru.lic.bank.core.transfers.Transfer</class-a>
-		<class-b>ru.lab_ic.nciba.eapi.types.Transfer</class-b>
+		<class-a>ma.glasnost.orika.test.loader.A</class-a>
+		<class-b>ma.glasnost.orika.test.loader.B</class-b>
 		<field>
-			<a>statusId</a>
-			<b>transferStatus</b>
+			<a>a1</a>
+			<b>b1</b>
 		</field>
 		<field>
-			<a>creditFullName</a>
-			<b>creditPersonFIO</b>
-		</field>
-		<field>
-			<a>creditExternalSystem</a>
-			<b>creditExternalSystemId</b>
-		</field>
-		<field>
-			<a>debitExternalSystem</a>
-			<b>debitExternalSystemId</b>
-		</field>
-		<field>
-			<a>directionId</a>
-			<b>transferDirectionId</b>
-		</field>
-		<field>
-			<a>recipientId</a>
-			<b>transferRecipientId</b>
-		</field>
-		<field>
-			<a>creditCurrencyRef.code</a>
-			<b>creditCurrency</b>
-		</field>
-		<field>
-			<a>debitCurrencyRef.code</a>
-			<b>debitCurrency</b>
-		</field>
-		<field>
-			<a>customer.profile.fullName</a>
-			<b>debitPersonFIO</b>
-		</field>
-		<field>
-			<a>currencyCourse</a>
-			<b>course</b>
-		</field>
-		<field>
-			<a>id</a>
-			<b>transferId</b>
-		</field>
-		<field>
-			<a>tax.taxType</a>
-			<b>taxType</b>
-		</field>
-		<field>
-			<a>tax.period</a>
-			<b>period</b>
-		</field>
-		<field>
-			<a>tax.taxDocumentDate</a>
-			<b>taxDocumentDate</b>
-		</field>
-		<field>
-			<a>tax.taxDocumentNumber</a>
-			<b>taxDocumentNumber</b>
-		</field>
-		<field>
-			<a>tax.reason</a>
-			<b>reason</b>
-		</field>
-		<field>
-			<a>tax.okato</a>
-			<b>okato</b>
-		</field>
-		<field>
-			<a>tax.kbk</a>
-			<b>kbk</b>
-		</field>
-		<field>
-			<a>creditKpp</a>
-			<b>kpp</b>
+			<a>a2</a>
+			<b>b2</b>
 		</field>
 	</mapping>
 
+<!--
 	<mapping>
 		<class-a>ru.lab_ic.nciba.absgate.AbsGetAccountListResponse$Accounts
 		</class-a>
@@ -766,4 +699,5 @@
 		<class-a>ru.lab_ic.nciba.absgate.FindKbkResponse</class-a>
 		<class-b>ru.lab_ic.nciba.bapi.FindKbkResponse</class-b>
 	</mapping>
+-->
 </mappings>

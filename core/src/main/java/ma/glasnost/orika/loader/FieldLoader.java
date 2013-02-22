@@ -15,7 +15,11 @@ import java.util.Arrays;
 public class FieldLoader extends DefaultLoader {
     private FieldElements element;
     private ClassMapBuilder classMapBuilder;
-    private Property.Builder[] elements = new Property.Builder[FieldElements.values().length];
+    private String[] elements = new String[FieldElements.values().length];
+
+    public FieldLoader(ILoader parent) {
+        this.parent = parent;
+    }
 
     public ILoader init(ClassMapBuilder classMapBuilder) {
         Arrays.fill(elements, null);
@@ -24,45 +28,52 @@ public class FieldLoader extends DefaultLoader {
     }
 
     @Override
-    public ILoader startElement(MapperFactory factory, ILoader parent, XMLEvent event) {
+    public ILoader startElement(MapperFactory factory, XMLEvent event) {
         String name = event.asStartElement().getName().getLocalPart();
-        FieldElements element = LoaderUtils.findLocalPart(name, FieldElements.class);
+        element = LoaderUtils.findLocalPart(name, FieldElements.class);
         return this;
     }
 
     @Override
-    public ILoader character(MapperFactory factory, ILoader parent, XMLEvent event) {
+    public ILoader character(MapperFactory factory, XMLEvent event) {
+        if (element == null) {
+            return super.character(factory, event);
+        }
         String data = event.asCharacters().getData();
         switch (element) {
             case A:
-                elements[element.ordinal()] = Property.Builder.propertyFor(
+                elements[element.ordinal()] = data;
+/*
+                Property.Builder.propertyFor(
                         classMapBuilder.getAType().getRawType(), data
                 );
+*/
                 break;
             case B:
-                elements[element.ordinal()] = Property.Builder.propertyFor(
-                    classMapBuilder.getAType().getRawType(), data
-                );
-                break;
+                elements[element.ordinal()] = data;
             default:
-                return super.character(factory, parent, event);
+                return super.character(factory, event);
         }
         return this;
     }
 
     @Override
-    public ILoader endElement(MapperFactory factory, ILoader parent, XMLEvent event) {
-        if (LoaderUtils.areAllNotNull(elements[FieldElements.A.ordinal()], elements[FieldElements.B.ordinal()]) ) {
-            classMapBuilder.field(elements[FieldElements.A.ordinal()], elements[FieldElements.B.ordinal()]);
-            log.info(MessageFormat.format("Для мапинга {0}-{1} добавлены поля a-{2} b-{3}",
-                    classMapBuilder.getAType().getName(), classMapBuilder.getBType().getName(),
-                    elements[FieldElements.A.ordinal()].toString(), elements[FieldElements.B.ordinal()].toString()));
+    public ILoader endElement(MapperFactory factory, XMLEvent event) {
+        if (element == null) {
+            if (LoaderUtils.areAllNotNull(elements[FieldElements.A.ordinal()], elements[FieldElements.B.ordinal()]) ) {
+                classMapBuilder.field(elements[FieldElements.A.ordinal()], elements[FieldElements.B.ordinal()]);
+                log.info(MessageFormat.format("Для мапинга {0}-{1} добавлены поля a-{2} b-{3}",
+                        classMapBuilder.getAType().getName(), classMapBuilder.getBType().getName(),
+                        elements[FieldElements.A.ordinal()].toString(), elements[FieldElements.B.ordinal()].toString()));
+                return parent;
+            } else {
+                log.error(MessageFormat.format("Для мапинга {0}-{1} не заполнены поля a-{2} b-{3}",
+                        classMapBuilder.getAType().getName(), classMapBuilder.getBType().getName(),
+                        elements[FieldElements.A.ordinal()].toString(), elements[FieldElements.B.ordinal()].toString()));
+            }
             return parent;
-        } else {
-            log.error(MessageFormat.format("Для мапинга {0}-{1} не заполнены поля a-{2} b-{3}",
-                    classMapBuilder.getAType().getName(), classMapBuilder.getBType().getName(),
-                    elements[FieldElements.A.ordinal()].toString(), elements[FieldElements.B.ordinal()].toString()));
         }
+        element = null;
         return this;
     }
 }

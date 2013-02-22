@@ -2,9 +2,7 @@ package ma.glasnost.orika.loader;
 
 import ma.glasnost.orika.MapperFactory;
 
-import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.XMLEvent;
-import java.util.Iterator;
 
 /**
  * @author  ikozar
@@ -13,24 +11,29 @@ import java.util.Iterator;
 public class MappingsLoader extends DefaultLoader {
 
     private static final String MAPPING = "mapping";
-    private MappingLoader mappingLoader = new MappingLoader();
+    private MappingLoader mappingLoader;
+
+    public MappingsLoader() {
+        mappingLoader = new MappingLoader(this);
+        parent = this;
+    }
 
     @Override
-    public ILoader startElement(MapperFactory factory, ILoader parent, XMLEvent event) {
+    public ILoader startElement(MapperFactory factory, XMLEvent event) {
         String name = event.asStartElement().getName().getLocalPart();
         if (name.equals(MAPPING)) {
             return mappingLoader.init();
         }
-        return super.startElement(factory, parent, event);
+        return super.startElement(factory, event);
     }
 
     @Override
-    public ILoader character(MapperFactory factory, ILoader parent, XMLEvent event) {
-        return super.character(factory, parent, event);
+    public ILoader character(MapperFactory factory, XMLEvent event) {
+        return super.character(factory, event);
     }
 
     @Override
-    public ILoader endElement(MapperFactory factory, ILoader parent, XMLEvent event) {
-        return super.endElement(factory, parent, event);
+    public ILoader endElement(MapperFactory factory, XMLEvent event) {
+        return super.endElement(factory, event);
     }
 }
