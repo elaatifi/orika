@@ -23,9 +23,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class LoaderTest {
+public class TestConfigureParser {
+
     @Test
-    public void testTupleObject() {
+    public void testConfigureParseAndMapping() {
         String fn = getClass().getClassLoader().getResource("config.xml").getFile();
         MapperFactory factory = MappingUtil.getMapperFactory();
         XMLParser parser = new XMLParser(factory);

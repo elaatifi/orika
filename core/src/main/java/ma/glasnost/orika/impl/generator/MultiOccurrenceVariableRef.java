@@ -178,7 +178,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         
         if (isArray()) {
             if (!iteratorDeclared) {
-                throw new IllegalStateException("Iterator must be declared in order to add elements to destination array");
+                throw new IllegalStateException("Iterator must be declared in order to add nodetypes to destination array");
             }
             return getter() + "[++" + getIteratorName() + "] = " + value;
         } else if (isMap() && value.isMapEntry()) {
@@ -186,7 +186,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         } else if (isCollection()) {
             return getter() + ".add(" + cast(value, type().getNestedType(0)) + ")";
         } else {
-            throw new IllegalArgumentException(type() + " does not support adding elements of type " + value.type());
+            throw new IllegalArgumentException(type() + " does not support adding nodetypes of type " + value.type());
         }
     }
     
@@ -194,7 +194,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         
         if (isArray()) {
             if (!iteratorDeclared) {
-                throw new IllegalStateException("Iterator must be declared in order to add elements to destination array");
+                throw new IllegalStateException("Iterator must be declared in order to add nodetypes to destination array");
             }
             return getter() + "[++" + getIteratorName() + "] = " + value;
         } else if (isMap()) {
@@ -202,7 +202,7 @@ public class MultiOccurrenceVariableRef extends VariableRef {
         } else if (isCollection()) {
             return getter() + ".add(" + cast(value, type().getNestedType(0)) + ")";
         } else {
-            throw new IllegalArgumentException(type() + " does not support adding of elements");
+            throw new IllegalArgumentException(type() + " does not support adding of nodetypes");
         }
     }
     

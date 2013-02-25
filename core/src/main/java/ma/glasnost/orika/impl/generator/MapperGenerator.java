@@ -97,7 +97,7 @@ public final class MapperGenerator {
     }
     
     private String getFieldTag(FieldMap fieldMap) {
-    	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
+    	return "\n\t EField(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
     }
     
     private Set<FieldMap> addMapMethod(SourceCodeContext code, boolean aToB, ClassMap<?, ?> classMap, StringBuilder logDetails) throws CannotCompileException {

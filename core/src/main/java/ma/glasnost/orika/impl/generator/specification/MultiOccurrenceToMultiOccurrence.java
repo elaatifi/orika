@@ -108,7 +108,7 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         }
         
         /*
-         * Declare "collector" elements and their iterators; used for aggregating
+         * Declare "collector" nodetypes and their iterators; used for aggregating
          * results which are finally assigned/copied back into their final destination(s)
          */
         for (Node destRef : destNodes) {

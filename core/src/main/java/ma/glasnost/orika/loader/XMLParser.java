@@ -18,6 +18,8 @@ package ma.glasnost.orika.loader;
 
 import com.sun.xml.internal.stream.events.XMLEventAllocatorImpl;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.loader.nodetypes.EMappings;
+import ma.glasnost.orika.loader.nodetypes.IElement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,7 @@ import java.io.FileNotFoundException;
 import java.util.Stack;
 
 /**
- * Internal class that parses a raw custom xml mapping file into Map objects.
+ * Map configure file parser
  */
 public class XMLParser {
 
@@ -54,53 +56,45 @@ public class XMLParser {
             XMLStreamReader xmlr = xmlif.createXMLStreamReader(filename,
                     new FileInputStream(filename));
 
-            // when XMLStreamReader is created,
-            // it is positioned at START_DOCUMENT event.
             int eventType = xmlr.getEventType();
-            ILoader loader = new MappingsLoader();
-            Stack<ILoader> loaderStack = new Stack<ILoader>();
+            IParser loader = new MappingsParser(EMappings.class, factory);
+            Stack<IParser> loaderStack = new Stack<IParser>();
             loaderStack.push(loader);
-/*
-            printEventType(eventType);
-            printStartDocument(xmlr);
-*/
 
-            // check if there are more events
-            // in the input stream
             while(xmlr.hasNext()) {
                 eventType = xmlr.next();
                 XMLEvent event = allocator.allocate(xmlr);
-                if (eventType == XMLStreamConstants.START_ELEMENT) {
-                    loader = loader.startElement(factory, event);
-                } else if (eventType == XMLStreamConstants.END_ELEMENT) {
-                    loader = loader.endElement(factory, event);
-                } else if (eventType == XMLStreamConstants.CHARACTERS) {
-                    loader = loader.character(factory, event);
-                } else if (eventType == XMLStreamConstants.END_DOCUMENT) {
-                    System.out.println("END_DOCUMENT ");
-                } else {
-                    System.out.println(eventType);
+                if (eventType == XMLStreamConstants.END_DOCUMENT) {
+                    System.out.println(">>>> END_DOCUMENT ");
+                    break;
                 }
 
-                System.out.println(loader.getClass().getSimpleName());
+                IElement element = loader.detectElement(event);
+                if (element == null) {
+                    continue;
+                }
+                if (element.isIgnored()) {
+                    if (eventType == XMLStreamConstants.START_ELEMENT) {
+                        log.info("Element " + element.getLocalPart() + " ignored");
+                    }
+                    continue;
+                }
 
-//                printEventType(eventType);
-
-                // these functions print the information
-                // about the particular event by calling
-                // the relevant function
-/*
-                printStartElement(xmlr);
-                printEndElement(xmlr);
-                printText(xmlr);
-                printPIData(xmlr);
-                printComment(xmlr);
-*/
+                if (eventType == XMLStreamConstants.START_ELEMENT) {
+                    loader = loader.startElement(event);
+                } else if (eventType == XMLStreamConstants.END_ELEMENT) {
+                    loader = loader.endElement(event);
+                } else if (eventType == XMLStreamConstants.CHARACTERS) {
+                    loader = loader.character(event);
+                } else if (eventType == XMLStreamConstants.COMMENT) {
+                } else {
+                    log.warn("!!!!!!!!! " + event.toString());
+                }
             }
         } catch (FileNotFoundException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            log.error("Configuration file not found");
         } catch (XMLStreamException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            log.error("XMLStreamException");
         }
     }
 

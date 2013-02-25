@@ -66,7 +66,7 @@ public class SortedCollection<V> implements Collection<V> {
     
     /**
      * @param c the collection from which to initialize this SortedCollection
-     * @param comparator the comparator used for sorting the elements
+     * @param comparator the comparator used for sorting the nodetypes
      */
     public SortedCollection(Collection<? extends V> c, Comparator<V> comparator) {
         this(comparator);
