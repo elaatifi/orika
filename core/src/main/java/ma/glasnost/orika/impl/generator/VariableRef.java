@@ -557,11 +557,10 @@ public class VariableRef {
                 
                 path = new ArrayList<VariableRef>(propPath.length);
                 path.add(new VariableRef(propPath[0], name));
-                String[] expr = property.getExpression().split("\\.");
                 for (int i = 1; i < propPath.length; ++i) {
                     Property[] nestedPath = new Property[i];
                     System.arraycopy(propPath, 0, nestedPath, 0, i);
-                    path.add(new VariableRef(new NestedProperty(join(expr, ".", 0, i + 1), propPath[i], nestedPath), name));
+                    path.add(new VariableRef(new NestedProperty(join(propPath, ".", 0, i + 1), propPath[i], nestedPath), name));
                 }
             } else {
                 path = Collections.singletonList(new VariableRef(propPath[0], name));
@@ -572,7 +571,7 @@ public class VariableRef {
         }
     }
     
-    private static String join(Object[] array, String separator, int startIndex, int endIndex) {
+    private static String join(Property[] array, String separator, int startIndex, int endIndex) {
         if (array == null) {
             return null;
         }
@@ -589,7 +588,7 @@ public class VariableRef {
                 buf.append(separator);
             }
             if (array[i] != null) {
-                buf.append(array[i]);
+                buf.append(array[i].getName());
             }
         }
         return buf.toString();
