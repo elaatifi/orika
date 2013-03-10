@@ -1,7 +1,26 @@
+/*
+ * Orika - simpler, better and faster Java bean mapping
+ * 
+ * Copyright (C) 2011 Orika authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ma.glasnost.orika.converter.builtin;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -84,7 +103,7 @@ public class CloneableConverter extends CustomConverter<Object, Object> {
 	                     */
 	                    synchronized(cachedMethods) {
 	                        try {
-	                            clone = source.getClass().getMethod("clone");
+	                            clone = destinationType.getRawType().getMethod("clone");
 	                            cachedMethods.put(source.getClass(), clone);
 	                        } catch (NoSuchMethodException e) {
 	                            throw new IllegalStateException(e);
@@ -94,7 +113,11 @@ public class CloneableConverter extends CustomConverter<Object, Object> {
 	                    }
 	                }
 	        }
-	        return clone.invoke(source);
+	        if (System.getSecurityManager() != null) {
+	        	return AccessController.doPrivileged(new CloneAction(clone, source));
+	        } else {
+	        	return clone.invoke(source);
+	        }
         } catch (IllegalArgumentException e) {
             throw new IllegalStateException(e);
         } catch (IllegalAccessException e) {
@@ -103,4 +126,34 @@ public class CloneableConverter extends CustomConverter<Object, Object> {
             throw new IllegalStateException(e);
         }
     }
+	
+	/**
+	 * CloneAction provides privileged access to the clone method in
+	 * presence of a SecurityManager
+	 */
+	private static final class CloneAction implements PrivilegedAction<Object> {
+
+		private final Method method;
+		private final Object target;
+		
+		private CloneAction(Method method, Object target) {
+			this.method = method;
+			this.target = target;
+		}
+		
+		public Object run() {
+			try {
+				return method.invoke(target);
+			} catch (IllegalAccessException e) {
+				String accessibleClause = method.isAccessible() ? "(even though " + method + " is accessible)" : "";
+				throw new IllegalStateException("Call to clone method not accessible for " + 
+						target.getClass().getCanonicalName() + accessibleClause, e);
+			} catch (InvocationTargetException e) {
+				throw new IllegalStateException("Call to clone method failed for " + 
+						target.getClass().getCanonicalName(), e.getTargetException());
+			}
+		}
+		
+	}
+	
 }

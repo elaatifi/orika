@@ -123,7 +123,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                             types.add(type.getSuperclass());
                         }
                         
-                        @SuppressWarnings("unchecked")
                         List<? extends Class<? extends Object>> interfaces = Arrays.<Class<? extends Object>> asList(type.getInterfaces());
                         types.addAll(interfaces);
                     }
@@ -220,9 +219,11 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      *            a reference type to be used for resolving generic parameters
      * @param properties
      */
-    protected void processProperty(String propertyName, Class<?> propertyType, Method readMethod, Method writeMethod, Class<?> owningType,
+    protected Property processProperty(String propertyName, Class<?> propertyType, Method readMethod, Method writeMethod, Class<?> owningType,
             Type<?> referenceType, Map<String, Property> properties) {
         final Property.Builder builder = new Property.Builder();
+        
+        Property property = null;
         
         builder.expression(propertyName);
         builder.name(propertyName);
@@ -237,19 +238,49 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         if (readMethod != null || writeMethod != null) {
             
             builder.type(resolvePropertyType(readMethod, propertyType, owningType, referenceType));
-            Property property = builder.build(this);
+            property = builder.build(this);
             
             Property existing = properties.get(propertyName);
             if (existing == null) {
-                properties.put(propertyName, builder.build(this));
-            } else if (existing.getType().isAssignableFrom(property.getType()) && !existing.getType().equals(property.getType())) {
+                properties.put(propertyName, property);
+            } else if (existing.getType().isAssignableFrom(property.getType()) /*&& !existing.getType().equals(property.getType())*/) {
                 /*
                  * The type has been refined by the generic information in a
                  * super-type
                  */
-                properties.put(propertyName, builder.merge(existing).build(this));
+            	property = builder.merge(existing).build(this);
+                properties.put(propertyName, property);
             }
         }
+        return property;
+    }
+    
+    /**
+     * Tests whether the specified class has type parameters either on
+     * itself or on it's super-class or declared interfaces
+     * 
+     * @param type
+     * @return
+     */
+    protected boolean hasTypeParameters(Class<?> type) {
+    	
+    	boolean hasTypeParams = false;
+    	if (type.getTypeParameters().length > 0) {
+    		hasTypeParams = true;
+    	} else {
+    		if (type.getGenericSuperclass() instanceof ParameterizedType) {
+    			hasTypeParams = true;
+    		} else {
+    			for (java.lang.reflect.Type anInterface: type.getGenericInterfaces()) {
+    				if (anInterface instanceof ParameterizedType) {
+    					hasTypeParams = true;
+    					break;
+    				}
+    			}
+    		}
+    	}
+    	return hasTypeParams;
+    	
     }
     
     /**
@@ -266,7 +297,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         rawType = resolveRawPropertyType(rawType, readMethod);
         
         Type<?> resolvedGenericType = null;
-        if (referenceType.isParameterized() || owningType.getTypeParameters().length > 0 || rawType.getTypeParameters().length > 0) {
+        if (referenceType.isParameterized() || hasTypeParameters(owningType) || hasTypeParameters(rawType)) {
             
             if (readMethod != null) {
                 try {
@@ -382,6 +413,22 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     private static final String ELEMENT_PROPERTY_SPLITTER = "(?!\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")\\{";
     
     
+    /**
+     * @param propertyName
+     * @return
+     */
+    protected String[] splitNestedProperty(String propertyName) {
+    	return propertyName.split(NESTED_PROPERTY_SPLITTER, 50);
+    }
+    
+    /**
+     * @param propertyName
+     * @return
+     */
+    protected String[] splitElementProperty(String propertyName) {
+    	return propertyName.split(ELEMENT_PROPERTY_SPLITTER, 2);
+    }
+    
     /*
      * (non-Javadoc)
      * 
@@ -392,12 +439,12 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     public NestedProperty getNestedProperty(java.lang.reflect.Type type, String p) {
         return getNestedProperty(type, p, null);
     }
-    /*
-     * (non-Javadoc)
-     * 
-     * @see
-     * ma.glasnost.orika.property.PropertyResolverStrategy#getNestedProperty
-     * (java.lang.reflect.Type, java.lang.String)
+    
+    /**
+     * @param type
+     * @param p
+     * @param owner
+     * @return
      */
     protected NestedProperty getNestedProperty(java.lang.reflect.Type type, String p, Property owner) {
         
@@ -408,7 +455,13 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         final StringBuilder expression = new StringBuilder();
         Property container = owner;
         if (p.indexOf('.') != -1) {
-            final String[] ps = p.split(NESTED_PROPERTY_SPLITTER);
+        	final String[] ps;
+        	try {
+        		ps = splitNestedProperty(p);
+        	} catch (StackOverflowError e) {
+        		System.out.println("p=" + p);
+        		throw e;
+        	}
             int i = 0;
             while (i < ps.length) {
                 try {
@@ -437,6 +490,11 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return new NestedProperty(expression.toString(), property, path.toArray(new Property[path.size()]));
     }
     
+    /**
+     * @param type
+     * @param p
+     * @return
+     */
     public Property getElementProperty(java.lang.reflect.Type type, String p) {
         return getElementProperty(type, p, null);
     }
@@ -450,7 +508,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     @SuppressWarnings("unchecked")
     public Property getElementProperty(java.lang.reflect.Type type, String p, Property owner) {
         
-        String[] ps = p.split(ELEMENT_PROPERTY_SPLITTER, 2);
+        String[] ps = splitElementProperty(p);
         String elementPropertyExpression = ps[1].substring(0, ps[1].length() - 1);
         
         Property owningProperty;

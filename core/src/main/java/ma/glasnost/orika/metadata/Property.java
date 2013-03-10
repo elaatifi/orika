@@ -45,6 +45,17 @@ public class Property {
     private final Type<?> elementType;
     private final Property container;
     
+    /**
+     * Constructs a new Property instance
+     * 
+     * @param expression
+     * @param name
+     * @param getter
+     * @param setter
+     * @param type
+     * @param elementType
+     * @param container
+     */
     protected Property(String expression, String name, String getter, String setter, Type<?> type, Type<?> elementType, Property container) {
         super();
         this.expression = expression;
@@ -81,10 +92,17 @@ public class Property {
         this.container = container;
     }
     
+    /**
+     * @return a copy of this property instance
+     */
     public Property copy() {
         return copy(this.type);
     }
     
+    /**
+     * @param newType
+     * @return a copy of this property with the new type as it's type
+     */
     public Property copy(Type<?> newType) {
         return new Property.Builder().name(this.name)
                 .getter(this.getter)
@@ -180,42 +198,73 @@ public class Property {
         return !(type != null && !type.equals(property.type));
     }
     
+    /**
+     * @return true if this property's type is primitive
+     */
     public boolean isPrimitive() {
         return type.getRawType().isPrimitive();
     }
     
+    /**
+     * @return tre if this property's type is an array
+     */
     public boolean isArray() {
         return type.getRawType().isArray();
     }
     
+    /**
+     * @param p
+     * @return true if this property is assignable from the other property p
+     */
     public boolean isAssignableFrom(Property p) {
         return type.isAssignableFrom(p.type);
     }
     
+    /**
+     * @return true if this property's type is a Collection
+     */
     public boolean isCollection() {
         return Collection.class.isAssignableFrom(type.getRawType());
     }
     
+    /**
+     * @return true if this property's type is a Set
+     */
     public boolean isSet() {
         return Set.class.isAssignableFrom(type.getRawType());
     }
     
+    /**
+     * @return true if this property's type is a List
+     */
     public boolean isList() {
         return List.class.isAssignableFrom(type.getRawType());
     }
     
+    /**
+     * @return true if this property's type is a Map
+     */
     public boolean isMap() {
         return Map.class.isAssignableFrom(type.getRawType());
     }
     
+    /**
+     * @return true if this property represents a Map Key
+     */
     public boolean isMapKey() {
         return false;
     }
     
+    /**
+     * @return true if this property represents a list element
+     */
     public boolean isListElement() {
         return false;
     }
     
+    /**
+     * @return true if this property represents an array element
+     */
     public boolean isArrayElement() {
         return false;
     }
@@ -227,18 +276,32 @@ public class Property {
         return isMap() || isCollection() || isArray();
     }
     
+    /**
+     * @return true if this property has a path
+     */
     public boolean hasPath() {
         return false;
     }
     
+    /**
+     * @return the path to this property; properties in the path
+     * are ordered from parent to child
+     */
     public Property[] getPath() {
         return EMPTY_PATH;
     }
     
+    /**
+     * @return the container for this property; null unless the property represents
+     * an element of a multi-occurrence property
+     */
     public Property getContainer() {
         return container;
     }
     
+    /**
+     * @return the element property
+     */
     public Property getElement() {
         return null;
     }
@@ -257,6 +320,9 @@ public class Property {
         return expression + "(" + type + ")";
     }
     
+    /**
+     * @return true if this property is an enum
+     */
     public boolean isEnum() {
         return type.getRawType().isEnum();
     }
@@ -274,21 +340,47 @@ public class Property {
         private String propertyTypeName;
         private Type<?> elementType;
         private Type<?> propertyType;
-        protected Type<?> owningType;
+        private Type<?> owningType;
         private String name;
         private String expression;
         private Property container;
         private Property[] path;
         
+        public String toString() {
+        	StringBuilder out = new StringBuilder();
+        	out.append(Builder.class.getSimpleName());
+        	out.append("(");
+        	out.append(expression);
+        	out.append("(");
+        	out.append(propertyType);
+        	out.append(")");
+        	out.append(")");
+        	return out.toString();
+        }
+        
+        /**
+         * Creates a new Property.Builder for the specified owning type and property name 
+         * @param owningType
+         * @param name
+         */
         public Builder(Type<?> owningType, String name) {
             this.owningType = owningType;
             this.name = name;
         }
         
+        /**
+         * Creates a new Property.Builder
+         */
         public Builder() {
             
         }
         
+        /**
+         * Merges the attributes of the specified property into this one
+         * 
+         * @param property
+         * @return
+         */
         public Builder merge(Property property) {
             
             if (property.getter != null) {
@@ -317,18 +409,46 @@ public class Property {
             return this;
         }
         
+        /**
+         * Creates a new property builder for the specified owningType and name
+         * 
+         * @param owningType the owning type
+         * @param name the new property's name
+         * @return
+         */
         public static Builder propertyFor(Type<?> owningType, String name) {
             return new Builder(owningType, name);
         }
         
+        /**
+         * Creates a new property builder for the specified owningType and name
+         * 
+         * @param owningType the owning type
+         * @param name the new property's name
+         * @return
+         */
         public static Builder propertyFor(Class<?> owningType, String name) {
             return new Builder(TypeFactory.valueOf(owningType), name);
         }
         
+        /**
+         * Creates a new property builder for the specified owningType descriptor and name
+         * 
+         * @param owningTypeDescriptor a type-descriptor string describing the owning type
+         * @param name the new property's name
+         * @return
+         */
         public static Builder propertyFor(String owningTypeDescriptor, String name) {
             return new Builder(TypeFactory.valueOf(owningTypeDescriptor), name);
         }
         
+        /**
+         * Creates a new nested property builder (with this builder as the owner)
+         * for the specified name
+         * 
+         * @param name
+         * @return
+         */
         public Builder nestedProperty(String name) {
             return new NestedProperty.Builder(this, name);
         }
@@ -402,37 +522,74 @@ public class Property {
             return this;
         }
         
+        /**
+         * Sets the expression
+         * 
+         * @param expression
+         * @return
+         */
         public Builder expression(String expression) {
             this.expression = expression;
             return this;
         }
         
+        /**
+         * Set the name
+         * 
+         * @param name
+         * @return
+         */
         public Builder name(String name) {
             this.name = name;
             return this;
         }
         
+        /**
+         * Set the type
+         * 
+         * @param type
+         * @return
+         */
         public Builder type(java.lang.reflect.Type type) {
             this.propertyType = TypeFactory.valueOf(type);
             return this;
         }
         
+        /**
+         * Set the type by name
+         * 
+         * @param typeName
+         * @return
+         */
         public Builder type(String typeName) {
             this.propertyTypeName = typeName;
             return this;
         }
         
+        /**
+         * Set the element type
+         * @param elementType
+         * @return
+         */
         public Builder elementType(Type<?> elementType) {
             this.elementType = elementType;
             return this;
         }
         
+        /**
+         * Set the getter/accessor method
+         * 
+         * @param readMethod
+         * @return
+         */
         public Builder getter(Method readMethod) {
             this.getterMethod = readMethod;
             return this;
         }
         
         /**
+         * Get the getter/accessor method
+         * 
          * @return the readMethod
          */
         public Method getReadMethod() {
@@ -440,21 +597,52 @@ public class Property {
         }
         
         /**
+         * Get the setter/mutator method
+         * 
          * @return the writeMethod
          */
         public Method getWriteMethod() {
             return setterMethod;
         }
         
+        /**
+         * Set the setter/mutator method
+         * 
+         * @param writeMethod
+         * @return
+         */
         public Builder setter(Method writeMethod) {
             this.setterMethod = writeMethod;
             return this;
         }
         
+        /**
+         * Sets the owning type
+         * 
+         * @param owningType
+         * @return
+         */
+        protected Builder owningType(Type<?> owningType) {
+        	this.owningType = owningType;
+        	return this;
+        }
+        
+        /**
+         * Builds the property
+         * 
+         * @return the property specified by this builder
+         */
         public Property build() {
             return build(null);
         }
         
+        /**
+         * Builds the property, using the specified proeprtyResolver to
+         * validate the property settings
+         * 
+         * @param propertyResolver
+         * @return
+         */
         public Property build(PropertyResolver propertyResolver) {
             validate(propertyResolver);
             

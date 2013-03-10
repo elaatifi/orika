@@ -24,11 +24,22 @@ import java.util.List;
 
 import ma.glasnost.orika.property.PropertyResolver;
 
+/**
+ * NestedProperty represents a property which is accessed by
+ * chaining calls to multiple properties.
+ */
 public class NestedProperty extends Property {
     
     private final Property[] path;
     private final Property tail;
     
+    /**
+     * Creates a new NestedProperty
+     * 
+     * @param expression
+     * @param property
+     * @param path
+     */
     public NestedProperty(String expression, Property property, Property[] path) {
         super(expression,property.getName(),property.getGetter(),property.getSetter(),property.getType(),property.getElementType(), property.getContainer());
         this.path = collapse(path);
@@ -95,6 +106,9 @@ public class NestedProperty extends Property {
         return tail.isMapKey();
     }
     
+    /**
+     * NestedProperty.Builder is a builder for nested properties
+     */
     static class Builder extends Property.Builder {
 
         private Property.Builder parent;
@@ -119,7 +133,7 @@ public class NestedProperty extends Property {
             } else {
                 path = new Property[]{parentProperty};
             }
-            this.owningType = parentProperty.getType();
+            owningType(parentProperty.getType());
             
             Property p = super.build(propertyResolver);
             return new NestedProperty("", p, path);

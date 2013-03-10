@@ -78,9 +78,12 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
                 
                 try {
                     Method readMethod = getReadMethod(pd, type);
-                    Method writeMethod = getWriteMethod(pd, type);
+                    Method writeMethod = getWriteMethod(pd, type, null);
                     
-                    processProperty(pd.getName(), pd.getPropertyType(), readMethod, writeMethod, type, referenceType, properties);
+                    Property property = 
+                    		processProperty(pd.getName(), pd.getPropertyType(), readMethod, writeMethod, type, referenceType, properties);
+                    
+                    postProcessProperty(property, pd, readMethod, writeMethod, type, referenceType, properties);
                     
                 } catch (final Exception e) {
                     /*
@@ -97,6 +100,31 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
     }
     
     /**
+     * This method performs special handling to deal with deficiencies in older (pre java-7)
+     * versions of the introspector, which don't properly match getters with setters in
+     * cases where only one of the two came from a template method on an ancestor.
+     * 
+     * @param property
+     * @param pd
+     * @param readMethod
+     * @param writeMethod
+     * @param type
+     * @param referenceType
+     * @param properties
+     */
+    private void postProcessProperty(Property property, PropertyDescriptor pd, Method readMethod,
+			Method writeMethod, Class<?> type, Type<?> referenceType,
+			Map<String, Property> properties) {
+    	 
+    	if (writeMethod == null && property != null) {
+         	writeMethod = getWriteMethod(pd, type, property.getRawType());
+         	if (writeMethod != null) {
+         		processProperty(property.getName(), property.getRawType(), readMethod, writeMethod, type, referenceType, properties);
+         	}
+         }
+	}
+
+	/**
      * Get the read method for the particular property descriptor
      * 
      * @param pd the property descriptor
@@ -104,8 +132,24 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
      */
     private Method getReadMethod(PropertyDescriptor pd, Class<?> type) {
         final String capitalName = capitalize(pd.getName());
-        Method readMethod;
-        if (pd.getReadMethod() == null && Boolean.class.equals(pd.getPropertyType())) {
+        Method readMethod = pd.getReadMethod();
+        
+        if (readMethod == null) {
+        	/*
+             * Special handling for older versions of Introspector: if
+             * one of the getter or setter is fulfilling a templated type
+             * and the other is not, they may not be returned as the same
+             * property descriptor
+             */
+        	try {
+                readMethod = type.getMethod("get" + capitalName);
+            } catch (NoSuchMethodException e) {
+                readMethod = null;
+            }
+        } 
+        
+        
+        if (readMethod == null && Boolean.class.equals(pd.getPropertyType())) {
             /*
              * Special handling for Boolean "is" read method; not strictly
              * compliant with the JavaBeans specification, but still very common
@@ -115,8 +159,6 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
             } catch (NoSuchMethodException e) {
                 readMethod = null;
             }
-        } else {
-            readMethod = pd.getReadMethod();
         } 
         
         if (readMethod != null && readMethod.isBridge()) {
@@ -136,16 +178,33 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
      * @param pd the property descriptor
      * @return the property's write method
      */
-    private Method getWriteMethod(PropertyDescriptor pd, Class<?> type) {
+    private Method getWriteMethod(PropertyDescriptor pd, Class<?> type, Class<?> propertyType) {
         
-        Method writeMethod = pd.getWriteMethod();
+    	final String capitalName = capitalize(pd.getName());
+        final Class<?> parameterType = propertyType != null ? propertyType : pd.getPropertyType();
+    	Method writeMethod = pd.getWriteMethod();
+        
+        if (writeMethod == null && !("Class".equals(capitalName) && Class.class.equals(parameterType))) {
+        	/*
+             * Special handling for older versions of Introspector: if
+             * one of the getter or setter is fulfilling a templated type
+             * and the other is not, they may not be returned as the same
+             * property descriptor
+             */
+        	try {
+        		writeMethod = type.getMethod("set" + capitalName, parameterType);
+            } catch (NoSuchMethodException e) {
+            	writeMethod = null;
+            }
+        } 
+        
         if (writeMethod == null) {
             /*
              * Special handling for fluid APIs where setters return
              * a value
              */
             try {
-                writeMethod = type.getMethod("set" + capitalize(pd.getName()), pd.getPropertyType());
+                writeMethod = type.getMethod("set" + capitalName, parameterType);
             } catch (NoSuchMethodException e) {
                 writeMethod = null;
             }
@@ -177,5 +236,4 @@ public class IntrospectorPropertyResolver extends PropertyResolver {
         }
         return realMethod;
     }
-    
 }

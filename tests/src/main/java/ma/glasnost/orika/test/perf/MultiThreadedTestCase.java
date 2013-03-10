@@ -61,6 +61,8 @@ import org.junit.Test;
  */
 public class MultiThreadedTestCase {
     
+	private static final boolean IS_IBM_JDK = (""+System.getProperty("java.vendor")).toUpperCase().contains("IBM");
+	
     /**
      * Allows us to run methods concurrently by marking with
      * <code>@Concurrent</code>; note that in the current implementation, such
@@ -364,21 +366,47 @@ public class MultiThreadedTestCase {
      * Since the contract for SoftReference states that all soft references will
      * be cleared by the garbage collector before OOME is thrown, we allocate
      * dummy bytes until we reach OOME.
+     * TODO: this doesn't work on IBM Jdk, as it propagates the OOME to all
+     * threads, including the one running our test!
      */
     private void forceClearSoftAndWeakReferences() {
-        
-        SoftReference<Object> checkReference = new SoftReference<Object>(new Object());
-        Assert.assertNotNull(checkReference.get());
-        try {
-            List<byte[]> byteBucket = new ArrayList<byte[]>();
-            for (int i = 0; i < Integer.MAX_VALUE; ++i) {
-                int available = (int) Math.min((long) Integer.MAX_VALUE, Runtime.getRuntime().maxMemory());
-                byteBucket.add(new byte[available]);
-            }
-        } catch (Throwable e) {
-            // Ignore OME; soft references should now have been cleared
-            Assert.assertNull(checkReference.get());
-        }
+    	
+    	if (IS_IBM_JDK) {
+    		synchronized(this) {
+	    		SoftReference<Object> checkReference = new SoftReference<Object>(new Object());
+		        Assert.assertNotNull(checkReference.get());
+		        List<byte[]> byteBucket = new ArrayList<byte[]>();
+		        try {
+		            for (int i = 0; i < Integer.MAX_VALUE; ++i) {
+		                int available = (int) Math.min((long) Integer.MAX_VALUE, Runtime.getRuntime().maxMemory());
+		                byteBucket.add(new byte[available]);
+		                if (checkReference.get() == null) {
+		                	break;
+		                }
+		            }
+		        } catch (Throwable e) {
+		        	byteBucket = null;
+		            // Ignore OME; soft references should now have been cleared
+		            Assert.assertNull(checkReference.get());
+		            // Must explicitly tell IBM jdk to gc here, or it will not reap the released
+		            // memory in time
+		            Runtime.getRuntime().gc();
+		        }
+    		}
+    	} else {
+	        SoftReference<Object> checkReference = new SoftReference<Object>(new Object());
+	        Assert.assertNotNull(checkReference.get());
+	        List<byte[]> byteBucket = new ArrayList<byte[]>();
+	        try {
+	            for (int i = 0; i < Integer.MAX_VALUE; ++i) {
+	                int available = (int) Math.min((long) Integer.MAX_VALUE, Runtime.getRuntime().maxMemory());
+	                byteBucket.add(new byte[available]);
+	            }
+	        } catch (Throwable e) {
+	            // Ignore OME; soft references should now have been cleared
+	            Assert.assertNull(checkReference.get());
+	        }
+    	}
         
     }
     
