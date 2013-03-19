@@ -56,25 +56,36 @@ public class Property {
      * @param elementType
      * @param container
      */
-    protected Property(String expression, String name, String getter, String setter, Type<?> type, Type<?> elementType, Property container) {
+    protected Property(final String expression, final String name, final String getter, final String setter, final Type<?> type,
+            final Type<?> elementType, final Property container) {
         super();
         this.expression = expression;
         this.name = name;
         this.getter = getter;
         this.setter = setter;
         this.type = type;
+        this.elementType = defaultElementType(type, elementType);
+        
+        this.container = container;
+    }
+    
+    private static Type<?> defaultElementType(final Type<?> type, final Type<?> elementType) {
+        
+        if (elementType != null) {
+            return elementType;
+        }
         
         if (type.getActualTypeArguments().length > 0 && elementType == null) {
-            this.elementType = (Type<?>) type.getActualTypeArguments()[0];
+            return (Type<?>) type.getActualTypeArguments()[0];
         } else if (type.isCollection()) {
             Type<?> collectionElementType = elementType;
             Type<?> collection = type.findAncestor(Collection.class);
             if (collection != null) {
-                 collectionElementType = (Type<?>) collection.getActualTypeArguments()[0];
+                collectionElementType = (Type<?>) collection.getActualTypeArguments()[0];
             }
-            this.elementType = collectionElementType;
+            return collectionElementType;
             
-        } else if (type.isMap()) {    
+        } else if (type.isMap()) {
             
             Type<?> mapElementType = elementType;
             Type<?> map = type.findAncestor(Map.class);
@@ -83,13 +94,11 @@ public class Property {
                 Type<? extends Map<Object, Object>> mapType = (Type<? extends Map<Object, Object>>) map;
                 mapElementType = MapEntry.entryType(mapType);
             }
-            this.elementType = mapElementType;
+            return mapElementType;
             
         } else {
-            this.elementType = elementType;
+            return elementType;
         }
-        
-        this.container = container;
     }
     
     /**
@@ -103,7 +112,7 @@ public class Property {
      * @param newType
      * @return a copy of this property with the new type as it's type
      */
-    public Property copy(Type<?> newType) {
+    public Property copy(final Type<?> newType) {
         return new Property.Builder().name(this.name)
                 .getter(this.getter)
                 .setter(this.setter)
@@ -176,7 +185,7 @@ public class Property {
     }
     
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) {
             return true;
         }
@@ -216,7 +225,7 @@ public class Property {
      * @param p
      * @return true if this property is assignable from the other property p
      */
-    public boolean isAssignableFrom(Property p) {
+    public boolean isAssignableFrom(final Property p) {
         return type.isAssignableFrom(p.type);
     }
     
@@ -284,16 +293,16 @@ public class Property {
     }
     
     /**
-     * @return the path to this property; properties in the path
-     * are ordered from parent to child
+     * @return the path to this property; properties in the path are ordered
+     *         from parent to child
      */
     public Property[] getPath() {
         return EMPTY_PATH;
     }
     
     /**
-     * @return the container for this property; null unless the property represents
-     * an element of a multi-occurrence property
+     * @return the container for this property; null unless the property
+     *         represents an element of a multi-occurrence property
      */
     public Property getContainer() {
         return container;
@@ -346,24 +355,27 @@ public class Property {
         private Property container;
         private Property[] path;
         
+        @Override
         public String toString() {
-        	StringBuilder out = new StringBuilder();
-        	out.append(Builder.class.getSimpleName());
-        	out.append("(");
-        	out.append(expression);
-        	out.append("(");
-        	out.append(propertyType);
-        	out.append(")");
-        	out.append(")");
-        	return out.toString();
+            StringBuilder out = new StringBuilder();
+            out.append(Builder.class.getSimpleName());
+            out.append("(");
+            out.append(expression);
+            out.append("(");
+            out.append(propertyType);
+            out.append(")");
+            out.append(")");
+            return out.toString();
         }
         
         /**
-         * Creates a new Property.Builder for the specified owning type and property name 
+         * Creates a new Property.Builder for the specified owning type and
+         * property name
+         * 
          * @param owningType
          * @param name
          */
-        public Builder(Type<?> owningType, String name) {
+        public Builder(final Type<?> owningType, final String name) {
             this.owningType = owningType;
             this.name = name;
         }
@@ -381,7 +393,7 @@ public class Property {
          * @param property
          * @return
          */
-        public Builder merge(Property property) {
+        public Builder merge(final Property property) {
             
             if (property.getter != null) {
                 getter = property.getter;
@@ -400,7 +412,7 @@ public class Property {
             if (container == null || property.container != null) {
                 container = property.container;
             }
-            if (property.getPath().length > 0 ) {
+            if (property.getPath().length > 0) {
                 path = property.getPath();
             }
             name = property.name;
@@ -412,48 +424,55 @@ public class Property {
         /**
          * Creates a new property builder for the specified owningType and name
          * 
-         * @param owningType the owning type
-         * @param name the new property's name
+         * @param owningType
+         *            the owning type
+         * @param name
+         *            the new property's name
          * @return
          */
-        public static Builder propertyFor(Type<?> owningType, String name) {
+        public static Builder propertyFor(final Type<?> owningType, final String name) {
             return new Builder(owningType, name);
         }
         
         /**
          * Creates a new property builder for the specified owningType and name
          * 
-         * @param owningType the owning type
-         * @param name the new property's name
+         * @param owningType
+         *            the owning type
+         * @param name
+         *            the new property's name
          * @return
          */
-        public static Builder propertyFor(Class<?> owningType, String name) {
+        public static Builder propertyFor(final Class<?> owningType, final String name) {
             return new Builder(TypeFactory.valueOf(owningType), name);
         }
         
         /**
-         * Creates a new property builder for the specified owningType descriptor and name
+         * Creates a new property builder for the specified owningType
+         * descriptor and name
          * 
-         * @param owningTypeDescriptor a type-descriptor string describing the owning type
-         * @param name the new property's name
+         * @param owningTypeDescriptor
+         *            a type-descriptor string describing the owning type
+         * @param name
+         *            the new property's name
          * @return
          */
-        public static Builder propertyFor(String owningTypeDescriptor, String name) {
+        public static Builder propertyFor(final String owningTypeDescriptor, final String name) {
             return new Builder(TypeFactory.valueOf(owningTypeDescriptor), name);
         }
         
         /**
-         * Creates a new nested property builder (with this builder as the owner)
-         * for the specified name
+         * Creates a new nested property builder (with this builder as the
+         * owner) for the specified name
          * 
          * @param name
          * @return
          */
-        public Builder nestedProperty(String name) {
+        public Builder nestedProperty(final String name) {
             return new NestedProperty.Builder(this, name);
         }
         
-        private String fixQuotes(String methodExpression) {
+        private String fixQuotes(final String methodExpression) {
             String expression = methodExpression;
             StringBuilder output = new StringBuilder();
             while (expression.length() > 0) {
@@ -489,7 +508,7 @@ public class Property {
          * @param container
          *            the container to set
          */
-        public Builder container(Property container) {
+        public Builder container(final Property container) {
             this.container = container;
             return this;
         }
@@ -499,7 +518,7 @@ public class Property {
          *            the path to set
          * @return
          */
-        public Builder path(Property[] path) {
+        public Builder path(final Property[] path) {
             this.path = path;
             return this;
         }
@@ -508,7 +527,7 @@ public class Property {
          * @param getter
          *            the getter to set
          */
-        public Builder getter(String getter) {
+        public Builder getter(final String getter) {
             this.getter = fixQuotes(getter);
             return this;
         }
@@ -517,7 +536,7 @@ public class Property {
          * @param setter
          *            the setter to set
          */
-        public Builder setter(String setter) {
+        public Builder setter(final String setter) {
             this.setter = fixQuotes(setter);
             return this;
         }
@@ -528,7 +547,7 @@ public class Property {
          * @param expression
          * @return
          */
-        public Builder expression(String expression) {
+        public Builder expression(final String expression) {
             this.expression = expression;
             return this;
         }
@@ -539,7 +558,7 @@ public class Property {
          * @param name
          * @return
          */
-        public Builder name(String name) {
+        public Builder name(final String name) {
             this.name = name;
             return this;
         }
@@ -550,7 +569,7 @@ public class Property {
          * @param type
          * @return
          */
-        public Builder type(java.lang.reflect.Type type) {
+        public Builder type(final java.lang.reflect.Type type) {
             this.propertyType = TypeFactory.valueOf(type);
             return this;
         }
@@ -561,17 +580,18 @@ public class Property {
          * @param typeName
          * @return
          */
-        public Builder type(String typeName) {
+        public Builder type(final String typeName) {
             this.propertyTypeName = typeName;
             return this;
         }
         
         /**
          * Set the element type
+         * 
          * @param elementType
          * @return
          */
-        public Builder elementType(Type<?> elementType) {
+        public Builder elementType(final Type<?> elementType) {
             this.elementType = elementType;
             return this;
         }
@@ -582,7 +602,7 @@ public class Property {
          * @param readMethod
          * @return
          */
-        public Builder getter(Method readMethod) {
+        public Builder getter(final Method readMethod) {
             this.getterMethod = readMethod;
             return this;
         }
@@ -611,7 +631,7 @@ public class Property {
          * @param writeMethod
          * @return
          */
-        public Builder setter(Method writeMethod) {
+        public Builder setter(final Method writeMethod) {
             this.setterMethod = writeMethod;
             return this;
         }
@@ -622,9 +642,9 @@ public class Property {
          * @param owningType
          * @return
          */
-        protected Builder owningType(Type<?> owningType) {
-        	this.owningType = owningType;
-        	return this;
+        protected Builder owningType(final Type<?> owningType) {
+            this.owningType = owningType;
+            return this;
         }
         
         /**
@@ -637,13 +657,13 @@ public class Property {
         }
         
         /**
-         * Builds the property, using the specified proeprtyResolver to
-         * validate the property settings
+         * Builds the property, using the specified proeprtyResolver to validate
+         * the property settings
          * 
          * @param propertyResolver
          * @return
          */
-        public Property build(PropertyResolver propertyResolver) {
+        public Property build(final PropertyResolver propertyResolver) {
             validate(propertyResolver);
             
             if (propertyType == null && propertyTypeName != null) {
@@ -664,7 +684,7 @@ public class Property {
             return p;
         }
         
-        private void validate(PropertyResolver propertyResolver) {
+        private void validate(final PropertyResolver propertyResolver) {
             
             if (getterMethod == null && setterMethod == null && getter == null && setter == null) {
                 throw new IllegalArgumentException("property " + (owningType != null ? owningType.getCanonicalName() : "") + "[" + name
