@@ -49,6 +49,7 @@ import ma.glasnost.orika.impl.GeneratedObjectBase;
 import ma.glasnost.orika.impl.generator.CompilerStrategy.SourceCodeGenerationException;
 import ma.glasnost.orika.impl.generator.Node.NodeList;
 import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
+import ma.glasnost.orika.impl.generator.specification.AbstractSpecification;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
@@ -657,8 +658,16 @@ public class SourceCodeContext {
         if (destinationProperty.isNestedProperty()) {
             if (!sourceProperty.isPrimitive()) {
                 out.append(sourceProperty.ifNotNull());
-                out.append("{ \n");
+                out.append(" {\n");
                 closing.append("\n}");
+                if (AbstractSpecification.shouldMapNulls(fieldMap, this) && !destinationProperty.isPrimitive()) {
+                	closing.append(" else {\n");
+                	closing.append("\n");
+                	closing.append(destinationProperty.ifPathNotNull());
+                	closing.append("{\n");
+                	closing.append(destinationProperty.assignIfPossible("null"));
+                	closing.append(";\n}\n}");
+                }
             }
             out.append(assureInstanceExists(destinationProperty, sourceProperty));
         }

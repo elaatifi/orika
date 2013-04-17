@@ -21,7 +21,7 @@ public abstract class AbstractSpecification implements Specification {
      * @param context
      * @return
      */
-    protected boolean shouldMapNulls(FieldMap fieldMap, SourceCodeContext context) {
+    public static boolean shouldMapNulls(FieldMap fieldMap, SourceCodeContext context) {
         Boolean mapNull = fieldMap.isDestinationMappedOnNull();
         if (mapNull == null) {
             mapNull = context.shouldMapNulls();
