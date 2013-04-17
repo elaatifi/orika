@@ -148,7 +148,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
      */
     public void assureTypeIsAccessible(Class<?> type) throws SourceCodeGenerationException {
         
-        if (!type.isPrimitive() && type.getClassLoader() != null) {
+        if (!type.isPrimitive()) {
             
             if (!Modifier.isPublic(type.getModifiers())) {
                 throw new SourceCodeGenerationException(type + " is not accessible");
@@ -171,20 +171,21 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
                 // Strip off the "[L" prefix from the internal name
                 className = type.getComponentType().getName();
             }
-            
-            try {
-                classPool.get(className);
-            } catch (NotFoundException e) {
-                
-                if (registerClassLoader(type.getClassLoader())) {
-                    try {
-                        classPool.get(className);
-                    } catch (NotFoundException e2) {
-                        throw new SourceCodeGenerationException(type + " is not accessible", e2);
-                    }
-                } else {
-                    throw new SourceCodeGenerationException(type + " is not accessible", e);
-                }
+            if (type.getClassLoader() != null) {
+	            try {
+	                classPool.get(className);
+	            } catch (NotFoundException e) {
+	                
+	                if (registerClassLoader(type.getClassLoader())) {
+	                    try {
+	                        classPool.get(className);
+	                    } catch (NotFoundException e2) {
+	                        throw new SourceCodeGenerationException(type + " is not accessible", e2);
+	                    }
+	                } else {
+	                    throw new SourceCodeGenerationException(type + " is not accessible", e);
+	                }
+	            }
             }
         }  
     }
