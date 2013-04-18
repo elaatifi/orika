@@ -61,8 +61,8 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
  * SourceCodeContext contains the state information necessary while generating
- * source code for a given mapping object;
- * it also houses various utility methods which can be used to aid in code generation.
+ * source code for a given mapping object; it also houses various utility
+ * methods which can be used to aid in code generation.
  * 
  */
 public class SourceCodeContext {
@@ -98,8 +98,7 @@ public class SourceCodeContext {
      * @param mapperFactory
      * @param logDetails
      */
-    public SourceCodeContext(final String baseClassName, Class<?> superClass, 
-            MappingContext mappingContext, StringBuilder logDetails) {
+    public SourceCodeContext(final String baseClassName, Class<?> superClass, MappingContext mappingContext, StringBuilder logDetails) {
         
         this.mapperFactory = (MapperFactory) mappingContext.getProperty(Properties.MAPPER_FACTORY);
         this.codeGenerationStrategy = (CodeGenerationStrategy) mappingContext.getProperty(Properties.CODE_GENERATION_STRATEGY);
@@ -109,7 +108,7 @@ public class SourceCodeContext {
         String safeBaseClassName = baseClassName.replace("[]", "$Array");
         this.sourceBuilder = new StringBuilder();
         this.superClass = superClass;
-
+        
         int namePos = safeBaseClassName.lastIndexOf(".");
         if (namePos > 0) {
             this.packageName = safeBaseClassName.substring(0, namePos - 1);
@@ -124,14 +123,11 @@ public class SourceCodeContext {
         this.methods = new ArrayList<String>();
         this.fields = new ArrayList<String>();
         
-        
         sourceBuilder.append("package " + packageName + ";\n\n");
-        sourceBuilder.append("public class " + classSimpleName + " extends "
-                + superClass.getCanonicalName() + " {\n");
+        sourceBuilder.append("public class " + classSimpleName + " extends " + superClass.getCanonicalName() + " {\n");
         
         this.usedTypes = new UsedTypesContext();
         this.usedConverters = new UsedConvertersContext();
-        
         
         this.mappingContext = mappingContext;
         this.usedMapperFacades = new UsedMapperFacadesContext();
@@ -141,10 +137,8 @@ public class SourceCodeContext {
     }
     
     private String makeUniqueClassName(String name) {
-        return name + 
-                System.nanoTime() + "$" + UNIQUE_CLASS_INDEX.getAndIncrement();
+        return name + System.nanoTime() + "$" + UNIQUE_CLASS_INDEX.getAndIncrement();
     }
-    
     
     /**
      * @return true if debug logging is enabled for this context
@@ -165,38 +159,39 @@ public class SourceCodeContext {
     protected StringBuilder getSourceBuilder() {
         return sourceBuilder;
     }
-
+    
     public Class<?> getSuperClass() {
         return superClass;
     }
-
+    
     public String getClassSimpleName() {
         return classSimpleName;
     }
-
+    
     public String getPackageName() {
         return packageName;
     }
-
+    
     public String getClassName() {
         return className;
     }
-
+    
     List<String> getFields() {
         return fields;
     }
-
+    
     List<String> getMethods() {
         return methods;
     }
-
+    
     public boolean shouldMapNulls() {
-        return (Boolean)mappingContext.getProperty(Properties.SHOULD_MAP_NULLS);
+        return (Boolean) mappingContext.getProperty(Properties.SHOULD_MAP_NULLS);
     }
     
     public MappingContext getMappingContext() {
         return mappingContext;
     }
+    
     /**
      * Adds a method definition to the class based on the provided source.
      * 
@@ -206,7 +201,7 @@ public class SourceCodeContext {
         sourceBuilder.append("\n" + methodSource + "\n");
         this.methods.add(methodSource);
     }
-
+    
     /**
      * Adds a field definition to the class based on the provided source.
      * 
@@ -217,14 +212,14 @@ public class SourceCodeContext {
         sourceBuilder.append("\n" + fieldSource + "\n");
         this.fields.add(fieldSource);
     }
-
+    
     /**
      * @return the completed generated java source for the class.
      */
     public String toSourceFile() {
         return sourceBuilder.toString() + "\n}";
     }
-
+    
     /**
      * Compile and return the (generated) class; this will also cause the
      * generated class to be detached from the class-pool, and any (optional)
@@ -241,7 +236,7 @@ public class SourceCodeContext {
             throw e;
         }
     }
-
+    
     /**
      * @return a new instance of the (generated) compiled class
      * @throws CannotCompileException
@@ -250,14 +245,13 @@ public class SourceCodeContext {
      * @throws IllegalAccessException
      */
     @SuppressWarnings("unchecked")
-    public <T extends GeneratedObjectBase> T getInstance() throws SourceCodeGenerationException,
-            InstantiationException, IllegalAccessException {
-
+    public <T extends GeneratedObjectBase> T getInstance() throws SourceCodeGenerationException, InstantiationException,
+            IllegalAccessException {
+        
         T instance = (T) compileClass().newInstance();
         
-        
         Type<Object>[] usedTypesArray = usedTypes.toArray();
-        Converter<Object,Object>[] usedConvertersArray = usedConverters.toArray();
+        Converter<Object, Object>[] usedConvertersArray = usedConverters.toArray();
         BoundMapperFacade<Object, Object>[] usedMapperFacadesArray = usedMapperFacades.toArray();
         if (logDetails != null) {
             if (usedTypesArray.length > 0) {
@@ -269,7 +263,7 @@ public class SourceCodeContext {
             if (usedMapperFacadesArray.length > 0) {
                 logDetails.append("\n\t" + BoundMapperFacade.class.getSimpleName() + "s used: " + Arrays.toString(usedMapperFacadesArray));
             }
-        } 
+        }
         instance.setUsedTypes(usedTypesArray);
         instance.setUsedConverters(usedConvertersArray);
         instance.setUsedMapperFacades(usedMapperFacadesArray);
@@ -302,11 +296,11 @@ public class SourceCodeContext {
     }
     
     public String callMapper(VariableRef source, VariableRef destination) {
-        return callMapper(source.type(), destination.type(), ""+source, ""+destination);
+        return callMapper(source.type(), destination.type(), "" + source, "" + destination);
     }
     
     public String callMapper(VariableRef source, Type<?> destination) {
-        return callMapper(source.type(), destination, ""+source);
+        return callMapper(source.type(), destination, "" + source);
     }
     
     public String usedMapperFacadeNewObjectCall(VariableRef source, VariableRef destination) {
@@ -316,15 +310,18 @@ public class SourceCodeContext {
     public String newObjectFromMapper(Type<?> sourceType, Type<?> destinationType) {
         UsedMapperFacadesIndex usedFacade = usedMapperFacades.getIndex(sourceType, destinationType, mapperFactory);
         String instantiateMethod = usedFacade.isReversed ? "newObjectReverse" : "newObject";
-        return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod + "";
+        return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + instantiateMethod
+                + "";
     }
     
     /**
-     * Generates a code snippet to generate a new instance of the destination type from a mapper
+     * Generates a code snippet to generate a new instance of the destination
+     * type from a mapper
      * 
      * @param source
      * @param destinationType
-     * @return a code snippet to generate a new instance of the destination type from a mapper
+     * @return a code snippet to generate a new instance of the destination type
+     *         from a mapper
      */
     public String newObjectFromMapper(VariableRef source, Type<?> destinationType) {
         return newObjectFromMapper(source.type(), destinationType) + "(" + source.asWrapper() + ", mappingContext)";
@@ -343,18 +340,18 @@ public class SourceCodeContext {
     /**
      * @param source
      * @param destinationType
-     * @return the code snippet for generating a new instance, or assigning the default value in cases of primitive types
+     * @return the code snippet for generating a new instance, or assigning the
+     *         default value in cases of primitive types
      */
     public String newObject(VariableRef source, Type<?> destinationType) {
         if (destinationType.isPrimitive()) {
             return VariableRef.getDefaultValue(destinationType.getRawType());
-        } else if (destinationType.isString()){
+        } else if (destinationType.isString()) {
             return "null";
         } else {
             return newObjectFromMapper(source, destinationType);
         }
     }
-    
     
     /**
      * Append a statement which assures that the variable reference has an
@@ -364,7 +361,7 @@ public class SourceCodeContext {
      * @param propertyRef
      *            the property or variable reference on which to check for an
      *            instance
-     * @param source 
+     * @param source
      * @return a reference to <code>this</code> SourceCodeBuilder
      */
     public String assureInstanceExists(VariableRef propertyRef, VariableRef source) {
@@ -375,10 +372,7 @@ public class SourceCodeContext {
             if (!ClassUtil.isConcrete(ref.type()) && !ref.type().isMultiOccurrence()) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
-            append(out,
-                    format("if(%s) { \n", ref.isNull()),
-                    ref.assign(newObject(source, ref.type())),
-                    "}");
+            append(out, format("if(%s) { \n", ref.isNull()), ref.assign(newObject(source, ref.type())), "}");
         }
         return out.toString();
     }
@@ -417,14 +411,14 @@ public class SourceCodeContext {
      * @param out
      * @param statements
      */
-    public static void append(StringBuilder out, String...statements) {
-        for (String statement: statements) {
+    public static void append(StringBuilder out, String... statements) {
+        for (String statement : statements) {
             out.append(statement(statement));
         }
     }
     
     /**
-     * Join the items in the list together in a String, separated by the 
+     * Join the items in the list together in a String, separated by the
      * provided separator
      * 
      * @param list
@@ -443,42 +437,43 @@ public class SourceCodeContext {
      * Creates a VariableRef representing a Set<Map.Entry> for the provided
      * VariableRef (which should be a Map)
      * 
-     * @param s the Map type variable ref
-     * @return a new VariableRef corresponding to an EntrySet for the provided variable ref, 
-     * which should be a Map type
+     * @param s
+     *            the Map type variable ref
+     * @return a new VariableRef corresponding to an EntrySet for the provided
+     *         variable ref, which should be a Map type
      */
     public static VariableRef entrySetRef(VariableRef s) {
         @SuppressWarnings("unchecked")
         Type<?> sourceEntryType = TypeFactory.valueOf(Set.class, MapEntry.entryType((Type<? extends Map<Object, Object>>) s.type()));
         return new VariableRef(sourceEntryType, s + ".entrySet()");
     }
-        
+    
     /**
      * @param source
      * @param dest
      * @param srcNodes
      * @param destNodes
-     * @return a code snippet suitable to use as an equality comparison test for the provided 
-     * source and destination nodes
+     * @return a code snippet suitable to use as an equality comparison test for
+     *         the provided source and destination nodes
      */
     public String currentElementComparator(Node source, Node dest, NodeList srcNodes, NodeList destNodes) {
         
         StringBuilder comparator = new StringBuilder();
         
         MapperKey key = new MapperKey(source.elementRef.type(), dest.elementRef.type());
-        ClassMap<?,?> classMap = mapperFactory.getClassMap(key);
+        ClassMap<?, ?> classMap = mapperFactory.getClassMap(key);
         if (classMap == null) {
             classMap = mapperFactory.classMap(key.getAType(), key.getBType()).byDefault().toClassMap();
-        } 
+        }
         
         String or = "";
         Set<FieldMap> fieldMaps = new HashSet<FieldMap>(classMap.getFieldsMapping());
-        for (Node node: source.children) {
+        for (Node node : source.children) {
             if (node.value != null) {
                 fieldMaps.add(node.value);
             }
         }
-        for (Node node: dest.children) {
+        for (Node node : dest.children) {
             if (node.value != null) {
                 fieldMaps.add(node.value);
             }
@@ -486,11 +481,9 @@ public class SourceCodeContext {
         
         Set<String> comparisons = new HashSet<String>();
         
-        for (FieldMap fieldMap: fieldMaps) {
-            if (!(fieldMap.is(aMultiOccurrenceElementMap()) && fieldMap.isByDefault()) 
-                    && !fieldMap.isExcluded()
-                    && !fieldMap.isIgnored()) {
-            
+        for (FieldMap fieldMap : fieldMaps) {
+            if (!(fieldMap.is(aMultiOccurrenceElementMap()) && fieldMap.isByDefault()) && !fieldMap.isExcluded() && !fieldMap.isIgnored()) {
+                
                 Node srcNode = Node.findFieldMap(fieldMap, srcNodes, true);
                 if (srcNode != null && srcNode.parent != null) {
                     srcNode = srcNode.parent;
@@ -516,7 +509,7 @@ public class SourceCodeContext {
                     VariableRef d = new VariableRef(fieldMap.getDestination(), destNode.elementRef);
                     String code = this.compareFields(fieldMap, s, d, key.getBType(), null);
                     if (!"".equals(code) && comparisons.add(code)) {
-                        comparator.append(or + "!(" + code + ")"); 
+                        comparator.append(or + "!(" + code + ")");
                         or = " || ";
                     }
                 } catch (Exception e) {
@@ -591,15 +584,15 @@ public class SourceCodeContext {
     }
     
     /**
-     * Tests whether any aggregate specifications apply for the specified FieldMap, and 
-     * if so, adds it to the list of FieldMaps for that spec, returning true.
-     * Otherwise, false is returned.
+     * Tests whether any aggregate specifications apply for the specified
+     * FieldMap, and if so, adds it to the list of FieldMaps for that spec,
+     * returning true. Otherwise, false is returned.
      * 
      * @param fieldMap
      * @return
      */
     public boolean aggregateSpecsApply(FieldMap fieldMap) {
-        for (AggregateSpecification spec: codeGenerationStrategy.getAggregateSpecifications()) {
+        for (AggregateSpecification spec : codeGenerationStrategy.getAggregateSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 List<FieldMap> fieldMaps = this.aggregateFieldMaps.get(spec);
                 if (fieldMaps == null) {
@@ -614,12 +607,12 @@ public class SourceCodeContext {
     }
     
     /**
-     * @return the source code generated from applying all aggregated specs with accumulated FieldMaps
-     * to  those FieldMap lists.
+     * @return the source code generated from applying all aggregated specs with
+     *         accumulated FieldMaps to those FieldMap lists.
      */
     public String mapAggregateFields() {
         StringBuilder out = new StringBuilder();
-        for (Entry<AggregateSpecification, List<FieldMap>> entry: aggregateFieldMaps.entrySet()) {
+        for (Entry<AggregateSpecification, List<FieldMap>> entry : aggregateFieldMaps.entrySet()) {
             if (!entry.getValue().isEmpty()) {
                 out.append(entry.getKey().generateMappingCode(entry.getValue(), this));
             }
@@ -643,8 +636,8 @@ public class SourceCodeContext {
      *            a StringBuilder to contain the debug output
      * @return a reference to <code>this</code> CodeSourceBuilder
      */
-    public String mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty,
-            Type<?> destinationType, StringBuilder logDetails) {
+    public String mapFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty, Type<?> destinationType,
+            StringBuilder logDetails) {
         
         StringBuilder out = new StringBuilder();
         StringBuilder closing = new StringBuilder();
@@ -661,12 +654,12 @@ public class SourceCodeContext {
                 out.append(" {\n");
                 closing.append("\n}");
                 if (AbstractSpecification.shouldMapNulls(fieldMap, this) && !destinationProperty.isPrimitive()) {
-                	closing.append(" else {\n");
-                	closing.append("\n");
-                	closing.append(destinationProperty.ifPathNotNull());
-                	closing.append("{\n");
-                	closing.append(destinationProperty.assignIfPossible("null"));
-                	closing.append(";\n}\n}");
+                    closing.append(" else {\n");
+                    closing.append("\n");
+                    closing.append(destinationProperty.ifPathNotNull());
+                    closing.append("{\n");
+                    closing.append(destinationProperty.assignIfPossible("null"));
+                    closing.append(";\n}\n}");
                 }
             }
             out.append(assureInstanceExists(destinationProperty, sourceProperty));
@@ -675,12 +668,12 @@ public class SourceCodeContext {
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
         sourceProperty.setConverter(converter);
         
-        for (Specification spec: codeGenerationStrategy.getSpecifications()) {
+        for (Specification spec : codeGenerationStrategy.getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 String code = spec.generateMappingCode(fieldMap, sourceProperty, destinationProperty, this);
                 if (code == null || "".equals(code)) {
-                    throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty + 
-                            ", destinationProperty = " + destinationProperty);
+                    throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty
+                            + ", destinationProperty = " + destinationProperty);
                 }
                 out.append(code);
                 break;
@@ -693,7 +686,8 @@ public class SourceCodeContext {
     }
     
     /**
-     * Generates source code for an "equality" comparison of two variables, based on the FieldMap passed
+     * Generates source code for an "equality" comparison of two variables,
+     * based on the FieldMap passed
      * 
      * @param fieldMap
      * @param sourceProperty
@@ -702,8 +696,8 @@ public class SourceCodeContext {
      * @param logDetails
      * @return the source code for equality test of the provided fields
      */
-    public String compareFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty,
-            Type<?> destinationType, StringBuilder logDetails) {
+    public String compareFields(FieldMap fieldMap, VariableRef sourceProperty, VariableRef destinationProperty, Type<?> destinationType,
+            StringBuilder logDetails) {
         
         StringBuilder out = new StringBuilder();
         
@@ -724,12 +718,12 @@ public class SourceCodeContext {
         Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
         sourceProperty.setConverter(converter);
         
-        for (Specification spec: codeGenerationStrategy.getSpecifications()) {
+        for (Specification spec : codeGenerationStrategy.getSpecifications()) {
             if (spec.appliesTo(fieldMap)) {
                 String code = spec.generateEqualityTestCode(fieldMap, sourceProperty, destinationProperty, this);
                 if (code == null || "".equals(code)) {
-                    throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty + 
-                            ", destinationProperty = " + destinationProperty);
+                    throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty
+                            + ", destinationProperty = " + destinationProperty);
                 }
                 out.append(code);
                 break;

@@ -7,7 +7,7 @@ import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 
 public abstract class AbstractSpecification implements Specification {
-
+    
     protected MapperFactory mapperFactory;
     
     public void setMapperFactory(MapperFactory mapperFactory) {
@@ -30,13 +30,11 @@ public abstract class AbstractSpecification implements Specification {
     }
     
     public abstract boolean appliesTo(FieldMap fieldMap);
-
+    
     public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         return source + ".equals(" + destination + ")";
     }
-
+    
     public abstract String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code);
-    
-    
     
 }
