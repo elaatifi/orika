@@ -18,13 +18,27 @@
 
 package ma.glasnost.orika.impl.mapping.strategy;
 
+import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
+/**
+ * InstantiateByDefaultAndUseCustomMapperStrategy uses a custom mapper and creates instances
+ * using the default constructor for the destination type.
+ *
+ */
 public class InstantiateByDefaultAndUseCustomMapperStrategy extends UseCustomMapperStrategy {
     
-    public InstantiateByDefaultAndUseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, DirectionalCustomMapperReference customMapper, UnenhanceStrategy unenhancer) {
+    /**
+     * Creates a new instance of InstantiateByDefaultAndUseCustomMapperStrategy
+     * 
+     * @param sourceType
+     * @param destinationType
+     * @param customMapper
+     * @param unenhancer
+     */
+    public InstantiateByDefaultAndUseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, Mapper<Object, Object> customMapper, UnenhanceStrategy unenhancer) {
     	super(sourceType, destinationType, customMapper, unenhancer);
     }
 
@@ -36,13 +50,5 @@ public class InstantiateByDefaultAndUseCustomMapperStrategy extends UseCustomMap
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-    }
-    
-    public String toString() {
-        StringBuilder description = new StringBuilder();
-        description.append(getClass().getSimpleName() + "(");
-        description.append(this.customMapper);
-        description.append(")");
-        return description.toString();
     }
 }

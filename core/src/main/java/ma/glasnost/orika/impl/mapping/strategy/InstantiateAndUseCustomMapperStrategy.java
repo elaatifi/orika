@@ -18,16 +18,33 @@
 
 package ma.glasnost.orika.impl.mapping.strategy;
 
+import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
+/**
+ * InstantiateAndUseCustomMapperStrategy uses a custom ObjectFactory and
+ * a custom Mapper to map from source to destination type.
+ */
 public class InstantiateAndUseCustomMapperStrategy extends UseCustomMapperStrategy {
     
+	/**
+	 * The custom ObjectFactory used by this strategy
+	 */
 	protected final ObjectFactory<Object> objectFactory;
     
-    public InstantiateAndUseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, DirectionalCustomMapperReference customMapper, ObjectFactory<Object> objectFactory, UnenhanceStrategy unenhancer) {
+    /**
+     * Creates a new instance of InstantiateAndUseCustomMapperStrategy
+     * 
+     * @param sourceType
+     * @param destinationType
+     * @param customMapper
+     * @param objectFactory
+     * @param unenhancer
+     */
+    public InstantiateAndUseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, Mapper<Object, Object> customMapper, ObjectFactory<Object> objectFactory, UnenhanceStrategy unenhancer) {
     	super(sourceType, destinationType, customMapper, unenhancer);
         this.objectFactory = objectFactory;
     }

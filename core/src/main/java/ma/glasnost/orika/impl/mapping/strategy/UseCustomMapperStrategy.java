@@ -23,90 +23,60 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
-public abstract class UseCustomMapperStrategy implements MappingStrategy {
+/**
+ * UseCustomMapperStrategy uses a custom mapper to map the source to the destination
+ */
+public abstract class UseCustomMapperStrategy extends AbstractMappingStrategy {
     
-    protected final DirectionalCustomMapperReference customMapper;
-    protected final Type<Object> sourceType;
-    protected final Type<Object> destinationType;
+    /**
+     * The custom mapper resolved for this strategy
+     */
+    protected final Mapper<Object, Object> customMapper;
+    /**
+     * The Unenhancer to be used for this strategy
+     */
     protected final UnenhanceStrategy unenhancer;
     
-    public UseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, DirectionalCustomMapperReference customMapper, UnenhanceStrategy unenhancer) {
-        this.sourceType = sourceType;
-        this.destinationType = destinationType;
+    /**
+     * Creates a new instance of UseCustomMapperStrategy
+     * 
+     * @param sourceType
+     * @param destinationType
+     * @param customMapper
+     * @param unenhancer
+     */
+    public UseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, Mapper<Object, Object> customMapper,
+            UnenhanceStrategy unenhancer) {
+        super(sourceType, destinationType);
         this.customMapper = customMapper;
         this.unenhancer = unenhancer;
     }
-
+    
     public Object map(final Object sourceObject, final Object destinationObject, final MappingContext context) {
         
         context.beginMapping();
         
-    	Object resolvedSourceObject = unenhancer.unenhanceObject(sourceObject, sourceType);
+        Object resolvedSourceObject = unenhancer.unenhanceObject(sourceObject, sourceType);
         
         Object newInstance = getInstance(resolvedSourceObject, destinationObject, context);
         
         context.cacheMappedObject(sourceObject, destinationType, newInstance);
         
-        customMapper.map(resolvedSourceObject, newInstance, context);
+        customMapper.mapAtoB(resolvedSourceObject, newInstance, context);
         
         context.endMapping();
         
         return newInstance;
     }
     
+    /**
+     * Gets an instance of the destination object to be mapped; may return the
+     * provided destinationObject for map-in-place scenarios
+     * 
+     * @param sourceObject
+     * @param destinationObject
+     * @param context
+     * @return an instance of the destination type to be mapped
+     */
     protected abstract Object getInstance(Object sourceObject, Object destinationObject, MappingContext context);
-    
-    public static interface DirectionalCustomMapperReference {
-    	public void map(Object sourceObject,
-    			Object destinationObject, MappingContext context); 
-    }
-    
-    public static class ForwardMapperReference implements DirectionalCustomMapperReference {
-
-    	protected Mapper<Object, Object> customMapper;
-    	
-    	public ForwardMapperReference(Mapper<Object, Object> customMapper) {
-    		this.customMapper = customMapper;
-    	}
-    	
-		public void map(Object sourceObject,
-				Object destinationObject, MappingContext context) {
-			customMapper.mapAtoB(sourceObject, destinationObject, context);
-		}
-		
-		public String toString() {
-		    return customMapper.getClass().getSimpleName() + ".mapAtoB";
-		}
-    }
-    
-    public static class ReverseMapperReference extends ForwardMapperReference {
-
-    	public ReverseMapperReference(Mapper<Object, Object> customMapper) {
-    		super(customMapper);
-    	}
-    	
-    	@Override
-		public void map(Object sourceObject,
-				Object destinationObject, MappingContext context) {
-			customMapper.mapBtoA(sourceObject, destinationObject, context);
-		}
-    	
-    	public String toString() {
-            return customMapper.getClass().getSimpleName() + ".mapBtoA";
-        }
-    }
-    
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getSoureType()
-     */
-    public Type<?> getSoureType() {
-        return sourceType;
-    }
-
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getDestinationType()
-     */
-    public Type<?> getDestinationType() {
-        return destinationType;
-    }
 }

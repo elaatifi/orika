@@ -21,9 +21,7 @@ package ma.glasnost.orika.impl.mapping.strategy;
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.ObjectFactory;
-import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.DirectionalCustomMapperReference;
-import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.ForwardMapperReference;
-import ma.glasnost.orika.impl.mapping.strategy.UseCustomMapperStrategy.ReverseMapperReference;
+import ma.glasnost.orika.impl.ReversedMapper;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
@@ -55,82 +53,157 @@ public class MappingStrategyRecorder {
     private final UnenhanceStrategy unenhanceStrategy;
     private final MappingStrategyKey key;
     
+    /**
+     * @param key
+     * @param unenhanceStrategy
+     */
     public MappingStrategyRecorder(MappingStrategyKey key, UnenhanceStrategy unenhanceStrategy) {
         this.unenhanceStrategy = unenhanceStrategy;
         this.key = key;
     }
     
+    /**
+     * @return true if the strategy should use unenhancement
+     */
     public boolean isUnenhance() {
         return unenhance;
     }
 
+    /**
+     * @return true of the strategy should instantiate new instances
+     */
     public boolean isInstantiate() {
 		return instantiate;
 	}
 
+	/**
+	 * Sets whether the strategy should create new instances
+	 * 
+	 * @param instantiate
+	 */
 	public void setInstantiate(boolean instantiate) {
 		this.instantiate = instantiate;
 	}
 
+	/**
+	 * Sets whether the strategy should perform unenhancement
+	 * 
+	 * @param unenhance
+	 */
 	public void setUnenhance(boolean unenhance) {
         this.unenhance = unenhance;
     }
     
+    /**
+     * @return the converter resolved for this strategy
+     */
     public Converter<Object, Object> getResolvedConverter() {
         return resolvedConverter;
     }
 
+    /**
+     * Set the converter that should be used by the MappingStrategy
+     * 
+     * @param resolvedConverter 
+     */
     public void setResolvedConverter(Converter<Object, Object> resolvedConverter) {
         this.resolvedConverter = resolvedConverter;
     }
 
     
+    /**
+     * @return the source type for the strategy
+     */
     public Type<?> getResolvedSourceType() {
         return resolvedSourceType;
     }
 
+    /**
+     * Sets the source type that should be used with the strategy
+     * @param resolvedSourceType
+     */
     @SuppressWarnings("unchecked")
     public void setResolvedSourceType(Type<?> resolvedSourceType) {
         this.resolvedSourceType = (Type<Object>) resolvedSourceType;
     }
 
+    /**
+     * @return the destination type for the strategy
+     */
     public Type<?> getResolvedDestinationType() {
         return resolvedDestinationType;
     }
 
+    /**
+     * Set the destination type to be used with the strategy
+     * 
+     * @param resolvedDestinationType
+     */
     @SuppressWarnings("unchecked")
     public void setResolvedDestinationType(Type<?> resolvedDestinationType) {
         this.resolvedDestinationType = (Type<Object>) resolvedDestinationType;
     }
 
+    /**
+     * @return true if the strategy should use copy-by-reference
+     */
     public boolean isCopyByReference() {
         return copyByReference;
     }
 
+    /**
+     * Set whether the strategy should use copy-by-reference
+     * 
+     * @param copyByReference
+     */
     public void setCopyByReference(boolean copyByReference) {
         this.copyByReference = copyByReference;
     }
 
+    /**
+     * @return true if the strategy should map in reverse
+     */
     public boolean isMapReverse() {
         return mapReverse;
     }
 
+    /**
+     * Set whether this strategy should map in reverse
+     * 
+     * @param mapReverse
+     */
     public void setMapReverse(boolean mapReverse) {
         this.mapReverse = mapReverse;
     }
 
+    /**
+     * @return the mapper resolved for the strategy
+     */
     public Mapper<Object, Object> getResolvedMapper() {
         return resolvedMapper;
     }
 
+    /**
+     * Sets the mapper to be used with the strategy
+     * 
+     * @param resolvedMapper
+     */
     public void setResolvedMapper(Mapper<Object, Object> resolvedMapper) {
         this.resolvedMapper = resolvedMapper;
     }
 
+    /**
+     * @return the ObjectFactory to use for the strategy
+     */
     public ObjectFactory<Object> getResolvedObjectFactory() {
         return resolvedObjectFactory;
     }
 
+    /**
+     * Set the ObjectFactory to use for the strategy
+     * 
+     * @param resolvedObjectFactory
+     */
     @SuppressWarnings("unchecked")
     public void setResolvedObjectFactory(ObjectFactory<?> resolvedObjectFactory) {
         this.resolvedObjectFactory = (ObjectFactory<Object>) resolvedObjectFactory;
@@ -156,11 +229,13 @@ public class MappingStrategyRecorder {
             resolvedStrategy = new UseConverterStrategy(resolvedSourceType, resolvedDestinationType, resolvedConverter, unenhanceStrategy);
         } else {
         	
-        	DirectionalCustomMapperReference directionalMapper = (mapReverse ? new ReverseMapperReference(resolvedMapper) : new ForwardMapperReference(resolvedMapper));
+        	if (mapReverse) {
+        	    resolvedMapper = ReversedMapper.reverse(resolvedMapper);
+        	}
         	if (resolvedObjectFactory != null) {
-        		resolvedStrategy = new InstantiateAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, resolvedObjectFactory, unenhanceStrategy);
+        		resolvedStrategy = new InstantiateAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, resolvedObjectFactory, unenhanceStrategy);
         	} else {
-        		resolvedStrategy = new MapExistingAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, directionalMapper, unenhanceStrategy);
+        		resolvedStrategy = new MapExistingAndUseCustomMapperStrategy(resolvedSourceType, resolvedDestinationType, resolvedMapper, unenhanceStrategy);
         	}
         
         }
@@ -170,7 +245,7 @@ public class MappingStrategyRecorder {
     /**
      * Describes the details of the strategy chosen for this particular set of inputs
      * 
-     * @return
+     * @return a String description of this strategy suitable for logging
      */
     public String describeDetails() {
         if (resolvedStrategy == null) {

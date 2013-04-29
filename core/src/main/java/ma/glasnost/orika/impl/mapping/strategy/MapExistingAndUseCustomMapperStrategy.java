@@ -18,13 +18,26 @@
 
 package ma.glasnost.orika.impl.mapping.strategy;
 
+import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
+/**
+ * MapExistingAndUseCustomMapperStrategy maps in place using a custom mapper
+ *
+ */
 public class MapExistingAndUseCustomMapperStrategy extends UseCustomMapperStrategy {
     
-    public MapExistingAndUseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, DirectionalCustomMapperReference customMapper, UnenhanceStrategy unenhancer) {
+    /**
+     * Creates a new instance of MapExistingAndUseCustomMapperStrategy
+     * 
+     * @param sourceType
+     * @param destinationType
+     * @param customMapper
+     * @param unenhancer
+     */
+    public MapExistingAndUseCustomMapperStrategy(Type<Object> sourceType, Type<Object> destinationType, Mapper<Object, Object> customMapper, UnenhanceStrategy unenhancer) {
     	super(sourceType, destinationType, customMapper, unenhancer);
     }
 

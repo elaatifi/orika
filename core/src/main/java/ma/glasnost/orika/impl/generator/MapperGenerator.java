@@ -239,7 +239,7 @@ public final class MapperGenerator {
     				// TODO: this brings up an important case: sometimes the destination is not assignable, 
     				// but it's properties can still be mapped in-place. Should we handle it?
     			    
-    				logDetails.append(destination.type() + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is neither assignable nor an array, collection, or map");
+    				logDetails.append(destination.type() + "." + fieldMap.getDestination().getName() + "(" + fieldMap.getDestination().getType() + ") is neither assignable nor an array, collection, or map");
     			}		
             }
         	return "";

@@ -41,8 +41,14 @@ public interface MappingStrategy {
      */
     public Object map(Object sourceObject, Object destinationObject, MappingContext context);
  
+    /**
+     * @return the source type handled by this strategy
+     */
     public Type<?> getSoureType();
     
+    /**
+     * @return the destination type handled by this strategy
+     */
     public Type<?> getDestinationType();
     
 }

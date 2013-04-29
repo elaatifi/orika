@@ -74,10 +74,10 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         this.rawBType = typeOfB;
         this.aType = TypeFactory.valueOf(typeOfA);
         this.bType = TypeFactory.valueOf(typeOfB);
-        this.aToB = new BoundStrategyCache(aType, bType, mapperFactory.getMapperFacade(), mapperFactory.getUnenhanceStrategy(), false);
-        this.bToA = new BoundStrategyCache(bType, aType, mapperFactory.getMapperFacade(), mapperFactory.getUnenhanceStrategy(), false);
-        this.aToBInPlace = new BoundStrategyCache(aType, bType, mapperFactory.getMapperFacade(), mapperFactory.getUnenhanceStrategy(), true);
-        this.bToAInPlace = new BoundStrategyCache(bType, aType, mapperFactory.getMapperFacade(), mapperFactory.getUnenhanceStrategy(), true);
+        this.aToB = new BoundStrategyCache(aType, bType, mapperFactory.getMapperFacade(), mapperFactory.getUserUnenhanceStrategy(), false);
+        this.bToA = new BoundStrategyCache(bType, aType, mapperFactory.getMapperFacade(), mapperFactory.getUserUnenhanceStrategy(), false);
+        this.aToBInPlace = new BoundStrategyCache(aType, bType, mapperFactory.getMapperFacade(), mapperFactory.getUserUnenhanceStrategy(), true);
+        this.bToAInPlace = new BoundStrategyCache(bType, aType, mapperFactory.getMapperFacade(), mapperFactory.getUserUnenhanceStrategy(), true);
     }
     
     public Type<A> getAType() {
@@ -216,30 +216,6 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         return objectFactoryA.create(source, context);
     }
     
-    private static class SourceTypeKey {
-    	private final Type<?> unenhancedType;
-    	private final Class<?> actualType;
-    	
-    	private SourceTypeKey(Type<?> unenhancedType, Class<?> actualType) {
-    		this.unenhancedType = unenhancedType;
-    		this.actualType = actualType;
-    	}
-    	
-    	@Override
-    	public boolean equals(Object obj) {
-    		if (obj instanceof SourceTypeKey) {
-    			SourceTypeKey other = (SourceTypeKey) obj;
-    			return other.unenhancedType.equals(unenhancedType) && other.actualType.equals(actualType);
-    		}
-    		return false;
-    	}
-    	
-    	@Override
-    	public int hashCode() {
-    		return unenhancedType.hashCode() ^ actualType.hashCode();
-    	}
-    }
-    
     /**
      * BoundStrategyCache attempts to optimize caching of MappingStrategies for a particular
      * situation based on the assumption that the most common case involves mapping with a single
@@ -257,9 +233,9 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         private final boolean inPlace;
         private final MapperFacade mapperFacade;
         private final UnenhanceStrategy unenhanceStrategy;
-        protected final ConcurrentHashMap<SourceTypeKey, MappingStrategy> strategies = new ConcurrentHashMap<SourceTypeKey, MappingStrategy>(2);
+        protected final ConcurrentHashMap<Class<?>, MappingStrategy> strategies = new ConcurrentHashMap<Class<?>, MappingStrategy>(2);
         
-        private volatile SourceTypeKey idClass;
+        private volatile Class<?> idClass;
         private volatile MappingStrategy defaultStrategy;
         
         private BoundStrategyCache(Type<?> aType, Type<?> bType, MapperFacade mapperFacade, UnenhanceStrategy unenhanceStrategy, boolean inPlace) {
@@ -272,23 +248,23 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         
         public MappingStrategy getStrategy(Object sourceObject, MappingContext context) {
             MappingStrategy strategy = null;
-            Type<?> resolvedType = unenhanceStrategy.unenhanceType(sourceObject, TypeFactory.TYPE_OF_OBJECT);
-            SourceTypeKey key = new SourceTypeKey(resolvedType, sourceObject.getClass());
-            if (defaultStrategy != null && key.equals(idClass)) {
+            Class<?> sourceClass = getClass(sourceObject);
+            if (defaultStrategy != null && sourceClass.equals(idClass)) {
                 strategy = defaultStrategy;
             } else if (defaultStrategy == null) {
                 synchronized(this) {
                     if (defaultStrategy == null) {
                         defaultStrategy = mapperFacade.resolveMappingStrategy(sourceObject, aType, bType, inPlace, context);
-                        idClass = key;
+                        idClass = sourceClass;
+                        strategies.put(idClass, defaultStrategy);
                     }
                 }
                 strategy = defaultStrategy;
             } else {
-                strategy = strategies.get(key);
+                strategy = strategies.get(sourceClass);
                 if (strategy == null) {
                     strategy = mapperFacade.resolveMappingStrategy(sourceObject, aType, bType, inPlace, context);
-                    strategies.put(key, strategy);
+                    strategies.put(sourceClass, strategy);
                 }
             }
             
@@ -300,6 +276,14 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
             context.setResolvedDestinationType(strategy.getDestinationType());
             
             return strategy;
+        }
+        
+        protected Class<?> getClass(Object object) {
+            if (this.unenhanceStrategy == null) {
+                return object.getClass();
+            } else {
+                return unenhanceStrategy.unenhanceObject(object, TypeFactory.TYPE_OF_OBJECT).getClass();
+            }
         }
     }
 }

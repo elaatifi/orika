@@ -51,19 +51,31 @@ import org.slf4j.LoggerFactory;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
 
+/**
+ * MapperFacadeImpl is the base implementation of MapperFacade
+ */
 public class MapperFacadeImpl implements MapperFacade {
     
     private final MapperFactory mapperFactory;
     private final MappingContextFactory contextFactory;
     private final UnenhanceStrategy unenhanceStrategy;
+    private final UnenhanceStrategy userUnenhanceStrategy;
     private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new ConcurrentLinkedHashMap.Builder<MappingStrategyKey, MappingStrategy>().maximumWeightedCapacity(
             500).build();
     private final Logger log = LoggerFactory.getLogger(getClass());
     
+    /**
+     * Constructs a new MapperFacadeImpl
+     * 
+     * @param mapperFactory
+     * @param contextFactory
+     * @param unenhanceStrategy
+     */
     public MapperFacadeImpl(MapperFactory mapperFactory, MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
         
         this.unenhanceStrategy = unenhanceStrategy;
+        this.userUnenhanceStrategy = mapperFactory.getUserUnenhanceStrategy();
         this.contextFactory = contextFactory;
     }
     
@@ -118,6 +130,20 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     /**
+     * Get the class for the specified object, accounting for unwrapping
+     * 
+     * @param object
+     * @return the unwrapped class for the specified target object
+     */
+    protected Class<?> getClass(Object object) {
+        if (this.userUnenhanceStrategy == null) {
+            return object.getClass();
+        } else {
+            return userUnenhanceStrategy.unenhanceObject(object, TypeFactory.TYPE_OF_OBJECT).getClass();
+        }
+    }
+    
+    /**
      * Resolves a reusable MappingStrategy for the given set of inputs.
      * 
      * @param sourceObject
@@ -129,17 +155,19 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType,
             final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
         
-        @SuppressWarnings("unchecked")
-        Type<S> sourceType = (Type<S>) (initialSourceType != null ? TypeFactory.valueOf(initialSourceType)
-                : TypeFactory.typeOf(sourceObject));
-        Type<D> destinationType = TypeFactory.valueOf(initialDestinationType);
-        final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
-        MappingStrategyKey key = new MappingStrategyKey(sourceObject.getClass(), resolvedSourceType, initialDestinationType, mapInPlace);
+        MappingStrategyKey key = new MappingStrategyKey(getClass(sourceObject), initialSourceType, initialDestinationType, mapInPlace);
         MappingStrategy strategy = strategyCache.get(key);
         
         if (strategy == null) {
+            
+            @SuppressWarnings("unchecked")
+            Type<S> sourceType = (Type<S>) (initialSourceType != null ? TypeFactory.valueOf(initialSourceType)
+                    : TypeFactory.typeOf(sourceObject));
+            Type<D> destinationType = TypeFactory.valueOf(initialDestinationType);
+            
             MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
             
+            final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
             final S resolvedSourceObject;
             
             if (mapInPlace) {
@@ -268,6 +296,31 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         
         try {
+            /*
+             * PERF: shave off some time by moving these checks to the exception block?
+             */
+//            if (destinationObject == null) {
+//                throw new MappingException("[destinationObject] can not be null.");
+//            }
+//            
+//            if (destinationType == null) {
+//                throw new MappingException("[destinationType] can not be null.");
+//            }
+//            
+//            if (sourceObject == null) {
+//                throw new MappingException("[sourceObject] can not be null.");
+//            }
+            
+            if (context.getMappedObject(sourceObject, destinationType) == null) {
+                MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, true, context);
+                strategy.map(sourceObject, destinationObject, context);
+            }
+            
+        } catch (MappingException e) {
+            /* don't wrap our own exceptions */
+            throw e;
+        } catch (RuntimeException e) {
+            
             if (destinationObject == null) {
                 throw new MappingException("[destinationObject] can not be null.");
             }
@@ -280,15 +333,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 throw new MappingException("[sourceObject] can not be null.");
             }
             
-            if (context.getMappedObject(sourceObject, destinationType) == null) {
-                MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, true, context);
-                strategy.map(sourceObject, destinationObject, context);
-            }
             
-        } catch (MappingException e) {
-            /* don't wrap our own exceptions */
-            throw e;
-        } catch (RuntimeException e) {
             if (!ExceptionUtility.originatedByOrika(e)) {
                 throw e;
             }

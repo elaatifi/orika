@@ -374,5 +374,5 @@ public interface MapperFactory {
 	 * 
 	 * @return the {@link UnenhanceStrategy} associated with this MapperFactory.
 	 */
-    public UnenhanceStrategy getUnenhanceStrategy();
+    public UnenhanceStrategy getUserUnenhanceStrategy();
 }

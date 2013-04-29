@@ -97,6 +97,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<Type<?>, Set<Type<?>>> dynamicAToBRegistry;
     private final List<DefaultFieldMapper> defaultFieldMappers;
     private final UnenhanceStrategy unenhanceStrategy;
+    private final UnenhanceStrategy userUnenahanceStrategy;
     private final ConverterFactory converterFactory;
     private final CompilerStrategy compilerStrategy;
     private final PropertyResolverStrategy propertyResolverStrategy;
@@ -109,7 +110,6 @@ public class DefaultMapperFactory implements MapperFactory {
     private final boolean useBuiltinConverters;
     private volatile boolean isBuilt = false;
     private volatile boolean isBuilding = false;
-    
     
     /**
      * Constructs a new instance of DefaultMapperFactory
@@ -127,6 +127,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
         this.objectFactoryRegistry = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
+        this.userUnenahanceStrategy = builder.unenhanceStrategy;
         this.unenhanceStrategy = buildUnenhanceStrategy(builder.unenhanceStrategy, builder.superTypeStrategy);
         this.contextFactory = new MappingContext.Factory();
         this.mapperFacade = buildMapperFacade(contextFactory, unenhanceStrategy);
@@ -158,6 +159,7 @@ public class DefaultMapperFactory implements MapperFactory {
         props.put(Properties.CODE_GENERATION_STRATEGY, builder.codeGenerationStrategy);
         props.put(Properties.COMPILER_STRATEGY, builder.compilerStrategy);
         props.put(Properties.PROPERTY_RESOLVER_STRATEGY, builder.propertyResolverStrategy);
+        props.put(Properties.UNENHANCE_STRATEGY, unenhanceStrategy);
         props.put(Properties.MAPPER_FACTORY, this);
         
         /*
@@ -170,9 +172,10 @@ public class DefaultMapperFactory implements MapperFactory {
         this.registerConcreteType(Map.class, LinkedHashMap.class);
         this.registerConcreteType(Map.Entry.class, MapEntry.class);
     }
-
+    
     /**
      * Add factory to the factories chain
+     * 
      * @param factory
      */
     protected void addClassMapBuilderFactory(ClassMapBuilderFactory factory) {
@@ -181,7 +184,7 @@ public class DefaultMapperFactory implements MapperFactory {
         factory.setPropertyResolver(this.propertyResolverStrategy);
         factory.setMapperFactory(this);
     }
-
+    
     /**
      * MapperFactoryBuilder provides an extensible Builder definition usable for
      * providing your own Builder class for subclasses of DefaultMapperFactory.<br>
@@ -244,7 +247,8 @@ public class DefaultMapperFactory implements MapperFactory {
         protected boolean useAutoMapping = true;
         /**
          * The configured value of whether or not to map null values; if false,
-         * they will be ignored, and any existing value is unchanged in case of null.
+         * they will be ignored, and any existing value is unchanged in case of
+         * null.
          */
         protected boolean mapNulls = true;
         
@@ -409,11 +413,13 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         /**
-         * Get a reference to the CodeGenerationStrategy associated with this MapperFactory,
-         * which may be used to configure/customize the individual mapping Specifications
-         * that are used to generate code for the various mapping scenarios.
+         * Get a reference to the CodeGenerationStrategy associated with this
+         * MapperFactory, which may be used to configure/customize the
+         * individual mapping Specifications that are used to generate code for
+         * the various mapping scenarios.
          * 
-         * @return the CodeGenerationStrategy to be associated with this MapperFactory
+         * @return the CodeGenerationStrategy to be associated with this
+         *         MapperFactory
          */
         public CodeGenerationStrategy getCodeGenerationStrategy() {
             return codeGenerationStrategy;
@@ -500,7 +506,7 @@ public class DefaultMapperFactory implements MapperFactory {
         
         if (superTypeStrategy != null) {
             unenhancer.addSuperTypeResolverStrategy(superTypeStrategy);
-        } 
+        }
         
         /*
          * This strategy produces super-types whenever the proposed class type
@@ -542,18 +548,18 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     /**
-	 * Builds the MapperFacade for this factory. Subclasses can override this
-	 * method to build a custom MapperFacade. Please note that this method is
-	 * called from the constructor and as such properties of the factory may not
-	 * yet be initialized.
-	 * 
-	 * @param contextFactory
-	 * @param unenhanceStrategy
-	 * @return the MapperFacade to use
-	 */
-	protected MapperFacade buildMapperFacade(MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {
-		return new MapperFacadeImpl(this, contextFactory, unenhanceStrategy);
-	}
+     * Builds the MapperFacade for this factory. Subclasses can override this
+     * method to build a custom MapperFacade. Please note that this method is
+     * called from the constructor and as such properties of the factory may not
+     * yet be initialized.
+     * 
+     * @param contextFactory
+     * @param unenhanceStrategy
+     * @return the MapperFacade to use
+     */
+    protected MapperFacade buildMapperFacade(MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {
+        return new MapperFacadeImpl(this, contextFactory, unenhanceStrategy);
+    }
     
     /*
      * (non-Javadoc)
@@ -572,6 +578,15 @@ public class DefaultMapperFactory implements MapperFactory {
         }
     }
     
+    /**
+     * Searches for a Mapper which is capable of mapping the classes identified
+     * by the provided MapperKey instance
+     * 
+     * @param mapperKey
+     * @param context
+     * @return the Mapper instance which is able to support the set of classes
+     *         identified by the passed MapperKey
+     */
     @SuppressWarnings("unchecked")
     public Mapper<Object, Object> lookupMapper(MapperKey mapperKey, MappingContext context) {
         
@@ -723,7 +738,8 @@ public class DefaultMapperFactory implements MapperFactory {
      * 
      * @param type
      * @param context
-     * @return an ObjectFactory instance which is able to instantiate the specified type
+     * @return an ObjectFactory instance which is able to instantiate the
+     *         specified type
      */
     @SuppressWarnings("unchecked")
     public <T> ObjectFactory<T> lookupObjectFactory(final Type<T> type, final MappingContext context) {
@@ -791,7 +807,7 @@ public class DefaultMapperFactory implements MapperFactory {
         
         if (concreteType != null) {
             return concreteType;
-        } 
+        }
         
         /*
          * Look for a match in the explicitly registered types
@@ -844,7 +860,7 @@ public class DefaultMapperFactory implements MapperFactory {
             } else {
                 concreteType = (Type<? extends D>) resolveConcreteType(destinationType, destinationType);
             }
-        } 
+        }
         
         if (concreteType == null) {
             concreteType = (Type<? extends D>) resolveConcreteType(destinationType, destinationType);
@@ -886,12 +902,13 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     @SuppressWarnings("unchecked")
-    public synchronized <A, B>  void registerClassMap(ClassMap<A, B> classMap) {
+    public synchronized <A, B> void registerClassMap(ClassMap<A, B> classMap) {
         classMapRegistry.put(new MapperKey(classMap.getAType(), classMap.getBType()), (ClassMap<Object, Object>) classMap);
         if (isBuilding || isBuilt) {
             MappingContext context = contextFactory.getContext();
             try {
-                buildMapper(classMap, /** isAutoGenerated == **/isBuilding, context);
+                buildMapper(classMap, /** isAutoGenerated == **/
+                isBuilding, context);
                 
                 buildObjectFactories(classMap, context);
                 initializeUsedMappers(classMap);
@@ -931,7 +948,7 @@ public class DefaultMapperFactory implements MapperFactory {
             } finally {
                 contextFactory.release(context);
             }
-
+            
             isBuilt = true;
             isBuilding = false;
         }
@@ -1096,7 +1113,8 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public Set<Type<? extends Object>> lookupMappedClasses(Type<?> type) {
         /*
-         * Combine the dynamically registered classes with the explicitly registered
+         * Combine the dynamically registered classes with the explicitly
+         * registered
          */
         TreeSet<Type<?>> mappedClasses = new TreeSet<Type<?>>();
         Set<Type<? extends Object>> types = explicitAToBRegistry.get(type);
@@ -1131,9 +1149,8 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
-        ClassMapBuilderFactory classMapBuilderFactory =
-            chainClassMapBuilderFactory.choiceClassMapBuilderFactory(aType, bType);
-
+        ClassMapBuilderFactory classMapBuilderFactory = chainClassMapBuilderFactory.choiceClassMapBuilderFactory(aType, bType);
+        
         if (classMapBuilderFactory != null) {
             return classMapBuilderFactory.map(aType, bType);
         } else {
@@ -1209,12 +1226,14 @@ public class DefaultMapperFactory implements MapperFactory {
     public <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType, boolean containsCycles) {
         return getMapperFacade(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType), containsCycles);
     }
-
-    /* (non-Javadoc)
+    
+    /*
+     * (non-Javadoc)
+     * 
      * @see ma.glasnost.orika.MapperFactory#getCodeGenerationStrategy()
      */
     
-    public UnenhanceStrategy getUnenhanceStrategy() {
-		return unenhanceStrategy;
-	}
+    public UnenhanceStrategy getUserUnenhanceStrategy() {
+        return userUnenahanceStrategy;
+    }
 }

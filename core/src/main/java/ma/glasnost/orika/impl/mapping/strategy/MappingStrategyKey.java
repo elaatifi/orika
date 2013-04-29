@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.impl.mapping.strategy;
 
-
 /**
  * MappingStrategyKey defines the minimum information necessary to cache a
  * particular mapping strategy
@@ -34,6 +33,14 @@ public final class MappingStrategyKey {
 	private final boolean destinationProvided;
     private final int hashCode;
     
+    /**
+     * Constructs a new instance of MappingStrategyKey
+     * 
+     * @param rawSourceType
+     * @param sourceType
+     * @param destinationType
+     * @param destinationProvided
+     */
     public MappingStrategyKey(Class<?> rawSourceType, java.lang.reflect.Type sourceType, java.lang.reflect.Type destinationType, boolean destinationProvided) {
         this.rawSourceType = rawSourceType;
         this.sourceType = sourceType;
@@ -42,18 +49,30 @@ public final class MappingStrategyKey {
         this.hashCode = computeHashCode();
     }
     
+    /**
+     * @return the raw source class of the associated mapping strategy
+     */
     protected Class<?> getRawSourceType() {
         return rawSourceType;
     }
 
+    /**
+     * @return the source type of the associated mapping strategy
+     */
     protected java.lang.reflect.Type getSourceType() {
         return sourceType;
     }
 
+    /**
+     * @return the destination type of the associated mapping strategy
+     */
     protected java.lang.reflect.Type getDestinationType() {
         return destinationType;
     }
     
+    /**
+     * @return true if the destination is provided
+     */
     protected boolean isDestinationProvided() {
     	return destinationProvided;
     }

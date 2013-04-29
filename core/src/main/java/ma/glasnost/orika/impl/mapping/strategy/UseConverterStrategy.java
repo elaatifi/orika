@@ -23,17 +23,24 @@ import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 
-public class UseConverterStrategy implements MappingStrategy {
+/**
+ *
+ */
+public class UseConverterStrategy extends AbstractMappingStrategy {
     
     private final Converter<Object,Object> converter;
-    private final Type<Object> sourceType;
-    private final Type<?> destinationType;
     private final UnenhanceStrategy unenhancer;
     
-    @SuppressWarnings("unchecked")
-    public UseConverterStrategy(Type<?> sourceType, Type<?> destinationType, Converter<Object,Object> converter, UnenhanceStrategy unenhancer) {
-        this.sourceType = (Type<Object>) sourceType;
-        this.destinationType = destinationType;
+    /**
+     * Creates a new instance of UseConverterStrategy
+     * 
+     * @param sourceType
+     * @param destinationType
+     * @param converter
+     * @param unenhancer
+     */
+    public UseConverterStrategy(Type<Object> sourceType, Type<Object> destinationType, Converter<Object,Object> converter, UnenhanceStrategy unenhancer) {
+        super(sourceType, destinationType);
         this.converter = converter;
         this.unenhancer = unenhancer;
     }
@@ -43,19 +50,5 @@ public class UseConverterStrategy implements MappingStrategy {
         //       be a problem with converters now (recently) having access
         //       to the MapperFacade; 
         return converter.convert(unenhancer.unenhanceObject(sourceObject, sourceType), destinationType);
-    }
-
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getSoureType()
-     */
-    public Type<?> getSoureType() {
-        return sourceType;
-    }
-
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getDestinationType()
-     */
-    public Type<?> getDestinationType() {
-        return destinationType;
     }
 }

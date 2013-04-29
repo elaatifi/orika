@@ -17,12 +17,12 @@
  */
 package ma.glasnost.orika.impl.generator;
 
-
 import static java.lang.String.format;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Set;
 
@@ -41,6 +41,10 @@ import ma.glasnost.orika.metadata.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * ObjectFactoryGenerator generates source code which implements an
+ * ObjectFactory capable of instantiating a given target type.
+ */
 public class ObjectFactoryGenerator {
     
     private final static Logger LOGGER = LoggerFactory.getLogger(ObjectFactoryGenerator.class);
@@ -49,13 +53,25 @@ public class ObjectFactoryGenerator {
     private final MapperFactory mapperFactory;
     private final String nameSuffix;
     
+    /**
+     * Creates a new ObjectFactoryGenerator instance
+     * 
+     * @param mapperFactory
+     * @param constructorResolverStrategy
+     * @param compilerStrategy
+     */
     public ObjectFactoryGenerator(MapperFactory mapperFactory, ConstructorResolverStrategy constructorResolverStrategy,
-    		CompilerStrategy compilerStrategy) {
+            CompilerStrategy compilerStrategy) {
         this.mapperFactory = mapperFactory;
         this.nameSuffix = String.valueOf(System.nanoTime());
         this.constructorResolverStrategy = constructorResolverStrategy;
     }
     
+    /**
+     * @param type
+     * @param context
+     * @return an instance of the newly generated ObjectFactory
+     */
     public GeneratedObjectFactory build(Type<?> type, MappingContext context) {
         
         final String className = type.getSimpleName() + "_ObjectFactory" + nameSuffix;
@@ -63,14 +79,13 @@ public class ObjectFactoryGenerator {
         try {
             StringBuilder logDetails;
             if (LOGGER.isDebugEnabled()) {
-            	logDetails = new StringBuilder();
-            	logDetails.append("Generating new object factory for (" + type +")");
+                logDetails = new StringBuilder();
+                logDetails.append("Generating new object factory for (" + type + ")");
             } else {
-            	logDetails = null;
+                logDetails = null;
             }
             
-            final SourceCodeContext factoryCode = 
-                    new SourceCodeContext(className,GeneratedObjectFactory.class, context, logDetails);
+            final SourceCodeContext factoryCode = new SourceCodeContext(className, GeneratedObjectFactory.class, context, logDetails);
             
             UsedTypesContext usedTypes = new UsedTypesContext();
             UsedConvertersContext usedConverters = new UsedConvertersContext();
@@ -82,23 +97,24 @@ public class ObjectFactoryGenerator {
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
             
             if (logDetails != null) {
-            	LOGGER.debug(logDetails.toString());
+                LOGGER.debug(logDetails.toString());
             }
             
             return objectFactory;
             
         } catch (final Exception e) {
             throw new MappingException("exception while creating object factory for " + type.getName(), e);
-        } 
+        }
     }
     
-    private void addCreateMethod(SourceCodeContext code, UsedTypesContext usedTypes, 
-    		UsedConvertersContext usedConverters, UsedMapperFacadesContext usedMappers, 
-    		Type<?> type, MappingContext mappingContext, StringBuilder logDetails) throws CannotCompileException {
-    	
+    private void addCreateMethod(SourceCodeContext code, UsedTypesContext usedTypes, UsedConvertersContext usedConverters,
+            UsedMapperFacadesContext usedMappers, Type<?> type, MappingContext mappingContext, StringBuilder logDetails)
+            throws CannotCompileException {
+        
         final StringBuilder out = new StringBuilder();
         out.append("public Object create(Object s, " + MappingContext.class.getCanonicalName() + " mappingContext) {");
-        out.append(format("if(s == null) throw new %s(\"source object must be not null\");", IllegalArgumentException.class.getCanonicalName()));
+        out.append(format("if(s == null) throw new %s(\"source object must be not null\");",
+                IllegalArgumentException.class.getCanonicalName()));
         
         Set<Type<? extends Object>> sourceClasses = mapperFactory.lookupMappedClasses(type);
         
@@ -110,23 +126,21 @@ public class ObjectFactoryGenerator {
             throw new MappingException("Cannot generate ObjectFactory for " + type);
         }
         
-        // TODO: can this condition be reached?
-        // if object factory generation failed, we should not create the factory
-        // which is unable to construct an instance of anything.
-        out.append(format("throw new %s(s.getClass().getCanonicalName() + \" is an unsupported source class : \"+s.getClass().getCanonicalName());",
-                IllegalArgumentException.class.getCanonicalName()));
+        out.append(addUnmatchedSourceHandler(code, type, mappingContext, logDetails));
+        
         out.append("\n}");
         
         code.addMethod(out.toString());
     }
     
-    private String addSourceClassConstructor(SourceCodeContext code, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails) {
+    private String addSourceClassConstructor(SourceCodeContext code, Type<?> type, Type<?> sourceType, MappingContext mappingContext,
+            StringBuilder logDetails) {
         
-        MapperKey mapperKey = new MapperKey(type,sourceType);
-        ClassMap<Object, Object>  classMap = mapperFactory.getClassMap(mapperKey); 
+        MapperKey mapperKey = new MapperKey(type, sourceType);
+        ClassMap<Object, Object> classMap = mapperFactory.getClassMap(mapperKey);
         
-        if (classMap==null) {
-        	classMap = mapperFactory.getClassMap(new MapperKey(sourceType,type));
+        if (classMap == null) {
+            classMap = mapperFactory.getClassMap(new MapperKey(sourceType, type));
         }
         
         StringBuilder out = new StringBuilder();
@@ -134,19 +148,19 @@ public class ObjectFactoryGenerator {
         if (type.isArray()) {
             out.append(addArrayClassConstructor(code, type, sourceType, classMap.getFieldsMapping().size()));
         } else {
-        
+            
             ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap, type);
             Constructor<?> constructor = constructorMapping.getConstructor();
             
             if (constructor == null) {
                 throw new IllegalArgumentException("no constructors found for " + type);
             } else if (logDetails != null) {
-            	logDetails.append("\n\tUsing constructor: " + constructor);
+                logDetails.append("\n\tUsing constructor: " + constructor);
             }
             
             List<FieldMap> properties = constructorMapping.getMappedFields();
             Type<?>[] constructorArguments = constructorMapping.getParameterTypes();
-    
+            
             int argIndex = 0;
             
             out.append(format("if (s instanceof %s) {", sourceType.getCanonicalName()));
@@ -155,7 +169,7 @@ public class ObjectFactoryGenerator {
             argIndex = 0;
             
             for (FieldMap fieldMap : properties) {
-            	
+                
                 VariableRef v = new VariableRef(constructorArguments[argIndex], "arg" + argIndex++);
                 VariableRef s = new VariableRef(fieldMap.getSource(), "source");
                 VariableRef destOwner = new VariableRef(fieldMap.getDestination(), "");
@@ -176,26 +190,50 @@ public class ObjectFactoryGenerator {
             /*
              * Any exceptions thrown calling constructors should be propagated
              */
-            append(out,
-                    "\n} catch (java.lang.Exception e) {\n",
-                    "if (e instanceof RuntimeException) {\n",
-                    "throw (RuntimeException)e;\n",
-                    "} else {",
-                    "throw new java.lang.RuntimeException(" +
-            		"\"Error while constructing new " + type.getSimpleName() + " instance\", e);",
-            		"\n}\n}\n}");
+            append(out, "\n} catch (java.lang.Exception e) {\n", "if (e instanceof RuntimeException) {\n", "throw (RuntimeException)e;\n",
+                    "} else {", "throw new java.lang.RuntimeException(" + "\"Error while constructing new " + type.getSimpleName()
+                            + " instance\", e);", "\n}\n}\n}");
         }
         return out.toString();
     }
-
+    
+    /**
+     * Adds a default constructor call (where possible) as fail-over case when
+     * no specific source type has been matched.
+     * 
+     * @param code
+     * @param type
+     * @param mappingContext
+     * @param logDetails
+     * @return
+     */
+    private String addUnmatchedSourceHandler(SourceCodeContext code, Type<?> type, MappingContext mappingContext, StringBuilder logDetails) {
+        StringBuilder out = new StringBuilder();
+        for (Constructor<?> constructor : type.getRawType().getConstructors()) {
+            if (constructor.getParameterTypes().length == 0 && Modifier.isPublic(constructor.getModifiers())) {
+                out.append(format("return new %s();", type.getCanonicalName()));
+                break;
+            }
+        }
+        
+        if (out.length() == 0) {
+            // TODO: can this condition be reached?
+            // if object factory generation failed, we should not create the factory
+            // which is unable to construct an instance of anything.
+            out.append(format(
+                    "throw new %s(s.getClass().getCanonicalName() + \" is an unsupported source class : \"+s.getClass().getCanonicalName());",
+                    IllegalArgumentException.class.getCanonicalName()));
+        }
+        
+        return out.toString();
+    }
+    
     /**
      * @param type
      * @param size
      */
     private String addArrayClassConstructor(SourceCodeContext code, Type<?> type, Type<?> sourceType, int size) {
-        return
-                format("if (s instanceof %s) {", sourceType.getCanonicalName()) +
-                "return new " + type.getRawType().getComponentType().getCanonicalName() + "[" + size + "];" +
-                "\n}";
+        return format("if (s instanceof %s) {", sourceType.getCanonicalName()) + "return new "
+                + type.getRawType().getComponentType().getCanonicalName() + "[" + size + "];" + "\n}";
     }
 }

@@ -92,4 +92,7 @@ public abstract class GeneratedMapperBase extends GeneratedObjectBase implements
         }
     }
     
+    public String toString() {
+        return "GeneratedMapper(" + aType + ", " + bType + ")";
+    }
 }
