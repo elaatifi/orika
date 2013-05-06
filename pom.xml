@@ -185,12 +185,6 @@
             </dependency>
 
             <dependency>
-	            <groupId>org.codehaus.jsr166-mirror</groupId>
-	            <artifactId>jsr166x</artifactId>
-	            <version>1.7.0</version>
-	        </dependency>
-
-            <dependency>
               <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
               <artifactId>concurrentlinkedhashmap-lru</artifactId>
               <version>1.2_jdk5</version>
