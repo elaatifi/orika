@@ -17,6 +17,8 @@
  */
 package ma.glasnost.orika.converter;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -32,10 +34,11 @@ import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.util.SortedSet;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
+import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap.Builder;
 
 public class DefaultConverterFactory implements ConverterFactory {
     
-    private static final int CACHE_SIZE = 2000;
+    private static final Integer CACHE_SIZE = 2000;
     private final Map<ConverterKey, Converter<Object, Object>> converterCache;
     private final Set<Converter<Object, Object>> converters;
     private final Map<String, Converter<Object, Object>> convertersMap;
@@ -49,7 +52,38 @@ public class DefaultConverterFactory implements ConverterFactory {
     }
     
     public DefaultConverterFactory() {
-        this(new ConcurrentLinkedHashMap.Builder<ConverterKey, Converter<Object, Object>>().maximumWeightedCapacity(CACHE_SIZE).build(), new LinkedHashSet<Converter<Object, Object>>());
+        this(getConcurrentMap(), new LinkedHashSet<Converter<Object, Object>>());
+    }
+    
+    private static Map<ConverterKey, Converter<Object, Object>> getConcurrentMap() {
+        
+        Builder<ConverterKey, Converter<Object, Object>> builder = new ConcurrentLinkedHashMap.Builder<ConverterKey, Converter<Object, Object>>();
+        /*
+         * Fix for maximumWeightedCapacity change from int to long between 1.2 version
+         * and newer 1.x versions; use reflection to detect int or long in the method
+         * signature
+         */
+        try {
+            Method maximumWeightedCapacity = ConcurrentLinkedHashMap.Builder.class.getMethod("maximumWeightedCapacity", int.class);
+            maximumWeightedCapacity.invoke(builder, CACHE_SIZE.intValue());
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalStateException(e.getTargetException());
+        } catch (NoSuchMethodException e) {
+            try {
+                Method maximumWeightedCapacity = ConcurrentLinkedHashMap.Builder.class.getMethod("maximumWeightedCapacity", long.class);
+                maximumWeightedCapacity.invoke(builder, CACHE_SIZE.longValue());
+            } catch (NoSuchMethodException e1) {
+                throw new IllegalStateException(e1);
+            } catch (IllegalAccessException e1) {
+                throw new IllegalStateException(e1);
+            } catch (InvocationTargetException e1) {
+                throw new IllegalStateException(e1);
+            }
+            
+        }
+        return builder.build();
     }
     
     public void setMapperFacade(MapperFacade mapperFacade) {
