@@ -29,7 +29,7 @@ public class AnyTypeToString extends AbstractSpecification {
             }
             
             if (shouldMapNulls(fieldMap, code)) {
-                return statement("if (" + source.notNull() + ") {" + destination.assign("%s.toString()", source) + "} else {" + destination.assign("null") + "}");
+                return statement("if (" + source.notNull() + ") {" + statement(destination.assign("%s.toString()", source)) + "} else {" + statement(destination.assign("null")) + "}");
             } else {
                 return statement(source.ifNotNull() + destination.assign("%s.toString()", source));
             }

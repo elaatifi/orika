@@ -20,49 +20,61 @@ package ma.glasnost.orika.util;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.Map.Entry;
+
+import jsr166x.ConcurrentSkipListMap;
 
 /**
  * A simple sorted collection implementation that allows for duplicates;
  * new items are inserted based on their comparison to existing items;
  * if a new item is found to be less than any item in the list, it is inserted 
  * before that item, else it is inserted at the end. <br><br>
- * The collection is backed by a LinkedList, and all operations save for <code>add</code>
- * and <code>addAll</code> perform in the same time as the backing collection.<br><br>
- * The add method performs in linear time (O(n)), and the addAll method performs in
- * O(n*m) time, where n is the current size of the list, and m is the count being added.
+ * The collection is backed by a ConcurrentSkipListMap, with the keys defined as
+ * Double, allowing for inserts of items at a specific location with respect to
+ * the other items in the map.
  * <p>
- * This class is not thread-safe, with the same caveats for java.util.LinkedList.
+ * This class is thread-safe, with the same caveats for ConcurrentSkipListMap.
  * 
  * @author matt.deboer@gmail.com
- *
+ * @param <V> the element type contained in this list
  */
 public class SortedCollection<V> implements Collection<V> {
     
+    /**
+     * 
+     */
     protected final Comparator<V> comparator;
-    protected final LinkedList<V> sortedList = new LinkedList<V>();
+    /**
+     * 
+     */
+    protected final ConcurrentSkipListMap<Double, V> sortedItems;
     
     /**
      * 
      */
     public SortedCollection() {
-        this.comparator = null;
+        this((Comparator<V>)null);
     }
     
-    /**
-     * 
-     */
-    public SortedCollection(Collection<? extends V> c) {
-        this();
-        addAll(c);
-    }
     
     /**
      * @param comparator
      */
     public SortedCollection(Comparator<V> comparator) {
         this.comparator = comparator;
+        this.sortedItems = new ConcurrentSkipListMap<Double, V>();
     }
+    
+    
+    /**
+     * @param c the collection used to initialize this SortedCollection
+     */
+    public SortedCollection(Collection<? extends V> c) {
+        this();
+        addAll(c);
+    }
+    
+
     
     /**
      * @param c the collection from which to initialize this SortedCollection
@@ -73,37 +85,84 @@ public class SortedCollection<V> implements Collection<V> {
         addAll(c);
     }
     
+    /**
+     * @return a copy of the current sorted collection which is safe for
+     * concurrent access
+     */
+    public SortedCollection<V> threadsafeCopy() {
+        return new SortedCollection<V>(this);
+    }
     
     /* (non-Javadoc)
      * @see java.util.Collection#add(java.lang.Object)
      */
     public boolean add(V value) {
-        int i = -1;
+        double index = 0;
+        double nextIndex = 0;
         boolean insert = false;
-        for (V item: sortedList) {
-            ++i;
-            int comparison = comparator == null ? toComparable(item).compareTo(value) : comparator.compare(item, value);
+        V current = null;
+        
+        for (Entry<Double, V> item: sortedItems.entrySet()) {
+            current = item.getValue();
+            int comparison = comparator == null ? toComparable(current).compareTo(value) : comparator.compare(current, value);
             if (comparison > 0) {
                 insert = true;
+                nextIndex = item.getKey();
                 break;
+            } else {
+                index = item.getKey();
             }
         }
-        if (insert) {
-            sortedList.add(i, value);
-        } else {
-            sortedList.addLast(value);
+        
+        if (!insert) {
+            nextIndex = index + 2.0;
+        } 
+        return insertBetween(index, nextIndex, value, true);
+    }
+
+    /**
+     * Inserts the provided value with a key between the provided min and max values.
+     * If an item is already found at that key, an additional comparison is performed,
+     * and the new value is inserted at half the distance before or after the existing
+     * key.
+     * <p>
+     * Returns true if the item is inserted.
+     * 
+     * @param min
+     * @param max
+     * @param value
+     * @param allowDuplicates
+     * @return true if the item was inserted
+     */
+    protected boolean insertBetween(Double min, Double max, V value, boolean allowDuplicates) {
+        double key = min + ((max - min)/2.0);
+        V existing = sortedItems.putIfAbsent(key, value);
+        while (existing != null) {
+            int comparison = comparator == null ? toComparable(existing).compareTo(value) : comparator.compare(existing, value);
+            if (comparison > 0) {
+                key = min + ((key - min) / 2.0);
+            } else if (comparison < 0 || allowDuplicates || !existing.equals(value)) {
+                key = key + ((max - key) / 2.0);
+            } else {
+                return false;
+            }
+            existing = sortedItems.putIfAbsent(key, value);
         }
         return true;
     }
-
+    
     public int size() {
-        return sortedList.size();
+        return sortedItems.size();
     }
     
     public boolean isEmpty() {
-        return sortedList.isEmpty();
+        return sortedItems.isEmpty();
     }
     
+    /**
+     * @param item
+     * @return the provided item, cast as a Comparable
+     */
     @SuppressWarnings({"unchecked" })
     protected static <V> Comparable<V> toComparable(V item) {
         return (Comparable<V>)item;
@@ -112,42 +171,42 @@ public class SortedCollection<V> implements Collection<V> {
      * @see java.lang.Iterable#iterator()
      */
     public Iterator<V> iterator() {
-        return sortedList.iterator();
+        return sortedItems.values().iterator();
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#contains(java.lang.Object)
      */
     public boolean contains(Object o) {
-        return sortedList.contains(o);
+        return sortedItems.containsValue(o);
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#toArray()
      */
     public Object[] toArray() {
-        return sortedList.toArray();
+        return sortedItems.values().toArray();
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#toArray(T[])
      */
     public <T> T[] toArray(T[] a) {
-        return sortedList.toArray(a);
+        return sortedItems.values().toArray(a);
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#remove(java.lang.Object)
      */
     public boolean remove(Object o) {
-        return sortedList.remove(o);
+        return sortedItems.values().remove(o);
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#containsAll(java.util.Collection)
      */
     public boolean containsAll(Collection<?> c) {
-        return sortedList.containsAll(c);
+        return sortedItems.values().containsAll(c);
     }
 
     /* (non-Javadoc)
@@ -164,34 +223,36 @@ public class SortedCollection<V> implements Collection<V> {
      * @see java.util.Collection#removeAll(java.util.Collection)
      */
     public boolean removeAll(Collection<?> c) {
-        return sortedList.removeAll(c);
+        return sortedItems.values().removeAll(c);
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#retainAll(java.util.Collection)
      */
     public boolean retainAll(Collection<?> c) {
-        return sortedList.retainAll(c);
+        return sortedItems.values().retainAll(c);
     }
 
     /* (non-Javadoc)
      * @see java.util.Collection#clear()
      */
     public void clear() {
-        sortedList.clear();
+        sortedItems.clear();
     }
     
     /**
      * @return the first item in this collection
      */
     public V first() {
-        return sortedList.getFirst();
+        Entry<Double, V> entry = sortedItems.firstEntry();
+        return entry != null ? entry.getValue() : null;
     }
     
     /**
      * @return the last item in this collection
      */
     public V last() {
-        return sortedList.getLast();
+        Entry<Double, V> entry = sortedItems.lastEntry();
+        return entry != null ? entry.getValue() : null;
     }
 }

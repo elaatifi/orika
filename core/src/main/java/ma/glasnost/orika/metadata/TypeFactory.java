@@ -18,6 +18,7 @@
 package ma.glasnost.orika.metadata;
 
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
@@ -462,9 +463,17 @@ public abstract class TypeFactory {
      * @param object
      * @return the resolved Type instance
      */
-    @SuppressWarnings("unchecked")
     public static <T> Type<T> elementTypeOf(final Iterable<T> object) {
-        return valueOf((Class<T>) (object == null || !object.iterator().hasNext() ? null : object.iterator().next().getClass()));
+        
+        try {
+            Method iterator = object.getClass().getMethod("iterator");
+            Type<Iterable<T>> type = valueOf(iterator.getGenericReturnType());
+            return type.getNestedType(0);
+        } catch (SecurityException e) {
+            throw new IllegalStateException(e);
+        } catch (NoSuchMethodException e) {
+            throw new IllegalStateException(e);
+        }
     }
     
     /**
