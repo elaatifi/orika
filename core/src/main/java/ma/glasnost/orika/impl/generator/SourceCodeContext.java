@@ -287,18 +287,41 @@ public class SourceCodeContext {
         return "((" + BoundMapperFacade.class.getCanonicalName() + ")usedMapperFacades[" + usedFacade.index + "])." + mapInDirection + "";
     }
     
+    /**
+     * @param sourceType
+     * @param destinationType
+     * @param sourceExpression
+     * @param destExpression
+     * @return
+     */
     public String callMapper(Type<?> sourceType, Type<?> destinationType, String sourceExpression, String destExpression) {
         return usedMapperFacadeCall(sourceType, destinationType) + "(" + sourceExpression + ", " + destExpression + ", mappingContext)";
     }
     
+    /**
+     * @param sourceType
+     * @param destinationType
+     * @param sourceExpression
+     * @return
+     */
     public String callMapper(Type<?> sourceType, Type<?> destinationType, String sourceExpression) {
         return usedMapperFacadeCall(sourceType, destinationType) + "(" + sourceExpression + ", mappingContext)";
     }
     
+    /**
+     * @param source
+     * @param destination
+     * @return
+     */
     public String callMapper(VariableRef source, VariableRef destination) {
         return callMapper(source.type(), destination.type(), "" + source, "" + destination);
     }
     
+    /**
+     * @param source
+     * @param destination
+     * @return
+     */
     public String callMapper(VariableRef source, Type<?> destination) {
         return callMapper(source.type(), destination, "" + source);
     }
@@ -367,13 +390,20 @@ public class SourceCodeContext {
     public String assureInstanceExists(VariableRef propertyRef, VariableRef source) {
         
         StringBuilder out = new StringBuilder();
+        String end = "";
+        if (source.isNullPossible()) {
+            out.append(source.ifNotNull());
+            out.append("{\n");
+            end = "\n}\n";
+        }
         for (final VariableRef ref : propertyRef.getPath()) {
             
             if (!ClassUtil.isConcrete(ref.type()) && !ref.type().isMultiOccurrence()) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
-            append(out, format("if(%s) { \n", ref.isNull()), ref.assign(newObject(source, ref.type())), "}");
+            append(out, format("if((%s)) { \n", ref.isNull()), ref.assign(newObject(source, ref.type())), "}");
         }
+        out.append(end);
         return out.toString();
     }
     
@@ -642,46 +672,44 @@ public class SourceCodeContext {
         StringBuilder out = new StringBuilder();
         StringBuilder closing = new StringBuilder();
         
-        if (sourceProperty.isNestedProperty()) {
-            out.append(sourceProperty.ifPathNotNull());
-            out.append("{ \n");
-            closing.append("\n}");
-        }
+        if (destinationProperty.isAssignable() || destinationProperty.type().isMultiOccurrence()) {
         
-        if (destinationProperty.isNestedProperty()) {
-            if (!sourceProperty.isPrimitive()) {
-                out.append(sourceProperty.ifNotNull());
-                out.append(" {\n");
+            if (sourceProperty.isNestedProperty()) {
+                out.append(sourceProperty.ifPathNotNull());
+                out.append("{ \n");
                 closing.append("\n}");
-                if (AbstractSpecification.shouldMapNulls(fieldMap, this) && !destinationProperty.isPrimitive()) {
-                    closing.append(" else {\n");
-                    closing.append("\n");
-                    closing.append(destinationProperty.ifPathNotNull());
-                    closing.append("{\n");
-                    closing.append(destinationProperty.assignIfPossible("null"));
-                    closing.append(";\n}\n}");
+            }
+            
+            boolean mapNulls = AbstractSpecification.shouldMapNulls(fieldMap, this);
+            
+            if (destinationProperty.isNestedProperty()) {
+                if (!sourceProperty.isPrimitive()) {
+                    if (!mapNulls) {
+                        out.append(sourceProperty.ifNotNull());
+                        out.append(" {\n");
+                        closing.append("\n}");
+                    }
+                }
+                out.append(assureInstanceExists(destinationProperty, sourceProperty));
+            }
+            
+            Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
+            sourceProperty.setConverter(converter);
+            
+            for (Specification spec : codeGenerationStrategy.getSpecifications()) {
+                if (spec.appliesTo(fieldMap)) {
+                    String code = spec.generateMappingCode(fieldMap, sourceProperty, destinationProperty, this);
+                    if (code == null || "".equals(code)) {
+                        throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty
+                                + ", destinationProperty = " + destinationProperty);
+                    }
+                    out.append(code);
+                    break;
                 }
             }
-            out.append(assureInstanceExists(destinationProperty, sourceProperty));
+            
+            out.append(closing.toString());
         }
-        
-        Converter<Object, Object> converter = getConverter(fieldMap, fieldMap.getConverterId());
-        sourceProperty.setConverter(converter);
-        
-        for (Specification spec : codeGenerationStrategy.getSpecifications()) {
-            if (spec.appliesTo(fieldMap)) {
-                String code = spec.generateMappingCode(fieldMap, sourceProperty, destinationProperty, this);
-                if (code == null || "".equals(code)) {
-                    throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty
-                            + ", destinationProperty = " + destinationProperty);
-                }
-                out.append(code);
-                break;
-            }
-        }
-        
-        out.append(closing.toString());
-        
         return out.toString();
     }
     

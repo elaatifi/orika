@@ -25,7 +25,7 @@ public class ObjectToObject extends AbstractSpecification {
         }
         
         String mapNewObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination.type()), source));
-        String mapExistingObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination), source, destination));
+        String mapExistingObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination)));
         String mapStmt = format(" %s { %s; } else { %s; }", destination.ifNull(), mapNewObject, mapExistingObject);
         
         String ipStmt = "";

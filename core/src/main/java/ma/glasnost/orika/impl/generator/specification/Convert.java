@@ -7,6 +7,15 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 
+/**
+ * Convert applies the conversion operation between two properties.
+ * There is a special shortcut case applied when the converter is a
+ * CopyByReferenceConverter -- we applied the code to assign the reference
+ * directly rather than making an extra method call.
+ * 
+ * @author mattdeboer
+ *
+ */
 public class Convert extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {
@@ -47,35 +56,32 @@ public class Convert extends AbstractSpecification {
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
 
-        if (code.isDebugEnabled()) {
-            code.debug("converting using " + source.getConverter());
+        String assureInstanceExists = destination.isNestedProperty() ? (statement(code.assureInstanceExists(destination, source)) + "\n") : "";
+        
+        String statement;
+        boolean canHandleNulls;
+        if (source.getConverter() instanceof CopyByReferenceConverter) {
+            if (code.isDebugEnabled()) {
+                code.debug("copying " + source.type() + " by reference");
+            }
+            statement = destination.assignIfPossible(source);
+            canHandleNulls = true;
+        } else {
+            if (code.isDebugEnabled()) {
+                code.debug("converting using " + source.getConverter());
+            }
+            statement = destination.assignIfPossible("%s.convert(%s, %s)", code.usedConverter(source.getConverter()), source.asWrapper(), code.usedType(destination));
+            canHandleNulls = false;
         }
         
-        if (source.getConverter() instanceof CopyByReferenceConverter) {
-            
-            String statement = destination.assignIfPossible(source);
-            
-            boolean shouldSetNull = shouldMapNulls(fieldMap, code) && !destination.isPrimitive();
-            
-            if (source.isPrimitive()) {
-                return statement(statement);
-            } else {
-                String elseSetNull = shouldSetNull ? (" else { \n" + destination.assignIfPossible("null")) + ";\n }" : "";
-                return statement(source.ifNotNull() + "{ \n" + statement) + "\n}" + elseSetNull;
-            }
-            
-        } else {
+        boolean shouldSetNull = shouldMapNulls(fieldMap, code) && !destination.isPrimitive();
+        String destinationNotNull = destination.ifPathNotNull();
         
-            String statement = destination.assignIfPossible("%s.convert(%s, %s)", code.usedConverter(source.getConverter()), source.asWrapper(), code.usedType(destination));
-            
-            boolean shouldSetNull = shouldMapNulls(fieldMap, code) && !destination.isPrimitive();
-            
-            if (source.isPrimitive()) {
-                return statement(statement);
-            } else {
-            	String elseSetNull   = shouldSetNull ? (" else { \n" + destination.assignIfPossible("null")) + ";\n }" : "";
-                return statement(source.ifNotNull() + "{ \n" + statement) + "\n}" + elseSetNull;
-            }
+        if (!source.isNullPossible() || (canHandleNulls && shouldSetNull && destinationNotNull.isEmpty())) {
+            return statement(statement);
+        } else {
+            String elseSetNull = shouldSetNull ? (" else "+ destinationNotNull +"{ \n" + destination.assignIfPossible("null")) + ";\n }" : "";
+            return statement(source.ifNotNull() + "{ \n" + assureInstanceExists + statement) + "\n}" + elseSetNull;
         }
     }
 }

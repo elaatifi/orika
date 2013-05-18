@@ -54,11 +54,15 @@ public class VariableRef {
     private Type<?> type;
     private boolean declared;
     private Converter<?, ?> converter;
+    private boolean nullPossible;
+    private boolean nullPathPossible;
     
     public VariableRef(Property property, String name) {
         this.name = name;
         this.property = property;
         this.type = property.getType();
+        this.nullPossible = !isPrimitive();
+        this.nullPathPossible = isNestedProperty();
     }
     
     public VariableRef(Property property, VariableRef anchor) {
@@ -68,6 +72,8 @@ public class VariableRef {
     public VariableRef(Type<?> type, String name) {
         this.name = name;
         this.type = type;
+        this.nullPossible = !isPrimitive();
+        this.nullPathPossible = isNestedProperty();
     }
     
     public void setConverter(Converter<?, ?> converter) {
@@ -360,9 +366,9 @@ public class VariableRef {
             if (value.isPrimitive()) {
                 castValue = format("%s.valueOf(%s)", type.getCanonicalName(), castValue);
             }
-        } else if (type.isString()) {
+        } else if (type.isString() && !value.type().isString()) {
             castValue = "\"\" + " + castValue;
-        } else {
+        } else if (!castValue.replace("(", "").startsWith(typeName)){
             castValue = "((" + typeName + ")" + castValue + ")";
         }
         return castValue;
@@ -502,7 +508,7 @@ public class VariableRef {
     /**
      * @return a nested-property safe null check for this property
      */
-    public String notNull() {
+    private String notNullIncludingPath() {
         StringBuilder path = new StringBuilder();
         path.append("(");
         if (property() != null && property().hasPath()) {
@@ -530,8 +536,24 @@ public class VariableRef {
         return path.toString();
     }
     
+    public String notNull() {
+        return notNull(isNullPathPossible());
+    }
+    
+    public String notNull(boolean includePath) {
+        if (includePath) {
+            return notNullIncludingPath();
+        } else {
+            return format("!(%s)", isNull(property, name));
+        }
+    }
+    
     public String ifNotNull() {
-        return "if ( " + notNull() + ") ";
+        return ifNotNull(isNullPathPossible());
+    }
+    
+    public String ifNotNull(boolean includePath) {
+        return "if ( " + notNull(includePath) + ")";
     }
     
     public String ifNull() {
@@ -657,17 +679,49 @@ public class VariableRef {
     }
     
     /**
+     * @return true if it is possible for this variable to be null at the
+     * current state within code
+     */
+    public boolean isNullPossible() {
+        return nullPossible;
+    }
+    
+    /**
+     * Used to mark that this variable can not possibly be null at the 
+     * current state within code (because null has already been checked)
+     */
+    public void setNullImpossible() {
+        this.nullPossible = false;
+    }
+    
+    /**
+     * @return true if it is possible for this variable to be null at the
+     * current state within code
+     */
+    public boolean isNullPathPossible() {
+        return nullPathPossible;
+    }
+    
+    /**
+     * Used to mark that this variable can not possibly be null at the 
+     * current state within code (because null has already been checked)
+     */
+    public void setNullPathImpossible() {
+        this.nullPathPossible = false;
+    }
+    
+    /**
      * Return Java code which avoids a NullPointerException when accessing this
      * variable reference; if it is not backed by a nested property, this method
      * returns the empty string.
      * 
      * @return
      */
-    public String ifPathNotNull() {
+    public String pathNotNull() {
         StringBuilder path = new StringBuilder();
         if (property.hasPath()) {
             boolean first = true;
-            path.append("if(");
+            path.append("(");
             String expression = this.name;
             
             for (final Property p : property.getPath()) {
@@ -682,6 +736,21 @@ public class VariableRef {
             path.append(")");
         }
         return path.toString();
+    }
+    
+    /**
+     * Return Java code which avoids a NullPointerException when accessing this
+     * variable reference; if it is not backed by a nested property, this method
+     * returns the empty string.
+     * 
+     * @return
+     */
+    public String ifPathNotNull() {
+        if (nullPathPossible) {
+            return "if " + pathNotNull();
+        } else {
+            return "";
+        }
     }
     
     protected static boolean isPrimitiveLiteral(String expr, Type<?> type) {
