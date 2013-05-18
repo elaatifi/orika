@@ -77,7 +77,7 @@ public class Convert extends AbstractSpecification {
         boolean shouldSetNull = shouldMapNulls(fieldMap, code) && !destination.isPrimitive();
         String destinationNotNull = destination.ifPathNotNull();
         
-        if (!source.isNullPossible() || (canHandleNulls && shouldSetNull && destinationNotNull.isEmpty())) {
+        if (!source.isNullPossible() || (canHandleNulls && shouldSetNull && "".equals(destinationNotNull))) {
             return statement(statement);
         } else {
             String elseSetNull = shouldSetNull ? (" else "+ destinationNotNull +"{ \n" + destination.assignIfPossible("null")) + ";\n }" : "";
