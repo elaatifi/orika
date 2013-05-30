@@ -22,7 +22,8 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import jsr166x.ConcurrentSkipListMap;
+import ma.glasnost.orika.jsr166x.ConcurrentSkipListMap;
+
 
 /**
  * A simple sorted collection implementation that allows for duplicates;
@@ -83,14 +84,6 @@ public class SortedCollection<V> implements Collection<V> {
     public SortedCollection(Collection<? extends V> c, Comparator<V> comparator) {
         this(comparator);
         addAll(c);
-    }
-    
-    /**
-     * @return a copy of the current sorted collection which is safe for
-     * concurrent access
-     */
-    public SortedCollection<V> threadsafeCopy() {
-        return new SortedCollection<V>(this);
     }
     
     /* (non-Javadoc)
