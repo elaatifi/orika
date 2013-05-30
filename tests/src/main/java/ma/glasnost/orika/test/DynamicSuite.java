@@ -26,6 +26,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,7 +80,7 @@ import org.junit.runners.model.TestClass;
  */
 public class DynamicSuite extends ParentRunner<Runner> {
 
-	private static final String DEFAULT_TEST_CASE_PATTERN = ".*TestCase.class";
+	private static final String DEFAULT_TEST_CASE_PATTERN = ".*TestCase";
 
 	/**
 	 * The <code>TestCasePattern</code> annotation specifies the pattern from
@@ -147,16 +149,28 @@ public class DynamicSuite extends ParentRunner<Runner> {
 	 * @return
 	 */
 	public static List<Class<?>> findTestCases(Class<?> theClass) {
-		File classFolder;
+		List<File> classFolders = new ArrayList<File>();
 		try {
-			classFolder = new File(URLDecoder.decode(theClass.getResource("/")
-					.getFile(), "UTF-8"));
+		    ClassLoader loader = theClass.getClassLoader();
+		    if (loader instanceof URLClassLoader) {
+		        for (URL url: ((URLClassLoader)loader).getURLs()) {
+		            File file = new File(URLDecoder.decode(url.getFile(), "UTF-8"));
+		            if (file.isDirectory()) {
+		                classFolders.add(file);
+		            }
+		        }
+		    } else {
+		        classFolders.add(new File(URLDecoder.decode(theClass.getResource("/").getFile(), "UTF-8")));
+		    }
 		} catch (UnsupportedEncodingException e) {
 			throw new RuntimeException(e);
 		}
 		String testCaseRegex = getTestCasePattern(theClass);
-
-		return findTestCases(classFolder, testCaseRegex);
+		List<Class<?>> classes = new ArrayList<Class<?>>();
+		for (File classFolder: classFolders) {
+		    classes.addAll(findTestCases(classFolder, testCaseRegex));
+		}
+		return classes;
 	}
 
 	private static boolean containsTests(Class<?> testClass) {
