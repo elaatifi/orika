@@ -184,8 +184,8 @@ public class MapperFacadeImpl implements MapperFacade {
             
             if (!mapInPlace && canCopyByReference(destinationType, resolvedSourceType)) {
                 /*
-                 * We can copy by reference when source and destination types
-                 * are the same and immutable.
+                 * We can copy by reference when destination is assignable from
+                 * source and the source is immutable
                  */
                 strategyRecorder.setCopyByReference(true);
             } else if (!mapInPlace && canConvert(resolvedSourceType, destinationType)) {
@@ -280,7 +280,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * @return
      */
     private <D, S> boolean canCopyByReference(Type<D> destinationType, final Type<S> resolvedSourceType) {
-        if (ClassUtil.isImmutable(resolvedSourceType) && (resolvedSourceType.equals(destinationType))) {
+//        if (ClassUtil.isImmutable(resolvedSourceType) && (resolvedSourceType.equals(destinationType))) {
+        if (ClassUtil.isImmutable(resolvedSourceType) && (destinationType.isAssignableFrom(resolvedSourceType))) {
             return true;
         } else if (resolvedSourceType.isPrimitiveWrapper()
                 && resolvedSourceType.getRawType().equals(ClassUtil.getWrapperType(destinationType.getRawType()))) {

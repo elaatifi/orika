@@ -338,16 +338,10 @@ public class PropertyResolverTestCase {
         Assert.assertEquals(((Element)person.getAttribute("name")).getAttribute("last"), ((Element)mapBack.getAttribute("name")).getAttribute("last"));
         Assert.assertEquals(((Element)person.getAttribute("employment")).getAttribute("salary"), ((Element)mapBack.getAttribute("employment")).getAttribute("salary"));
         
-        /*
-         * Note!!!: map-back fails here, because we've only given enough info to identify jobTitle
-         * as a List<Object>; see the next test where we pass parameterized List<String> to identify
-         * the list properly.
-         */
         List<?> original = (List<?>) ((Element)person.getAttribute("employment")).getAttribute("jobTitle");
         List<?> mapBackList = (List<?>) ((Element)mapBack.getAttribute("employment")).getAttribute("jobTitle");
-        Assert.assertFalse(original.containsAll(mapBackList));
-        Assert.assertFalse(mapBackList.containsAll(original));
-        
+        Assert.assertTrue(original.containsAll(mapBackList));
+        Assert.assertTrue(mapBackList.containsAll(original));
     }
     
     /**
