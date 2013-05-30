@@ -156,7 +156,14 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
         Type<?> type = TypeFactory.valueOf(rawType);
         if (isSpecialCaseType(type)) {
             Type<?> propertyType = isSpecialCaseType(getBType()) ? getBType() : getAType();
-            return resolveCustomProperty(expr, propertyType);
+            try {
+                /*
+                 * Attempt to resolve a standard property on the object first
+                 */
+                return super.resolveProperty(type, expr);
+            } catch (IllegalArgumentException e) {
+                return resolveCustomProperty(expr, propertyType);
+            }
         } else {
             return super.resolveProperty(type, expr);
         }
