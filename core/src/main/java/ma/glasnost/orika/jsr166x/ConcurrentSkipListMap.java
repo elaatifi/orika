@@ -4,7 +4,7 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-package jsr166x;
+package ma.glasnost.orika.jsr166x;
 
 import java.util.*;
 import java.util.concurrent.*;

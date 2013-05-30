@@ -296,21 +296,7 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
         
         try {
-            /*
-             * PERF: shave off some time by moving these checks to the exception block?
-             */
-//            if (destinationObject == null) {
-//                throw new MappingException("[destinationObject] can not be null.");
-//            }
-//            
-//            if (destinationType == null) {
-//                throw new MappingException("[destinationType] can not be null.");
-//            }
-//            
-//            if (sourceObject == null) {
-//                throw new MappingException("[sourceObject] can not be null.");
-//            }
-            
+
             if (context.getMappedObject(sourceObject, destinationType) == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, true, context);
                 strategy.map(sourceObject, destinationObject, context);
@@ -357,6 +343,17 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
         
         try {
+            
+            MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
+            if (null == context.getMappedObject(sourceObject, strategy.getDestinationType())) {
+                strategy.map(sourceObject, destinationObject, context);
+            }
+            
+        } catch (MappingException e) {
+            /* don't wrap our own exceptions */
+            throw e;
+        } catch (RuntimeException e) {
+            
             if (destinationObject == null) {
                 throw new MappingException("[destinationObject] can not be null.");
             }
@@ -365,15 +362,6 @@ public class MapperFacadeImpl implements MapperFacade {
                 throw new MappingException("[sourceObject] can not be null.");
             }
             
-            if (context.getMappedObject(sourceObject, destinationObject.getClass()) == null) {
-                MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
-                strategy.map(sourceObject, destinationObject, context);
-            }
-            
-        } catch (MappingException e) {
-            /* don't wrap our own exceptions */
-            throw e;
-        } catch (RuntimeException e) {
             if (!ExceptionUtility.originatedByOrika(e)) {
                 throw e;
             }
@@ -702,7 +690,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 return null;
             }
             
-            D result = (D) context.getMappedObject(sourceObject, destinationClass);
+            D result = (D) context.getMappedObject(sourceObject, TypeFactory.valueOf(destinationClass));
             if (result == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationClass, false, context);
                 result = (D) strategy.map(sourceObject, null, context);

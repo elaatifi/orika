@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 
@@ -39,6 +40,8 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     private Type<?> componentType;
     private final TypeKey key;
     private final int hashCode;
+    private final AtomicInteger nextUniqueIndex = new AtomicInteger();
+    private final int uniqueIndex;
 
     /**
      * @param rawType
@@ -52,6 +55,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         this.actualTypeArguments = actualTypeArguments;
         this.typesByVariable = typesByVariable;
         this.isParameterized = rawType.getTypeParameters().length > 0;
+        this.uniqueIndex = nextUniqueIndex.getAndIncrement();
     }
     
     /**
@@ -74,6 +78,10 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
 					" is neither Class, nor ParameterizedType, but " + ancestor);
 		}
 		return resolvedType;
+    }
+    
+    public int getUniqueIndex() {
+        return uniqueIndex;
     }
     
     /**
@@ -392,7 +400,9 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
     @Override
     public int hashCode() {
-        return hashCode;
+        //return hashCode;
+        // TODO: try guaranteed unique integer index
+        return uniqueIndex;
     }
     
     @Override

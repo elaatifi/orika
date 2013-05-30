@@ -38,7 +38,6 @@ import ma.glasnost.orika.unenhance.UnenhanceStrategy;
  */
 class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     
-    
     /*
      * Keep small cache of strategies; we expect the total size to be == 1 in most cases,
      * but some polymorphism is possible
@@ -58,6 +57,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     protected final Type<B> bType;
     protected final MapperFactory mapperFactory;
     protected final MappingContextFactory contextFactory;
+    
     
     /**
      * Constructs a new instance of DefaultBoundMapperFacade
@@ -163,7 +163,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
     @SuppressWarnings("unchecked")
     public B map(A instanceA, B instanceB, MappingContext context) {
         B result = (B) context.getMappedObject(instanceA, bType);
-		if (result == null && instanceA != null) {
+        if (result == null && instanceA != null) {
             result = (B) aToBInPlace.getStrategy(instanceA, context).map(instanceA, instanceB, context);
         }
         return result;
@@ -177,8 +177,8 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
      */
     @SuppressWarnings("unchecked")
     public A mapReverse(B instanceB, A instanceA, MappingContext context) {
-    	A result = (A) context.getMappedObject(instanceB, aType);
-		if (result == null && instanceB != null) {
+        A result = (A) context.getMappedObject(instanceB, aType);
+        if (result == null && instanceB != null) {
             result = (A) bToAInPlace.getStrategy(instanceB, context).map(instanceB, instanceA, context);
         }
         return result;

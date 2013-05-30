@@ -36,19 +36,19 @@ public class Issue24TestCase {
         Assert.assertEquals(BSub.class, bsub.getRawType());
     }
 
-    public class A {
+    public static class A {
 
     }
 
-    public class BSuper extends B {
+    public static class BSuper extends B {
 
     }
 
-    public class B extends BSub {
+    public static class B extends BSub {
 
     }
 
-    public class BSub {
+    public static class BSub {
 
     }
 }

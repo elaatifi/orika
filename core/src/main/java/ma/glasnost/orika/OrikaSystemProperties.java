@@ -94,4 +94,21 @@ public final class OrikaSystemProperties {
      */
     public static final String USE_STRATEGY_CACHE = "ma.glasnost.orika.useStrategyCache";
     
+    /**
+     * Specifies whether null values should be mapped.
+     * default value is <code>true</code>
+     */
+    public static final String MAP_NULLS = "ma.glasnost.orika.mapNulls";
+    
+    /**
+     * Specifies whether to use built-in converters
+     * default value is <code>true</code>
+     */
+    public static final String USE_BUILTIN_CONVERTERS = "ma.glasnost.orika.useBuiltinConverters";
+    
+    /**
+     * Specifies whether Mapper and ObjectFactory instances for registered ClassMap instances
+     * default value is <code>false</code>
+     */
+    public static final String USE_AUTO_MAPPING = "ma.glasnost.orika.useAutoMapping";
 }

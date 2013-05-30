@@ -18,6 +18,12 @@
 
 package ma.glasnost.orika.impl;
 
+import static java.lang.Boolean.valueOf;
+import static java.lang.System.getProperty;
+import static ma.glasnost.orika.OrikaSystemProperties.MAP_NULLS;
+import static ma.glasnost.orika.OrikaSystemProperties.USE_AUTO_MAPPING;
+import static ma.glasnost.orika.OrikaSystemProperties.USE_BUILTIN_CONVERTERS;
+
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +33,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +69,7 @@ import ma.glasnost.orika.metadata.ClassMapBuilderFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilderForArrays;
 import ma.glasnost.orika.metadata.ClassMapBuilderForLists;
 import ma.glasnost.orika.metadata.ClassMapBuilderForMaps;
+import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -92,6 +100,7 @@ public class DefaultMapperFactory implements MapperFactory {
     private final Map<MapperKey, ClassMap<Object, Object>> classMapRegistry;
     private final SortedCollection<Mapper<Object, Object>> mappersRegistry;
     private final MappingContextFactory contextFactory;
+    private final MappingContextFactory nonCyclicContextFactory;
     private final ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> objectFactoryRegistry;
     private final Map<Type<?>, Set<Type<?>>> explicitAToBRegistry;
     private final Map<Type<?>, Set<Type<?>>> dynamicAToBRegistry;
@@ -130,6 +139,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.userUnenahanceStrategy = builder.unenhanceStrategy;
         this.unenhanceStrategy = buildUnenhanceStrategy(builder.unenhanceStrategy, builder.superTypeStrategy);
         this.contextFactory = new MappingContext.Factory();
+        this.nonCyclicContextFactory = new NonCyclicMappingContext.Factory(this.contextFactory.getGlobalProperties());
         this.mapperFacade = buildMapperFacade(contextFactory, unenhanceStrategy);
         this.concreteTypeRegistry = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
         
@@ -239,19 +249,18 @@ public class DefaultMapperFactory implements MapperFactory {
          * The configured value of whether or not to use built-in converters for
          * the MapperFactory
          */
-        protected boolean useBuiltinConverters = true;
+        protected Boolean useBuiltinConverters;
         /**
          * The configured value of whether or not to use auto-mapping for the
          * MapperFactory
          */
-        protected boolean useAutoMapping = true;
+        protected Boolean useAutoMapping;
         /**
          * The configured value of whether or not to map null values; if false,
          * they will be ignored, and any existing value is unchanged in case of
          * null.
          */
-        protected boolean mapNulls = true;
-        
+        protected Boolean mapNulls;
         /**
          * Instantiates a new MapperFactoryBuilder
          */
@@ -261,6 +270,10 @@ public class DefaultMapperFactory implements MapperFactory {
             compilerStrategy = UtilityResolver.getDefaultCompilerStrategy();
             propertyResolverStrategy = UtilityResolver.getDefaultPropertyResolverStrategy();
             classMapBuilderFactory = UtilityResolver.getDefaultClassMapBuilderFactory();
+            
+            useBuiltinConverters = valueOf(getProperty(USE_BUILTIN_CONVERTERS, "true"));
+            useAutoMapping = valueOf(getProperty(USE_AUTO_MAPPING, "true"));
+            mapNulls = valueOf(getProperty(MAP_NULLS, "true"));
         }
         
         /**
@@ -1199,12 +1212,8 @@ public class DefaultMapperFactory implements MapperFactory {
         if (!isBuilt && !isBuilding) {
             build();
         }
-        
-        if (!containsCycles) {
-            return new NonCyclicBoundMapperFacade<S, D>(this, contextFactory, sourceType, destinationType);
-        } else {
-            return new DefaultBoundMapperFacade<S, D>(this, contextFactory, sourceType, destinationType);
-        }
+        MappingContextFactory ctxFactory = containsCycles ? contextFactory : nonCyclicContextFactory;
+        return new DefaultBoundMapperFacade<S, D>(this, ctxFactory, sourceType, destinationType);
     }
     
     /*
@@ -1214,7 +1223,7 @@ public class DefaultMapperFactory implements MapperFactory {
      * java.lang.Class)
      */
     public <A, B> BoundMapperFacade<A, B> getMapperFacade(Class<A> aType, Class<B> bType) {
-        return getMapperFacade(aType, bType, true);
+        return getMapperFacade(TypeFactory.valueOf(aType), TypeFactory.valueOf(bType));
     }
     
     /*

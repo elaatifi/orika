@@ -336,7 +336,7 @@ public class VariableRef {
                 castValue = format("%s.valueOf(%s)", type.getWrapperType().getCanonicalName(), castValue);
             } else if (type.isString()) {
                 castValue = "\"\" + " + castValue;
-            } else if (!value.startsWith("(" + typeName + ")")) {
+            } else if (!value.startsWith("(" + typeName + ")") && !value.startsWith("((" + typeName + ")")) {
                 castValue = "((" + typeName + ")" + castValue + ")";
             }
         }
