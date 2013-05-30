@@ -38,7 +38,6 @@ public class Issue92TestCase {
         }
 
         @Test
-        @Ignore
         public void test() {
                 factory.classMap(CustomMap.class, CustomClass.class).field("id", "id").register();
                 CustomMap customMap = new CustomMap();

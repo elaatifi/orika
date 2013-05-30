@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.PropertyNotFoundException;
 import ma.glasnost.orika.metadata.ArrayElementProperty;
 import ma.glasnost.orika.metadata.ListElementProperty;
 import ma.glasnost.orika.metadata.MapKeyProperty;
@@ -468,8 +469,8 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                     property = getProperty(propertyType, ps[i], (i < ps.length - 1), container);
                     propertyType = property.getType();
                     container = null;
-                } catch (MappingException e) {
-                    throw new MappingException("could not resolve nested property [" + p + "] on " + type + ", because "
+                } catch (PropertyNotFoundException e) {
+                    throw new PropertyNotFoundException("could not resolve nested property [" + p + "] on " + type + ", because "
                             + e.getLocalizedMessage());
                 }
                 
@@ -484,7 +485,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         }
         
         if (property == null) {
-            throw new RuntimeException(typeName + " does not contain property [" + p + "]");
+            throw new PropertyNotFoundException(p, type);
         }
         
         return new NestedProperty(expression.toString(), property, path.toArray(new Property[path.size()]));
@@ -525,9 +526,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         Type<?> elementType;
         
         Property elementProperty;
-        /*if (isIndividualElementExpression(elementPropertyExpression)) {
-            elementProperty = getProperty(owningProperty.getType(), elementPropertyExpression, false, owningProperty);
-        } else*/ if (owningProperty.isMap()) {
+        if (owningProperty.isMap()) {
             elementType = MapEntry.concreteEntryType((Type<Map<Object, Object>>) owningProperty.getType());
             elementProperty = getProperty(elementType, elementPropertyExpression, false, owningProperty); 
         } else if (owningProperty.isCollection()) {
@@ -555,7 +554,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         String[] ps = p.split("\\[", 2);
         String elementPropertyExpression = ps[1].substring(0, ps[1].length()-1);
         
-//        Property owningProperty = owner != null ? owner : getProperty(type, ps[0]);
         Property owningProperty;
         if (owner != null) {
             if (type.equals(owner.getType())) {
@@ -663,7 +661,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                         }
                     }
                 } else {
-                    throw new MappingException(expr + " does not belong to " + type);
+                    throw new PropertyNotFoundException(expr, type);
                 }
                 
                 if (owner != null) {

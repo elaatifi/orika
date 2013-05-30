@@ -24,6 +24,7 @@ import java.util.Set;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.PropertyNotFoundException;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
@@ -161,7 +162,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
                  * Attempt to resolve a standard property on the object first
                  */
                 return super.resolveProperty(type, expr);
-            } catch (IllegalArgumentException e) {
+            } catch (PropertyNotFoundException e) {
                 return resolveCustomProperty(expr, propertyType);
             }
         } else {
