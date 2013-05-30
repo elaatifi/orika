@@ -36,6 +36,7 @@ import ma.glasnost.orika.impl.GeneratedObjectFactory;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
+import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 
 import org.slf4j.Logger;
@@ -72,9 +73,9 @@ public class ObjectFactoryGenerator {
      * @param context
      * @return an instance of the newly generated ObjectFactory
      */
-    public GeneratedObjectFactory build(Type<?> type, MappingContext context) {
+    public GeneratedObjectFactory build(Type<?> type, Type<?> sourceType, MappingContext context) {
         
-        final String className = type.getSimpleName() + "_ObjectFactory" + nameSuffix;
+        final String className = type.getSimpleName() + "_" + sourceType.getSimpleName() + "_ObjectFactory" + nameSuffix;
         
         try {
             StringBuilder logDetails;
@@ -91,7 +92,7 @@ public class ObjectFactoryGenerator {
             UsedConvertersContext usedConverters = new UsedConvertersContext();
             UsedMapperFacadesContext usedMapperFacades = new UsedMapperFacadesContext();
             
-            addCreateMethod(factoryCode, usedTypes, usedConverters, usedMapperFacades, type, context, logDetails);
+            addCreateMethod(factoryCode, usedTypes, usedConverters, usedMapperFacades, type, sourceType, context, logDetails);
             
             GeneratedObjectFactory objectFactory = (GeneratedObjectFactory) factoryCode.getInstance();
             objectFactory.setMapperFacade(mapperFactory.getMapperFacade());
@@ -108,7 +109,7 @@ public class ObjectFactoryGenerator {
     }
     
     private void addCreateMethod(SourceCodeContext code, UsedTypesContext usedTypes, UsedConvertersContext usedConverters,
-            UsedMapperFacadesContext usedMappers, Type<?> type, MappingContext mappingContext, StringBuilder logDetails)
+            UsedMapperFacadesContext usedMappers, Type<?> type, Type<?> sourceType, MappingContext mappingContext, StringBuilder logDetails)
             throws CannotCompileException {
         
         final StringBuilder out = new StringBuilder();
@@ -116,15 +117,15 @@ public class ObjectFactoryGenerator {
         out.append(format("if(s == null) throw new %s(\"source object must be not null\");",
                 IllegalArgumentException.class.getCanonicalName()));
         
-        Set<Type<? extends Object>> sourceClasses = mapperFactory.lookupMappedClasses(type);
-        
-        if (sourceClasses != null && !sourceClasses.isEmpty()) {
-            for (Type<? extends Object> sourceType : sourceClasses) {
+//        Set<Type<? extends Object>> sourceClasses = mapperFactory.lookupMappedClasses(type);
+//        
+//        if (sourceClasses != null && !sourceClasses.isEmpty()) {
+//            for (Type<? extends Object> sourceType : sourceClasses) {
                 out.append(addSourceClassConstructor(code, type, sourceType, mappingContext, logDetails));
-            }
-        } else {
-            throw new MappingException("Cannot generate ObjectFactory for " + type);
-        }
+//            }
+//        } else {
+//            throw new MappingException("Cannot generate ObjectFactory for " + type);
+//        }
         
         out.append(addUnmatchedSourceHandler(code, type, mappingContext, logDetails));
         
@@ -133,27 +134,35 @@ public class ObjectFactoryGenerator {
         code.addMethod(out.toString());
     }
     
-    private String addSourceClassConstructor(SourceCodeContext code, Type<?> type, Type<?> sourceType, MappingContext mappingContext,
+    /**
+     * @param code
+     * @param destinationType
+     * @param sourceType
+     * @param mappingContext
+     * @param logDetails
+     * @return
+     */
+    private String addSourceClassConstructor(SourceCodeContext code, Type<?> destinationType, Type<?> sourceType, MappingContext mappingContext,
             StringBuilder logDetails) {
         
-        MapperKey mapperKey = new MapperKey(type, sourceType);
+        MapperKey mapperKey = new MapperKey(sourceType, destinationType);
         ClassMap<Object, Object> classMap = mapperFactory.getClassMap(mapperKey);
         
         if (classMap == null) {
-            classMap = mapperFactory.getClassMap(new MapperKey(sourceType, type));
+            classMap = mapperFactory.getClassMap(new MapperKey(destinationType, sourceType));
         }
         
         StringBuilder out = new StringBuilder();
         
-        if (type.isArray()) {
-            out.append(addArrayClassConstructor(code, type, sourceType, classMap.getFieldsMapping().size()));
+        if (destinationType.isArray()) {
+            out.append(addArrayClassConstructor(code, destinationType, sourceType, classMap.getFieldsMapping().size()));
         } else {
             
-            ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap, type);
+            ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap, destinationType);
             Constructor<?> constructor = constructorMapping.getConstructor();
             
             if (constructor == null) {
-                throw new IllegalArgumentException("no constructors found for " + type);
+                throw new IllegalArgumentException("no suitable constructors found for " + destinationType);
             } else if (logDetails != null) {
                 logDetails.append("\n\tUsing constructor: " + constructor);
             }
@@ -169,16 +178,15 @@ public class ObjectFactoryGenerator {
             argIndex = 0;
             
             for (FieldMap fieldMap : properties) {
-                
                 VariableRef v = new VariableRef(constructorArguments[argIndex], "arg" + argIndex++);
                 VariableRef s = new VariableRef(fieldMap.getSource(), "source");
                 VariableRef destOwner = new VariableRef(fieldMap.getDestination(), "");
                 v.setOwner(destOwner);
                 out.append(statement(v.declare()));
-                out.append(code.mapFields(fieldMap, s, v, type, logDetails));
+                out.append(code.mapFields(fieldMap, s, v, destinationType, logDetails));
             }
             
-            out.append(format("return new %s(", type.getCanonicalName()));
+            out.append(format("return new %s(", destinationType.getCanonicalName()));
             for (int i = 0; i < properties.size(); i++) {
                 out.append(format("arg%d", i));
                 if (i < properties.size() - 1) {
@@ -191,7 +199,7 @@ public class ObjectFactoryGenerator {
              * Any exceptions thrown calling constructors should be propagated
              */
             append(out, "\n} catch (java.lang.Exception e) {\n", "if (e instanceof RuntimeException) {\n", "throw (RuntimeException)e;\n",
-                    "} else {", "throw new java.lang.RuntimeException(" + "\"Error while constructing new " + type.getSimpleName()
+                    "} else {", "throw new java.lang.RuntimeException(" + "\"Error while constructing new " + destinationType.getSimpleName()
                             + " instance\", e);", "\n}\n}\n}");
         }
         return out.toString();

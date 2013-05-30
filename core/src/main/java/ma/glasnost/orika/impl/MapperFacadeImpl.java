@@ -213,7 +213,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 strategyRecorder.setResolvedDestinationType(resolvedDestinationType);
                 strategyRecorder.setResolvedMapper(resolveMapper(resolvedSourceType, resolvedDestinationType));
                 if (!mapInPlace) {
-                    strategyRecorder.setResolvedObjectFactory(mapperFactory.lookupObjectFactory(resolvedDestinationType));
+                    strategyRecorder.setResolvedObjectFactory(mapperFactory.lookupObjectFactory(resolvedDestinationType, resolvedSourceType));
                 }
             }
             strategy = strategyRecorder.playback();
@@ -232,7 +232,7 @@ public class MapperFacadeImpl implements MapperFacade {
         
         return strategy;
     }
-    
+   
     @SuppressWarnings("unchecked")
     public <S, D> D map(final S sourceObject, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
         
@@ -592,7 +592,7 @@ public class MapperFacadeImpl implements MapperFacade {
     private <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context,
             MappingStrategyRecorder strategyBuilder) {
         
-        final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType);
+        final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType, TypeFactory.valueOf(sourceObject.getClass()));
         
         if (strategyBuilder != null) {
             strategyBuilder.setResolvedObjectFactory(objectFactory);
