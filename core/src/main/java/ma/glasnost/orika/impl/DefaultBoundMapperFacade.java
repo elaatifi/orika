@@ -195,7 +195,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         if (objectFactoryB == null) {
             synchronized(this) {
                 if (objectFactoryB == null) {
-                    objectFactoryB = mapperFactory.lookupObjectFactory(bType);
+                    objectFactoryB = mapperFactory.lookupObjectFactory(bType, aType);
                 }
             }
         }
@@ -209,7 +209,7 @@ class DefaultBoundMapperFacade<A, B> implements BoundMapperFacade<A, B> {
         if (objectFactoryA == null) {
             synchronized(this) {
                 if (objectFactoryA == null) {
-                    objectFactoryA = mapperFactory.lookupObjectFactory(aType);
+                    objectFactoryA = mapperFactory.lookupObjectFactory(aType, bType);
                 }
             }
         }
