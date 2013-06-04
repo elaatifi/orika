@@ -242,6 +242,13 @@ public class OpenIntObjectHashMap {
     }
     
     /**
+     * Removes all entries from this map
+     */
+    public void clear() {
+        setUp(highWaterMark, minLoadFactor, maxLoadFactor);
+    }
+    
+    /**
      * Chooses a new prime table capacity optimized for growing that
      * (approximately) satisfies the invariant
      * <tt>c * minLoadFactor <= size <= c * maxLoadFactor</tt> and has at least

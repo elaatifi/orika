@@ -39,7 +39,6 @@ import ma.glasnost.orika.metadata.Type;
 public class MappingContext {
     
     private final Map<Type<?>, Type<?>> mapping;
-    private final Map<java.lang.reflect.Type, Map<Object, Object>> classCache;
     private final OpenIntObjectHashMap typeCache;
     private List<Map<MapperKey, ClassMap<?, ?>>> mappersSeen;
     private Map<Object, Object> properties;
@@ -87,7 +86,6 @@ public class MappingContext {
      */
     protected MappingContext(Map<Object, Object> globalProperties) {
         this.mapping = new HashMap<Type<?>, Type<?>>();
-        this.classCache = new HashMap<java.lang.reflect.Type, Map<Object, Object>>();
         this.typeCache = new OpenIntObjectHashMap();
         this.globalProperties = globalProperties;
     }
@@ -248,8 +246,8 @@ public class MappingContext {
      * Resets this context instance, in preparation for use by another mapping request
      */
     public void reset() {
-        classCache.clear();
         mapping.clear();
+        typeCache.clear();
         if (properties != null) {
             properties.clear();
         }

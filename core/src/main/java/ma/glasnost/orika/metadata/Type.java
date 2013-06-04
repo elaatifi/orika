@@ -30,8 +30,9 @@ import ma.glasnost.orika.impl.util.ClassUtil;
  */
 public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
+    private static final AtomicInteger nextUniqueIndex = new AtomicInteger();
+    
     private final Class<T> rawType;
-    //private java.lang.reflect.Type ownerType;
     private final Type<?>[] actualTypeArguments;
     private final boolean isParameterized;
     private Map<String, Type<?>> typesByVariable;
@@ -39,8 +40,6 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     private volatile Type<?>[] interfaces;
     private Type<?> componentType;
     private final TypeKey key;
-    private final int hashCode;
-    private final AtomicInteger nextUniqueIndex = new AtomicInteger();
     private final int uniqueIndex;
 
     /**
@@ -50,7 +49,6 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     @SuppressWarnings("unchecked")
     Type(TypeKey key, Class<?> rawType, Map<String, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
         this.key = key;
-        this.hashCode = key.hashCode();
         this.rawType = (Class<T>)rawType;
         this.actualTypeArguments = actualTypeArguments;
         this.typesByVariable = typesByVariable;
@@ -80,6 +78,9 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
 		return resolvedType;
     }
     
+    /**
+     * @return the unique index of this type
+     */
     public int getUniqueIndex() {
         return uniqueIndex;
     }
