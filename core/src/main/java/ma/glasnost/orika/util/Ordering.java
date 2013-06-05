@@ -15,9 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ma.glasnost.orika.impl;
-
-import java.util.Comparator;
+package ma.glasnost.orika.util;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.Mapper;
@@ -25,10 +23,26 @@ import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 
 /**
- * @author matt.deboer@gmail.com
- *
+ * Ordering
+ * 
+ * @param <T>
  */
-public abstract class Comparators {
+public abstract class Ordering<T> {
+    
+    /**
+     * Returns -1 if object1 should be ordered before object2; Returns 1 if
+     * object2 should be ordered before object1; Returns 0 if there is no
+     * ordering implied between the objects (they are either equal, or
+     * unrelated).
+     * 
+     * 
+     * @param object1
+     * @param object2
+     * @return -1 if object1 should be ordered before object2; 1 if object2
+     *         should be ordered before object1; 0 if there is no ordering
+     *         implied between the objects
+     */
+    public abstract int order(T object1, T object2);
     
     private static final int compare(Type<?> aType1, Type<?> bType1, Type<?> aType2, Type<?> bType2, boolean isBidirectional) {
         
@@ -41,31 +55,35 @@ public abstract class Comparators {
                 || (isBidirectional && aType2.isAssignableFrom(bType1) && bType2.isAssignableFrom(aType1))) {
             return -1;
         } else {
-            /*
-             * Unrelated, thus they should be considered "equal" in regards to
-             * sorting
-             */
             return 0;
         }
     }
     
-    public static final Comparator<MapperKey> MAPPER_KEY = new Comparator<MapperKey>() {
-        public int compare(MapperKey mapper1, MapperKey mapper2) {
-            return Comparators.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType(), true);
+    /**
+     * 
+     */
+    public static final Ordering<MapperKey> MAPPER_KEY = new Ordering<MapperKey>() {
+        public int order(MapperKey mapper1, MapperKey mapper2) {
+            return Ordering.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType(), true);
         }
     };
     
-    public static final Comparator<Mapper<Object, Object>> MAPPER = new Comparator<Mapper<Object, Object>>() {
-        public int compare(Mapper<Object, Object> mapper1, Mapper<Object, Object> mapper2) {
-            return Comparators.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType(), true);
+    /**
+     * 
+     */
+    public static final Ordering<Mapper<Object, Object>> MAPPER = new Ordering<Mapper<Object, Object>>() {
+        public int order(Mapper<Object, Object> mapper1, Mapper<Object, Object> mapper2) {
+            return Ordering.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType(), true);
         }
     };
     
-    public static final Comparator<Converter<Object, Object>> CONVERTER = new Comparator<Converter<Object, Object>>() {
-        public int compare(Converter<Object, Object> mapper1, Converter<Object, Object> mapper2) {
-            return Comparators.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType(), false);
+    /**
+     * 
+     */
+    public static final Ordering<Converter<Object, Object>> CONVERTER = new Ordering<Converter<Object, Object>>() {
+        public int order(Converter<Object, Object> mapper1, Converter<Object, Object> mapper2) {
+            return Ordering.compare(mapper1.getAType(), mapper1.getBType(), mapper2.getAType(), mapper2.getBType(), false);
         }
     };
-    
     
 }

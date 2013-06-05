@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import ma.glasnost.orika.Converter;
 import ma.glasnost.orika.MapperFacade;
-import ma.glasnost.orika.impl.Comparators;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.util.Ordering;
 import ma.glasnost.orika.util.SortedSet;
 
 import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
@@ -47,7 +47,7 @@ public class DefaultConverterFactory implements ConverterFactory {
     public DefaultConverterFactory(Map<ConverterKey, Converter<Object, Object>> converterCache, Set<Converter<Object, Object>> converters) {
         super();
         this.converterCache = converterCache;
-        this.converters = new SortedSet<Converter<Object,Object>>(converters, Comparators.CONVERTER);
+        this.converters = new SortedSet<Converter<Object,Object>>(converters, Ordering.CONVERTER);
         this.convertersMap = new ConcurrentHashMap<String, Converter<Object, Object>>();
     }
     

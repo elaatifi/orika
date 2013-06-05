@@ -18,7 +18,6 @@
 package ma.glasnost.orika.util;
 
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -44,52 +43,33 @@ public class SortedCollection<V> implements Collection<V> {
     /**
      * 
      */
-    protected final Comparator<V> comparator;
+    protected final Ordering<V> ordering;
     /**
      * 
      */
     protected final ConcurrentSkipListMap<Double, V> sortedItems;
     
     /**
-     * 
+     * @param ordering
      */
-    public SortedCollection() {
-        this((Comparator<V>)null);
-    }
-    
-    
-    /**
-     * @param comparator
-     */
-    public SortedCollection(Comparator<V> comparator) {
-        this.comparator = comparator;
+    public SortedCollection(Ordering<V> ordering) {
+        this.ordering = ordering;
         this.sortedItems = new ConcurrentSkipListMap<Double, V>();
     }
     
-    
-    /**
-     * @param c the collection used to initialize this SortedCollection
-     */
-    public SortedCollection(Collection<? extends V> c) {
-        this();
-        addAll(c);
-    }
-    
-
-    
     /**
      * @param c the collection from which to initialize this SortedCollection
-     * @param comparator the comparator used for sorting the elements
+     * @param ordering the ordering used for sorting the elements
      */
-    public SortedCollection(Collection<? extends V> c, Comparator<V> comparator) {
-        this(comparator);
+    public SortedCollection(Collection<? extends V> c, Ordering<V> ordering) {
+        this(ordering);
         addAll(c);
     }
     
     /* (non-Javadoc)
      * @see java.util.Collection#add(java.lang.Object)
      */
-    public boolean add(V value) {
+    public synchronized boolean add(V value) {
         double index = 0;
         double nextIndex = 0;
         boolean insert = false;
@@ -97,7 +77,7 @@ public class SortedCollection<V> implements Collection<V> {
         
         for (Entry<Double, V> item: sortedItems.entrySet()) {
             current = item.getValue();
-            int comparison = comparator == null ? toComparable(current).compareTo(value) : comparator.compare(current, value);
+            int comparison = ordering.order(current, value);
             if (comparison > 0) {
                 insert = true;
                 nextIndex = item.getKey();
@@ -131,7 +111,7 @@ public class SortedCollection<V> implements Collection<V> {
         double key = min + ((max - min)/2.0);
         V existing = sortedItems.putIfAbsent(key, value);
         while (existing != null) {
-            int comparison = comparator == null ? toComparable(existing).compareTo(value) : comparator.compare(existing, value);
+            int comparison = ordering.order(existing, value);
             if (comparison > 0) {
                 key = min + ((key - min) / 2.0);
             } else if (comparison < 0 || allowDuplicates || !existing.equals(value)) {
@@ -152,14 +132,6 @@ public class SortedCollection<V> implements Collection<V> {
         return sortedItems.isEmpty();
     }
     
-    /**
-     * @param item
-     * @return the provided item, cast as a Comparable
-     */
-    @SuppressWarnings({"unchecked" })
-    protected static <V> Comparable<V> toComparable(V item) {
-        return (Comparable<V>)item;
-    }
     /* (non-Javadoc)
      * @see java.lang.Iterable#iterator()
      */

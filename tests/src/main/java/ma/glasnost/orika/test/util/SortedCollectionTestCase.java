@@ -21,9 +21,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import junit.framework.Assert;
-import ma.glasnost.orika.impl.Comparators;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.util.Ordering;
 import ma.glasnost.orika.util.SortedCollection;
 
 import org.junit.Test;
@@ -33,6 +33,7 @@ import org.junit.Test;
  * 
  */
 public class SortedCollectionTestCase {
+    
     public static class A1 {
         
     }
@@ -188,7 +189,7 @@ public class SortedCollectionTestCase {
         set.add(new MapperKey(TypeFactory.valueOf(C4.class), TypeFactory.valueOf(D2.class)));
         set.add(new MapperKey(TypeFactory.valueOf(C5.class), TypeFactory.valueOf(D1.class)));
         
-        SortedCollection<MapperKey> queue = new SortedCollection<MapperKey>(Comparators.MAPPER_KEY);
+        SortedCollection<MapperKey> queue = new SortedCollection<MapperKey>(Ordering.MAPPER_KEY);
         
         for (MapperKey key : set) {
             queue.add(key);
@@ -250,7 +251,7 @@ public class SortedCollectionTestCase {
         set.add(new MapperKey(TypeFactory.valueOf(C5.class), TypeFactory.valueOf(D5.class)));
         
         
-        SortedCollection<MapperKey> queue = new SortedCollection<MapperKey>(Comparators.MAPPER_KEY);
+        SortedCollection<MapperKey> queue = new SortedCollection<MapperKey>(Ordering.MAPPER_KEY);
         
         for (MapperKey key : set) {
             queue.add(key);

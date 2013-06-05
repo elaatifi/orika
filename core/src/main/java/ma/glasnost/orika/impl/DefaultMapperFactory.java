@@ -76,6 +76,7 @@ import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 import ma.glasnost.orika.unenhance.BaseUnenhancer;
 import ma.glasnost.orika.unenhance.UnenhanceStrategy;
+import ma.glasnost.orika.util.Ordering;
 import ma.glasnost.orika.util.SortedCollection;
 
 import org.slf4j.Logger;
@@ -130,7 +131,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.converterFactory = builder.converterFactory;
         this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
-        this.mappersRegistry = new SortedCollection<Mapper<Object, Object>>(Comparators.MAPPER);
+        this.mappersRegistry = new SortedCollection<Mapper<Object, Object>>(Ordering.MAPPER);
         this.explicitAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.dynamicAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
@@ -1081,7 +1082,7 @@ public class DefaultMapperFactory implements MapperFactory {
              * mappers to avoid calling the same mapper multiple times during a
              * single map request;
              */
-            SortedCollection<MapperKey> usedMappers = new SortedCollection<MapperKey>(Comparators.MAPPER_KEY);
+            SortedCollection<MapperKey> usedMappers = new SortedCollection<MapperKey>(Ordering.MAPPER_KEY);
             for (MapperKey key : this.classMapRegistry.keySet()) {
                 if (!key.getAType().equals(classMap.getAType()) || !key.getBType().equals(classMap.getBType())) {
                     if (key.getAType().isAssignableFrom(classMap.getAType()) && key.getBType().isAssignableFrom(classMap.getBType())) {
