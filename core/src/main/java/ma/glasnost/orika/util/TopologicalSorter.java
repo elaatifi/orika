@@ -2,7 +2,6 @@ package ma.glasnost.orika.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -14,13 +13,13 @@ public class TopologicalSorter {
 
 	private static class Node<T> {
 		public final T value;
-		public final HashSet<Edge<T>> inEdges;
-		public final HashSet<Edge<T>> outEdges;
+		public final LinkedHashSet<Edge<T>> inEdges;
+		public final LinkedHashSet<Edge<T>> outEdges;
 
 		public Node(T value) {
 			this.value = value;
-			inEdges = new HashSet<Edge<T>>();
-			outEdges = new HashSet<Edge<T>>();
+			inEdges = new LinkedHashSet<Edge<T>>();
+			outEdges = new LinkedHashSet<Edge<T>>();
 		}
 
 		public Node<T> addEdge(Node<T> node) {
@@ -53,6 +52,11 @@ public class TopologicalSorter {
 		public boolean equals(Object obj) {
 			Edge<?> e = (Edge<?>) obj;
 			return e.from == from && e.to == to;
+		}
+		
+		@Override
+		public int hashCode() {
+			return to.hashCode() ^ from.hashCode();
 		}
 
 		@Override
