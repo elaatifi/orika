@@ -267,7 +267,9 @@ public interface MapperFacade {
     <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context);
     
     /**
-     * Maps the source Array into a new Array of type<code>D</code>.
+     * Maps the source interable into a new Array of type<code>D</code>.
+     * 
+     * @param destination
      * 
      * @param source
      *            the Array from which to map
@@ -281,21 +283,65 @@ public interface MapperFacade {
      */
     <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass);
     
+    /**
+     * Maps the source array into a new Array of type<code>D</code>.
+     * 
+     * @param destination
+     *            the destination array which is also returned
+     * @param source
+     *            the source array
+     * @param destinationClass
+     *            the destination class
+     * @return a new Array containing elements of type
+     *         <code>destinationClass</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass);
     
+    /**
+     * Maps the source Iterable into a new Array of type<code>D</code>.
+     * 
+     * @param destination
+     *            the destination array which is also returned
+     * @param source
+     *            the source Iterable
+     * @param destinationClass
+     *            the destination class
+     * @param context
+     *            the current MappingContext
+     * @return a new Array containing elements of type
+     *         <code>destinationClass</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context);
     
+    /**
+     * Maps the source Array into a new Array of type<code>D</code>.
+     * 
+     * @param destination
+     *            the destination array which is also returned
+     * @param source
+     *            the source Array
+     * @param destinationClass
+     *            the destination class
+     * @param context
+     *            the current MappingContext
+     * @return a new Array containing elements of type
+     *         <code>destinationClass</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context);
     
     /**
-     * Map an iterable onto an existing collection
+     * Maps the source Iterable into the destination Collection
+     * 
      * 
      * @param source
-     *            the source iterable
+     *            the source Iterable
      * @param destination
-     *            the destination collection
+     *            the destination Collection
      * @param destinationClass
-     *            the type of elements in the destination
+     *            the destination class
      */
     <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass);
     
@@ -323,7 +369,7 @@ public interface MapperFacade {
      * @param destinationClass
      *            the type of elements in the destination
      */
-    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationCollection);
+    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass);
     
     /**
      * Map an array onto an existing collection
@@ -337,11 +383,9 @@ public interface MapperFacade {
      * @param context
      *            the current mapping context
      */
-    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationCollection, MappingContext context);
+    <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass, MappingContext context);
     
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // New method signatures to support generics mapping
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
     <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType);
     
     <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType, MappingContext context);
@@ -436,6 +480,20 @@ public interface MapperFacade {
      * 
      * @param source
      *            the source object to map
+     * @param destinationClass
+     *            the type of the destination class to produce
+     * @param converterId
+     *            the specific converter to use; if null, the first compatible
+     *            global converter is used
+     * @return an instance of the converted destination type
+     */
+    <S, D> D convert(S source, Class<D> destinationClass, String converterId);
+    
+    /**
+     * Convert the source object into the appropriate destination type
+     * 
+     * @param source
+     *            the source object to map
      * @param sourceType
      *            the type of the source object
      * @param destinationType
@@ -443,13 +501,9 @@ public interface MapperFacade {
      * @param converterId
      *            the specific converter to use; if null, the first compatible
      *            global converter is used
-     * @return
+     * @return an instance of the converted destination type
      */
     <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId);
-    
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    // New method signatures to support java.util.Map types
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     
     /**
      * Map from one instance of java.util.Map to another.
@@ -480,60 +534,190 @@ public interface MapperFacade {
     <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
             Type<? extends Map<Dk, Dv>> destinationType, MappingContext context);
     
-    /*
-     * New mapping type: Iterable or Array to Map
+    /**
+     * Map from an Iterable to an instance of java.util.Map.
+     * 
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Map object
+     * @return a new Map instance, with key and value types as defined by
+     *         destinationType
      */
     <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType);
     
+    /**
+     * Map from an Iterable to an instance of java.util.Map.
+     * 
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Map object
+     * @param context
+     *            the current mapping context
+     * @return a new Map instance, with key and value types as defined by
+     *         destinationType
+     */
     <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
             MappingContext context);
     
+    /**
+     * Map from an Array to an instance of java.util.Map.
+     * 
+     * @param source
+     *            the source Array
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Map object
+     * @return a new Map instance, with key and value types as defined by
+     *         destinationType
+     */
     <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType);
     
+    /**
+     * Map from an Array to an instance of java.util.Map.
+     * 
+     * @param source
+     *            the source Array
+     * @param sourceType
+     *            the parameterized type of the source Array element
+     * @param destinationType
+     *            the parameterized type of the destination Map object
+     * @param context
+     *            the current mapping context
+     * @return a new Map instance, with key and value types as defined by
+     *         destinationType
+     */
     <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType, MappingContext context);
     
-    /*
-     * New mapping type: Map to List, Set or Array
+    /**
+     * Map from a java.util.Map to a List
+     * 
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination List elements
+     * @return a new List instance, with element types as defined by
+     *         destinationType
      */
     <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
     
+    /**
+     * Map from a java.util.Map to a List
+     * 
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination List elements
+     * @param context
+     *            the current mapping context
+     * @return a new List instance, with element types as defined by
+     *         destinationType
+     */
     <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
             MappingContext context);
     
+    /**
+     * Map from a java.util.Map to a Set
+     * 
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Set elements
+     * @return a new Set instance, with element types defined by
+     *         destinationType
+     */
     <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
     
+    /**
+     * Map from a java.util.Map to a Set
+     * 
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Set elements
+     * @param context
+     *            the current mapping context
+     * @return a new Map instance, with element types as defined by
+     *         destinationType
+     */
     <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Map from a java.util.Map to a Set
+     * 
+     * @param destination
+     *      the destination Array which is also returned
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Array elements
+     * @return the destination Array
+     */
     <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
     
+    /**
+     * Map from a java.util.Map to a Set
+     * 
+     * @param destination
+     *      the destination Array which is also returned
+     * @param source
+     *            the source Map
+     * @param sourceType
+     *            the parameterized type of the source Map object
+     * @param destinationType
+     *            the parameterized type of the destination Array elements
+     * @param context
+     *            the current mapping context
+     * @return the destination Array
+     */
     <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
             MappingContext context);
-    
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    
-    <S, D> D convert(S source, Class<D> destinationClass, String converterId);
     
     /**
      * Create new instance of a destination class. <strong>Abstract types are
      * unsupported</code>.
      * 
      * @param source
-     * @param destinationClass
+     *            the source objet
+     * @param destinationType
+     *            the type of the destination
+     * @param context
+     *            the current mapping context
      * @return new instance of <code>destinationClass</code>
      */
-    // TODO Utilité d'avoir cette méthode publique?
-    <S, D> D newObject(S source, Type<? extends D> destinationClass, MappingContext context);
+    <S, D> D newObject(S source, Type<? extends D> destinationType, MappingContext context);
     
     /**
-     * Resolves a reusable MappingStrategy for the given set of inputs.
-     * 
-     * @param sourceObject the source object to map
-     * @param rawAType the source type
-     * @param rawBType the destination type
-     * @param context the current MappingContext
-     * @return
+     * @param sourceObject
+     *            the source object being mapped
+     * @param sourceType
+     *            the source type to map
+     * @param destinationType
+     *            the destination type
+     * @param mapInPlace
+     *            whether the strategy should map objects in-place
+     * @param context
+     *            the current MappingContext
+     * @return a MappingStrategy appropriate for mapping between the provided
+     *         types
      */
-    <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type rawAType,
-            final java.lang.reflect.Type rawBType, boolean mapInPlace, final MappingContext context);
+    <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type sourceType,
+            final java.lang.reflect.Type destinationType, boolean mapInPlace, final MappingContext context);
     
 }
