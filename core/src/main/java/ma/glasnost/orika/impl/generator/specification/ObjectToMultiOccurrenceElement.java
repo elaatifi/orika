@@ -4,16 +4,21 @@ import static ma.glasnost.orika.impl.generator.SourceCodeContext.append;
 import static ma.glasnost.orika.impl.generator.SourceCodeContext.statement;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
-import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.FieldMap;
+import ma.glasnost.orika.metadata.TypeFactory;
 
+/**
+ * ObjectToMultiOccurrenceElement handles the case where the destination is
+ * a multi-occurrence object of type Object
+ *
+ */
 public class ObjectToMultiOccurrenceElement extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {
+        
         return (fieldMap.getDestination().isMapKey() || fieldMap.getDestination().isArrayElement() || fieldMap.getDestination().isListElement())
-                && (ClassUtil.isImmutable(fieldMap.getSource().getType()) || (!fieldMap.getSource().isCollection()
-                        && !fieldMap.getSource().isArray() && !fieldMap.getSource().isMap() && !fieldMap.getSource()
-                        .isEnum()));
+                && (TypeFactory.TYPE_OF_OBJECT.equals(fieldMap.getDestination().getType()));
+        
     }
 
     public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
@@ -21,6 +26,10 @@ public class ObjectToMultiOccurrenceElement extends AbstractSpecification {
     }
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
+        
+        if (code.isDebugEnabled()) {
+            code.debug("mapping object to multi-occurrence element of type Object");
+        }
         
         StringBuilder out = new StringBuilder();
         if (!source.isPrimitive()) {
