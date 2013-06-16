@@ -17,8 +17,6 @@
  */
 package ma.glasnost.orika.converter;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -30,12 +28,16 @@ import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ConverterKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
+import ma.glasnost.orika.util.HashMapUtility;
 import ma.glasnost.orika.util.Ordering;
 import ma.glasnost.orika.util.SortedSet;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap.Builder;
-
+/**
+ * DefaultConverterFactory is the base implementation of ConverterFactory
+ * 
+ * @author mattdeboer
+ *
+ */
 public class DefaultConverterFactory implements ConverterFactory {
     
     private static final Integer CACHE_SIZE = 2000;
@@ -44,6 +46,10 @@ public class DefaultConverterFactory implements ConverterFactory {
     private final Map<String, Converter<Object, Object>> convertersMap;
     private MapperFacade mapperFacade;
     
+    /**
+     * @param converterCache
+     * @param converters
+     */
     public DefaultConverterFactory(Map<ConverterKey, Converter<Object, Object>> converterCache, Set<Converter<Object, Object>> converters) {
         super();
         this.converterCache = converterCache;
@@ -51,39 +57,13 @@ public class DefaultConverterFactory implements ConverterFactory {
         this.convertersMap = new ConcurrentHashMap<String, Converter<Object, Object>>();
     }
     
+    /**
+     * Constructs a new instance of DefaultConverterFactory using a concurrent linked hash map
+     * as the Converter cache, and a linked hashSet holding the converters.
+     */
     public DefaultConverterFactory() {
-        this(getConcurrentMap(), new LinkedHashSet<Converter<Object, Object>>());
-    }
-    
-    private static Map<ConverterKey, Converter<Object, Object>> getConcurrentMap() {
-        
-        Builder<ConverterKey, Converter<Object, Object>> builder = new ConcurrentLinkedHashMap.Builder<ConverterKey, Converter<Object, Object>>();
-        /*
-         * Fix for maximumWeightedCapacity change from int to long between 1.2 version
-         * and newer 1.x versions; use reflection to detect int or long in the method
-         * signature
-         */
-        try {
-            Method maximumWeightedCapacity = ConcurrentLinkedHashMap.Builder.class.getMethod("maximumWeightedCapacity", int.class);
-            maximumWeightedCapacity.invoke(builder, CACHE_SIZE.intValue());
-        } catch (IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalStateException(e.getTargetException());
-        } catch (NoSuchMethodException e) {
-            try {
-                Method maximumWeightedCapacity = ConcurrentLinkedHashMap.Builder.class.getMethod("maximumWeightedCapacity", long.class);
-                maximumWeightedCapacity.invoke(builder, CACHE_SIZE.longValue());
-            } catch (NoSuchMethodException e1) {
-                throw new IllegalStateException(e1);
-            } catch (IllegalAccessException e1) {
-                throw new IllegalStateException(e1);
-            } catch (InvocationTargetException e1) {
-                throw new IllegalStateException(e1);
-            }
-            
-        }
-        return builder.build();
+        this(HashMapUtility.<ConverterKey, Converter<Object, Object>>getConcurrentLinkedHashMap(CACHE_SIZE), 
+                new LinkedHashSet<Converter<Object, Object>>());
     }
     
     public void setMapperFacade(MapperFacade mapperFacade) {
@@ -230,12 +210,12 @@ public class DefaultConverterFactory implements ConverterFactory {
      * ma.glasnost.orika.converter.ConverterFactory#registerConverter(ma.glasnost
      * .orika.converter.Converter)
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked"})
     public <S, D> void registerConverter(Converter<S, D> converter) {
     	if (this.mapperFacade != null) {
     		converter.setMapperFacade(mapperFacade);
     	}
-    	converters.add((Converter) converter);
+    	converters.add((Converter<Object, Object>) converter);
     }
     
     /*
@@ -245,12 +225,12 @@ public class DefaultConverterFactory implements ConverterFactory {
      * ma.glasnost.orika.converter.ConverterFactory#registerConverter(java.lang
      * .String, ma.glasnost.orika.converter.Converter)
      */
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     public <S, D> void registerConverter(String converterId, Converter<S, D> converter) {
     	if (this.mapperFacade != null) {
     		converter.setMapperFacade(mapperFacade);
     	}
-    	convertersMap.put(converterId, (Converter) converter);
+    	convertersMap.put(converterId, (Converter<Object, Object>) converter);
     }
     
     /*

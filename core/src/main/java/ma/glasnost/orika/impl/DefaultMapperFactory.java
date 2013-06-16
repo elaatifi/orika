@@ -23,6 +23,7 @@ import static java.lang.System.getProperty;
 import static ma.glasnost.orika.OrikaSystemProperties.MAP_NULLS;
 import static ma.glasnost.orika.OrikaSystemProperties.USE_AUTO_MAPPING;
 import static ma.glasnost.orika.OrikaSystemProperties.USE_BUILTIN_CONVERTERS;
+import static ma.glasnost.orika.util.HashMapUtility.getConcurrentLinkedHashMap;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +69,6 @@ import ma.glasnost.orika.metadata.ClassMapBuilderFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilderForArrays;
 import ma.glasnost.orika.metadata.ClassMapBuilderForLists;
 import ma.glasnost.orika.metadata.ClassMapBuilderForMaps;
-import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
@@ -130,7 +129,7 @@ public class DefaultMapperFactory implements MapperFactory {
         
         this.converterFactory = builder.converterFactory;
         this.compilerStrategy = builder.compilerStrategy;
-        this.classMapRegistry = new ConcurrentHashMap<MapperKey, ClassMap<Object, Object>>();
+        this.classMapRegistry = getConcurrentLinkedHashMap(Integer.MAX_VALUE);
         this.mappersRegistry = new SortedCollection<Mapper<Object, Object>>(Ordering.MAPPER);
         this.explicitAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.dynamicAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
@@ -262,6 +261,7 @@ public class DefaultMapperFactory implements MapperFactory {
          * null.
          */
         protected Boolean mapNulls;
+        
         /**
          * Instantiates a new MapperFactoryBuilder
          */
@@ -710,8 +710,7 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public <D, S> void registerObjectFactory(ObjectFactory<D> objectFactory, Type<D> destinationType, Type<S> sourceType) {
-        ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> localCache =
-                objectFactoryRegistry.get(destinationType);
+        ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> localCache = objectFactoryRegistry.get(destinationType);
         if (localCache == null) {
             localCache = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
             objectFactoryRegistry.put(destinationType, localCache);
@@ -786,24 +785,24 @@ public class DefaultMapperFactory implements MapperFactory {
         Type<T> targetType = destinationType;
         ObjectFactory<T> result;
         
-        ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> localCache =
-                objectFactoryRegistry.get(targetType);
+        ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> localCache = objectFactoryRegistry.get(targetType);
         if (localCache == null) {
             localCache = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
-            ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> existing = objectFactoryRegistry.putIfAbsent(targetType, localCache);
+            ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> existing = objectFactoryRegistry.putIfAbsent(
+                    targetType, localCache);
             if (existing != null) {
                 localCache = existing;
             }
             result = null;
         } else {
-        	Type<?> checkSourceType = sourceType;
-        	do {
-        		result = (ObjectFactory<T>) localCache.get(checkSourceType);
-       			checkSourceType = checkSourceType.getSuperType();
-        	} while (result == null && !TypeFactory.TYPE_OF_OBJECT.equals(checkSourceType));
-        	if (result == null) {
-        		result = (ObjectFactory<T>) localCache.get(TypeFactory.TYPE_OF_OBJECT);
-        	}
+            Type<?> checkSourceType = sourceType;
+            do {
+                result = (ObjectFactory<T>) localCache.get(checkSourceType);
+                checkSourceType = checkSourceType.getSuperType();
+            } while (result == null && !TypeFactory.TYPE_OF_OBJECT.equals(checkSourceType));
+            if (result == null) {
+                result = (ObjectFactory<T>) localCache.get(TypeFactory.TYPE_OF_OBJECT);
+            }
         }
         
         if (result == null) {
@@ -1022,11 +1021,16 @@ public class DefaultMapperFactory implements MapperFactory {
         return usedClassMapSet;
     }
     
+    /**
+     * Builds up metadata regarding which classmaps are used by others.
+     */
     private void buildClassMapRegistry() {
+        
         // prepare a map for classmap (stored as set)
         Map<MapperKey, ClassMap<Object, Object>> classMapsDictionary = new HashMap<MapperKey, ClassMap<Object, Object>>();
         
         Set<ClassMap<Object, Object>> classMaps = new HashSet<ClassMap<Object, Object>>(classMapRegistry.values());
+        
         
         for (final ClassMap<Object, Object> classMap : classMaps) {
             classMapsDictionary.put(new MapperKey(classMap.getAType(), classMap.getBType()), classMap);

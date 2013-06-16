@@ -18,6 +18,8 @@
 
 package ma.glasnost.orika.impl;
 
+import static ma.glasnost.orika.util.HashMapUtility.getConcurrentLinkedHashMap;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -49,8 +51,6 @@ import ma.glasnost.orika.unenhance.UnenhanceStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.googlecode.concurrentlinkedhashmap.ConcurrentLinkedHashMap;
-
 /**
  * MapperFacadeImpl is the base implementation of MapperFacade
  */
@@ -60,8 +60,7 @@ public class MapperFacadeImpl implements MapperFacade {
     private final MappingContextFactory contextFactory;
     private final UnenhanceStrategy unenhanceStrategy;
     private final UnenhanceStrategy userUnenhanceStrategy;
-    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = new ConcurrentLinkedHashMap.Builder<MappingStrategyKey, MappingStrategy>().maximumWeightedCapacity(
-            500).build();
+    private final Map<MappingStrategyKey, MappingStrategy> strategyCache = getConcurrentLinkedHashMap(500);
     private final Logger log = LoggerFactory.getLogger(getClass());
     
     /**
@@ -227,8 +226,8 @@ public class MapperFacadeImpl implements MapperFacade {
          * Set the resolved types on the current mapping context; this can be
          * used by downstream Mappers to determine the originally resolved types
          */
-        context.setResolvedSourceType(strategy.getSoureType());
-        context.setResolvedDestinationType(strategy.getDestinationType());
+        context.setResolvedSourceType(strategy.getAType());
+        context.setResolvedDestinationType(strategy.getBType());
         
         return strategy;
     }
@@ -280,7 +279,6 @@ public class MapperFacadeImpl implements MapperFacade {
      * @return
      */
     private <D, S> boolean canCopyByReference(Type<D> destinationType, final Type<S> resolvedSourceType) {
-//        if (ClassUtil.isImmutable(resolvedSourceType) && (resolvedSourceType.equals(destinationType))) {
         if (ClassUtil.isImmutable(resolvedSourceType) && (destinationType.isAssignableFrom(resolvedSourceType))) {
             return true;
         } else if (resolvedSourceType.isPrimitiveWrapper()
@@ -344,9 +342,8 @@ public class MapperFacadeImpl implements MapperFacade {
     public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
         
         try {
-            
             MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
-            if (null == context.getMappedObject(sourceObject, strategy.getDestinationType())) {
+            if (null == context.getMappedObject(sourceObject, strategy.getBType())) {
                 strategy.map(sourceObject, destinationObject, context);
             }
             
