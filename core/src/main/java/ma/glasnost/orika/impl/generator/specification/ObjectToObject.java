@@ -6,15 +6,21 @@ import ma.glasnost.orika.impl.generator.MultiOccurrenceVariableRef;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.Property;
 
+/**
+ * ObjectToObject
+ *
+ */
 public class ObjectToObject extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {
         return true;
     }
 
-    public String generateEqualityTestCode(VariableRef source, VariableRef destination, Property inverseProperty, SourceCodeContext code) {
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.impl.generator.specification.AbstractSpecification#generateEqualityTestCode(ma.glasnost.orika.metadata.FieldMap, ma.glasnost.orika.impl.generator.VariableRef, ma.glasnost.orika.impl.generator.VariableRef, ma.glasnost.orika.impl.generator.SourceCodeContext)
+     */
+    public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         return "";
     }
 

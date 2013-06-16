@@ -31,6 +31,10 @@ import ma.glasnost.orika.MapperFactory;
  */
 public interface CodeGenerationStrategy {
     
+    /**
+     * Position represents the relative position of a specification
+     * in the chain of mapping specifications
+     */
     enum Position {
         BEFORE,
         AFTER,
@@ -56,12 +60,10 @@ public interface CodeGenerationStrategy {
      */
     public void addSpecification(Specification spec, Position relativePosition, Class<Specification> relativeSpec);
     
-   
     /**
      * @return the defined specifications 
      */
     public List<Specification> getSpecifications();
-    
     
     /**
      * Convenience method to add an AggregateSpecification at a relative position with respect to

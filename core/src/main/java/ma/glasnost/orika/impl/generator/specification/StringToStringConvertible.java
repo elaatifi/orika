@@ -6,6 +6,10 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 
+/**
+ * StringToStringConvertible handles conversion of String to primitive types
+ *
+ */
 public class StringToStringConvertible extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {
@@ -18,6 +22,11 @@ public class StringToStringConvertible extends AbstractSpecification {
     }
 
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
+        
+        if (code.isDebugEnabled()) {
+            code.debug("converting from String to " + destination.type());
+        }
+        
         String value = source.toString();
         if (String.class.equals(source.rawType()) && (Character.class.equals(destination.rawType()) || char.class.equals(destination.rawType()))) {
             value = value + ".charAt(0)";

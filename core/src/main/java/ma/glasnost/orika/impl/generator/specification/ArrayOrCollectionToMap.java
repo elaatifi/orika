@@ -16,6 +16,11 @@ import ma.glasnost.orika.impl.util.StringUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.Type;
 
+/**
+ * ArrayOrCollectionToMap handles mapping of an Array or Collection
+ * to a Map field
+ *
+ */
 public class ArrayOrCollectionToMap extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {

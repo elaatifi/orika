@@ -5,6 +5,10 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 
+/**
+ * AnyTypeToString handles conversion of any non-String type
+ * to a String using a toString() or primitive equivalent.
+ */
 public class AnyTypeToString extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {

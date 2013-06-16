@@ -5,6 +5,10 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 
+/**
+ * ArrayOrCollectionToArray handles mapping of an Array or Collection to
+ * an Array
+ */
 public class ArrayOrCollectionToArray extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {

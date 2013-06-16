@@ -4,6 +4,7 @@ import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
+import ma.glasnost.orika.metadata.TypeFactory;
 
 /**
  * @author mattdeboer
@@ -12,7 +13,9 @@ import ma.glasnost.orika.metadata.FieldMap;
 public class PrimitiveAndObject extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {
-        return fieldMap.getSource().getType().isPrimitive() || fieldMap.getDestination().getType().isPrimitive();
+        return (fieldMap.getSource().getType().isPrimitive() 
+                && !TypeFactory.TYPE_OF_OBJECT.equals(fieldMap.getDestination().getType()))
+                    || fieldMap.getDestination().getType().isPrimitive();
     }
 
     public String generateEqualityTestCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {

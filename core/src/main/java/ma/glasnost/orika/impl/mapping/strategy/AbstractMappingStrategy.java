@@ -25,11 +25,11 @@ public abstract class AbstractMappingStrategy implements MappingStrategy {
         this.destinationType = destinationType;
     }
     
-    public Type<?> getSoureType() {
+    public Type<Object> getAType() {
         return sourceType;
     }
 
-    public Type<?> getDestinationType() {
+    public Type<Object> getBType() {
         return destinationType;
     }
     

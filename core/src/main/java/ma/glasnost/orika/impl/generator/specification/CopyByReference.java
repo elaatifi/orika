@@ -7,6 +7,9 @@ import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.FieldMap;
 
+/**
+ * CopyByReference handles mapping of immutable types by reference
+ */
 public class CopyByReference extends AbstractSpecification {
 
     public boolean appliesTo(FieldMap fieldMap) {

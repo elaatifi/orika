@@ -6,6 +6,9 @@ import ma.glasnost.orika.impl.generator.SourceCodeContext;
 import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.metadata.FieldMap;
 
+/**
+ * EnumToEnum handles conversion of one enumeration to another
+ */
 public class EnumToEnum extends AbstractSpecification {
     
     public boolean appliesTo(FieldMap fieldMap) {

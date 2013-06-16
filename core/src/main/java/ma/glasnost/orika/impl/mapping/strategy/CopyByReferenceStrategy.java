@@ -54,7 +54,7 @@ public class CopyByReferenceStrategy implements MappingStrategy {
      * @see
      * ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getSoureType()
      */
-    public Type<?> getSoureType() {
+    public Type<Object> getAType() {
         return null;
     }
     
@@ -65,7 +65,7 @@ public class CopyByReferenceStrategy implements MappingStrategy {
      * ma.glasnost.orika.impl.mapping.strategy.MappingStrategy#getDestinationType
      * ()
      */
-    public Type<?> getDestinationType() {
+    public Type<Object> getBType() {
         return null;
     }
 }

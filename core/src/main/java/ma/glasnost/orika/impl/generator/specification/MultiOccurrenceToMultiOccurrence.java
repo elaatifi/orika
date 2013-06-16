@@ -23,13 +23,18 @@ import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
+import ma.glasnost.orika.metadata.TypeFactory;
 
 /**
- * @author mattdeboer
- *
+ * MultiOccurrenceToMultiOccurrence handles the mapping of one or more
+ * multi-occurrence source fields to one or more multi-occurrence destination
+ * fields.
  */
 public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification {
     
+    /**
+     * The MapperFactory relevant to this code generation request
+     */
     protected MapperFactory mapperFactory;
     
     /**
@@ -199,7 +204,10 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                  * If we have a fieldMap for the current node, attempt to map the fields
                  */
                 boolean wasConverted = mapFields(currentNode, srcNode, out, code);
-                if (!currentNode.parent.addedToCollector) {
+                if (currentNode.parent != null 
+                        && currentNode.parent.elementRef != null 
+                        && !currentNode.parent.addedToCollector) {
+                    
                     String assignNull = (currentNode.parent.elementRef.isPrimitive() ? currentNode.parent.nullCheckFlag.assign("true") : currentNode.parent.elementRef.assign("null"));
                     if (mapperFactory.getConverterFactory().canConvert(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type())) {
                         append(out,
@@ -282,7 +290,9 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         
         out.append(statement(code.mapFields(currentNode.value, s, d, destType, null)));
         
-        return d.type().equals(currentNode.parent.elementRef.type()) && mapperFactory.getConverterFactory().canConvert(s.type(), d.type());
+        Type<?> parentElementType = currentNode.parent != null ? currentNode.parent.elementRef.type() : TypeFactory.TYPE_OF_OBJECT;
+        
+        return d.type().equals(parentElementType) && mapperFactory.getConverterFactory().canConvert(s.type(), d.type());
     }
     
     
@@ -315,8 +325,10 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                 }
             }
         
-            if (srcNode.parent != null 
-                    && srcNode.parent.elementRef != null 
+            if (srcNode != null 
+                    && srcNode.parent != null 
+                    && srcNode.parent.elementRef != null
+                    && currentNode != null
                     && currentNode.parent != null 
                     && currentNode.parent.elementRef != null) {
                 

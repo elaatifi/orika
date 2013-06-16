@@ -18,8 +18,8 @@
 
 package ma.glasnost.orika.impl.mapping.strategy;
 
+import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.MappingContext;
-import ma.glasnost.orika.metadata.Type;
 
 /**
  * MappingStrategy defines the contract for a pre-resolved classification of mapping
@@ -28,7 +28,7 @@ import ma.glasnost.orika.metadata.Type;
  * @author matt.deboer@gmail.com
  *
  */
-public interface MappingStrategy {
+public interface MappingStrategy extends MappedTypePair<Object, Object> {
     
     /**
      * Perform the mapping
@@ -40,15 +40,5 @@ public interface MappingStrategy {
      * @return the mapping result
      */
     public Object map(Object sourceObject, Object destinationObject, MappingContext context);
- 
-    /**
-     * @return the source type handled by this strategy
-     */
-    public Type<?> getSoureType();
-    
-    /**
-     * @return the destination type handled by this strategy
-     */
-    public Type<?> getDestinationType();
     
 }
