@@ -385,33 +385,246 @@ public interface MapperFacade {
      */
     <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass, MappingContext context);
     
-    
+    /**
+     * Create and return a new instance of type D mapped with the properties of
+     * <code>sourceObject</code>.
+     * 
+     * @param sourceObject
+     *            the object to map from
+     * @param sourceType
+     *            the type of the source object
+     * @param destinationType
+     *            the type of the new object to return
+     * @return a new instance of type D mapped with the properties of
+     *         <code>sourceObject</code>
+     */
     <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Create and return a new instance of type D mapped with the properties of
+     * <code>sourceObject</code>.
+     * 
+     * @param sourceObject
+     *            the object to map from
+     * @param sourceType
+     *            the type of the source object
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return a new instance of type D mapped with the properties of
+     *         <code>sourceObject</code>
+     */
     <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Maps the source Iterable into a new Set parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Iterable from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @return a new Set containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Maps the source Iterable into a new Set parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Iterable from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return a new Set containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Maps the source Array into a new Set parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @return a new Set containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Maps the source Array into a new Set parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return a new Set containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Maps the source Iterable into a new List parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Iterable from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return a new List containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Maps the source Iterable into a new List parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Iterable from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return a new List containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Maps the source Array into a new List parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @return a new List containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Maps the source Array into a new List parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return a new List containing elements of type
+     *         <code>destinationType</code> mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Maps the source Array into a new List parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param destination
+     *            the destination Array which is returned
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @return the destination Array mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Maps the source Array into a new List parameterized by
+     * <code>destinationType</code>.
+     * 
+     * @param destination
+     *            the destination Array which is returned
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return the destination Array mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType);
     
+    /**
+     * Maps the source Iterable into the destination Array
+     * 
+     * @param destination
+     *            the destination Array which is returned
+     * @param source
+     *            the Iterable from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return the destination Array mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
+    /**
+     * Maps the source Array into the destination Array
+     * 
+     * @param destination
+     *            the destination Array which is returned
+     * @param source
+     *            the Array from which to map
+     * @param sourceType
+     *            the type of the source elements
+     * @param destinationType
+     *            the type of the new object to return
+     * @param context
+     *            the current mapping context
+     * @return the destination Array mapped from the elements of
+     *         <code>source</code>.
+     */
     <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context);
     
     /**
@@ -635,8 +848,7 @@ public interface MapperFacade {
      *            the parameterized type of the source Map object
      * @param destinationType
      *            the parameterized type of the destination Set elements
-     * @return a new Set instance, with element types defined by
-     *         destinationType
+     * @return a new Set instance, with element types defined by destinationType
      */
     <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType);
     
@@ -660,7 +872,7 @@ public interface MapperFacade {
      * Map from a java.util.Map to a Set
      * 
      * @param destination
-     *      the destination Array which is also returned
+     *            the destination Array which is also returned
      * @param source
      *            the source Map
      * @param sourceType
@@ -675,7 +887,7 @@ public interface MapperFacade {
      * Map from a java.util.Map to a Set
      * 
      * @param destination
-     *      the destination Array which is also returned
+     *            the destination Array which is also returned
      * @param source
      *            the source Map
      * @param sourceType
