@@ -17,20 +17,11 @@
  */
 package ma.glasnost.orika.test.metadata;
 
-import static java.util.Arrays.asList;
-
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
 import junit.framework.Assert;
+import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
-import ma.glasnost.orika.metadata.ClassMap;
-import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.ScoringClassMapBuilder;
+import ma.glasnost.orika.metadata.CaseInsensitiveClassMapBuilder;
 
 import org.junit.Test;
 
@@ -39,112 +30,117 @@ import org.junit.Test;
  * 
  */
 public class CaseInsensitiveClassMapBuilderTest {
-    public static class Name {
-        public String first;
-        public String middle;
-        public String last;
-    }
     
     public static class Source {
-        public String lastName;
-        public Integer age;
-        public PostalAddress postalAddress;
+        public String lastNAME;
         public String firstName;
-        public String stateOfBirth;
-        public String eyeColor;
-        public String driversLicenseNumber;
+        public Integer age;
+        public SourceName NaMe;
+    }
+    
+    public static class SourceName {
+        public String FIRST;
+        public String LAST;
     }
     
     public static class Destination {
-        public Name name;
-        public Integer currentAge;
-        public String streetAddress;
-        public String birthState;
-        public String countryCode;
-        public String favoriteColor;
-        public String id;
+        public String LastName;
+        public String fIrStNaMe;
+        public Integer AGE;
+        public DestinationName nAme;
     }
     
-    public static class PostalAddress {
-        public String street;
-        public String city;
-        public String state;
-        public String postalCode;
-        public Country country;
-    }
-    
-    public static class Country {
-        public String name;
-        public String alphaCode;
-        public int numericCode;
+    public static class DestinationName {
+        public String fIrSt;
+        public String LaSt;
     }
     
     @Test
-    public void testClassMapBuilderExtension() {
+    public void byDefault() {
         
-        MapperFactory factory = new DefaultMapperFactory.Builder().classMapBuilderFactory(new ScoringClassMapBuilder.Factory()).build();
+        MapperFactory factory = new DefaultMapperFactory.Builder()
+            .classMapBuilderFactory(new CaseInsensitiveClassMapBuilder.Factory()).build();
         
-        ClassMap<Source, Destination> map = factory.classMap(Source.class, Destination.class).byDefault().toClassMap();
-        Map<String, String> mapping = new HashMap<String, String>();
-        for (FieldMap f : map.getFieldsMapping()) {
-            mapping.put(f.getSource().getExpression(), f.getDestination().getExpression());
-        }
+        factory.classMap(Source.class, Destination.class).byDefault().register();
+
+        MapperFacade mapper = factory.getMapperFacade();
         
+        Source s = new Source();
+        s.lastNAME = "Smith";
+        s.firstName = "Joe";
+        s.age = 25;
+        
+        Destination d = mapper.map(s, Destination.class);
         /*
          * Check that properties we expect were mapped
          */
-        Assert.assertEquals("name.first", mapping.get("firstName"));
-        Assert.assertEquals("name.last", mapping.get("lastName"));
-        Assert.assertEquals("streetAddress", mapping.get("postalAddress.street"));
-        Assert.assertEquals("countryCode", mapping.get("postalAddress.country.alphaCode"));
-        Assert.assertEquals("currentAge", mapping.get("age"));
-        Assert.assertEquals("birthState", mapping.get("stateOfBirth"));
-        
-        /*
-         * Check that properties that we don't expect aren't mapped by accident
-         */
-        Assert.assertFalse(mapping.containsKey("driversLicenseNumber"));
-        Assert.assertFalse(mapping.containsKey("eyeColor"));
-        
-        
+        Assert.assertEquals(s.firstName, d.fIrStNaMe);
+        Assert.assertEquals(s.lastNAME, d.LastName);
+        Assert.assertEquals(s.age, d.AGE);
     }
     
-    @SuppressWarnings("unchecked")
     @Test
-    public void testSplittingWords() throws Throwable {
-        Map<String, List<List<String>>> tests = new HashMap<String, List<List<String>>>() {
-            private static final long serialVersionUID = 1L;
-            {
-                put("lowercase", asList(asList("lowercase")));
-                put("Class", asList(asList("class")));
-                put("MyClass", asList(asList("my", "class")));
-                put("HTML", asList(asList("html")));
-                put("PDFLoader", asList(asList("pdf", "loader")));
-                put("AString", asList(asList("a", "string")));
-                put("SimpleXMLParser", asList(asList("Simple", "xml", "parser")));
-                put("GL11Version", asList(asList("gl", "11", "version")));
-                put("99Bottles", asList(asList("99", "bottles")));
-                put("May5", asList(asList("may", "5")));
-                put("BFG9000", asList(asList("bfg", "9000")));
-                put("SimpleXMLParser", asList(asList("simple", "xml", "parser")));
-                put("postalAddress.country", asList(asList("postal", "address"), asList("country")));
-                put("aVeryLongWord.name.first", asList(asList("a", "very", "long", "word"), asList("name"), asList("first")));
-            }
-        };
+    public void fieldMap_withoutNestedProperties() {
         
-        Method splitIntoWords = ScoringClassMapBuilder.FieldMatchScore.class.getDeclaredMethod("splitIntoLowerCaseWords", String.class);
-        splitIntoWords.setAccessible(true);
+        MapperFactory factory = new DefaultMapperFactory.Builder()
+            .classMapBuilderFactory(new CaseInsensitiveClassMapBuilder.Factory()).build();
         
-        for (Entry<String, List<List<String>>> test : tests.entrySet()) {
-            
-            List<List<String>> testValue = test.getValue();
-            List<List<String>> result = (List<List<String>>)splitIntoWords.invoke(null, test.getKey());
-            Assert.assertEquals(testValue.size(), result.size());
-            for (int i=0, len = testValue.size(); i < len; ++i) {
-                Assert.assertEquals(testValue.get(i), result.get(i));
-            }
-        }
+        factory.classMap(Source.class, Destination.class)
+            .field("FIRSTname", "FIRSTname")
+            .field("lastNAME", "lastNAME")
+            .field("aGE", "aGE")
+            .register();
         
+
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Source s = new Source();
+        s.lastNAME = "Smith";
+        s.firstName = "Joe";
+        s.age = 25;
+        
+        Destination d = mapper.map(s, Destination.class);
+        /*
+         * Check that properties we expect were mapped
+         */
+        Assert.assertEquals(s.firstName, d.fIrStNaMe);
+        Assert.assertEquals(s.lastNAME, d.LastName);
+        Assert.assertEquals(s.age, d.AGE);
     }
     
+    @Test
+    public void fieldMap_withNestedProperties() {
+        
+        MapperFactory factory = new DefaultMapperFactory.Builder()
+            .classMapBuilderFactory(new CaseInsensitiveClassMapBuilder.Factory()).build();
+        
+        factory.classMap(Source.class, Destination.class)
+            .field("FIRSTname", "FIRSTname")
+            .field("lastNAME", "lastNAME")
+            .field("aGE", "aGE")
+            .field("name.first", "name.first")
+            .field("name.last", "name.last")
+            .register();
+        
+
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Source s = new Source();
+        s.lastNAME = "Smith";
+        s.firstName = "Joe";
+        s.age = 25;
+        s.NaMe = new SourceName();
+        s.NaMe.FIRST = "Joe";
+        s.NaMe.LAST = "Smith";
+        
+        Destination d = mapper.map(s, Destination.class);
+        /*
+         * Check that properties we expect were mapped
+         */
+        Assert.assertEquals(s.firstName, d.fIrStNaMe);
+        Assert.assertEquals(s.lastNAME, d.LastName);
+        Assert.assertEquals(s.age, d.AGE);
+        Assert.assertEquals(s.NaMe.FIRST, d.nAme.fIrSt);
+        Assert.assertEquals(s.NaMe.LAST, d.nAme.LaSt);
+    }
 }

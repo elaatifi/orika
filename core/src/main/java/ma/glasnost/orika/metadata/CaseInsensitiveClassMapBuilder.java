@@ -1,6 +1,6 @@
 package ma.glasnost.orika.metadata;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -37,6 +37,10 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
             return new CaseInsensitiveClassMapBuilder<A,B>(aType, bType, mapperFactory, propertyResolver, defaults);
         }
     }
+
+    private Map<String, String> lowercasePropertiesForA;
+    private Map<String, String> lowercasePropertiesForB;
+    private boolean initialized;
     
     /**
      * @param aType
@@ -48,6 +52,17 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
     protected CaseInsensitiveClassMapBuilder(Type<A> aType, Type<B> bType, MapperFactory mapperFactory,
             PropertyResolverStrategy propertyResolver, DefaultFieldMapper[] defaults) {
         super(aType, bType, mapperFactory, propertyResolver, defaults);
+        
+        lowercasePropertiesForA = new LinkedHashMap<String, String>();
+        for (String prop: this.getPropertyExpressions(getAType()).keySet()) {
+            lowercasePropertiesForA.put(prop.toLowerCase(), prop);
+        }
+        
+        lowercasePropertiesForB = new LinkedHashMap<String, String>();
+        for (String prop: this.getPropertyExpressions(getBType()).keySet()) {
+            lowercasePropertiesForB.put(prop.toLowerCase(), prop);
+        }
+        initialized = true;
     }
 
     /* (non-Javadoc)
@@ -61,7 +76,6 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
         
         super.byDefault(withDefaults);
         
-        
         DefaultFieldMapper[] defaults;
         if (withDefaults.length == 0) {
             defaults = getDefaultFieldMappers();
@@ -69,23 +83,12 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
             defaults = withDefaults;
         }
         
-        
-        Map<String, String> propertiesForA = new HashMap<String, String>();
-        for (String prop: getPropertiesForTypeA()) {
-            propertiesForA.put(prop.toLowerCase(), prop);
-        }
-        
-        Map<String, String> propertiesForB = new HashMap<String, String>();
-        for (String prop: getPropertiesForTypeB()) {
-            propertiesForB.put(prop.toLowerCase(), prop);
-        }
-        
-        for (final Entry<String, String> entry : propertiesForA.entrySet()) {
+        for (final Entry<String, String> entry : lowercasePropertiesForA.entrySet()) {
             String propertyNameA = entry.getValue();
             String lowercaseName = entry.getKey();
             if (!getMappedPropertiesForTypeA().contains(propertyNameA)) {
-                if (propertiesForB.containsKey(lowercaseName)) {
-                    String propertyNameB = propertiesForB.get(lowercaseName);
+                if (lowercasePropertiesForB.containsKey(lowercaseName)) {
+                    String propertyNameB = lowercasePropertiesForB.get(lowercaseName);
                     if (!getMappedPropertiesForTypeB().contains(propertyNameB)) {
                         /*
                          * Don't include the default mapping of Class to Class; this
@@ -111,6 +114,26 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
         }
         
         return this;
+    }
+    
+    /**
+     * Resolves a property for the particular type, based on the provided property expression
+     * 
+     * @param type the type to resolve
+     * @param expr the property expression to resolve
+     * @return the Property referenced by the provided expression
+     */
+    protected Property resolveProperty(java.lang.reflect.Type type, String expr) {
+        String expression = expr;
+        if (initialized) {
+            Map<String, String> lowercaseProps = type.equals(getAType()) ? 
+                    lowercasePropertiesForA : lowercasePropertiesForB;
+            String resolvedExpression = lowercaseProps.get(expr.toLowerCase());
+            if (resolvedExpression != null) {
+                expression = resolvedExpression;
+            }
+        } 
+        return super.resolveProperty(type, expression);
     }
     
 }

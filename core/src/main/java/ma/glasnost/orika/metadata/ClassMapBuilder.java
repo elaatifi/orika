@@ -20,9 +20,12 @@ package ma.glasnost.orika.metadata;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.Map.Entry;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MappedTypePair;
@@ -30,6 +33,7 @@ import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.UtilityResolver;
+import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
@@ -121,6 +125,77 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
 	    
 	}
      
+    /**
+     * Gets all of the property expressions for a given type, including all nested properties.
+     * If the type of a property is not immutable and has any nested properties, it will not
+     * be included. (Note that the 'class' property is explicitly excluded.)
+     * 
+     * @param type the type for which to gather properties
+     * @return the map of nested properties keyed by expression name
+     */
+    protected Map<String, Property> getPropertyExpressions(Type<?> type) {
+        
+        PropertyResolverStrategy propertyResolver = getPropertyResolver();
+        
+        Map<String, Property> properties = new HashMap<String, Property>();
+        LinkedHashMap<String, Property> toProcess = new LinkedHashMap<String, Property>(propertyResolver.getProperties(type));
+        
+        if (type.isMap() || type.isList() || type.isArray()) {
+            Property selfReferenceProperty =
+                    new Property.Builder()
+                        .name("").getter("").setter(" = %s").type(TypeFactory.valueOf(type))
+                        .build((PropertyResolver) propertyResolver);
+            toProcess.put("", selfReferenceProperty);
+        }
+        
+        while (!toProcess.isEmpty()) {
+            
+            Entry<String, Property> entry = toProcess.entrySet().iterator().next();
+            if (!entry.getKey().equals("class")) {
+                Property owningProperty = entry.getValue();
+                Type<?> propertyType = owningProperty.getType();
+                if (!ClassUtil.isImmutable(propertyType)) {
+                    Map<String, Property> props = propertyResolver.getProperties(propertyType);
+                    if (propertyType.isMap()) {
+                        Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getNestedType(1));
+                        for (Entry<String, Property> prop: valueProperties.entrySet()) {
+                            Property elementProp = new NestedElementProperty(entry.getValue(), prop.getValue(), propertyResolver);
+                            String key = entry.getKey() + PropertyResolver.ELEMENT_PROPERT_PREFIX + prop.getKey() + PropertyResolver.ELEMENT_PROPERT_SUFFIX;
+                            toProcess.put(key, elementProp);
+                        }
+                    } else if (propertyType.isList()) {
+                        Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getNestedType(0));
+                        for (Entry<String, Property> prop: valueProperties.entrySet()) {
+                            Property elementProp = new NestedElementProperty(owningProperty, prop.getValue(), propertyResolver);
+                            String key = entry.getKey() + PropertyResolver.ELEMENT_PROPERT_PREFIX + prop.getValue().getExpression() + PropertyResolver.ELEMENT_PROPERT_SUFFIX;
+                            toProcess.put(key, elementProp);
+                        }
+                    } else if (propertyType.isArray()) {
+                        Map<String, Property> valueProperties = getPropertyExpressions(propertyType.getComponentType());
+                        for (Entry<String, Property> prop: valueProperties.entrySet()) {
+                            Property elementProp = new NestedElementProperty(entry.getValue(), prop.getValue(), propertyResolver);
+                            String key = entry.getKey() + PropertyResolver.ELEMENT_PROPERT_PREFIX + prop.getKey() + PropertyResolver.ELEMENT_PROPERT_SUFFIX;
+                            toProcess.put(key, elementProp);
+                        }
+                    } else if (!props.isEmpty()) {
+                        for (Entry<String, Property> property : props.entrySet()) {
+                            if (!property.getKey().equals("class")) {
+                                String expression = entry.getKey() + "." + property.getKey();
+                                toProcess.put(expression, resolveProperty(type, expression));
+                            }
+                        }
+                    } else {
+                        properties.put(entry.getKey(), resolveProperty(type, entry.getKey()));
+                    }
+                } else {
+                    properties.put(entry.getKey(), resolveProperty(type, entry.getKey()));
+                }
+            }
+            toProcess.remove(entry.getKey());
+        }
+        return properties;
+    }
+    
     /**
      * @param aType
      * @param bType
