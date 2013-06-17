@@ -18,6 +18,8 @@
 
 package ma.glasnost.orika.metadata;
 
+import java.util.List;
+
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
@@ -99,8 +101,13 @@ public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
     }
      
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
+        Type<?> listAncestor = propertyType;
+        if (!listAncestor.isParameterized()) {
+            listAncestor = listAncestor.findAncestor(List.class);
+        }
+        
         int index = Integer.valueOf(expr.replaceAll("[\\[\\]]", ""));
-        return new ListElementProperty(index, propertyType.getNestedType(0), null);
+        return new ListElementProperty(index, listAncestor.getNestedType(0), null);
     }
     
 }

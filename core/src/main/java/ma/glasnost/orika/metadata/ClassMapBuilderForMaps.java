@@ -20,6 +20,7 @@ package ma.glasnost.orika.metadata;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import ma.glasnost.orika.DefaultFieldMapper;
@@ -171,7 +172,12 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
     }
     
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
-        return new MapKeyProperty(expr, propertyType.getNestedType(1), null);
+        Type<?> mapAncestor = propertyType;
+        if (!mapAncestor.isParameterized()) {
+            mapAncestor = mapAncestor.findAncestor(Map.class);
+        }
+        
+        return new MapKeyProperty(expr, mapAncestor.getNestedType(1), null);
     }
     
 }
