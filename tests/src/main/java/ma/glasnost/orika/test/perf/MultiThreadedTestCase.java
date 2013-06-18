@@ -400,6 +400,10 @@ public class MultiThreadedTestCase {
 	        try {
 	            for (int i = 0; i < Integer.MAX_VALUE; ++i) {
 	                int available = (int) Math.min((long) Integer.MAX_VALUE, Runtime.getRuntime().maxMemory());
+	                // 8 bytes for the array header, 4 bytes for the length
+	                if (available > 12) {
+	                    available -= 12;
+	                }
 	                byteBucket.add(new byte[available]);
 	            }
 	        } catch (Throwable e) {
