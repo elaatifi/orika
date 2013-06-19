@@ -160,7 +160,11 @@ public class MultiOccurrenceVariableRef extends VariableRef {
                 return assign("listToArray(%s, %s.class)", value, type().getCanonicalName());
             }
         } else if (isMap() && value.isList()) {
-            return assign("listToMap(%s, java.util.LinkedHashMap.class)", value);
+            if (isAssignable()) {
+                return assign("listToMap(%s, java.util.LinkedHashMap.class)", value);
+            } else {
+                return String.format("listToMap(%s, %s)", value, this);
+            }
         } else if (isCollection() && value.isArray()) {
             if (value.type().getComponentType().isPrimitive()) {
                 return getter() + ".addAll(asList(" + value + "))";

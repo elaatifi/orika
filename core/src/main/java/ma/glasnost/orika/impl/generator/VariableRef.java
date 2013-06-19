@@ -462,7 +462,7 @@ public class VariableRef {
     }
     
     public String name() {
-        return property != null ? property.getName() : name;
+        return property != null && !"".equals(property.getName()) ? property.getName() : name;
     }
     
     public String isNull() {

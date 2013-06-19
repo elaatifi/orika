@@ -145,9 +145,6 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         // TODO: need to create a flag variable to mark whether destination has been added
         // to it's collector; it should be set to false upon new destination element creation
         
-        
-//        MapperFactory mapperFactory = (MapperFactory) code.getMappingContext().getProperty(Properties.MAPPER_FACTORY);
-        
         StringBuilder endWhiles = new StringBuilder();
         StringBuilder addLastElement = new StringBuilder();
         
@@ -195,7 +192,6 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                             currentNode.shouldAddToCollectorFlag.assign("true"),
                             "}");
                 }
-                
             }
             
             if (currentNode.value != null) {

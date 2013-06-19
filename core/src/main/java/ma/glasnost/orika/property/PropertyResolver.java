@@ -17,6 +17,9 @@
  */
 package ma.glasnost.orika.property;
 
+import static java.lang.reflect.Modifier.isFinal;
+import static java.lang.reflect.Modifier.isStatic;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -328,7 +331,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     protected void collectPublicFieldProperties(Type<?> referenceType, Map<String, Property> properties) {
         
         for (Field f : referenceType.getRawType().getFields()) {
-            if (!Modifier.isStatic(f.getModifiers())) {
+            if (!isStatic(f.getModifiers())) {
                 final Property.Builder builder = new Property.Builder();
                 builder.expression(f.getName());
                 builder.name(f.getName());
@@ -341,8 +344,11 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                     builder.type(TypeFactory.valueOf(rawType));
                 }
                 
+                if (!isFinal(f.getModifiers())) {
+                    builder.setter(f.getName() + " = %s");
+                }
+
                 Property existing = properties.get(f.getName());
-                builder.setter(f.getName() + " = %s");
                 if (existing == null) {
                     builder.getter(f.getName());
                     properties.put(f.getName(), builder.build(this));

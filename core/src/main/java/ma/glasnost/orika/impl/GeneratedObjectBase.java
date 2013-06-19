@@ -381,8 +381,18 @@ public abstract class GeneratedObjectBase {
      * Function to help with list to Array conversion to support Javassist
      * 
      * @param list the list to convert
+     * @param array the array to receive the elements of the list
+     */
+    public static void listToArray(List<?> list, Object[] array) {
+        list.toArray((Object[]) array);
+    }
+    
+    /**
+     * Function to help with list to Array conversion to support Javassist
+     * 
+     * @param list the list to convert
      * @param arrayClass the array type to construct
-     * @return
+     * @return an Array with elements of type matching the list
      */
     public static Object listToArray(List<?> list, Class<?> arrayClass) {
         Object array = Array.newInstance(arrayClass.getComponentType(), list.size());
@@ -395,6 +405,7 @@ public abstract class GeneratedObjectBase {
      * 
      * @param entries a list of Map.Entry
      * @param mapClass the type of Map to instantiate
+     * @return a new Map created from a list of Map entries
      */
     @SuppressWarnings("unchecked")
     public static <K,V> Map<K,V> listToMap(List<?> entries, Class<?> mapClass) {
@@ -410,5 +421,18 @@ public abstract class GeneratedObjectBase {
             throw new RuntimeException(e);
         }
         
+    }
+    
+    /**
+     * Function to help with list to Map conversion to support Javassist;<br>
+     * 
+     * @param entries a list of Map.Entry
+     * @param map the map to receive the entries
+     */
+    @SuppressWarnings("unchecked")
+    public static <K,V> void listToMap(List<?> entries, Map<K, V> map) {
+        for (Map.Entry<K, V> entry: (List<Map.Entry<K, V>>)entries) {
+            ((Map<K,V>)map).put(entry.getKey(), entry.getValue());
+        }
     }
 }

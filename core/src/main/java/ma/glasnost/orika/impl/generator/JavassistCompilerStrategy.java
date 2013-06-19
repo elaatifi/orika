@@ -250,9 +250,9 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
                 try {
                     byteCodeClass.addMethod(CtNewMethod.make(methodDef, byteCodeClass));
                 } catch (CannotCompileException e) {
-                    throw new SourceCodeGenerationException("An exception occured while compiling the following method:\n\n " + methodDef
+                    LOG.error("An exception occured while compiling the following method:\n\n " + methodDef
                             + "\n\n for " + sourceCode.getClassName() + "\n", e);
-                    
+                    throw e;
                 }
                 
             }
@@ -263,7 +263,7 @@ public class JavassistCompilerStrategy extends CompilerStrategy {
         } catch (NotFoundException e) {
             throw new SourceCodeGenerationException(e);
         } catch (CannotCompileException e) {
-            throw new SourceCodeGenerationException(e);
+            throw new SourceCodeGenerationException("Error compiling " + sourceCode.getClassName(), e);
         } catch (IOException e) {
             throw new SourceCodeGenerationException("Could not write files for " + sourceCode.getClassName(), e);
         }
