@@ -401,7 +401,9 @@ public class SourceCodeContext {
             if (!ClassUtil.isConcrete(ref.type()) && !ref.type().isMultiOccurrence()) {
                 throw new MappingException("Abstract types are unsupported for nested properties. \n" + ref.name());
             }
-            append(out, format("if((%s)) { \n", ref.isNull()), ref.assign(newObject(source, ref.type())), "}");
+            if (ref.isAssignable()) {
+                append(out, format("if((%s)) { \n", ref.isNull()), ref.assign(newObject(source, ref.type())), "}");
+            }
         }
         out.append(end);
         return out.toString();

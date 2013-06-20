@@ -1211,7 +1211,7 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     public <A, B> ClassMapBuilder<A, B> classMap(Type<A> aType, Type<B> bType) {
-        ClassMapBuilderFactory classMapBuilderFactory = chainClassMapBuilderFactory.choiceClassMapBuilderFactory(aType, bType);
+        ClassMapBuilderFactory classMapBuilderFactory = chainClassMapBuilderFactory.chooseClassMapBuilderFactory(aType, bType);
         
         if (classMapBuilderFactory != null) {
             return classMapBuilderFactory.map(aType, bType);

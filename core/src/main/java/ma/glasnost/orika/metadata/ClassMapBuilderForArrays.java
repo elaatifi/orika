@@ -32,9 +32,12 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
 public class ClassMapBuilderForArrays<A, B> extends ClassMapBuilderForLists<A,B> {
     
 	
+	/**
+	 * Factory constructs instances of ClassMapBuilderForArrays
+	 */
 	public static class Factory extends ClassMapBuilderFactory {
         @Override
-        protected <A, B> boolean applied(Type<A> aType, Type<B> bType) {
+        protected <A, B> boolean appliesTo(Type<A> aType, Type<B> bType) {
             return (aType.isArray() && !bType.isArray()) || (bType.isArray() && !aType.isArray());
         }
 

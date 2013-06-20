@@ -133,7 +133,7 @@ public class FieldMapBuilder<A, B> {
     
     /**
      * @param aInverse
-     * @return
+     * @return this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> aInverse(final String aInverse) {
         final Type<?> type = aProperty.isCollection() ? aProperty.getElementType() : aProperty.getType();
@@ -144,7 +144,7 @@ public class FieldMapBuilder<A, B> {
     
     /**
      * @param bInverse
-     * @return
+     * @return this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> bInverse(final String bInverse) {
         final Type<?> type = bProperty.isCollection() ? bProperty.getElementType() : bProperty.getType();
@@ -190,7 +190,7 @@ public class FieldMapBuilder<A, B> {
      * Specify that the configured field mapping (property) should only be used
      * when mapping in the direction from A to B
      * 
-     * @return
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> aToB() {
         
@@ -203,10 +203,25 @@ public class FieldMapBuilder<A, B> {
      * Specify that the configured field mapping (property) should only be used
      * when mapping in the direction from B to A
      * 
-     * @return
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> bToA() {
         mappingDirection = MappingDirection.B_TO_A;
+        
+        return this;
+    }
+    
+    /**
+     * Specify that the configured field mapping (property) should only be used
+     * when mapping in the direction from A to B
+     * 
+     * @param direction the direction to be applied to this field map
+     * 
+     * @return a reference to this FieldMapBuilder
+     */
+    public FieldMapBuilder<A, B> direction(MappingDirection direction) {
+        
+        mappingDirection = direction;
         
         return this;
     }
@@ -217,7 +232,7 @@ public class FieldMapBuilder<A, B> {
      * 
      * @param id
      *            the id with which the converter to use was registered
-     * @return
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> converter(final String id) {
         this.converterId = id;
@@ -226,6 +241,8 @@ public class FieldMapBuilder<A, B> {
     
     /**
      * Specify that the property should be excluded from mapping
+     * 
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> exclude() {
         excluded = true;
@@ -237,6 +254,8 @@ public class FieldMapBuilder<A, B> {
      * <i>When dealing with legacy code, prior to Java 1.5 you can add element
      * type of collections, this is not required when using generics</i>
      * 
+     * @param rawType the elementType of of the 'B' field
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> aElementType(final Class<?> rawType) {
         return aElementType(TypeFactory.valueOf(rawType));
@@ -247,6 +266,8 @@ public class FieldMapBuilder<A, B> {
      * <i>When dealing with legacy code, prior to Java 1.5 you can add element
      * type of collections, this is not required when using generics</i>
      * 
+     * @param elementType the elementType of of the 'B' field
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> aElementType(final Type<?> elementType) {
         aProperty = new Property.Builder().merge(aProperty).elementType(elementType).build();
@@ -258,6 +279,8 @@ public class FieldMapBuilder<A, B> {
      * <i>When dealing with legacy code, prior to Java 1.5 you can add element
      * type of collections, this is not required when using generics</i>
      * 
+     * @param rawType the elementType of of the 'B' field
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> bElementType(final Class<?> rawType) {
         return bElementType(TypeFactory.valueOf(rawType));
@@ -267,13 +290,21 @@ public class FieldMapBuilder<A, B> {
      * Specify element type for B side property<br>
      * <i>When dealing with legacy code, prior to Java 1.5 you can add element
      * type of collections, this is not required when using generics</i>
-     * 
+     * @param elementType the elementType of the 'B' field
+     * @return a reference to this FieldMapBuilder
      */
     public FieldMapBuilder<A, B> bElementType(final Type<?> elementType) {
         bProperty = new Property.Builder().merge(bProperty).elementType(elementType).build();
         return this;
     }
     
+    /**
+     * Creates a FieldMap for the Map keys from A to B
+     * 
+     * @param aType
+     * @param bType
+     * @return a reference to this FieldMapBuilder
+     */
     public static FieldMap mapKeys(final Type<?> aType, final Type<?> bType) {
         
         Property aProperty = new Property.Builder().name("key").getter("getKey()").setter("setKey(%s)").type(aType).build(null);
@@ -283,6 +314,13 @@ public class FieldMapBuilder<A, B> {
         return new FieldMap(aProperty, bProperty, null, null, MappingDirection.A_TO_B, false, null, false, null, null);
     }
     
+    /**
+     * Creates a FieldMap for the Map values from A to B
+     * 
+     * @param aType
+     * @param bType
+     * @return a reference to this FieldMapBuilder
+     */
     public static FieldMap mapValues(final Type<?> aType, final Type<?> bType) {
         
         Property aProperty = new Property.Builder().name("value").getter("getValue()").setter("setValue(%s)").type(aType).build(null);

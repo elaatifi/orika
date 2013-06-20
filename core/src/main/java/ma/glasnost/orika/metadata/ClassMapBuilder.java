@@ -428,7 +428,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @param fieldA
      * @param fieldB
      * @param byDefault
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A,B> field(Property.Builder fieldA, Property.Builder fieldB) {
         return fieldMap(fieldA, fieldB, false).add(); 
@@ -437,10 +437,10 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     /**
      * 
      * 
-     * @param fieldA
+     * @param fieldNameA
      * @param fieldB
      * @param byDefault
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A,B> field(String fieldNameA, Property.Builder fieldB) {
         return fieldMap(fieldNameA, fieldB, false).add(); 
@@ -546,14 +546,31 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * @return this ClassMapBuilder instance
      */
     public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... withDefaults) {
+    	return byDefault(MappingDirection.BIDIRECTIONAL, withDefaults);
+    }
+    
+    
+    /**
+     * Configures this class-map builder to employ the default property mapping
+     * behavior to any properties that have not already been mapped or excluded; 
+     * if any DefaultFieldMapper instances are passed, they will be used (instead of
+     * those configured on the builder) to attempt a property name match if a direct 
+     * match is not found.
+     * 
+     * @param direction the mapping direction to be applied
+     * @param withDefaults zero or more DefaultFieldMapper instances to apply during the default mapping;
+     * if none are supplied, the configured DefaultFieldMappers for the builder (if any) should be used.
+     * @return this ClassMapBuilder instance
+     */
+    public ClassMapBuilder<A, B> byDefault(MappingDirection direction, DefaultFieldMapper... withDefaults) {
         
-    	DefaultFieldMapper[] defaults;
-    	if (withDefaults.length == 0) {
-    		defaults = getDefaultFieldMappers();
-    	} else {
-    		defaults = withDefaults;
-    	}
-    	
+        DefaultFieldMapper[] defaults;
+        if (withDefaults.length == 0) {
+            defaults = getDefaultFieldMappers();
+        } else {
+            defaults = withDefaults;
+        }
+        
         for (final String propertyName : getPropertiesForTypeA()) {
             if (!getMappedPropertiesForTypeA().contains(propertyName)) {
                 if (getPropertiesForTypeB().contains(propertyName)) {
@@ -564,7 +581,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
                          * in either direction.
                          */
                         if (!propertyName.equals("class")) {
-                            fieldMap(propertyName, true).add();
+                            fieldMap(propertyName, true).direction(direction).add();
                         }
                     }
                 } else {
@@ -573,7 +590,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
                         String suggestion = defaulter.suggestMappedField(propertyName, prop.getType());
                         if (suggestion != null && getPropertiesForTypeB().contains(suggestion)) {
                             if (!getMappedPropertiesForTypeB().contains(suggestion)) {
-                                fieldMap(propertyName, suggestion, true).add();
+                                fieldMap(propertyName, suggestion, true).direction(direction).add();
                             }
                         }
                     }
@@ -583,6 +600,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
         
         return this;
     }
+    
     
     /**
      * @deprecated use {@link #byDefault(DefaultFieldMapper...)} instead

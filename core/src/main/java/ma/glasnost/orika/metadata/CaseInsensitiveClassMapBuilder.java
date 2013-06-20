@@ -72,9 +72,9 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
      * 
      */
     @Override
-    public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... withDefaults) {
+    public ClassMapBuilder<A, B> byDefault(MappingDirection direction, DefaultFieldMapper... withDefaults) {
         
-        super.byDefault(withDefaults);
+        super.byDefault(direction, withDefaults);
         
         DefaultFieldMapper[] defaults;
         if (withDefaults.length == 0) {
@@ -96,7 +96,7 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
                          * in either direction.
                          */
                         if (!propertyNameA.equals("class")) {
-                            fieldMap(propertyNameA, propertyNameB, true).add();
+                            fieldMap(propertyNameA, propertyNameB, true).direction(direction).add();
                         }
                     }
                 } else {
@@ -105,7 +105,7 @@ public class CaseInsensitiveClassMapBuilder<A,B> extends ClassMapBuilder<A,B> {
                         String suggestion = defaulter.suggestMappedField(propertyNameA, prop.getType());
                         if (suggestion != null && getPropertiesForTypeB().contains(suggestion)) {
                             if (!getMappedPropertiesForTypeB().contains(suggestion)) {
-                                fieldMap(propertyNameA, suggestion, true).add();
+                                fieldMap(propertyNameA, suggestion, true).direction(direction).add();
                             }
                         }
                     }

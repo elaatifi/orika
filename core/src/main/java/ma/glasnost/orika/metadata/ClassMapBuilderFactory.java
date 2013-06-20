@@ -32,9 +32,21 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
  */
 public abstract class ClassMapBuilderFactory {
     
-    protected ClassMapBuilderFactory chainClassMapBuilderFactory;
+    /**
+     * The next factory in the chain
+     */
+    protected ClassMapBuilderFactory nextClassMapBuilderFactory;
+    /**
+     * The MapperFactory used by this factory
+     */
     protected MapperFactory mapperFactory;
+    /**
+     * The PropertyResolver used by this factory
+     */
     protected PropertyResolverStrategy propertyResolver;
+    /**
+     * The DefaultFieldMappers applied by this factory
+     */
     protected DefaultFieldMapper[] defaults;
     
     /**
@@ -50,29 +62,35 @@ public abstract class ClassMapBuilderFactory {
      * Return true if this implementation of factory is suitable for received types
      * @param aType
      * @param bType
-     * @return
+     * @return true if this factory applies to the specified pair of types
      */
-    protected <A, B> boolean applied(Type<A> aType, Type<B> bType) {
+    protected <A, B> boolean appliesTo(Type<A> aType, Type<B> bType) {
         return false;
     }
 
+    /**
+     * Set the next ClassMapBuilderFactory in the chain
+     * 
+     * @param classMapBuilderFactory
+     */
     public void setChainClassMapBuilderFactory(ClassMapBuilderFactory classMapBuilderFactory) {
-        chainClassMapBuilderFactory = classMapBuilderFactory;
+        nextClassMapBuilderFactory = classMapBuilderFactory;
     }
 
     /**
-     * Choice suitable ClassMapBuilderFactory for types from factories chain
+     * Choose suitable ClassMapBuilderFactory for types from factories chain
+     * 
      * @param aType
      * @param bType
      * @param <A>
      * @param <B>
-     * @return
+     * @return this ClassMapBuilderFactory
      */
-    public <A, B> ClassMapBuilderFactory choiceClassMapBuilderFactory(Type<A> aType, Type<B> bType) {
-        if (applied(aType, bType))
+    public <A, B> ClassMapBuilderFactory chooseClassMapBuilderFactory(Type<A> aType, Type<B> bType) {
+        if (appliesTo(aType, bType))
             return this;
-        return chainClassMapBuilderFactory == null ? null :
-            chainClassMapBuilderFactory.choiceClassMapBuilderFactory(aType, bType);
+        return nextClassMapBuilderFactory == null ? null :
+            nextClassMapBuilderFactory.chooseClassMapBuilderFactory(aType, bType);
     }
     
     /**

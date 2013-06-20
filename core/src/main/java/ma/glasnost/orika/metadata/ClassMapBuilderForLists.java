@@ -34,9 +34,12 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
 public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
     
 	
+	/**
+	 * Factory creates instances of ClassMapBuilderForLists
+	 */
 	public static class Factory extends ClassMapBuilderFactory {
         @Override
-        protected <A, B> boolean applied(Type<A> aType, Type<B> bType) {
+        protected <A, B> boolean appliesTo(Type<A> aType, Type<B> bType) {
             return (aType.isList() && !bType.isList()) || (bType.isList() && !aType.isList());
         }
 
@@ -78,6 +81,10 @@ public class ClassMapBuilderForLists<A, B> extends ClassMapBuilderForMaps<A,B> {
         return type.isList();
     }
     
+    /**
+     * @param expr
+     * @return the index of the next element in the list
+     */
     protected int resolveAndIncrementIndex(String expr) {
         int nextIndex;
         try {

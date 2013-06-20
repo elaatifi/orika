@@ -248,7 +248,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
      * @see ma.glasnost.orika.metadata.ClassMapBuilder#byDefault(ma.glasnost.
      * orika.DefaultFieldMapper[])
      */
-    public ClassMapBuilder<A, B> byDefault(DefaultFieldMapper... withDefaults) {
+    public ClassMapBuilder<A, B> byDefault(MappingDirection direction, DefaultFieldMapper... withDefaults) {
         
         DefaultFieldMapper[] defaults;
         if (withDefaults.length == 0) {
@@ -287,7 +287,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
                     LOGGER.trace("\n" + score.toString());
                 }
                 if (score.meetsMinimumScore()) {
-                    fieldMap(score.propertyA.getExpression(), score.propertyB.getExpression()).add();
+                    fieldMap(score.propertyA.getExpression(), score.propertyB.getExpression()).direction(direction).add();
                     unmatchedFields.remove(score.propertyA.getExpression());
                 }
             }
@@ -302,7 +302,7 @@ public class ScoringClassMapBuilder<A, B> extends ClassMapBuilder<A, B> {
                 String suggestion = defaulter.suggestMappedField(propertyNameA, prop.getType());
                 if (suggestion != null && getPropertiesForTypeB().contains(suggestion)) {
                     if (!getMappedPropertiesForTypeB().contains(suggestion)) {
-                        fieldMap(propertyNameA, suggestion).add();
+                        fieldMap(propertyNameA, suggestion).direction(direction).add();
                     }
                 }
             }

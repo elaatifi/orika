@@ -36,12 +36,14 @@ import ma.glasnost.orika.property.PropertyResolverStrategy;
  * @param <B>
  */
 public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
-    
 	
+	/**
+	 * Factory produces instances of ClassMapBuilderForMaps
+	 */
 	public static class Factory extends ClassMapBuilderFactory {
 
         @Override
-        protected <A, B> boolean applied(Type<A> aType, Type<B> bType) {
+        protected <A, B> boolean appliesTo(Type<A> aType, Type<B> bType) {
             return (aType.isMap() && !bType.isMap()) || (bType.isMap() && !aType.isMap());
         }
 
@@ -71,6 +73,9 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
 	    super(aType, bType, mapperFactory, propertyResolver, defaults);
 	}
        
+    /**
+     * @return this ClassMapBuilderForMaps
+     */
     protected ClassMapBuilderForMaps<A, B> self() {
         return this;
     }           
@@ -86,7 +91,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
      * Test whether the provided type is the special case type for this Builder
      * (as in, not the standard Java Bean type)
      * @param type
-     * @return
+     * @return true if this type is the special case type for this builder
      */
     protected boolean isSpecialCaseType(Type<?> type) {
         return type.isMap();
@@ -103,7 +108,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
      * if none are supplied, the configured DefaultFieldMappers for the builder (if any) should be used.
      * @return this ClassMapBuilder instance
      */
-    public ClassMapBuilderForMaps<A, B> byDefault(DefaultFieldMapper... withDefaults) {
+    public ClassMapBuilderForMaps<A, B> byDefault(MappingDirection direction, DefaultFieldMapper... withDefaults) {
     	
     	Set<String> remainingProperties;
     	if (isATypeBean()) {
@@ -121,13 +126,19 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
              * mapped a nested property
              */
             if (!nestedTypesUsed.contains(propertyName)) {                
-                fieldMap(propertyName, propertyName, true).add();
+                fieldMap(propertyName, propertyName, true).direction(direction).add();
             }
         }
         
         return self();
     }
 
+    /**
+     * Gets the parent expression from this nested expression
+     * 
+     * @param epxression
+     * @return the parent expression
+     */
     protected String getParentExpression(String epxression) {
         String[] parts = epxression.split("[.]");
         StringBuilder name = new StringBuilder();
@@ -151,7 +162,7 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
      * 
      * @param rawType the type to resolve
      * @param expr the property expression to resolve
-     * @return
+     * @return the Property matching the given expression
      */
     protected Property resolveProperty(java.lang.reflect.Type rawType, String expr) {
         
@@ -171,6 +182,13 @@ public class ClassMapBuilderForMaps<A, B> extends ClassMapBuilder<A,B> {
         }
     }
     
+    /**
+     * Resolves a custom property for this builder using the provided expression
+     * 
+     * @param expr
+     * @param propertyType
+     * @return the resolved custom Property
+     */
     protected Property resolveCustomProperty(String expr, Type<?> propertyType) {
         Type<?> mapAncestor = propertyType;
         if (!mapAncestor.isParameterized()) {
