@@ -31,7 +31,7 @@ public class Issue87TestCase {
     }
 
     @Test
-    @Ignore
+//    @Ignore
     public void mapAbstractNestedPropertyWhenConcreteTypeIsRegistered() {
 
             // Register concrete type for AbstractNestedType
