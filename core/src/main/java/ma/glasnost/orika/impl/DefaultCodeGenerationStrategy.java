@@ -30,6 +30,8 @@ import ma.glasnost.orika.impl.generator.specification.ArrayOrCollectionToArray;
 import ma.glasnost.orika.impl.generator.specification.ArrayOrCollectionToCollection;
 import ma.glasnost.orika.impl.generator.specification.ArrayOrCollectionToMap;
 import ma.glasnost.orika.impl.generator.specification.Convert;
+import ma.glasnost.orika.impl.generator.specification.ConvertArrayOrCollectionToArray;
+import ma.glasnost.orika.impl.generator.specification.ConvertArrayOrCollectionToCollection;
 import ma.glasnost.orika.impl.generator.specification.CopyByReference;
 import ma.glasnost.orika.impl.generator.specification.EnumToEnum;
 import ma.glasnost.orika.impl.generator.specification.MapToArray;
@@ -57,6 +59,8 @@ public class DefaultCodeGenerationStrategy implements CodeGenerationStrategy {
         
         this.specifications = new ArrayList<Specification>();
         
+        specifications.add(new ConvertArrayOrCollectionToArray());
+        specifications.add(new ConvertArrayOrCollectionToCollection());
         specifications.add(new Convert());
         specifications.add(new CopyByReference());
         specifications.add(new ApplyRegisteredMapper());
