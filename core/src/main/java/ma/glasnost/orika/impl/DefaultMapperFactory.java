@@ -43,6 +43,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.DefaultFieldMapper;
+import ma.glasnost.orika.Filter;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFacade;
@@ -99,6 +100,7 @@ public class DefaultMapperFactory implements MapperFactory {
     
     private final Map<MapperKey, ClassMap<Object, Object>> classMapRegistry;
     private final SortedCollection<Mapper<Object, Object>> mappersRegistry;
+    private final SortedCollection<Filter<Object, Object>> filtersRegistry;
     private final MappingContextFactory contextFactory;
     private final MappingContextFactory nonCyclicContextFactory;
     private final ConcurrentHashMap<Type<? extends Object>, ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>> objectFactoryRegistry;
@@ -131,6 +133,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.compilerStrategy = builder.compilerStrategy;
         this.classMapRegistry = getConcurrentLinkedHashMap(Integer.MAX_VALUE);
         this.mappersRegistry = new SortedCollection<Mapper<Object, Object>>(Ordering.MAPPER);
+        this.filtersRegistry = new SortedCollection<Filter<Object, Object>>(Ordering.FILTER);
         this.explicitAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.dynamicAToBRegistry = new ConcurrentHashMap<Type<?>, Set<Type<?>>>();
         this.usedMapperMetadataRegistry = new ConcurrentHashMap<MapperKey, Set<ClassMap<Object, Object>>>();
@@ -171,6 +174,7 @@ public class DefaultMapperFactory implements MapperFactory {
         props.put(Properties.PROPERTY_RESOLVER_STRATEGY, builder.propertyResolverStrategy);
         props.put(Properties.UNENHANCE_STRATEGY, unenhanceStrategy);
         props.put(Properties.MAPPER_FACTORY, this);
+        props.put(Properties.FILTERS, this.filtersRegistry);
         
         /*
          * Register default concrete types for common collection types; these
@@ -1293,5 +1297,13 @@ public class DefaultMapperFactory implements MapperFactory {
     
     public UnenhanceStrategy getUserUnenhanceStrategy() {
         return userUnenahanceStrategy;
+    }
+
+    /* (non-Javadoc)
+     * @see ma.glasnost.orika.MapperFactory#registerFilter(ma.glasnost.orika.Filter)
+     */
+    @SuppressWarnings("unchecked")
+    public void registerFilter(Filter<?, ?> filter) {
+        this.filtersRegistry.add((Filter<Object, Object>) filter);
     }
 }
