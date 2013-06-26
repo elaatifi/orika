@@ -1,4 +1,4 @@
-package ma.glasnost.orika.test.interceptor;
+package ma.glasnost.orika.test.filters;
 
 import java.math.BigDecimal;
 
@@ -41,38 +41,38 @@ public class FilterTestCase {
         
     }
     
-   
     public static class SecurityFilter extends CustomFilter<Object, Object> {
-
+        
         private final String MASK = "*************";
         
         public boolean filtersSource() {
             return false;
         }
-
+        
         public boolean filtersDestination() {
             return true;
         }
-
-        public boolean shouldMap(Type<?> sourceType, String sourceName, Type<?> destType, String destName, MappingContext mappingContext) {
+        
+        public boolean shouldMap(final Type<?> sourceType, final String sourceName, final Type<?> destType, final String destName,
+                final MappingContext mappingContext) {
             if ("age".equals(sourceName)) {
                 return false;
             }
             return true;
         }
-
-        public <D> D filterDestination(D destinationValue, Type<?> sourceType, String sourceName, Type<D> destType, String destName,
-                MappingContext mappingContext) {
+        
+        public <D> D filterDestination(D destinationValue, final Type<?> sourceType, final String sourceName, final Type<D> destType,
+                final String destName, final MappingContext mappingContext) {
             if ("creditCardNumber".equals(sourceName)) {
-                String cardMask = (String)destinationValue;
-                destinationValue = (D) (MASK.substring(0, cardMask.length()-4) + cardMask.substring(cardMask.length() - 4));
+                String cardMask = (String) destinationValue;
+                destinationValue = (D) (MASK.substring(0, cardMask.length() - 4) + cardMask.substring(cardMask.length() - 4));
             }
             return destinationValue;
             
         }
-
-        public <S> S filterSource(S sourceValue, Type<S> sourceType, String sourceName, Type<?> destType, String destName,
-                MappingContext mappingContext) {
+        
+        public <S> S filterSource(final S sourceValue, final Type<S> sourceType, final String sourceName, final Type<?> destType,
+                final String destName, final MappingContext mappingContext) {
             return sourceValue;
         }
     }
