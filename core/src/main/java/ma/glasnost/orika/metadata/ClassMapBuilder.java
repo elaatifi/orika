@@ -18,6 +18,8 @@
 
 package ma.glasnost.orika.metadata;
 
+import static ma.glasnost.orika.impl.Specifications.aMultiOccurrenceElementMap;
+
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
+import ma.glasnost.orika.impl.Specifications;
 import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.property.PropertyResolver;
@@ -836,6 +839,12 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     	getMappedFields().add(fieldMap);
         getMappedPropertiesForTypeA().add(fieldMap.getSourceExpression());
         getMappedPropertiesForTypeB().add(fieldMap.getDestinationExpression());
+        
+        if (fieldMap.is(aMultiOccurrenceElementMap())) {
+            getMappedPropertiesForTypeA().add(fieldMap.getSource().getContainer().getExpression());
+            getMappedPropertiesForTypeB().add(fieldMap.getDestination().getContainer().getExpression());
+        }
+        
     }
     
     /**
