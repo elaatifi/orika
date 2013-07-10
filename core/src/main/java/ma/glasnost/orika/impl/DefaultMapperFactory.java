@@ -141,7 +141,7 @@ public class DefaultMapperFactory implements MapperFactory {
         this.defaultFieldMappers = new CopyOnWriteArrayList<DefaultFieldMapper>();
         this.userUnenahanceStrategy = builder.unenhanceStrategy;
         this.unenhanceStrategy = buildUnenhanceStrategy(builder.unenhanceStrategy, builder.superTypeStrategy);
-        this.contextFactory = new MappingContext.Factory();
+        this.contextFactory = builder.mappingContextFactory;
         this.nonCyclicContextFactory = new NonCyclicMappingContext.Factory(this.contextFactory.getGlobalProperties());
         this.mapperFacade = buildMapperFacade(contextFactory, unenhanceStrategy);
         this.concreteTypeRegistry = new ConcurrentHashMap<java.lang.reflect.Type, Type<?>>();
@@ -246,6 +246,10 @@ public class DefaultMapperFactory implements MapperFactory {
          */
         protected ClassMapBuilderFactory classMapBuilderFactory;
         /**
+         * The MappingContextFactory configured for the MapperFactory
+         */
+        protected MappingContextFactory mappingContextFactory;
+        /**
          * The CodeGenerationStrategy configured for the MapperFactory
          */
         protected CodeGenerationStrategy codeGenerationStrategy = new DefaultCodeGenerationStrategy();
@@ -275,6 +279,7 @@ public class DefaultMapperFactory implements MapperFactory {
             compilerStrategy = UtilityResolver.getDefaultCompilerStrategy();
             propertyResolverStrategy = UtilityResolver.getDefaultPropertyResolverStrategy();
             classMapBuilderFactory = UtilityResolver.getDefaultClassMapBuilderFactory();
+            mappingContextFactory = UtilityResolver.getDefaultMappingContextFactory();
             
             useBuiltinConverters = valueOf(getProperty(USE_BUILTIN_CONVERTERS, "true"));
             useAutoMapping = valueOf(getProperty(USE_AUTO_MAPPING, "true"));
@@ -379,6 +384,17 @@ public class DefaultMapperFactory implements MapperFactory {
          */
         public B classMapBuilderFactory(ClassMapBuilderFactory classMapBuilderFactory) {
             this.classMapBuilderFactory = classMapBuilderFactory;
+            return self();
+        }
+        
+        /**
+         * Configure the MappingContextFactory to use with the generated MapperFactory
+         * 
+         * @param mappingContextFactory
+         * @return a reference to <code>this</code> MapperFactoryBuilder
+         */
+        public B mappingContextFactory(MappingContextFactory mappingContextFactory) {
+            this.mappingContextFactory = mappingContextFactory;
             return self();
         }
         
