@@ -363,6 +363,8 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         if (!sourceNodes.isEmpty()) {
             for (Node srcRef : sourceNodes) {
                 if (!srcRef.isLeaf()) {
+                    out.append(srcRef.multiOccurrenceVar.ifNotNull()).append(" {\n");
+                    endWhiles.append("\n}");
                     out.append(statement(srcRef.multiOccurrenceVar.declareIterator()));
                 }
             }
