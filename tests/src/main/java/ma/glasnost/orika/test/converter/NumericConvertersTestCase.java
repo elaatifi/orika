@@ -3,7 +3,6 @@ package ma.glasnost.orika.test.converter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
@@ -22,6 +21,7 @@ import ma.glasnost.orika.converter.builtin.NumericConverters.LongToIntegerConver
 import ma.glasnost.orika.converter.builtin.NumericConverters.LongToShortConverter;
 import ma.glasnost.orika.test.MappingUtil;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -39,6 +39,8 @@ import org.junit.Test;
  * 
  */
 public class NumericConvertersTestCase {
+    
+    private static final double DELTA = 0.000000001;
     
     @Test
     public void testBigDecimalToDoubleConverter() {
@@ -174,10 +176,10 @@ public class NumericConvertersTestCase {
         
         Double value = (double) Short.MAX_VALUE;
         Short result = mapper.map(value, Short.class);
-        Assert.assertEquals(value.doubleValue(), result.doubleValue());
+        Assert.assertEquals(value.doubleValue(), result.doubleValue(), DELTA);
         
         Double reverse = mapper.map(result, Double.class);
-        Assert.assertEquals(result.doubleValue(), reverse.doubleValue());
+        Assert.assertEquals(result.doubleValue(), reverse.doubleValue(), DELTA);
     }
     
     @Test
@@ -188,10 +190,10 @@ public class NumericConvertersTestCase {
         
         Double value = (double) Integer.MAX_VALUE;
         Integer result = mapper.map(value, Integer.class);
-        Assert.assertEquals(value.doubleValue(), result.doubleValue());
+        Assert.assertEquals(value.doubleValue(), result.doubleValue(), DELTA);
         
         Double reverse = mapper.map(result, Double.class);
-        Assert.assertEquals(result.doubleValue(), reverse.doubleValue());
+        Assert.assertEquals(result.doubleValue(), reverse.doubleValue(), DELTA);
     }
     
     @Test
@@ -202,10 +204,10 @@ public class NumericConvertersTestCase {
         
         Double value = (double) Long.MAX_VALUE;
         Long result = mapper.map(value, Long.class);
-        Assert.assertEquals(value.doubleValue(), result.doubleValue());
+        Assert.assertEquals(value.doubleValue(), result.doubleValue(), DELTA);
         
         Double reverse = mapper.map(result, Double.class);
-        Assert.assertEquals(result.doubleValue(), reverse.doubleValue());
+        Assert.assertEquals(result.doubleValue(), reverse.doubleValue(), DELTA);
     }
     
     @Test
@@ -216,10 +218,10 @@ public class NumericConvertersTestCase {
         
         Float value = (float) Short.MAX_VALUE;
         Short result = mapper.map(value, Short.class);
-        Assert.assertEquals(value.floatValue(), result.floatValue());
+        Assert.assertEquals(value.floatValue(), result.floatValue(), DELTA);
         
         Float reverse = mapper.map(result, Float.class);
-        Assert.assertEquals(result.floatValue(), reverse.floatValue());
+        Assert.assertEquals(result.floatValue(), reverse.floatValue(), DELTA);
     }
     
     @Test
@@ -230,10 +232,10 @@ public class NumericConvertersTestCase {
         
         Float value = (float) Integer.MAX_VALUE;
         Integer result = mapper.map(value, Integer.class);
-        Assert.assertEquals(value.floatValue(), result.floatValue());
+        Assert.assertEquals(value.floatValue(), result.floatValue(), DELTA);
         
         Float reverse = mapper.map(result, Float.class);
-        Assert.assertEquals(result.floatValue(), reverse.floatValue());
+        Assert.assertEquals(result.floatValue(), reverse.floatValue(), DELTA);
     }
     
     @Test
@@ -244,10 +246,10 @@ public class NumericConvertersTestCase {
         
         Float value = (float) Long.MAX_VALUE;
         Long result = mapper.map(value, Long.class);
-        Assert.assertEquals(value.floatValue(), result.floatValue());
+        Assert.assertEquals(value.floatValue(), result.floatValue(), DELTA);
         
         Float reverse = mapper.map(result, Float.class);
-        Assert.assertEquals(result.floatValue(), reverse.floatValue());
+        Assert.assertEquals(result.floatValue(), reverse.floatValue(), DELTA);
     }
     
     // ~ overflow exceptions
@@ -286,7 +288,7 @@ public class NumericConvertersTestCase {
         factory.getConverterFactory().registerConverter(new IntegerToShortConverter(false));
         MapperFacade mapper = factory.getMapperFacade();
         
-        Integer value = (int) Short.MAX_VALUE + 1;
+        Integer value = Short.MAX_VALUE + 1;
         Short result = mapper.map(value, Short.class);
         Assert.assertEquals(value.intValue(), result.intValue());
         
@@ -302,10 +304,10 @@ public class NumericConvertersTestCase {
         
         Double value = (double) Short.MAX_VALUE + 1;
         Short result = mapper.map(value, Short.class);
-        Assert.assertEquals(value.doubleValue(), result.doubleValue());
+        Assert.assertEquals(value.doubleValue(), result.doubleValue(), DELTA);
         
         Double reverse = mapper.map(result, Double.class);
-        Assert.assertEquals(result.doubleValue(), reverse.doubleValue());
+        Assert.assertEquals(result.doubleValue(), reverse.doubleValue(), DELTA);
     }
     
     @Test(expected = MappingException.class)
@@ -316,10 +318,10 @@ public class NumericConvertersTestCase {
         
         Double value = (double) Integer.MAX_VALUE + 1;
         Integer result = mapper.map(value, Integer.class);
-        Assert.assertEquals(value.doubleValue(), result.doubleValue());
+        Assert.assertEquals(value.doubleValue(), result.doubleValue(), DELTA);
         
         Double reverse = mapper.map(result, Double.class);
-        Assert.assertEquals(result.doubleValue(), reverse.doubleValue());
+        Assert.assertEquals(result.doubleValue(), reverse.doubleValue(), DELTA);
     }
     
     @Test(expected = MappingException.class)
@@ -328,12 +330,12 @@ public class NumericConvertersTestCase {
         factory.getConverterFactory().registerConverter(new DoubleToLongConverter(false));
         MapperFacade mapper = factory.getMapperFacade();
         
-        Double value = (double) Long.MAX_VALUE + 10000.0;
+        Double value = Long.MAX_VALUE + 10000.0;
         Long result = mapper.map(value, Long.class);
-        Assert.assertEquals(value.doubleValue(), result.doubleValue());
+        Assert.assertEquals(value.doubleValue(), result.doubleValue(), DELTA);
         
         Double reverse = mapper.map(result, Double.class);
-        Assert.assertEquals(result.doubleValue(), reverse.doubleValue());
+        Assert.assertEquals(result.doubleValue(), reverse.doubleValue(), DELTA);
     }
     
     @Test(expected = MappingException.class)
@@ -342,12 +344,12 @@ public class NumericConvertersTestCase {
         factory.getConverterFactory().registerConverter(new FloatToShortConverter(false));
         MapperFacade mapper = factory.getMapperFacade();
         
-        Float value = ((float) Short.MAX_VALUE) * 1.1f;
+        Float value = (Short.MAX_VALUE) * 1.1f;
         Short result = mapper.map(value, Short.class);
-        Assert.assertEquals(value.floatValue(), result.floatValue());
+        Assert.assertEquals(value.floatValue(), result.floatValue(), DELTA);
         
         Float reverse = mapper.map(result, Float.class);
-        Assert.assertEquals(result.floatValue(), reverse.floatValue());
+        Assert.assertEquals(result.floatValue(), reverse.floatValue(), DELTA);
     }
     
     @Test(expected = MappingException.class)
@@ -356,12 +358,12 @@ public class NumericConvertersTestCase {
         factory.getConverterFactory().registerConverter(new FloatToIntegerConverter(false));
         MapperFacade mapper = factory.getMapperFacade();
         
-        Float value = ((float) Integer.MAX_VALUE) * 1.1f;
+        Float value = (Integer.MAX_VALUE) * 1.1f;
         Integer result = mapper.map(value, Integer.class);
-        Assert.assertEquals(value.floatValue(), result.floatValue());
+        Assert.assertEquals(value.floatValue(), result.floatValue(), DELTA);
         
         Float reverse = mapper.map(result, Float.class);
-        Assert.assertEquals(result.floatValue(), reverse.floatValue());
+        Assert.assertEquals(result.floatValue(), reverse.floatValue(), DELTA);
     }
     
     @Test(expected = MappingException.class)
@@ -370,11 +372,11 @@ public class NumericConvertersTestCase {
         factory.getConverterFactory().registerConverter(new FloatToLongConverter(false));
         MapperFacade mapper = factory.getMapperFacade();
         
-        Float value = ((float) Long.MAX_VALUE) * 1.1f;
+        Float value = (Long.MAX_VALUE) * 1.1f;
         Long result = mapper.map(value, Long.class);
-        Assert.assertEquals(value.floatValue(), result.floatValue());
+        Assert.assertEquals(value.floatValue(), result.floatValue(), DELTA);
         
         Float reverse = mapper.map(result, Float.class);
-        Assert.assertEquals(result.floatValue(), reverse.floatValue());
+        Assert.assertEquals(result.floatValue(), reverse.floatValue(), DELTA);
     }
 }
