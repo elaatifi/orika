@@ -6,26 +6,28 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ma.glasnost.orika.impl.util.ClassUtil;
 
 /**
- * Type is an implementation of ParameterizedType which may be
- * used in various mapping methods where a Class instance would normally
- * be used, in order to provide more specific details as to the actual types
- * represented by the generic template parameters in a given class.<br><br>
+ * Type is an implementation of ParameterizedType which may be used in various
+ * mapping methods where a Class instance would normally be used, in order to
+ * provide more specific details as to the actual types represented by the
+ * generic template parameters in a given class.<br>
+ * <br>
  * 
- * Such details are not normally available at runtime using a Class instance
- * due to type-erasure.<br><br>
+ * Such details are not normally available at runtime using a Class instance due
+ * to type-erasure.<br>
+ * <br>
  * 
  * Type essentially provides a runtime token to represent a ParameterizedType
- * with fully-resolve actual type arguments; it will contain 
+ * with fully-resolve actual type arguments; it will contain
  * 
  * @author matt.deboer@gmail.com
- *
+ * 
  * @param <T>
  */
 public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
@@ -41,15 +43,15 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     private Type<?> componentType;
     private final TypeKey key;
     private final int uniqueIndex;
-
+    
     /**
      * @param rawType
      * @param actualTypeArguments
      */
     @SuppressWarnings("unchecked")
-    Type(TypeKey key, Class<?> rawType, Map<String, Type<?>> typesByVariable, Type<?>... actualTypeArguments) {
+    Type(final TypeKey key, final Class<?> rawType, final Map<String, Type<?>> typesByVariable, final Type<?>... actualTypeArguments) {
         this.key = key;
-        this.rawType = (Class<T>)rawType;
+        this.rawType = (Class<T>) rawType;
         this.actualTypeArguments = actualTypeArguments;
         this.typesByVariable = typesByVariable;
         this.isParameterized = rawType.getTypeParameters().length > 0;
@@ -63,19 +65,19 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         return isParameterized;
     }
     
-    private Type<?> resolveGenericAncestor(java.lang.reflect.Type ancestor) {
-    	Type<?> resolvedType = null;
-		if (ancestor instanceof ParameterizedType) {
-			resolvedType = TypeFactory.resolveValueOf((ParameterizedType)ancestor, this);
-		} else if (ancestor instanceof Class) {
-			resolvedType = TypeFactory.valueOf((Class<?>)ancestor);
-		} else if (ancestor == null){
-		    resolvedType = TypeFactory.TYPE_OF_OBJECT;
-		} else {
-			throw new IllegalStateException("super-type of " + this.toString() + 
-					" is neither Class, nor ParameterizedType, but " + ancestor);
-		}
-		return resolvedType;
+    private Type<?> resolveGenericAncestor(final java.lang.reflect.Type ancestor) {
+        Type<?> resolvedType = null;
+        if (ancestor instanceof ParameterizedType) {
+            resolvedType = TypeFactory.resolveValueOf((ParameterizedType) ancestor, this);
+        } else if (ancestor instanceof Class) {
+            resolvedType = TypeFactory.valueOf((Class<?>) ancestor);
+        } else if (ancestor == null) {
+            resolvedType = TypeFactory.TYPE_OF_OBJECT;
+        } else {
+            throw new IllegalStateException("super-type of " + this.toString() + " is neither Class, nor ParameterizedType, but "
+                    + ancestor);
+        }
+        return resolvedType;
     }
     
     /**
@@ -92,47 +94,49 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
      * @return
      */
     @SuppressWarnings("unchecked")
-	public <X> Type<X> getNestedType(int index) {
-    	return (Type<X>)((index > -1 && actualTypeArguments.length > index) ? actualTypeArguments[index] : null);
+    public <X> Type<X> getNestedType(final int index) {
+        return (Type<X>) ((index > -1 && actualTypeArguments.length > index) ? actualTypeArguments[index] : null);
     }
     
     /**
-     * @return the direct super-type of this type, with type arguments resolved with 
-     * respect to the actual type arguments of this type.
+     * @return the direct super-type of this type, with type arguments resolved
+     *         with respect to the actual type arguments of this type.
      * 
      */
     public Type<?> getSuperType() {
-    	if (this.superType == null) {
-    		synchronized(this) {
-	    		if (this.superType == null) {
-	    			this.superType = resolveGenericAncestor(rawType.getGenericSuperclass());
-	    		}
-    		}
-    	}
+        if (this.superType == null) {
+            synchronized (this) {
+                if (this.superType == null) {
+                    this.superType = resolveGenericAncestor(rawType.getGenericSuperclass());
+                }
+            }
+        }
         return this.superType;
     }
     
     /**
-     * @return the interfaces implemented by this type, with type arguments resolved with
-     * respect to the actual type arguments of this type.
+     * @return the interfaces implemented by this type, with type arguments
+     *         resolved with respect to the actual type arguments of this type.
      */
     public Type<?>[] getInterfaces() {
-    	if (this.interfaces == null) {
-    		synchronized(this) {
-	    		if (this.interfaces == null) {
-	    		    Type<?>[] interfaces = new Type<?>[rawType.getGenericInterfaces().length];
-		    		int i=0;
-		    		for (java.lang.reflect.Type interfaceType: rawType.getGenericInterfaces()) {
-		    			interfaces[i++] = resolveGenericAncestor(interfaceType);
-		    		}
-		    		this.interfaces = interfaces;
-	    		}
-    		}
-    	}
-    	return interfaces;
+        if (this.interfaces == null) {
+            synchronized (this) {
+                if (this.interfaces == null) {
+                    Type<?>[] interfaces = new Type<?>[rawType.getGenericInterfaces().length];
+                    int i = 0;
+                    for (java.lang.reflect.Type interfaceType : rawType.getGenericInterfaces()) {
+                        interfaces[i++] = resolveGenericAncestor(interfaceType);
+                    }
+                    this.interfaces = interfaces;
+                }
+            }
+        }
+        return interfaces;
     }
-
-    /* (non-Javadoc)
+    
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.reflect.ParameterizedType#getActualTypeArguments()
      */
     public java.lang.reflect.Type[] getActualTypeArguments() {
@@ -140,10 +144,10 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     }
     
     public Map<String, Type<?>> getTypesByVariable() {
-    	return Collections.unmodifiableMap(typesByVariable);
+        return Collections.unmodifiableMap(typesByVariable);
     }
     
-    public java.lang.reflect.Type getTypeByVariable(TypeVariable<?> typeVariable) {
+    public java.lang.reflect.Type getTypeByVariable(final TypeVariable<?> typeVariable) {
         if (isParameterized) {
             return typesByVariable.get(typeVariable.getName());
         } else {
@@ -158,16 +162,16 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     public Type<?> getComponentType() {
         if (componentType == null) {
             if (rawType.isArray()) {
-            	componentType = TypeFactory.valueOf(rawType.getComponentType());
-            } else if (isParameterized){
-            	componentType = this.getNestedType(0);
+                componentType = TypeFactory.valueOf(rawType.getComponentType());
+            } else if (isParameterized) {
+                componentType = this.getNestedType(0);
             }
         }
         return componentType;
     }
     
     public java.lang.reflect.Type getOwnerType() {
-    	throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException();
     }
     
     public String getSimpleName() {
@@ -182,16 +186,17 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         return this.rawType.getCanonicalName();
     }
     
-    
-    
     /**
      * Test whether this type is assignable from the other type.
      * 
      * @param other
      * @return
      */
-    public boolean isAssignableFrom(Type<?> other) {
-        if (other==null) {
+    public boolean isAssignableFrom(final Type<?> other) {
+        if (this == other) {
+            return true;
+        }
+        if (other == null) {
             return false;
         }
         if (!this.getRawType().isAssignableFrom(other.getRawType())) {
@@ -199,39 +204,43 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         }
         if (!this.isParameterized && other.isParameterized) {
             return true;
-        } else if (this.rawType.equals(Enum.class) && other.isEnum()){
+        } else if (this.rawType.equals(Enum.class) && other.isEnum()) {
             return true;
         } else {
-        
-            if (this.getActualTypeArguments().length!=other.getActualTypeArguments().length) {
+            
+            Type<?> sp = other.getSuperType();
+            if (sp.getRawType() != Object.class && isAssignableFrom(sp)) {
+                return true;
+            }
+            
+            if (this.getActualTypeArguments().length != other.getActualTypeArguments().length) {
                 return false;
             }
             java.lang.reflect.Type[] thisTypes = this.getActualTypeArguments();
             java.lang.reflect.Type[] thatTypes = other.getActualTypeArguments();
-            for (int i=0, total=thisTypes.length; i < total; ++i ) {
-                Type<?> thisType = (Type<?>)thisTypes[i];
-                Type<?> thatType = (Type<?>)thatTypes[i];
+            for (int i = 0, total = thisTypes.length; i < total; ++i) {
+                Type<?> thisType = (Type<?>) thisTypes[i];
+                Type<?> thatType = (Type<?>) thatTypes[i];
                 // Note: this may be less strict than the rules for compile-time
                 // assignability of generic types, but we're only interested in
                 // actual runtime types
-            	if (!thisType.isAssignableFrom(thatType)) {
-            		return false;
-            	}   
+                if (!thisType.isAssignableFrom(thatType)) {
+                    return false;
+                }
             }
             return true;
         }
     }
     
     /**
-     * Test whether this type is assignable from the other Class;
-     * returns true if this type is not parameterized and
-     * the raw type is assignable.
+     * Test whether this type is assignable from the other Class; returns true
+     * if this type is not parameterized and the raw type is assignable.
      * 
      * @param other
      * @return
      */
-    public boolean isAssignableFrom(Class<?> other) {
-    	if (other==null) {
+    public boolean isAssignableFrom(final Class<?> other) {
+        if (other == null) {
             return false;
         }
         if (this.isParameterized()) {
@@ -241,15 +250,15 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     }
     
     public boolean isEnum() {
-    	return getRawType().isEnum() || Enum.class.equals(getRawType());
+        return getRawType().isEnum() || Enum.class.equals(getRawType());
     }
-   
+    
     public boolean isArray() {
-    	return getRawType().isArray();
+        return getRawType().isArray();
     }
     
     public boolean isCollection() {
-    	return Collection.class.isAssignableFrom(getRawType());
+        return Collection.class.isAssignableFrom(getRawType());
     }
     
     public boolean isList() {
@@ -257,7 +266,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     }
     
     public boolean isMap() {
-    	return Map.class.isAssignableFrom(getRawType());
+        return Map.class.isAssignableFrom(getRawType());
     }
     
     /**
@@ -272,18 +281,18 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     }
     
     public boolean isPrimitive() {
-    	return getRawType().isPrimitive();
+        return getRawType().isPrimitive();
     }
     
     public boolean isPrimitiveWrapper() {
-    	return ClassUtil.isPrimitiveWrapper(getRawType());
+        return ClassUtil.isPrimitiveWrapper(getRawType());
     }
     
-    public boolean isWrapperFor(Type<?> primitive) {
+    public boolean isWrapperFor(final Type<?> primitive) {
         return primitive != null && isPrimitiveWrapper() && ClassUtil.getPrimitiveType(this.rawType).equals(primitive.getRawType());
     }
     
-    public boolean isPrimitiveFor(Type<?> wrapper) {
+    public boolean isPrimitiveFor(final Type<?> wrapper) {
         return wrapper != null && isPrimitive() && ClassUtil.getPrimitiveType(wrapper.rawType).equals(getRawType());
     }
     
@@ -300,7 +309,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
      * @param ancestor
      * @return
      */
-    public Type<?> findAncestor(Type<?> ancestor) {
+    public Type<?> findAncestor(final Type<?> ancestor) {
         return findAncestor(ancestor.getRawType());
     }
     
@@ -310,7 +319,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
      * @param ancestor
      * @return
      */
-    public Type<?> findAncestor(Class<?> ancestor) {
+    public Type<?> findAncestor(final Class<?> ancestor) {
         if (ancestor.isInterface()) {
             return findInterface(ancestor);
         } else {
@@ -331,8 +340,8 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
      * @param theInterface
      * @return
      */
-    private Type<?> findInterface(Class<?> theInterface) {
-       
+    private Type<?> findInterface(final Class<?> theInterface) {
+        
         Type<?> theInterfaceType = null;
         LinkedList<Type<?>> types = new LinkedList<Type<?>>();
         types.add(this);
@@ -341,7 +350,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
             Type<?> currentType = types.removeFirst();
             if (theInterface.equals(currentType.getRawType())) {
                 theInterfaceType = currentType;
-            } else if (!currentType.equals(TypeFactory.TYPE_OF_OBJECT)){
+            } else if (!currentType.equals(TypeFactory.TYPE_OF_OBJECT)) {
                 types.addAll(Arrays.asList(currentType.getInterfaces()));
                 types.add(currentType.getSuperType());
             }
@@ -349,7 +358,7 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         return theInterfaceType;
     }
     
-    public Type<?> findInterface(Type<?> theInterface) {
+    public Type<?> findInterface(final Type<?> theInterface) {
         
         return findInterface(theInterface.rawType);
     }
@@ -362,26 +371,27 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     }
     
     public boolean isConvertibleFromString() {
-    	return ClassUtil.isConvertibleFromString(getRawType());
+        return ClassUtil.isConvertibleFromString(getRawType());
     }
     
+    @Override
     public String toString() {
-    	StringBuilder stringValue = new StringBuilder();
-    	if (rawType.isAnonymousClass()) {
-    		rawType.getName();
-    	} else {	
-    		stringValue.append(rawType.getSimpleName());
-    	}
-    	if (actualTypeArguments.length > 0) {
-    		stringValue.append("<");
-    		for (java.lang.reflect.Type arg: actualTypeArguments) {
-    			stringValue.append(""+arg + ", ");
-    		}
-    		stringValue.setLength(stringValue.length()-2);
-    		stringValue.append(">");
-    	}
-    	
-    	return stringValue.toString();
+        StringBuilder stringValue = new StringBuilder();
+        if (rawType.isAnonymousClass()) {
+            rawType.getName();
+        } else {
+            stringValue.append(rawType.getSimpleName());
+        }
+        if (actualTypeArguments.length > 0) {
+            stringValue.append("<");
+            for (java.lang.reflect.Type arg : actualTypeArguments) {
+                stringValue.append("" + arg + ", ");
+            }
+            stringValue.setLength(stringValue.length() - 2);
+            stringValue.append(">");
+        }
+        
+        return stringValue.toString();
     }
     
     public String toFullyQualifiedString() {
@@ -389,10 +399,10 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         stringValue.append(rawType.getCanonicalName());
         if (actualTypeArguments.length > 0) {
             stringValue.append("<");
-            for (java.lang.reflect.Type arg: actualTypeArguments) {
-                stringValue.append(""+arg + ", ");
+            for (java.lang.reflect.Type arg : actualTypeArguments) {
+                stringValue.append("" + arg + ", ");
             }
-            stringValue.setLength(stringValue.length()-2);
+            stringValue.setLength(stringValue.length() - 2);
             stringValue.append(">");
         }
         
@@ -401,38 +411,40 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
     
     @Override
     public int hashCode() {
-        //return hashCode;
+        // return hashCode;
         // TODO: try guaranteed unique integer index
         return uniqueIndex;
     }
     
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
+    public boolean equals(final Object obj) {
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         Type<?> other = (Type<?>) obj;
         
         return this.key.equals(other.key);
     }
-
     
-    public int compareTo(Type<?> other) {
+    public int compareTo(final Type<?> other) {
         if (this.equals(other)) {
             return 0;
         }
-    	String thisChain = buildClassInheritanceChain(this).toString();
-    	String otherChain = buildClassInheritanceChain(other).toString();
-    	return thisChain.compareTo(otherChain);
+        String thisChain = buildClassInheritanceChain(this).toString();
+        String otherChain = buildClassInheritanceChain(other).toString();
+        return thisChain.compareTo(otherChain);
     }
-
-	private StringBuilder buildClassInheritanceChain(Type<?> type) {
-		if (type.equals(TypeFactory.TYPE_OF_OBJECT))
-			return new StringBuilder("/java.lang.Object");
-		return buildClassInheritanceChain(type.getSuperType()).append('/')
-				.append(type.getName());
-	}
+    
+    private StringBuilder buildClassInheritanceChain(final Type<?> type) {
+        if (type.equals(TypeFactory.TYPE_OF_OBJECT)) {
+            return new StringBuilder("/java.lang.Object");
+        }
+        return buildClassInheritanceChain(type.getSuperType()).append('/').append(type.getName());
+    }
 }
