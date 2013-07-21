@@ -1,82 +1,82 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>orika-parent</artifactId>
-        <groupId>ma.glasnost.orika</groupId>
-        <version>1.4.4-SNAPSHOT</version>
-    </parent>
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>orika-core</artifactId>
-    <name>Orika - core</name>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<parent>
+		<artifactId>orika-parent</artifactId>
+		<groupId>ma.glasnost.orika</groupId>
+		<version>1.4.4-SNAPSHOT</version>
+	</parent>
+	<modelVersion>4.0.0</modelVersion>
+	<artifactId>orika-core</artifactId>
+	<name>Orika - core</name>
+
+	<description>Fast Java bean mapper</description>
 
 
-    <description>Fast Java bean mapper</description>
-    <url>http://code.google.com/p/orika</url>
-    <scm>
-        <url>https://orika.googlecode.com/svn/trunk</url>
-        <developerConnection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</developerConnection>
-        <connection>scm:svn:https://orika.googlecode.com/svn/trunk/orika-core</connection>
-    </scm>
-    <organization>
-        <name>Glasnost</name>
-        <url>http://www.glasnost.ma</url>
-    </organization>
+	<dependencies>
 
-    <dependencies>
+		<dependency>
+			<groupId>org.javassist</groupId>
+			<artifactId>javassist</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>org.javassist</groupId>
-            <artifactId>javassist</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>com.thoughtworks.paranamer</groupId>
+			<artifactId>paranamer</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>com.thoughtworks.paranamer</groupId>
-            <artifactId>paranamer</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
+		<dependency>
+			<groupId>com.googlecode.concurrentlinkedhashmap</groupId>
+			<artifactId>concurrentlinkedhashmap-lru</artifactId>
+		</dependency>
 
-        <dependency>
-            <groupId>com.googlecode.concurrentlinkedhashmap</groupId>
-            <artifactId>concurrentlinkedhashmap-lru</artifactId>
-        </dependency>
+	</dependencies>
 
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.0</version>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <configuration>
-                            <shadedArtifactAttached>true</shadedArtifactAttached>
-                            <shadedClassifierName>deps-included</shadedClassifierName> <!-- Any name that makes sense -->
-                            <minimizeJar>true</minimizeJar>
-                            <relocations>
-                                <relocation>
-                                    <pattern>javassist</pattern>
-                                    <shadedPattern>orika_shaded.javassist</shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.thoughtworks.paranamer</pattern>
-                                    <shadedPattern>orika_shaded.com.thoughtworks.paranamer</shadedPattern>
-                                </relocation>
-                            </relocations>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>deps-included</shadedClassifierName> <!-- Any name that makes sense -->
+							<minimizeJar>true</minimizeJar>
+							<artifactSet>
+								<excludes>
+									<exclude>org.slf4j:slf4j-api</exclude>
+								</excludes>
+							</artifactSet>
+							<relocations>
+								<relocation>
+									<pattern>javassist</pattern>
+									<shadedPattern>orika_shaded.javassist</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.thoughtworks.paranamer</pattern>
+									<shadedPattern>orika_shaded.com.thoughtworks.paranamer</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.googlecode.concurrentlinkedhashmap</pattern>
+									<shadedPattern>orika_shaded.com.googlecode.concurrentlinkedhashmap</shadedPattern>
+								</relocation>
+							</relocations>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
