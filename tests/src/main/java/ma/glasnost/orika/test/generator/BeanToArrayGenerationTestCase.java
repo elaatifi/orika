@@ -27,6 +27,8 @@ import org.junit.Test;
 
 public class BeanToArrayGenerationTestCase {
 
+    private final double DELTA = 0.00001;
+
 	@Test
 	public void testBeanToArrayGeneration() throws Exception {
 		
@@ -74,8 +76,8 @@ public class BeanToArrayGenerationTestCase {
         Assert.assertEquals(student.name.first, mapBack.name.first);
         Assert.assertEquals(student.name.last, mapBack.name.last);
         Assert.assertEquals(student.grade.letter, mapBack.grade.letter);
-        Assert.assertEquals(student.grade.percentage, mapBack.grade.percentage);
-        Assert.assertEquals(student.grade.point, mapBack.grade.point);
+        Assert.assertEquals(student.grade.percentage, mapBack.grade.percentage, DELTA);
+        Assert.assertEquals(student.grade.point, mapBack.grade.point, DELTA);
 		
 	}
 	
@@ -126,8 +128,8 @@ public class BeanToArrayGenerationTestCase {
         Assert.assertEquals(student.name.first, mapBack.name.first);
         Assert.assertEquals(student.name.last, mapBack.name.last);
         Assert.assertEquals(student.grade.letter, mapBack.grade.letter);
-        Assert.assertEquals(student.grade.percentage, mapBack.grade.percentage);
-        Assert.assertEquals(student.grade.point, mapBack.grade.point);
+        Assert.assertEquals(student.grade.percentage, mapBack.grade.percentage, DELTA);
+        Assert.assertEquals(student.grade.point, mapBack.grade.point, DELTA);
         
     }
 	

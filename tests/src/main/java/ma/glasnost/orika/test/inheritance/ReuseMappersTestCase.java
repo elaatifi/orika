@@ -34,26 +34,26 @@ public class ReuseMappersTestCase {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
         {
-            ClassMapBuilder<Location, LocationDTO> builder = ClassMapBuilder.map(Location.class, LocationDTO.class);
-            builder.field("x", "coordinateX").field("y", "coordinateY");
-            factory.registerClassMap(builder.toClassMap());
-            
+            factory.classMap(Location.class, LocationDTO.class)
+                   .field("x", "coordinateX")
+                   .field("y", "coordinateY")
+                   .register();
         }
         
         {
-            ClassMapBuilder<NamedLocation, NamedLocationDTO> builder = ClassMapBuilder.map(NamedLocation.class, NamedLocationDTO.class);
-            builder.use(Location.class, LocationDTO.class).field("name", "label");
-            factory.registerClassMap(builder.toClassMap());
+            factory.classMap(NamedLocation.class, NamedLocationDTO.class)
+                    .use(Location.class, LocationDTO.class)
+                    .field("name", "label")
+                    .register();
         }
         
         {
-            ClassMapBuilder<City, CityDTO> builder = ClassMapBuilder.map(City.class, CityDTO.class);
-            builder.use(NamedLocation.class, NamedLocationDTO.class).byDefault();
-            factory.registerClassMap(builder.toClassMap());
+            factory.classMap(City.class, CityDTO.class)
+                    .use(NamedLocation.class, NamedLocationDTO.class)
+                    .byDefault()
+                    .register();
         }
-        
-        factory.build();
-        
+
         MapperFacade mapper = factory.getMapperFacade();
         
         City city = new City();

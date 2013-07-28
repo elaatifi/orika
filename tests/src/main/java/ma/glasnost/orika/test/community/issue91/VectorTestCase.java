@@ -36,12 +36,10 @@ public class VectorTestCase {
     @Test
     public void test() {
         
-        // Property.Builder builder = new Property.Builder();
-        // builder.merge(UtilityResolver.getDefaultPropertyResolverStrategy().getProperty(Trade.class,
-        // "fees"));
-        // Property fees = builder.elementType(TypeFactory.valueOf()).build();
-        
-        factory.classMap(XTrade.class, Trade.class).fieldMap("fees").bElementType(Fee.class).add().byDefault().register();
+        factory.classMap(XTrade.class, Trade.class)
+               .fieldMap("fees").bElementType(Fee.class).add()
+               .byDefault()
+               .register();
         
         XTrade xtrade = new XTrade();
         XFee xfee = new XFee();

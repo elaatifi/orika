@@ -32,18 +32,17 @@ public class UsedMappersTestCase {
     public void testReuseOfMapper() {
         MapperFactory mapperFactory = MappingUtil.getMapperFactory();
         {
-            ClassMapBuilder<A, C> classMapBuilder = ClassMapBuilder.map(A.class, C.class);
-            classMapBuilder.field("name", "nom");
-            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+            mapperFactory.classMap(A.class, C.class)
+                         .field("name", "nom")
+                         .register();
         }
         
         {
-            ClassMapBuilder<B, D> classMapBuilder = ClassMapBuilder.map(B.class, D.class);
-            classMapBuilder.field("age", "ages").use(A.class, C.class);
-            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+            mapperFactory.classMap(B.class, D.class)
+                    .use(A.class, C.class)
+                    .field("age", "ages")
+                    .register();
         }
-        
-        mapperFactory.build();
         
         MapperFacade mapperFacade = mapperFactory.getMapperFacade();
         
@@ -62,17 +61,17 @@ public class UsedMappersTestCase {
     public void testOneCallOfFieldMapping() {
         MapperFactory mapperFactory = MappingUtil.getMapperFactory();
         {
-            ClassMapBuilder<A, E> classMapBuilder = ClassMapBuilder.map(A.class, E.class);
-            mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
+            mapperFactory.classMap(A.class, E.class)
+                    .byDefault()
+                    .register();
         }
         {
-            ClassMapBuilder<B, F> classMapBuilder = ClassMapBuilder.map(B.class, F.class);
-            classMapBuilder.byDefault().use(A.class, E.class);
-            mapperFactory.registerClassMap(classMapBuilder.toClassMap());
+            mapperFactory.classMap(B.class, F.class)
+                    .use(A.class, E.class)
+                    .byDefault()
+                    .register();
         }
-        
-        mapperFactory.build();
-        
+
         MapperFacade mapperFacade = mapperFactory.getMapperFacade();
         
         B source = new B();
