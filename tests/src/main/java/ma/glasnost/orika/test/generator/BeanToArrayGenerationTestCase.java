@@ -18,11 +18,11 @@
 
 package ma.glasnost.orika.test.generator;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.test.MappingUtil;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class BeanToArrayGenerationTestCase {

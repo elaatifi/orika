@@ -125,10 +125,10 @@ public class AutomaticStringConversionTestCase {
 		source.setPrefijo("2");
 		
 		MapperFactory factory = new DefaultMapperFactory.Builder().build();
-		factory.registerClassMap(ClassMapBuilder
-				.map(CamposEntrada.class, CamposSalida.class).byDefault()
-				.toClassMap());
-		factory.build();
+		factory.classMap(CamposEntrada.class, CamposSalida.class)
+            .byDefault()
+            .register();
+
 		MapperFacade facade = factory.getMapperFacade();
 		
 		CamposSalida result = facade.map(source, CamposSalida.class);

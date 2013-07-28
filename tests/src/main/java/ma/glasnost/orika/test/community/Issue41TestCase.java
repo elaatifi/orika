@@ -18,7 +18,7 @@
 package ma.glasnost.orika.test.community;
 
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.ConfigurableMapper;
 import ma.glasnost.orika.metadata.ClassMapBuilder;

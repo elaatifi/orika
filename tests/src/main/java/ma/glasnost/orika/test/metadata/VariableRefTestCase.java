@@ -21,7 +21,7 @@ package ma.glasnost.orika.test.metadata;
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.metadata.Property;

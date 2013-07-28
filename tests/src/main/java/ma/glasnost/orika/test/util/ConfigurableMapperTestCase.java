@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.test.util;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -26,6 +25,7 @@ import ma.glasnost.orika.impl.ConfigurableMapper;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.Type;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class ConfigurableMapperTestCase {
@@ -40,11 +40,10 @@ public class ConfigurableMapperTestCase {
                 }
             });
             
-            ClassMapBuilder<Order, OrderDTO> classMapBuilder = ClassMapBuilder.map(Order.class, OrderDTO.class);
-            classMapBuilder.fieldMap("customer.address", "shippingAddress").add();
-            
-            mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
-            
+            mapperFactory.classMap(Order.class, OrderDTO.class)
+                .fieldMap("customer.address", "shippingAddress").add()
+                .byDefault()
+                .register();
         }
         
     }

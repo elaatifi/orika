@@ -21,7 +21,7 @@ package ma.glasnost.orika.test.property;
 import java.math.BigDecimal;
 import java.util.Map;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;

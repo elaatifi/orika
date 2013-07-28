@@ -97,9 +97,8 @@ public class GenericCollectionsTestCase {
         
         MapperFactory factory = new DefaultMapperFactory.Builder().build();
         
-        ClassMapBuilder<?, ?> builder = factory.classMap(TaskLayer1.class, TaskLayer2.class).byDefault();
-        ClassMap<?, ?> classMap = builder.toClassMap();
-        factory.registerClassMap(classMap);
+        factory.classMap(TaskLayer1.class, TaskLayer2.class).byDefault().register();
+
         
         /*
          * Let Orika know that it's okay to copy Employee or Person by reference...
@@ -136,8 +135,8 @@ public class GenericCollectionsTestCase {
         Type<TaskLayer1<Employee>> sourceType = new TypeBuilder<TaskLayer1<Employee>>(){}.build();
         Type<TaskLayer2<Employee>> targetType = new TypeBuilder<TaskLayer2<Employee>>(){}.build();
         
-        factory.registerClassMap(
-                factory.classMap(sourceType, targetType).byDefault());
+
+        factory.classMap(sourceType, targetType).byDefault().register();
         
         TaskLayer2<Employee> t2 = factory.getMapperFacade(sourceType, targetType).map(t1);
         Assert.assertNotNull(t2);

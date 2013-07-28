@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.test.inheritance;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperBase;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;

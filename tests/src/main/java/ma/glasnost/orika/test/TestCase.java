@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.test;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperFacade;
 
 import org.junit.Ignore;

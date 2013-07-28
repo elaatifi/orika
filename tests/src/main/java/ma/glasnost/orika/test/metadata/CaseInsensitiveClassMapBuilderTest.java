@@ -17,12 +17,12 @@
  */
 package ma.glasnost.orika.test.metadata;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.CaseInsensitiveClassMapBuilder;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 /**

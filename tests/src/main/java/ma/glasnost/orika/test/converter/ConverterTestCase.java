@@ -18,12 +18,12 @@
 
 package ma.glasnost.orika.test.converter;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
+import org.junit.Assert;
 
 public class ConverterTestCase {
     
@@ -33,9 +33,9 @@ public class ConverterTestCase {
         
         factory.getConverterFactory().registerConverter(new LongToStringConverter());
         
-        factory.registerClassMap(ClassMapBuilder.map(A.class, B.class).field("id", "string").toClassMap());
-        
-        factory.build();
+        factory.classMap(A.class, B.class).field("id", "string")
+               .register();
+
         
         A source = new A();
         source.setId(42L);

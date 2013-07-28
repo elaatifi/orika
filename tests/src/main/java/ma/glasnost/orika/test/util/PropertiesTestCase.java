@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.test.util;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.property.PropertyResolverStrategy;

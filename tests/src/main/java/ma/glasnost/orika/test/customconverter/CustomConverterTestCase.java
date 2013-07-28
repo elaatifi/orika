@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.test.customconverter;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.Type;

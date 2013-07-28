@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapEntry;

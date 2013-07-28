@@ -26,7 +26,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.test.ConcurrentRule;

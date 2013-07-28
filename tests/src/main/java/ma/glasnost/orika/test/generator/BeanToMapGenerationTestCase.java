@@ -21,7 +21,7 @@ package ma.glasnost.orika.test.generator;
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.Assert;
+
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.UtilityResolver;
@@ -33,6 +33,7 @@ import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 import ma.glasnost.orika.test.MappingUtil;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class BeanToMapGenerationTestCase {

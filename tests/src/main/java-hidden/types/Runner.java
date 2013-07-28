@@ -31,8 +31,7 @@ public class Runner {
 	public static void run(MapperFactory mapperFactory) {
 		
 		
-		mapperFactory.registerClassMap(
-				ClassMapBuilder.map(BookHidden.class, BookDTO.class).byDefault().toClassMap());
+		mapperFactory.classMap(BookHidden.class, BookDTO.class).byDefault().register();
 		
 		AuthorHidden author = new AuthorHidden();
 		author.setName("Chuck Testa");

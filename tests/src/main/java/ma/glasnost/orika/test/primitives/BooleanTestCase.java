@@ -32,9 +32,7 @@ public class BooleanTestCase {
     public void testPrimtiveToWrapper() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Primitive.class, Wrapper.class).field("primitive", "wrapper").toClassMap());
-        
-        factory.build();
+        factory.classMap(Primitive.class, Wrapper.class).field("primitive", "wrapper").register();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -50,9 +48,7 @@ public class BooleanTestCase {
     public void testWrapperToPrimtive() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Wrapper.class, Primitive.class).field("wrapper", "primitive").toClassMap());
-        
-        factory.build();
+        factory.classMap(Wrapper.class, Primitive.class).field("wrapper", "primitive").register();
         
         MapperFacade mapper = factory.getMapperFacade();
         

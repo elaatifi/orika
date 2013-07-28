@@ -27,13 +27,14 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.builtin.CloneableConverter;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import org.junit.Assert;
 import org.junit.Test;
 
 public class CloneableConverterNoSetAccessibleTestCase {

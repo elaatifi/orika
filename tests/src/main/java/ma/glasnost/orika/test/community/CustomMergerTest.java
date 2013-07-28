@@ -24,7 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -170,15 +170,7 @@ public class CustomMergerTest {
             for (Dto memberDto : srcDtos) {
                 Entity memberEntity = findEntity(dstEntities, memberDto.getId());
                 if (memberEntity == null) {
-                    
-                    dstEntities.add((Entity) mapperFacade.map(memberDto, sourceType, destinationType, context)); // Class
-                                                                                // of
-                                                                                // entity
-                                                                                // destination
-                                                                                // is
-                                                                                // unknown
-                                                                                // in
-                                                                                // merge
+                    dstEntities.add((Entity) mapperFacade.map(memberDto, sourceType, destinationType, context));
                 } else {
                     mapperFacade.map(memberDto, memberEntity);
                 }

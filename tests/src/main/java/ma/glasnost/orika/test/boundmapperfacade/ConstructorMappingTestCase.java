@@ -30,7 +30,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -357,9 +357,10 @@ public class ConstructorMappingTestCase {
     	LibraryNested library = new LibraryNested("Library #1", books);
     	
     	MapperFactory factory = MappingUtil.getMapperFactory();
-    	factory.registerClassMap(
-    			factory.classMap(AuthorNested.class, AuthorDTO.class)
-    				.field("name.fullName", "name").byDefault().toClassMap());
+        factory.classMap(AuthorNested.class, AuthorDTO.class)
+            .field("name.fullName", "name")
+            .byDefault()
+            .register();
     
     	MapperFacade mapper = factory.getMapperFacade();
     	
@@ -396,14 +397,15 @@ public class ConstructorMappingTestCase {
     	Holder holder = new Holder(primitiveHolder);
     	
     	MapperFactory factory = MappingUtil.getMapperFactory();
-    	factory.registerClassMap(
-    			factory.classMap(NestedPrimitiveHolder.class, PrimitiveWrapperHolder.class)
-    				.field("numbers.shortValue", "shortValue")
-    				.field("numbers.intValue", "intValue")
-    				.field("numbers.longValue", "longValue")
-    				.field("numbers.floatValue", "floatValue")
-    				.field("numbers.doubleValue", "doubleValue")
-    				.byDefault().toClassMap());
+
+        factory.classMap(NestedPrimitiveHolder.class, PrimitiveWrapperHolder.class)
+            .field("numbers.shortValue", "shortValue")
+            .field("numbers.intValue", "intValue")
+            .field("numbers.longValue", "longValue")
+            .field("numbers.floatValue", "floatValue")
+            .field("numbers.doubleValue", "doubleValue")
+            .byDefault()
+            .register();
     	
     	WrapperHolder wrapper = factory.getMapperFacade().map(holder, WrapperHolder.class);
     	

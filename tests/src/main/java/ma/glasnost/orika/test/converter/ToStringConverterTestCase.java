@@ -19,7 +19,7 @@ package ma.glasnost.orika.test.converter;
 
 import java.util.Date;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;

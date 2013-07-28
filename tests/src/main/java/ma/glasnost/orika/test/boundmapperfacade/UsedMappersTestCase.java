@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.test.boundmapperfacade;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.BoundMapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;

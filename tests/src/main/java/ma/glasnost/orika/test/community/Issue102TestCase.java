@@ -23,7 +23,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
@@ -34,7 +34,6 @@ public class Issue102TestCase {
     
     @Test
     public void testWithoutGenerics() {
-        System.out.println("pandu");
         Product p = new Product();
         p.setAvailability(true);
         p.setProductDescription("hi product description");
@@ -68,9 +67,10 @@ public class Issue102TestCase {
         private String productName;
         
         private String productDescription;
-        
-        // private Double price;
-        Map map;
+
+        private Map map;
+
+
         private Boolean availability;
         
         public Map getMap() {
@@ -88,12 +88,7 @@ public class Issue102TestCase {
         public void setProductDescription(String productDescription) {
             this.productDescription = productDescription;
         }
-        
-        /*
-         * public Double getPrice() { return price; }
-         * 
-         * public void setPrice(Double price) { this.price = price; }
-         */
+
         public String getProductName() {
             return productName;
         }
@@ -117,7 +112,6 @@ public class Issue102TestCase {
         private String productName;
         
         private String description;
-        // private BigDecimal price;
         Map map;
         
         public Map getMap() {
@@ -137,12 +131,6 @@ public class Issue102TestCase {
         public void setDescription(String description) {
             this.description = description;
         }
-        
-        /*
-         * public BigDecimal getPrice() { return price; }
-         * 
-         * public void setPrice(BigDecimal price) { this.price = price; }
-         */
         
         public Boolean getAvailability() {
             return availability;

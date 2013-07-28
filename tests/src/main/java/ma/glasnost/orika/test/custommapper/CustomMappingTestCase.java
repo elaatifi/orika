@@ -18,7 +18,7 @@
 
 package ma.glasnost.orika.test.custommapper;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.CustomMapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
