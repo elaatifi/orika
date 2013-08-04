@@ -18,16 +18,21 @@
 
 package ma.glasnost.orika.test.community;
 
-import org.junit.Assert;
+import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.QName;
+
 import ma.glasnost.orika.CustomConverter;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
+import ma.glasnost.orika.MappingContext;
+import ma.glasnost.orika.ObjectFactory;
 import ma.glasnost.orika.impl.ConfigurableMapper;
+import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
-import ma.glasnost.orika.test.MappingUtil;
-import ma.glasnost.orika.test.community.JaxbElementTestCase.MyMapper.EventConverter;
+import ma.glasnost.orika.metadata.TypeFactory;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class JaxbElementTestCase {
@@ -37,7 +42,7 @@ public class JaxbElementTestCase {
 	 * 
 	 * @param <T>
 	 */
-	public static class JAXBElement<T> {
+	public static class MockJAXBElement<T> {
 		private T value;
 
 		public T getValue() {
@@ -68,13 +73,13 @@ public class JaxbElementTestCase {
 	}
 
 	public static class EventDTO {
-		JAXBElement<? extends ActorDTO> actor; // actor.getValue() returns
+		MockJAXBElement<? extends ActorDTO> actor; // actor.getValue() returns
 
-		public JAXBElement<? extends ActorDTO> getActor() {
+		public MockJAXBElement<? extends ActorDTO> getActor() {
 			return actor;
 		}
 
-		public void setActor(JAXBElement<? extends ActorDTO> actor) {
+		public void setActor(MockJAXBElement<? extends ActorDTO> actor) {
 			this.actor = actor;
 		}
 
@@ -93,6 +98,14 @@ public class JaxbElementTestCase {
 		}
 	}
 
+	
+	public static class ActorHolder {
+	    public Actor actor;
+	}
+	
+	public static class ActorDTOHolder {
+	    public JAXBElement<Actor> actor;
+	}
 	
 	/**
 	 * Encapsulate the configuration in your own reusable mapper
@@ -129,7 +142,7 @@ public class JaxbElementTestCase {
 		MapperFacade mapper = new MyMapper();
 
 		EventDTO event = new EventDTO();
-		JAXBElement<ActorDTO> element = new JAXBElement<ActorDTO>();
+		MockJAXBElement<ActorDTO> element = new MockJAXBElement<ActorDTO>();
 		PersonDTO person = new PersonDTO();
 		person.setName("Chuck Testa");
 		element.setValue(person);
@@ -148,10 +161,39 @@ public class JaxbElementTestCase {
 		
 		Assert.assertNotNull(actor);
 		Assert.assertEquals(institution.getName(), actor.getName());
-		
-		
 	}
 	
+	public static class JaxbTypeFactory implements ObjectFactory<JAXBElement<Actor>> {
+
+        public JAXBElement<Actor> create(Object source, MappingContext mappingContext) {
+            if (source instanceof Actor) {
+                return new JAXBElement<Actor>(new QName("http://example.com/JAXBTest", "Actor"), Actor.class, (Actor) source);
+            }
+            throw new IllegalArgumentException("source must be an Actor");
+        }
+	}
 	
+	@Test
+	public void testRealJaxbElement() {
+	    
+	    MapperFactory factory = new DefaultMapperFactory.Builder()
+	        .build();
+	    factory.registerObjectFactory(new JaxbTypeFactory(), 
+	            new TypeBuilder<JAXBElement<Actor>>(){}.build(), TypeFactory.valueOf(Actor.class));
+	    
+	    MapperFacade mapper = factory.getMapperFacade();
+	    
+	    Actor actor = new Actor();
+	    actor.setName("Some Body");
+	    ActorHolder holder = new ActorHolder();
+	    holder.actor = actor;
+	    
+	    ActorDTOHolder dest = mapper.map(holder, ActorDTOHolder.class);
+	    
+	    Assert.assertNotNull(dest);
+	    Assert.assertNotNull(dest.actor);
+	    Assert.assertEquals(dest.actor.getValue().getName(), actor.getName());
+	    
+	}
 
 }
