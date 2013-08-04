@@ -369,7 +369,8 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      * @return true of the expression represents a nested property
      */
     protected boolean isNestedPropertyExpression(String expression) {
-        return expression.replaceAll("\\:\\{" + NON_NESTED_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
+//        return expression.replaceAll("\\:\\{" + NON_NESTED_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
+        return expression.replaceAll("\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + "\\}", "").indexOf('.') != -1;
     }
     
     /**
