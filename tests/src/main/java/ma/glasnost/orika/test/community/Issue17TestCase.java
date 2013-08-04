@@ -1,7 +1,7 @@
 /*
  * Orika - simpler, better and faster Java bean mapping
- * 
- * Copyright (C) 2011 Orika authors
+ *
+ * Copyright (C) 2011-2013 Orika authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.BidirectionalConverter;
@@ -87,10 +87,8 @@ public class Issue17TestCase {
 	public void testMappingToStringArray() {
 		final MapperFactory mapperFactory = new DefaultMapperFactory.Builder()
 				.build();
-		final ClassMapBuilder<A, B> builder = ClassMapBuilder.map(A.class,
-				B.class);
-
-		mapperFactory.registerClassMap(builder.byDefault().toClassMap());
+		mapperFactory.classMap(A.class, B.class)
+                .byDefault().register();
 
 		final MapperFacade facade = mapperFactory.getMapperFacade();
 

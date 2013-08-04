@@ -1,7 +1,7 @@
 /*
  * Orika - simpler, better and faster Java bean mapping
- * 
- * Copyright (C) 2011 Orika authors
+ *
+ * Copyright (C) 2011-2013 Orika authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 
 package ma.glasnost.orika.test.converter;
 
-import junit.framework.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.TypeConverter;
@@ -26,6 +25,7 @@ import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
+import org.junit.Assert;
 
 public class ConverterWithNestedPropertyTestCase {
     
@@ -39,12 +39,10 @@ public class ConverterWithNestedPropertyTestCase {
             }
         });
         
-        ClassMapBuilder<Order, OrderDTO> classMapBuilder = ClassMapBuilder.map(Order.class, OrderDTO.class);
-        classMapBuilder.fieldMap("customer.address", "shippingAddress").add();
-        
-        mapperFactory.registerClassMap(classMapBuilder.byDefault().toClassMap());
-        
-        mapperFactory.build();
+        mapperFactory.classMap(Order.class, OrderDTO.class)
+                     .fieldMap("customer.address", "shippingAddress").add()
+                     .byDefault()
+                     .register();
         
         Address address = new Address();
         address.setLine1("5 rue Blida");

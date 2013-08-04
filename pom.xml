@@ -5,8 +5,6 @@
 	<name>Orika - parent</name>
 	<version>1.4.4-SNAPSHOT</version>
 	<packaging>pom</packaging>
-	<description>Orika parent project</description>
-	<url>http://code.google.com/p/orika</url>
 
 	<parent>
 		<groupId>org.sonatype.oss</groupId>
@@ -14,7 +12,10 @@
 		<version>7</version>
 	</parent>
 
-	<organization>
+	<description>Simpler, better and faster Java bean mapping framework</description>
+	<url>http://code.google.com/p/orika</url>
+
+  <organization>
 		<name>Glasnost</name>
 		<url>http://www.glasnost.ma</url>
 	</organization>

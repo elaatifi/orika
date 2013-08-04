@@ -1,7 +1,7 @@
 /*
  * Orika - simpler, better and faster Java bean mapping
- * 
- * Copyright (C) 2011 Orika authors
+ *
+ * Copyright (C) 2011-2013 Orika authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,7 @@ public class BooleanTestCase {
     public void testPrimtiveToWrapper() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Primitive.class, Wrapper.class).field("primitive", "wrapper").toClassMap());
-        
-        factory.build();
+        factory.classMap(Primitive.class, Wrapper.class).field("primitive", "wrapper").register();
         
         MapperFacade mapper = factory.getMapperFacade();
         
@@ -50,9 +48,7 @@ public class BooleanTestCase {
     public void testWrapperToPrimtive() {
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(ClassMapBuilder.map(Wrapper.class, Primitive.class).field("wrapper", "primitive").toClassMap());
-        
-        factory.build();
+        factory.classMap(Wrapper.class, Primitive.class).field("wrapper", "primitive").register();
         
         MapperFacade mapper = factory.getMapperFacade();
         

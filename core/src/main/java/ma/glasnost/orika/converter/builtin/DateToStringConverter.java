@@ -1,7 +1,7 @@
 /*
  * Orika - simpler, better and faster Java bean mapping
- * 
- * Copyright (C) 2011 Orika authors
+ *
+ * Copyright (C) 2011-2013 Orika authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package ma.glasnost.orika.converter.builtin;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import ma.glasnost.orika.converter.BidirectionalConverter;
 import ma.glasnost.orika.metadata.Type;
@@ -34,7 +35,8 @@ import ma.glasnost.orika.metadata.Type;
 public class DateToStringConverter extends BidirectionalConverter<Date, String> {
     
     private final String pattern;
-    private final ThreadLocal<SimpleDateFormat> dateFormats = new ThreadLocal<SimpleDateFormat>();			
+    private final Locale locale;
+    private final ThreadLocal<SimpleDateFormat> dateFormats = new ThreadLocal<SimpleDateFormat>();
     
     /**
      * @return a SimpleDateFormat instance safe for use in the current thread
@@ -42,7 +44,7 @@ public class DateToStringConverter extends BidirectionalConverter<Date, String> 
     private SimpleDateFormat getDateFormat() {
     	SimpleDateFormat formatter = dateFormats.get();
     	if (formatter == null) {
-    		formatter = new SimpleDateFormat(pattern);
+    		formatter = new SimpleDateFormat(pattern, locale);
     		dateFormats.set(formatter);
     	}
     	return formatter;
@@ -56,7 +58,15 @@ public class DateToStringConverter extends BidirectionalConverter<Date, String> 
      * defined in {@link java.text.SimpleDateFormat}
      */
     public DateToStringConverter(final String format) {
+        this(format, Locale.getDefault());
+    }
+
+    /**
+     * Constructs a new instance of DateToStringConverter with given locale
+     */
+    public DateToStringConverter(final String format, final Locale locale) {
         this.pattern = format;
+        this.locale = locale;
     }
     
     @Override

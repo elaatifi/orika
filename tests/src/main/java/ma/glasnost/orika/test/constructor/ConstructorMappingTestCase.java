@@ -1,3 +1,21 @@
+/*
+ * Orika - simpler, better and faster Java bean mapping
+ *
+ * Copyright (C) 2011-2013 Orika authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package ma.glasnost.orika.test.constructor;
 
 import static org.junit.Assert.assertEquals;
@@ -12,12 +30,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.Assert;
+
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.converter.builtin.DateToStringConverter;
-import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.test.MappingUtil;
 import ma.glasnost.orika.test.common.types.TestCaseClasses.Author;
@@ -48,6 +65,7 @@ import ma.glasnost.orika.test.constructor.TestCaseClasses.WrapperHolder;
 
 import org.apache.commons.collections.list.TreeList;
 import org.junit.Test;
+import org.junit.Assert;
 
 public class ConstructorMappingTestCase {
     
@@ -60,13 +78,13 @@ public class ConstructorMappingTestCase {
         final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(PersonVO.class, Person.class)
-                //.constructorA()
+        factory.classMap(PersonVO.class, Person.class)
                 .fieldMap("dateOfBirth", "date")
                 .converter(DATE_CONVERTER)
                 .add()
                 .byDefault()
-                .toClassMap());
+                .register();
+
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
         Person person = new Person();
@@ -89,10 +107,10 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(PersonVO3.class, Person.class)
+        factory.classMap(PersonVO3.class, Person.class)
                 .fieldMap("dateOfBirth", "date").converter(DATE_CONVERTER).add()
                 .byDefault()
-                .toClassMap());
+                .register();
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
       
@@ -120,10 +138,11 @@ public class ConstructorMappingTestCase {
     	final SimpleDateFormat df = new SimpleDateFormat(DATE_PATTERN);
         MapperFactory factory = MappingUtil.getMapperFactory();
         
-        factory.registerClassMap(factory.classMap(PersonVO3.class, Person.class)
-                .field("firstName", "firstName")
-                .field("lastName", "lastName")
-        		.field("dateOfBirth", "date"));
+        factory.classMap(PersonVO3.class, Person.class)
+            .field("firstName", "firstName")
+            .field("lastName", "lastName")
+            .field("dateOfBirth", "date")
+            .register();
         factory.getConverterFactory().registerConverter(DATE_CONVERTER, new DateToStringConverter(DATE_PATTERN));
         
         Person person = new Person();
@@ -337,9 +356,11 @@ public class ConstructorMappingTestCase {
     	LibraryNested library = new LibraryNested("Library #1", books);
     	
     	MapperFactory factory = MappingUtil.getMapperFactory();
-    	factory.registerClassMap(
-    			factory.classMap(AuthorNested.class, AuthorDTO.class)
-    				.field("name.fullName", "name").byDefault().toClassMap());
+
+   		factory.classMap(AuthorNested.class, AuthorDTO.class)
+    	        .field("name.fullName", "name")
+                .byDefault()
+                .register();
     
     	MapperFacade mapper = factory.getMapperFacade();
     	
@@ -376,14 +397,15 @@ public class ConstructorMappingTestCase {
     	Holder holder = new Holder(primitiveHolder);
     	
     	MapperFactory factory = MappingUtil.getMapperFactory();
-    	factory.registerClassMap(
-    			factory.classMap(NestedPrimitiveHolder.class, PrimitiveWrapperHolder.class)
-    				.field("numbers.shortValue", "shortValue")
-    				.field("numbers.intValue", "intValue")
-    				.field("numbers.longValue", "longValue")
-    				.field("numbers.floatValue", "floatValue")
-    				.field("numbers.doubleValue", "doubleValue")
-    				.byDefault().toClassMap());
+
+        factory.classMap(NestedPrimitiveHolder.class, PrimitiveWrapperHolder.class)
+            .field("numbers.shortValue", "shortValue")
+            .field("numbers.intValue", "intValue")
+            .field("numbers.longValue", "longValue")
+            .field("numbers.floatValue", "floatValue")
+            .field("numbers.doubleValue", "doubleValue")
+            .byDefault()
+            .register();
     	
     	WrapperHolder wrapper = factory.getMapperFacade().map(holder, WrapperHolder.class);
     	
@@ -421,13 +443,14 @@ public class ConstructorMappingTestCase {
     @Test
     public void testConstructorsWithoutDebugInfo() {
     	MapperFactory factory = MappingUtil.getMapperFactory();
-    	factory.registerClassMap(
-    			factory.classMap(URLDto1.class, URL.class)
-		    		.field("protocolX", "protocol")
-		    		.field("hostX", "host")
-		    		.field("portX", "port")
-		    		.field("fileX", "file"));
-    	MapperFacade mapper = factory.getMapperFacade();
+
+        factory.classMap(URLDto1.class, URL.class)
+            .field("protocolX", "protocol")
+            .field("hostX", "host")
+            .field("portX", "port")
+            .field("fileX", "file")
+            .register();
+        MapperFacade mapper = factory.getMapperFacade();
     	
     	URLDto1 dto1 = new URLDto1();
     	dto1.protocolX = "http";
@@ -567,8 +590,4 @@ public class ConstructorMappingTestCase {
     	assertNotNull(authorDTO);
     	assertEquals(author.getName().getFullName(),authorDTO.getName());
     }
-    
-    
-    
-    
 }
