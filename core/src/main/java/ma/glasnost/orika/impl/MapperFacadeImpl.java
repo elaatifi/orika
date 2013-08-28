@@ -70,7 +70,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param contextFactory
      * @param unenhanceStrategy
      */
-    public MapperFacadeImpl(MapperFactory mapperFactory, MappingContextFactory contextFactory, UnenhanceStrategy unenhanceStrategy) {
+    public MapperFacadeImpl(final MapperFactory mapperFactory, final MappingContextFactory contextFactory,
+            final UnenhanceStrategy unenhanceStrategy) {
         this.mapperFactory = mapperFactory;
         
         this.unenhanceStrategy = unenhanceStrategy;
@@ -88,7 +89,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @return
      */
     @SuppressWarnings("unchecked")
-    private <S, D> Type<S> normalizeSourceType(S sourceObject, Type<S> sourceType, Type<D> destinationType) {
+    private <S, D> Type<S> normalizeSourceType(final S sourceObject, Type<S> sourceType, final Type<D> destinationType) {
         
         Type<?> resolvedType = null;
         
@@ -119,7 +120,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return (Type<S>) resolvedType;
     }
     
-    public <S, D> D map(S sourceObject, Type<S> sourceType, Type<D> destinationClass) {
+    public <S, D> D map(final S sourceObject, final Type<S> sourceType, final Type<D> destinationClass) {
         MappingContext context = contextFactory.getContext();
         try {
             return map(sourceObject, sourceType, destinationClass, context);
@@ -134,7 +135,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param object
      * @return the unwrapped class for the specified target object
      */
-    protected Class<?> getClass(Object object) {
+    protected Class<?> getClass(final Object object) {
         if (this.userUnenhanceStrategy == null) {
             return object.getClass();
         } else {
@@ -149,10 +150,11 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param rawAType
      * @param rawBType
      * @param context
-     * @return a MappingStrategy suitable to map the source and destination object
+     * @return a MappingStrategy suitable to map the source and destination
+     *         object
      */
     public <S, D> MappingStrategy resolveMappingStrategy(final S sourceObject, final java.lang.reflect.Type initialSourceType,
-            final java.lang.reflect.Type initialDestinationType, boolean mapInPlace, final MappingContext context) {
+            final java.lang.reflect.Type initialDestinationType, final boolean mapInPlace, final MappingContext context) {
         
         MappingStrategyKey key = new MappingStrategyKey(getClass(sourceObject), initialSourceType, initialDestinationType, mapInPlace);
         MappingStrategy strategy = strategyCache.get(key);
@@ -177,9 +179,6 @@ public class MapperFacadeImpl implements MapperFacade {
             
             strategyRecorder.setResolvedSourceType(resolvedSourceType);
             strategyRecorder.setResolvedDestinationType(destinationType);
-            if (sourceObject != resolvedSourceObject) {
-                strategyRecorder.setUnenhance(true);
-            }
             
             if (!mapInPlace && canCopyByReference(destinationType, resolvedSourceType)) {
                 /*
@@ -231,7 +230,7 @@ public class MapperFacadeImpl implements MapperFacade {
         
         return strategy;
     }
-   
+    
     @SuppressWarnings("unchecked")
     public <S, D> D map(final S sourceObject, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
         
@@ -278,7 +277,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param resolvedSourceType
      * @return
      */
-    private <D, S> boolean canCopyByReference(Type<D> destinationType, final Type<S> resolvedSourceType) {
+    private <D, S> boolean canCopyByReference(final Type<D> destinationType, final Type<S> resolvedSourceType) {
         if (ClassUtil.isImmutable(resolvedSourceType) && (destinationType.isAssignableFrom(resolvedSourceType))) {
             return true;
         } else if (resolvedSourceType.isPrimitiveWrapper()
@@ -292,10 +291,11 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> void map(final S sourceObject, final D destinationObject, final Type<S> sourceType, final Type<D> destinationType,
+            final MappingContext context) {
         
         try {
-
+            
             if (context.getMappedObject(sourceObject, destinationType) == null) {
                 MappingStrategy strategy = resolveMappingStrategy(sourceObject, sourceType, destinationType, true, context);
                 strategy.map(sourceObject, destinationObject, context);
@@ -318,7 +318,6 @@ public class MapperFacadeImpl implements MapperFacade {
                 throw new MappingException("[sourceObject] can not be null.");
             }
             
-            
             if (!ExceptionUtility.originatedByOrika(e)) {
                 throw e;
             }
@@ -330,7 +329,7 @@ public class MapperFacadeImpl implements MapperFacade {
         
     }
     
-    public <S, D> void map(S sourceObject, D destinationObject, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> void map(final S sourceObject, final D destinationObject, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             map(sourceObject, destinationObject, sourceType, destinationType, context);
@@ -339,7 +338,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> void map(S sourceObject, D destinationObject, MappingContext context) {
+    public <S, D> void map(final S sourceObject, final D destinationObject, final MappingContext context) {
         
         try {
             MappingStrategy strategy = resolveMappingStrategy(sourceObject, null, destinationObject.getClass(), true, context);
@@ -369,7 +368,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> void map(S sourceObject, D destinationObject) {
+    public <S, D> void map(final S sourceObject, final D destinationObject) {
         MappingContext context = contextFactory.getContext();
         try {
             map(sourceObject, destinationObject, context);
@@ -378,7 +377,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public final <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
+    public final <S, D> Set<D> mapAsSet(final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsSet(source, sourceType, destinationType, context);
@@ -387,11 +386,12 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public final <S, D> Set<D> mapAsSet(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public final <S, D> Set<D> mapAsSet(final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType,
+            final MappingContext context) {
         return (Set<D>) mapAsCollection(source, sourceType, destinationType, new HashSet<D>(), context);
     }
     
-    public final <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
+    public final <S, D> List<D> mapAsList(final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return (List<D>) mapAsCollection(source, sourceType, destinationType, new ArrayList<D>(), context);
@@ -400,11 +400,12 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public final <S, D> List<D> mapAsList(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public final <S, D> List<D> mapAsList(final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType,
+            final MappingContext context) {
         return (List<D>) mapAsCollection(source, sourceType, destinationType, new ArrayList<D>(), context);
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> D[] mapAsArray(final D[] destination, final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsArray(destination, source, sourceType, destinationType, context);
@@ -413,7 +414,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> D[] mapAsArray(final D[] destination, final S[] source, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsArray(destination, source, sourceType, destinationType, context);
@@ -422,7 +423,8 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> D[] mapAsArray(final D[] destination, final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType,
+            final MappingContext context) {
         
         if (source == null) {
             return null;
@@ -435,7 +437,8 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> D[] mapAsArray(final D[] destination, final S[] source, final Type<S> sourceType, final Type<D> destinationType,
+            final MappingContext context) {
         
         if (source == null) {
             return null;
@@ -448,7 +451,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> List<D> mapAsList(final S[] source, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsList(source, sourceType, destinationType, context);
@@ -457,7 +460,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> List<D> mapAsList(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> List<D> mapAsList(final S[] source, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
         final List<D> destination = new ArrayList<D>(source.length);
         for (final S s : source) {
             destination.add(map(s, sourceType, destinationType, context));
@@ -465,7 +468,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> Set<D> mapAsSet(final S[] source, final Type<S> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsSet(source, sourceType, destinationType, context);
@@ -474,7 +477,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> Set<D> mapAsSet(S[] source, Type<S> sourceType, Type<D> destinationType, MappingContext context) {
+    public <S, D> Set<D> mapAsSet(final S[] source, final Type<S> sourceType, final Type<D> destinationType, final MappingContext context) {
         final Set<D> destination = new HashSet<D>(source.length);
         for (final S s : source) {
             destination.add(map(s, sourceType, destinationType, context));
@@ -494,8 +497,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param destinationType
      * @param context
      */
-    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType,
-            MappingContext context) {
+    public <S, D> void mapAsCollection(final Iterable<S> source, final Collection<D> destination, final Type<S> sourceType,
+            final Type<D> destinationType, final MappingContext context) {
         if (source == null) {
             return;
         }
@@ -516,8 +519,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param destinationType
      * @param context
      */
-    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType,
-            MappingContext context) {
+    public <S, D> void mapAsCollection(final S[] source, final Collection<D> destination, final Type<S> sourceType,
+            final Type<D> destinationType, final MappingContext context) {
         if (source == null) {
             return;
         }
@@ -529,7 +532,7 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    Mapper<Object, Object> resolveMapper(Type<?> sourceType, Type<?> destinationType) {
+    Mapper<Object, Object> resolveMapper(final Type<?> sourceType, final Type<?> destinationType) {
         final MapperKey mapperKey = new MapperKey(sourceType, destinationType);
         Mapper<Object, Object> mapper = mapperFactory.lookupMapper(mapperKey);
         
@@ -565,21 +568,24 @@ public class MapperFacadeImpl implements MapperFacade {
      * @param strategyBuilder
      *            the strategy builder used to record the mapping strategy taken
      */
-    void mapDeclaredProperties(Object sourceObject, Object destinationObject, Type<?> sourceType, Type<?> destinationType,
-            MappingContext context, Mapper<Object, Object> mapper, MappingStrategyRecorder strategyBuilder) {
+    void mapDeclaredProperties(final Object sourceObject, final Object destinationObject, final Type<?> sourceType,
+            final Type<?> destinationType, final MappingContext context, final Mapper<Object, Object> mapper,
+            final MappingStrategyRecorder strategyBuilder) {
         
         if (mapper.getAType().equals(sourceType)) {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().equals(destinationType)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
-            if (strategyBuilder != null)
+            if (strategyBuilder != null) {
                 strategyBuilder.setMapReverse(true);
+            }
         } else if (mapper.getAType().isAssignableFrom(sourceType)) {
             mapper.mapAtoB(sourceObject, destinationObject, context);
         } else if (mapper.getAType().isAssignableFrom(destinationType)) {
             mapper.mapBtoA(sourceObject, destinationObject, context);
-            if (strategyBuilder != null)
+            if (strategyBuilder != null) {
                 strategyBuilder.setMapReverse(true);
+            }
         } else {
             throw new IllegalStateException(String.format("Source object type's must be one of '%s' or '%s'.", mapper.getAType(),
                     mapper.getBType()));
@@ -587,10 +593,11 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    private <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context,
-            MappingStrategyRecorder strategyBuilder) {
+    private <S, D> D newObject(final S sourceObject, final Type<? extends D> destinationType, final MappingContext context,
+            final MappingStrategyRecorder strategyBuilder) {
         
-        final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType, TypeFactory.valueOf(sourceObject.getClass()));
+        final ObjectFactory<? extends D> objectFactory = mapperFactory.lookupObjectFactory(destinationType,
+                TypeFactory.valueOf(sourceObject.getClass()));
         
         if (strategyBuilder != null) {
             strategyBuilder.setResolvedObjectFactory(objectFactory);
@@ -604,7 +611,7 @@ public class MapperFacadeImpl implements MapperFacade {
      * @see ma.glasnost.orika.MapperFacade#newObject(java.lang.Object,
      * ma.glasnost.orika.metadata.Type, ma.glasnost.orika.MappingContext)
      */
-    public <S, D> D newObject(S sourceObject, Type<? extends D> destinationType, MappingContext context) {
+    public <S, D> D newObject(final S sourceObject, final Type<? extends D> destinationType, final MappingContext context) {
         return newObject(sourceObject, destinationType, context, null);
     }
     
@@ -619,8 +626,8 @@ public class MapperFacadeImpl implements MapperFacade {
      * @return
      */
     @SuppressWarnings("unchecked")
-    <S, D> Collection<D> mapAsCollection(Iterable<S> source, Type<S> sourceType, Type<D> destinationType, Collection<D> destination,
-            MappingContext context) {
+    <S, D> Collection<D> mapAsCollection(final Iterable<S> source, final Type<S> sourceType, final Type<D> destinationType,
+            final Collection<D> destination, final MappingContext context) {
         
         if (source == null) {
             return null;
@@ -650,7 +657,7 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <S, D> D convert(S source, Type<S> sourceType, Type<D> destinationType, String converterId) {
+    public <S, D> D convert(final S source, final Type<S> sourceType, final Type<D> destinationType, final String converterId) {
         
         Converter<S, D> converter;
         ConverterFactory converterFactory = mapperFactory.getConverterFactory();
@@ -664,11 +671,11 @@ public class MapperFacadeImpl implements MapperFacade {
         return converter.convert(source, destinationType);
     }
     
-    private <S, D> boolean canConvert(Type<S> sourceType, Type<D> destinationType) {
+    private <S, D> boolean canConvert(final Type<S> sourceType, final Type<D> destinationType) {
         return mapperFactory.getConverterFactory().canConvert(sourceType, destinationType);
     }
     
-    public <S, D> D map(S sourceObject, Class<D> destinationClass) {
+    public <S, D> D map(final S sourceObject, final Class<D> destinationClass) {
         MappingContext context = contextFactory.getContext();
         try {
             return map(sourceObject, destinationClass, context);
@@ -678,7 +685,7 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <S, D> D map(S sourceObject, Class<D> destinationClass, MappingContext context) {
+    public <S, D> D map(final S sourceObject, final Class<D> destinationClass, final MappingContext context) {
         
         try {
             if (destinationClass == null) {
@@ -708,63 +715,64 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass) {
+    public <S, D> Set<D> mapAsSet(final Iterable<S> source, final Class<D> destinationClass) {
         return mapAsSet(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
-    public <S, D> Set<D> mapAsSet(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+    public <S, D> Set<D> mapAsSet(final Iterable<S> source, final Class<D> destinationClass, final MappingContext context) {
         return mapAsSet(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
-    public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass) {
+    public <S, D> Set<D> mapAsSet(final S[] source, final Class<D> destinationClass) {
         return mapAsSet(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
-    public <S, D> Set<D> mapAsSet(S[] source, Class<D> destinationClass, MappingContext context) {
+    public <S, D> Set<D> mapAsSet(final S[] source, final Class<D> destinationClass, final MappingContext context) {
         return mapAsSet(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
-    public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass) {
+    public <S, D> List<D> mapAsList(final Iterable<S> source, final Class<D> destinationClass) {
         return mapAsList(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
-    public <S, D> List<D> mapAsList(Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+    public <S, D> List<D> mapAsList(final Iterable<S> source, final Class<D> destinationClass, final MappingContext context) {
         return mapAsList(source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
-    public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass) {
+    public <S, D> List<D> mapAsList(final S[] source, final Class<D> destinationClass) {
         return mapAsList(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
-    public <S, D> List<D> mapAsList(S[] source, Class<D> destinationClass, MappingContext context) {
+    public <S, D> List<D> mapAsList(final S[] source, final Class<D> destinationClass, final MappingContext context) {
         return mapAsList(source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass) {
+    public <S, D> D[] mapAsArray(final D[] destination, final Iterable<S> source, final Class<D> destinationClass) {
         return mapAsArray(destination, source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass) {
+    public <S, D> D[] mapAsArray(final D[] destination, final S[] source, final Class<D> destinationClass) {
         return mapAsArray(destination, source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass));
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, Iterable<S> source, Class<D> destinationClass, MappingContext context) {
+    public <S, D> D[] mapAsArray(final D[] destination, final Iterable<S> source, final Class<D> destinationClass,
+            final MappingContext context) {
         return mapAsArray(destination, source, TypeFactory.elementTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
-    public <S, D> D[] mapAsArray(D[] destination, S[] source, Class<D> destinationClass, MappingContext context) {
+    public <S, D> D[] mapAsArray(final D[] destination, final S[] source, final Class<D> destinationClass, final MappingContext context) {
         return mapAsArray(destination, source, TypeFactory.componentTypeOf(source), TypeFactory.<D> valueOf(destinationClass), context);
     }
     
-    public <S, D> D convert(S source, Class<D> destinationClass, String converterId) {
+    public <S, D> D convert(final S source, final Class<D> destinationClass, final String converterId) {
         return convert(source, TypeFactory.typeOf(source), TypeFactory.<D> valueOf(destinationClass), converterId);
     }
     
     /*
      * New mapping type: Map to Map
      */
-    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
-            Type<? extends Map<Dk, Dv>> destinationType) {
+    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<? extends Map<Dk, Dv>> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsMap(source, sourceType, destinationType, context);
@@ -774,8 +782,8 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType,
-            Type<? extends Map<Dk, Dv>> destinationType, MappingContext context) {
+    public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<? extends Map<Dk, Dv>> destinationType, final MappingContext context) {
         Map<Dk, Dv> destination = new HashMap<Dk, Dv>(source.size());
         
         /*
@@ -801,7 +809,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 }
                 Dk mappedKey = (Dk) context.getMappedObject(entry.getKey(), destinationType.<Dk> getNestedType(0));
                 if (mappedKey == null) {
-                    mappedKey = (Dk) (Dk) keyStrategy.map(entry.getKey(), null, context);
+                    mappedKey = (Dk) keyStrategy.map(entry.getKey(), null, context);
                 }
                 
                 key = mappedKey;
@@ -819,7 +827,7 @@ public class MapperFacadeImpl implements MapperFacade {
                 
                 Dv mappedValue = (Dv) context.getMappedObject(entry.getValue(), destinationType.<Dv> getNestedType(1));
                 if (mappedValue == null) {
-                    mappedValue = (Dv) (Dv) valueStrategy.map(entry.getValue(), null, context);
+                    mappedValue = (Dv) valueStrategy.map(entry.getValue(), null, context);
                 }
                 
                 value = mappedValue;
@@ -830,7 +838,8 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(final Iterable<S> source, final Type<S> sourceType,
+            final Type<? extends Map<Dk, Dv>> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsMap(source, sourceType, destinationType, context);
@@ -840,8 +849,8 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(Iterable<S> source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
-            MappingContext context) {
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(final Iterable<S> source, final Type<S> sourceType,
+            final Type<? extends Map<Dk, Dv>> destinationType, final MappingContext context) {
         
         Map<Dk, Dv> destination = new HashMap<Dk, Dv>();
         MappingStrategy strategy = null;
@@ -865,7 +874,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return destination;
     }
     
-    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType) {
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(final S[] source, final Type<S> sourceType, final Type<? extends Map<Dk, Dv>> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsMap(source, sourceType, destinationType, context);
@@ -875,8 +884,8 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(S[] source, Type<S> sourceType, Type<? extends Map<Dk, Dv>> destinationType,
-            MappingContext context) {
+    public <S, Dk, Dv> Map<Dk, Dv> mapAsMap(final S[] source, final Type<S> sourceType, final Type<? extends Map<Dk, Dv>> destinationType,
+            final MappingContext context) {
         
         Map<Dk, Dv> destination = new HashMap<Dk, Dv>();
         Type<MapEntry<Dk, Dv>> entryType = MapEntry.concreteEntryType(destinationType);
@@ -902,7 +911,8 @@ public class MapperFacadeImpl implements MapperFacade {
     /*
      * New mapping type: Map to List, Set or Array
      */
-    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+    public <Sk, Sv, D> List<D> mapAsList(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsList(source, sourceType, destinationType, context);
@@ -911,8 +921,8 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <Sk, Sv, D> List<D> mapAsList(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
-            MappingContext context) {
+    public <Sk, Sv, D> List<D> mapAsList(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<D> destinationType, final MappingContext context) {
         /*
          * Use map as collection to map the entry set to a list; requires an
          * existing mapping for Map.Entry to to type D.
@@ -924,7 +934,7 @@ public class MapperFacadeImpl implements MapperFacade {
         return (List<D>) mapAsCollection(MapEntry.entrySet(source), entryType, destinationType, destination, context);
     }
     
-    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+    public <Sk, Sv, D> Set<D> mapAsSet(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType, final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsSet(source, sourceType, destinationType, context);
@@ -933,8 +943,8 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <Sk, Sv, D> Set<D> mapAsSet(Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
-            MappingContext context) {
+    public <Sk, Sv, D> Set<D> mapAsSet(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<D> destinationType, final MappingContext context) {
         /*
          * Use map as collection to map the entry set to a list; requires an
          * existing mapping for Map.Entry to to type D.
@@ -944,7 +954,8 @@ public class MapperFacadeImpl implements MapperFacade {
         return (Set<D>) mapAsCollection(source.entrySet(), entryType, destinationType, destination, context);
     }
     
-    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType) {
+    public <Sk, Sv, D> D[] mapAsArray(final D[] destination, final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             return mapAsArray(destination, source, sourceType, destinationType, context);
@@ -953,15 +964,15 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <Sk, Sv, D> D[] mapAsArray(D[] destination, Map<Sk, Sv> source, Type<? extends Map<Sk, Sv>> sourceType, Type<D> destinationType,
-            MappingContext context) {
+    public <Sk, Sv, D> D[] mapAsArray(final D[] destination, final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
+            final Type<D> destinationType, final MappingContext context) {
         
         Type<MapEntry<Sk, Sv>> entryType = MapEntry.concreteEntryType(sourceType);
         
         return mapAsArray(destination, MapEntry.entrySet(source), entryType, destinationType, context);
     }
     
-    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass) {
+    public <S, D> void mapAsCollection(final Iterable<S> source, final Collection<D> destination, final Class<D> destinationClass) {
         MappingContext context = contextFactory.getContext();
         try {
             mapAsCollection(source, destination, destinationClass, context);
@@ -970,11 +981,12 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
+    public <S, D> void mapAsCollection(final Iterable<S> source, final Collection<D> destination, final Class<D> destinationClass,
+            final MappingContext context) {
         mapAsCollection(source, destination, null, TypeFactory.valueOf(destinationClass), context);
     }
     
-    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass) {
+    public <S, D> void mapAsCollection(final S[] source, final Collection<D> destination, final Class<D> destinationClass) {
         MappingContext context = contextFactory.getContext();
         try {
             mapAsCollection(source, destination, destinationClass, context);
@@ -984,12 +996,14 @@ public class MapperFacadeImpl implements MapperFacade {
     }
     
     @SuppressWarnings("unchecked")
-    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Class<D> destinationClass, MappingContext context) {
+    public <S, D> void mapAsCollection(final S[] source, final Collection<D> destination, final Class<D> destinationClass,
+            final MappingContext context) {
         mapAsCollection(source, destination, (Type<S>) TypeFactory.valueOf(source.getClass().getComponentType()),
                 TypeFactory.valueOf(destinationClass), context);
     }
     
-    public <S, D> void mapAsCollection(Iterable<S> source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> void mapAsCollection(final Iterable<S> source, final Collection<D> destination, final Type<S> sourceType,
+            final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             mapAsCollection(source, destination, sourceType, destinationType, context);
@@ -998,7 +1012,8 @@ public class MapperFacadeImpl implements MapperFacade {
         }
     }
     
-    public <S, D> void mapAsCollection(S[] source, Collection<D> destination, Type<S> sourceType, Type<D> destinationType) {
+    public <S, D> void mapAsCollection(final S[] source, final Collection<D> destination, final Type<S> sourceType,
+            final Type<D> destinationType) {
         MappingContext context = contextFactory.getContext();
         try {
             mapAsCollection(source, destination, sourceType, destinationType, context);
