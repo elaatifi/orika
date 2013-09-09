@@ -284,21 +284,8 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
     }
     
     private boolean mapFields(Node currentNode, Node srcNode, StringBuilder out, SourceCodeContext code) {
-        
-        String srcName = srcNode.parent != null ? srcNode.parent.elementRef.name() : "source";
-        
-        Property sp = innermostElement(currentNode.value.getSource());
-        Property srcProp = new Property.Builder().merge(sp).expression(innermostElement(currentNode.value.getSource()).getExpression()).build();
-        VariableRef s = new VariableRef(srcProp, srcName);
-        
-        Property dp = innermostElement(currentNode.value.getDestination());
-        Property dstProp = new Property.Builder().merge(dp).expression(innermostElement(currentNode.value.getDestination()).getExpression()).build();
-        String dstName =  "destination";
-        if (currentNode.parent != null ) {
-            dstName = currentNode.parent.elementRef.name();
-        }
-        
-        VariableRef d = new VariableRef(dstProp, dstName);
+        VariableRef s = makeVariable(currentNode.value.getSource(), srcNode, "source");
+        VariableRef d = makeVariable(currentNode.value.getDestination(), currentNode, "destination");
         
         Type<?> destType = currentNode.parent != null ? currentNode.parent.elementRef.type() : null;
         
@@ -309,6 +296,14 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         return d.type().equals(parentElementType) && mapperFactory.getConverterFactory().canConvert(s.type(), d.type());
     }
     
+    private VariableRef makeVariable(Property currentProp, Node node, String defName) {
+        String name = node.parent != null ? node.parent.elementRef.name() : defName;
+
+        Property p = innermostElement(currentProp);
+        Property prop = new Property.Builder().merge(p).expression(p.getExpression()).build();
+
+        return new VariableRef(prop, name);
+    }
     
     /**
      * Register the ClassMaps needed to map this pair of source and
