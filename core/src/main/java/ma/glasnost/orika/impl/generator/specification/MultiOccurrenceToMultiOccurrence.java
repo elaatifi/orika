@@ -38,6 +38,7 @@ import ma.glasnost.orika.impl.generator.VariableRef;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.FieldMap;
+import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
@@ -238,6 +239,10 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                     }
                     currentNode.parent.addedToCollector = true;
                 }
+            } else {
+                VariableRef s = makeVariable(srcNode.property, srcNode, "source");
+                VariableRef d = makeVariable(currentNode.property, currentNode, "destination");
+                code.applyFilters(s, d, out, endWhiles);
             }
         }  
         

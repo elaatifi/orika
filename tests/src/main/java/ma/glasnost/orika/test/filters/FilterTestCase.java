@@ -19,6 +19,9 @@
 package ma.glasnost.orika.test.filters;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
@@ -134,6 +137,56 @@ public class FilterTestCase {
         }
     }
     
+    @Test
+    public void testMultiOccurenceFiltering() {
+        // run without filter
+        MapperFactory factory = MappingUtil.getMapperFactory();
+        factory.classMap(Source.class, Destination.class)
+                .field("infoMap{key}", "infos{item}")
+                .field("infoMap{value}", "infos{info}")
+                .byDefault().register();
+
+        MapperFacade mapper = factory.getMapperFacade();
+        
+        Source source = new Source();
+        source.age = 35;
+        source.infoMap = new HashMap<String, String>();
+        source.infoMap.put("weather", "nice");
+        
+        Destination dest = mapper.map(source, Destination.class);
+        
+        Assert.assertEquals(source.age, (int) dest.age);
+        Assert.assertEquals(1, dest.infos.size());
+        Info info = dest.infos.get(0);
+        Assert.assertEquals("weather", info.item);
+        Assert.assertEquals("nice", info.info);
+
+        // run with filter
+        factory = MappingUtil.getMapperFactory();
+        factory.classMap(Source.class, Destination.class)
+                .field("infoMap{key}", "infos{item}")
+                .field("infoMap{value}", "infos{info}")
+                .byDefault().register();
+        factory.registerFilter(new InfoFilter());
+        mapper = factory.getMapperFacade();
+        
+        dest = mapper.map(source, Destination.class);
+        
+        Assert.assertEquals(source.age, (int) dest.age);
+        Assert.assertNull(dest.infos);
+    }
+    
+    private static class InfoFilter extends NullFilter<Map<?, ?>, List<?>> {
+        @Override
+        public boolean shouldMap(final Type<?> sourceType, final String sourceName, final Map<?, ?> source, final Type<?> destType, final String destName,
+                final MappingContext mappingContext) {
+            if (sourceName.equals("infoMap")) {
+                return false;
+            }
+            return true;
+        }
+    }
+    
     public static class Source {
         public SourceName name;
         public Long id;
@@ -141,6 +194,7 @@ public class FilterTestCase {
         public double cost;
         public String creditCardNumber;
         public SourceAddress address;
+        public Map<String, String> infoMap;
     }
     
     public static class SourceName {
@@ -161,10 +215,16 @@ public class FilterTestCase {
         public String creditCardNumber;
         public String street;
         public String city;
+        public List<Info> infos;
     }
     
     public static class DestinationName {
         public String first;
         public String last;
+    }
+    
+    public static class Info {
+        public String item;
+        public String info;
     }
 }
