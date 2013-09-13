@@ -243,6 +243,16 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                 VariableRef s = makeVariable(srcNode.property, srcNode, "source");
                 VariableRef d = makeVariable(currentNode.property, currentNode, "destination");
                 code.applyFilters(s, d, out, endWhiles);
+
+
+                d = currentNode.isRoot() ? currentNode.newDestination : currentNode.multiOccurrenceVar;
+                out.append(format("\nmappingContext.beginMapping(%s, %s, %s, %s);\n",
+                            code.usedType(s.type()),
+                            s.asWrapper(),
+                            code.usedType(d.type()),
+                            d.asWrapper()));
+                out.append("try {\n");
+                endWhiles.insert(0, "\n} finally {\n  mappingContext.endMapping();\n}\n");
             }
         }  
         
