@@ -126,14 +126,14 @@ public class FilterTestCase {
         }
     
         @Override
-        public boolean filtersDestination() {
+        public boolean filtersSource() {
             return true;
         }
     
         @Override
-        public <D extends Number> D filterDestination(D destinationValue, final Type<?> sourceType, final String sourceName, final Type<D> destType,
+        public <S extends Number> S filterSource(S sourceValue, final Type<S> sourceType, final String sourceName, final Type<?> destType,
                 final String destName, final MappingContext mappingContext) {
-            return (D) ((BigDecimal) destinationValue).multiply(BigDecimal.valueOf(2));
+            return (S) new BigDecimal(((Double) sourceValue) * 2);
         }
     }
     
