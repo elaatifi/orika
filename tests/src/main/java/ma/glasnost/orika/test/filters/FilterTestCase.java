@@ -80,7 +80,7 @@ public class FilterTestCase {
             return true;
         }
         
-        public boolean shouldMap(final Type<?> sourceType, final String sourceName, final Object source, final Type<?> destType, final String destName,
+        public <S, D> boolean shouldMap(final Type<S> sourceType, final String sourceName, final S source, final Type<D> destType, final String destName,
                 final MappingContext mappingContext) {
             if ("age".equals(sourceName) || "address.street".equals(sourceName)) {
                 return false;
@@ -131,7 +131,7 @@ public class FilterTestCase {
         }
     
         @Override
-        public <D> D filterDestination(D destinationValue, final Type<?> sourceType, final String sourceName, final Type<D> destType,
+        public <D extends Number> D filterDestination(D destinationValue, final Type<?> sourceType, final String sourceName, final Type<D> destType,
                 final String destName, final MappingContext mappingContext) {
             return (D) ((BigDecimal) destinationValue).multiply(BigDecimal.valueOf(2));
         }
@@ -178,7 +178,7 @@ public class FilterTestCase {
     
     private static class InfoFilter extends NullFilter<Map<?, ?>, List<?>> {
         @Override
-        public boolean shouldMap(final Type<?> sourceType, final String sourceName, final Map<?, ?> source, final Type<?> destType, final String destName,
+        public <S extends Map<?, ?>, D extends List<?>> boolean shouldMap(final Type<S> sourceType, final String sourceName, final S source, final Type<D> destType, final String destName,
                 final MappingContext mappingContext) {
             if (sourceName.equals("infoMap")) {
                 return false;
