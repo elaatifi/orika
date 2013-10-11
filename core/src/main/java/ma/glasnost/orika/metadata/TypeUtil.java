@@ -23,6 +23,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.TypeVariable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -34,16 +35,23 @@ import java.util.Set;
 abstract class TypeUtil {
     
     @SuppressWarnings("unchecked")
-    static final Set<Type<?>> IGNORED_TYPES = 
-            new HashSet<Type<?>>(Arrays.asList(
-                    TypeFactory.valueOf(Cloneable.class), 
-                    TypeFactory.valueOf(Serializable.class),
-                    TypeFactory.valueOf(Externalizable.class)));
+    static final Set<Type<?>> IGNORED_TYPES = new HashSet<Type<?>>(Arrays.asList(TypeFactory.valueOf(Cloneable.class),
+            TypeFactory.valueOf(Serializable.class), TypeFactory.valueOf(Externalizable.class)));
     
+    static final Map<String, Class<?>> PRIMITIVES_CLASSES = new HashMap<String, Class<?>>() {
+        {
+            put(Boolean.TYPE.getName(), Boolean.TYPE);
+            put(Short.TYPE.getName(), Short.TYPE);
+            put(Integer.TYPE.getName(), Integer.TYPE);
+            put(Long.TYPE.getName(), Long.TYPE);
+            put(Float.TYPE.getName(), Float.TYPE);
+            put(Double.TYPE.getName(), Double.TYPE);
+        }
+    };
     
-    static java.lang.reflect.Type[] resolveActualTypeArguments(ParameterizedType type, Type<?> reference) {
-          
-        return resolveActualTypeArguments(((Class<?>)type.getRawType()).getTypeParameters(), type.getActualTypeArguments(), reference);
+    static java.lang.reflect.Type[] resolveActualTypeArguments(final ParameterizedType type, final Type<?> reference) {
+        
+        return resolveActualTypeArguments(((Class<?>) type.getRawType()).getTypeParameters(), type.getActualTypeArguments(), reference);
     }
     
     /**
@@ -55,48 +63,49 @@ abstract class TypeUtil {
      * @param reference
      * @return
      */
-    static java.lang.reflect.Type[] resolveActualTypeArguments(TypeVariable<?>[] vars, java.lang.reflect.Type[] typeArguments, Type<?> reference) {
-    	
-		java.lang.reflect.Type[] actualTypeArguments = new java.lang.reflect.Type[typeArguments.length];
-        for (int i=0, len=actualTypeArguments.length; i < len; ++i) {
+    static java.lang.reflect.Type[] resolveActualTypeArguments(final TypeVariable<?>[] vars, final java.lang.reflect.Type[] typeArguments,
+            final Type<?> reference) {
+        
+        java.lang.reflect.Type[] actualTypeArguments = new java.lang.reflect.Type[typeArguments.length];
+        for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
             java.lang.reflect.Type typeArg = typeArguments[i];
             TypeVariable<?> var = vars[i];
             // TODO: need to clean up this section:
-            // we should loop through the types provided by the reference type, 
-            // and if they are more specific than the existing type, use the reference instead
+            // we should loop through the types provided by the reference type,
+            // and if they are more specific than the existing type, use the
+            // reference instead
             if (typeArg instanceof TypeVariable) {
-                var = (TypeVariable<?>)typeArg;
+                var = (TypeVariable<?>) typeArg;
             }
             Type<?> typeFromReference = (Type<?>) reference.getTypeByVariable(var);
             if (typeFromReference != null && typeArg.equals(var)) {
                 actualTypeArguments[i] = typeFromReference;
             } else {
-                Type<?> typeFromArgument = (Type<?>) TypeFactory.valueOf(typeArg);
+                Type<?> typeFromArgument = TypeFactory.valueOf(typeArg);
                 actualTypeArguments[i] = getMostSpecificType(typeFromReference, typeFromArgument, IGNORED_TYPES);
             }
         }
         return actualTypeArguments;
-	
+        
     }
     
     /**
-     * Attempts to determine the more specific type out of the two
-     * provided types.<br>
+     * Attempts to determine the more specific type out of the two provided
+     * types.<br>
      * 
      * @param type0
      * @param type1
-     */ 
-    static Type<?> getMostSpecificType(Type<?> type0, Type<?> type1) {
+     */
+    static Type<?> getMostSpecificType(final Type<?> type0, final Type<?> type1) {
         return getMostSpecificType(type0, type1, IGNORED_TYPES);
     }
     
-    
     /**
-     * Attempts to determine the more specific type out of the two
-     * provided types.<br>
+     * Attempts to determine the more specific type out of the two provided
+     * types.<br>
      * Allows a provided list of types to ignore (which are basically considered
-     * the same as Object's type in terms of their specificity); this is
-     * to allow ignoring types that are not a useful part of the hierarchy
+     * the same as Object's type in terms of their specificity); this is to
+     * allow ignoring types that are not a useful part of the hierarchy
      * comparison.
      * 
      * @param type0
@@ -104,7 +113,7 @@ abstract class TypeUtil {
      * @param ignoredTypes
      * @return
      */
-    static Type<?> getMostSpecificType(Type<?> type0, Type<?> type1, Set<Type<?>> ignoredTypes) {
+    static Type<?> getMostSpecificType(final Type<?> type0, final Type<?> type1, final Set<Type<?>> ignoredTypes) {
         if (type1 == null && type0 == null) {
             return null;
         } else if (type0 == null && type1 != null) {
@@ -153,7 +162,7 @@ abstract class TypeUtil {
             throw new IllegalArgumentException("Must provide all type-arguments or none");
         } else {
             
-            for (int i=0, len=actualTypeArguments.length; i < len; ++i) {
+            for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
                 java.lang.reflect.Type t = actualTypeArguments[i];
                 recursiveBounds.add(rawType);
                 resultTypeArguments[i] = TypeFactory.limitedValueOf(t, recursiveBounds);
@@ -222,64 +231,66 @@ abstract class TypeUtil {
     }
     
     static class InvalidTypeDescriptorException extends Exception {
-        private static final long serialVersionUID = 1L;        
+        private static final long serialVersionUID = 1L;
     }
     
     /**
-     * Parses a type descriptor to produce the Type instance with a matching representation
+     * Parses a type descriptor to produce the Type instance with a matching
+     * representation
      * 
      * @param typeDescriptor
      * @return
      * @throws InvalidTypeDescriptorException
      */
-    static Type<?> parseTypeDescriptor(String typeDescriptor) throws InvalidTypeDescriptorException {
+    static Type<?> parseTypeDescriptor(final String typeDescriptor) throws InvalidTypeDescriptorException {
         final ClassLoader cl = Thread.currentThread().getContextClassLoader();
         StringBuilder descriptor = new StringBuilder(typeDescriptor);
         int split = descriptor.indexOf("<");
         if (split >= 0) {
             String className = descriptor.substring(0, split);
-            if (!descriptor.subSequence(descriptor.length()-1, descriptor.length()).equals(">")) {
+            if (!descriptor.subSequence(descriptor.length() - 1, descriptor.length()).equals(">")) {
                 throw new InvalidTypeDescriptorException();
             } else {
-                descriptor.setLength(descriptor.length()-1);
-                descriptor.replace(0, split+1, "");
+                descriptor.setLength(descriptor.length() - 1);
+                descriptor.replace(0, split + 1, "");
             }
             String[] subDescriptors = splitTypeArguments(descriptor.toString());
             Type<?>[] typeArguments = new Type<?>[subDescriptors.length];
             int index = -1;
-            for (String subDescriptor: subDescriptors) {
+            for (String subDescriptor : subDescriptors) {
                 typeArguments[++index] = parseTypeDescriptor(subDescriptor);
             }
             
             return TypeFactory.valueOf(loadClass(className, cl), typeArguments);
-           
+            
         } else {
-            return TypeFactory.valueOf(loadClass(typeDescriptor, cl));  
+            return TypeFactory.valueOf(loadClass(typeDescriptor, cl));
         }
     }
     
     /**
-     * Splits the provided string of nested types into separate top-level instances.
+     * Splits the provided string of nested types into separate top-level
+     * instances.
      * 
      * @param nestedTypes
      * @return
      */
-    private static String[] splitTypeArguments(String nestedTypes) {
+    private static String[] splitTypeArguments(final String nestedTypes) {
         StringBuilder string = new StringBuilder(nestedTypes.replaceAll("\\s*", ""));
         List<String> arguments = new ArrayList<String>();
-        while(string.length() > 0) {
+        while (string.length() > 0) {
             int nextComma = string.indexOf(",");
             int nextOpen = string.indexOf("<");
-            if (nextComma == -1 ) {
+            if (nextComma == -1) {
                 arguments.add(string.toString());
                 string.setLength(0);
             } else if (nextOpen == -1 || nextComma < nextOpen) {
                 arguments.add(string.substring(0, nextComma));
-                string.replace(0,nextComma+1,"");
+                string.replace(0, nextComma + 1, "");
             } else { // nextOpen < nextComma
                 int depth = 1;
                 int index = nextOpen;
-                while (depth > 0 && index < string.length() -1 ) {
+                while (depth > 0 && index < string.length() - 1) {
                     char nextChar = string.charAt(++index);
                     if ('<' == nextChar) {
                         ++depth;
@@ -287,25 +298,31 @@ abstract class TypeUtil {
                         --depth;
                     }
                 }
-                arguments.add(string.substring(0,index+1));
-                string.replace(0,index+1,"");
+                arguments.add(string.substring(0, index + 1));
+                string.replace(0, index + 1, "");
             }
         }
         return arguments.toArray(new String[arguments.size()]);
     }
     
     /**
-     * Attempt to load the class specified by the given name, using
-     * the provided class loader.<br>
-     * Additional attempts are made for classes not found which have no package 
-     * declaration, under the assumption that the class may be in the 
+     * Attempt to load the class specified by the given name, using the provided
+     * class loader.<br>
+     * Additional attempts are made for classes not found which have no package
+     * declaration, under the assumption that the class may be in the
      * 'java.lang' package, or 'java.util' package (in that order).
      * 
      * @param name
      * @param cl
      * @return
      */
-    private static Class<?> loadClass(String name, ClassLoader cl) {
+    private static Class<?> loadClass(final String name, final ClassLoader cl) {
+        
+        Class<?> cls = PRIMITIVES_CLASSES.get(name);
+        if (cls != null) {
+            return cls;
+        }
+        
         try {
             return Class.forName(name, false, cl);
         } catch (ClassNotFoundException e) {
@@ -325,7 +342,7 @@ abstract class TypeUtil {
                 int lastDot = name.lastIndexOf('.');
                 String modifiedName = name;
                 while (lastDot > 0) {
-                    modifiedName = modifiedName.substring(0, lastDot) + "$" + modifiedName.substring(lastDot+1);
+                    modifiedName = modifiedName.substring(0, lastDot) + "$" + modifiedName.substring(lastDot + 1);
                     try {
                         return Class.forName(modifiedName, false, cl);
                     } catch (ClassNotFoundException e2) {
