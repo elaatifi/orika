@@ -45,7 +45,7 @@ public class ObjectToObject extends AbstractSpecification {
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         
         if (code.isDebugEnabled()) {
-            code.debug("mapping object to object");
+            code.debug(fieldMap, "mapping object to object");
         }
         
         String mapNewObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination.type()), source));

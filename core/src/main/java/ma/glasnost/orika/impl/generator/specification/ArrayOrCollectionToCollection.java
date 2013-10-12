@@ -75,7 +75,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
         
         if (s.isArray()) {
             if (code.isDebugEnabled()) {
-                code.debug("mapping " + s.elementTypeName() + "[] to Collection<" + d.elementTypeName() + ">");
+                code.debug(fieldMap, "mapping " + s.elementTypeName() + "[] to Collection<" + d.elementTypeName() + ">");
             }
             
             if (s.elementType().isPrimitive()) {
@@ -87,7 +87,7 @@ public class ArrayOrCollectionToCollection extends AbstractSpecification {
             }
         } else {
             if (code.isDebugEnabled()) {
-                code.debug("mapping Collection<" + s.elementTypeName() + "> to Collection<" + d.elementTypeName() + ">");
+                code.debug(fieldMap, "mapping Collection<" + s.elementTypeName() + "> to Collection<" + d.elementTypeName() + ">");
             }
             append(out,
                     "\n",

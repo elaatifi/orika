@@ -54,7 +54,7 @@ public class MapToMap extends AbstractSpecification {
         MultiOccurrenceVariableRef s = MultiOccurrenceVariableRef.from(source);
         
         if (code.isDebugEnabled()) {
-            code.debug("mapping from Map<" + source.type().getNestedType(0) + ", " + 
+            code.debug(fieldMap, "mapping from Map<" + source.type().getNestedType(0) + ", " + 
             source.type().getNestedType(1) + "> to Map<" + destination.type().getNestedType(0) + ", " + 
             destination.type().getNestedType(1) + ">");
         }

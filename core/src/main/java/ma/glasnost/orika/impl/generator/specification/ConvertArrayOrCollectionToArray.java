@@ -66,11 +66,11 @@ public class ConvertArrayOrCollectionToArray extends AbstractSpecification {
         
         if (destination.elementType().isPrimitive()) {
             if (code.isDebugEnabled()) {
-                code.debug("converting to primitive array using " + source.getConverter());
+                code.debug(fieldMap, "converting to primitive array using " + source.getConverter());
             }
         } else {
             if (code.isDebugEnabled()) {
-                code.debug("converting to array using " + source.getConverter());
+                code.debug(fieldMap, "converting to array using " + source.getConverter());
             }
         }
         

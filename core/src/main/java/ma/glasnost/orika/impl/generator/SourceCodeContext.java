@@ -157,6 +157,17 @@ public class SourceCodeContext {
         }
     }
     
+    public void debug(FieldMap fieldMap, String msg)  {
+        if (isDebugEnabled()) {
+            logDetails.append(fieldTag(fieldMap));
+            logDetails.append(msg);
+        }
+    }
+    
+    public String fieldTag(FieldMap fieldMap) {
+        return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
+    }
+    
     /**
      * @return the StringBuilder containing the current accumulated source.
      */

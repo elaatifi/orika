@@ -39,7 +39,7 @@ public class MapToArray extends ArrayOrCollectionToArray {
     public String generateMappingCode(FieldMap fieldMap, VariableRef source, VariableRef destination, SourceCodeContext code) {
         
         if (code.isDebugEnabled()) {
-            code.debug("mapping Map<" + source.type().getNestedType(0) + ", " + 
+            code.debug(fieldMap, "mapping Map<" + source.type().getNestedType(0) + ", " + 
                     source.type().getNestedType(1) + "> to " + destination.elementTypeName() + "[]");
         }
         
