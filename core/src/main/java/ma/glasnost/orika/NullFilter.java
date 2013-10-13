@@ -31,6 +31,7 @@ public class NullFilter<A, B> extends CustomFilter<A, B> {
     /**
      * @return false
      */
+    @Override
     public boolean filtersSource() {
         return false;
     }
@@ -38,6 +39,7 @@ public class NullFilter<A, B> extends CustomFilter<A, B> {
     /**
      * @return false
      */
+    @Override
     public boolean filtersDestination() {
         return false;
     }
@@ -45,7 +47,8 @@ public class NullFilter<A, B> extends CustomFilter<A, B> {
     /**
      * @return true
      */
-    public boolean shouldMap(final Type<?> sourceType, final String sourceName, final A source, final Type<?> destType, final String destName,
+    @Override
+    public <S extends A, D extends B> boolean shouldMap(final Type<S> sourceType, final String sourceName, final S source, final Type<D> destType, final String destName,
             final MappingContext mappingContext) {
         return true;
     }
@@ -53,7 +56,8 @@ public class NullFilter<A, B> extends CustomFilter<A, B> {
     /**
      * @return destinationValue
      */
-    public <D> D filterDestination(D destinationValue, final Type<?> sourceType, final String sourceName, final Type<D> destType,
+    @Override
+    public <D extends B> D filterDestination(D destinationValue, final Type<?> sourceType, final String sourceName, final Type<D> destType,
             final String destName, final MappingContext mappingContext) {
         return destinationValue;
     }
@@ -61,7 +65,8 @@ public class NullFilter<A, B> extends CustomFilter<A, B> {
     /**
      * @return sourceValue
      */
-    public <S> S filterSource(final S sourceValue, final Type<S> sourceType, final String sourceName, final Type<?> destType,
+    @Override
+    public <S extends A> S filterSource(final S sourceValue, final Type<S> sourceType, final String sourceName, final Type<?> destType,
             final String destName, final MappingContext mappingContext) {
         return sourceValue;
     }
