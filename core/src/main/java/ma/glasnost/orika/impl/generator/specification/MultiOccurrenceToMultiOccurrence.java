@@ -114,6 +114,7 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             Set<FieldMap> subFields, SourceCodeContext code) {
         
         StringBuilder out = new StringBuilder();
+        StringBuilder sourcesNotNull = new StringBuilder();
         
         /*
          * Construct size/length expressions used to limit the parallel iteration
@@ -124,6 +125,10 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         for (Node ref : sourceNodes) {
             if (!ref.isLeaf()) {
                 sourceSizes.add(ref.multiOccurrenceVar.size());
+                if (sourcesNotNull.length() > 0) {
+                    sourcesNotNull.append(" && ");
+                }
+                sourcesNotNull.append(ref.multiOccurrenceVar.notNull());
             }
         }
         
@@ -139,7 +144,14 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
         for (Node destRef : destNodes) {
             
             if (!destRef.isLeaf()) {
-                out.append(statement(destRef.newDestination.declare(destRef.newDestination.newInstance(sizeExpr))));
+                out.append(statement(destRef.newDestination.declare()));
+                out.append( 
+                        statement("if (%s) {\n%s;\n} else {\n%s;}", 
+                                sourcesNotNull, 
+                                destRef.newDestination.assign(destRef.newDestination.newInstance(sizeExpr)),
+                                destRef.newDestination.assign("null")
+                        ));
+                
                 if (destRef.newDestination.isArray()) {
                     out.append(statement(destRef.newDestination.declareIterator()));
                 }
@@ -161,9 +173,6 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                 }
             }
         }
-        
-        // TODO: need to create a flag variable to mark whether destination has been added
-        // to it's collector; it should be set to false upon new destination element creation
         
         StringBuilder endWhiles = new StringBuilder();
         StringBuilder addLastElement = new StringBuilder();
