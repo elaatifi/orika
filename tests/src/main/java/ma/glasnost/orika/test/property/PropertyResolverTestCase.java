@@ -18,19 +18,24 @@
 
 package ma.glasnost.orika.test.property;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
-import org.junit.Assert;
 import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.metadata.ClassMapBuilder;
 import ma.glasnost.orika.metadata.NestedProperty;
 import ma.glasnost.orika.metadata.Property;
+import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeBuilder;
 import ma.glasnost.orika.metadata.TypeFactory;
 import ma.glasnost.orika.property.IntrospectorPropertyResolver;
@@ -41,6 +46,7 @@ import ma.glasnost.orika.test.property.TestCaseClasses.B;
 import ma.glasnost.orika.test.property.TestCaseClasses.Name;
 import ma.glasnost.orika.test.property.TestCaseClasses.Student;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class PropertyResolverTestCase {
@@ -521,6 +527,68 @@ public class PropertyResolverTestCase {
         Assert.assertTrue(original.containsAll(mapBackList));
         Assert.assertTrue(mapBackList.containsAll(original));
         
+    }
+    
+    @Test
+    public void resolveGenericTypeFromAncestor() {
+        
+        Type<?> type = TypeFactory.valueOf(OrderedMapImpl.class);
+        PropertyResolverStrategy resolver = new IntrospectorPropertyResolver();
+        Property property = resolver.getProperty(type, "map");
+        
+        Type<?> expectedType = new TypeBuilder<Map<Integer, Element>>(){}.build();
+        
+        Assert.assertEquals(expectedType, property.getType());
+    }
+    
+    public static abstract class AbstractOrderedMap<K, T> implements Iterable<T>, Serializable {
+
+        protected final Map<K, T> resultSet = new LinkedHashMap<K, T>();
+
+        protected AbstractOrderedMap(Map<K, T> map) {
+            resultSet.putAll(map);
+        }
+
+        public Iterator<T> iterator() {
+            return Collections.unmodifiableCollection(resultSet.values()).iterator();
+        }
+
+        public T get(K id) {
+            return resultSet.get(id);
+        }
+
+        public Map<K, T> getMap() {
+            return Collections.unmodifiableMap(resultSet);
+        }
+
+        public int size() {
+            return resultSet.size();
+        }
+
+        public boolean containsId(K id) {
+            return resultSet.containsKey(id);
+        }
+
+        public Set<K> idSet() {
+            return Collections.unmodifiableSet(resultSet.keySet());
+        }
+
+        @Override
+        public String toString() {
+            return this.getClass().getSimpleName() + "{" +
+                    "resultSet=" + resultSet +
+                    '}';
+        }
+    }
+
+    /**
+     * This type is not itself a parameterized type, but it extends from one,
+     * and those parameters should be resolved in properties' types.
+     */
+    public static class OrderedMapImpl extends AbstractOrderedMap<Integer, Element> {
+        public OrderedMapImpl(Map<Integer, Element> map) {
+            super(map);
+        }
     }
     
     public static class Element {

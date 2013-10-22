@@ -137,7 +137,9 @@ public final class MapperGenerator {
         append(out,
                 format("super.%s(a, b, mappingContext);", mapMethod),
                 "\n\n",
+                "// sourceType: " + source.type() + 
                 source.declare("a"),
+                "// destinationType: " + destination.type() + 
                 destination.declare("b"),
                 "\n\n");
         

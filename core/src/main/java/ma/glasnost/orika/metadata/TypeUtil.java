@@ -38,6 +38,7 @@ abstract class TypeUtil {
     static final Set<Type<?>> IGNORED_TYPES = new HashSet<Type<?>>(Arrays.asList(TypeFactory.valueOf(Cloneable.class),
             TypeFactory.valueOf(Serializable.class), TypeFactory.valueOf(Externalizable.class)));
     
+    @SuppressWarnings("serial")
     static final Map<String, Class<?>> PRIMITIVES_CLASSES = new HashMap<String, Class<?>>() {
         {
             put(Boolean.TYPE.getName(), Boolean.TYPE);
@@ -67,22 +68,41 @@ abstract class TypeUtil {
             final Type<?> reference) {
         
         java.lang.reflect.Type[] actualTypeArguments = new java.lang.reflect.Type[typeArguments.length];
-        for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
-            java.lang.reflect.Type typeArg = typeArguments[i];
-            TypeVariable<?> var = vars[i];
-            // TODO: need to clean up this section:
-            // we should loop through the types provided by the reference type,
-            // and if they are more specific than the existing type, use the
-            // reference instead
-            if (typeArg instanceof TypeVariable) {
-                var = (TypeVariable<?>) typeArg;
+        java.lang.reflect.Type[] defaultTypeArguments = new java.lang.reflect.Type[typeArguments.length];
+        boolean hasUnresolvedTypes = false;
+        Type<?> currentReference = reference;
+        do {
+            hasUnresolvedTypes = false;
+            for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
+                java.lang.reflect.Type typeArg = typeArguments[i];
+                TypeVariable<?> var = vars[i];
+                if (typeArg instanceof Class) {
+                    actualTypeArguments[i] = TypeFactory.valueOf(typeArg);
+                } else {
+                    if (typeArg instanceof TypeVariable) {
+                        var = (TypeVariable<?>) typeArg;
+                    }
+                    Type<?> typeFromReference = (Type<?>) currentReference.getTypeByVariable(var);
+                    
+                    if (typeFromReference != null && typeArg.equals(var)) {
+                        if (actualTypeArguments[i] == null
+                                || (actualTypeArguments[i] instanceof Type && ((Type<?>) actualTypeArguments[i]).isAssignableFrom(typeFromReference))) {
+                            actualTypeArguments[i] = typeFromReference;
+                        }
+                    } else {
+                        Type<?> typeFromArgument = TypeFactory.valueOf(typeArg);
+                        defaultTypeArguments[i] = getMostSpecificType(typeFromReference, typeFromArgument, IGNORED_TYPES);
+                        hasUnresolvedTypes = true;
+                    }
+                }
             }
-            Type<?> typeFromReference = (Type<?>) reference.getTypeByVariable(var);
-            if (typeFromReference != null && typeArg.equals(var)) {
-                actualTypeArguments[i] = typeFromReference;
-            } else {
-                Type<?> typeFromArgument = TypeFactory.valueOf(typeArg);
-                actualTypeArguments[i] = getMostSpecificType(typeFromReference, typeFromArgument, IGNORED_TYPES);
+            if (hasUnresolvedTypes) {
+                currentReference = currentReference.getSuperType();
+            }
+        } while (hasUnresolvedTypes && !currentReference.equals(TypeFactory.TYPE_OF_OBJECT));
+        for (int i = 0, len = actualTypeArguments.length; i < len; ++i) {
+            if (actualTypeArguments[i] == null) {
+                actualTypeArguments[i] = defaultTypeArguments[i];
             }
         }
         return actualTypeArguments;

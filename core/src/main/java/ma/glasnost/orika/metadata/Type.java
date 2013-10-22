@@ -83,6 +83,22 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
         return isParameterized;
     }
     
+    /**
+     * @return true if the given type or any of its ancestors is a
+     *  parameterized type
+     */
+    public synchronized boolean isSelfOrAncestorParameterized() {
+        Type<?> superType = this;
+        while (!superType.equals(TypeFactory.TYPE_OF_OBJECT)) {
+            if (superType.isParameterized()) {
+                return true;
+            } else {
+                superType = superType.getSuperType();
+            }
+        }
+        return false;
+    }
+    
     private Type<?> resolveGenericAncestor(final java.lang.reflect.Type ancestor) {
         Type<?> resolvedType = null;
         if (ancestor instanceof ParameterizedType) {
@@ -159,10 +175,6 @@ public final class Type<T> implements ParameterizedType, Comparable<Type<?>> {
      */
     public java.lang.reflect.Type[] getActualTypeArguments() {
         return actualTypeArguments;
-    }
-    
-    public Map<String, Type<?>> getTypesByVariable() {
-        return Collections.unmodifiableMap(typesByVariable);
     }
     
     public java.lang.reflect.Type getTypeByVariable(final TypeVariable<?> typeVariable) {

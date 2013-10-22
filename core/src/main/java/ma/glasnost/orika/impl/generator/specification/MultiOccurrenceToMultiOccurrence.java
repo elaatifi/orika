@@ -145,13 +145,21 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
             
             if (!destRef.isLeaf()) {
                 out.append(statement(destRef.newDestination.declare()));
-                out.append( 
-                        statement("if (%s) {\n%s;\n} else {\n%s;}", 
-                                sourcesNotNull, 
-                                destRef.newDestination.assign(destRef.newDestination.newInstance(sizeExpr)),
-                                destRef.newDestination.assign("null")
-                        ));
-                
+                if (!"".equals(sourcesNotNull.toString())) {
+                    out.append( 
+                            statement("if (%s) {\n%s;\n} else {\n%s;}", 
+                                    sourcesNotNull, 
+                                    destRef.newDestination.assign(destRef.newDestination.newInstance(sizeExpr)),
+                                    destRef.newDestination.assign("null")
+                            ));
+                } else {
+                    /*
+                     * We're not able to check the sources for null
+                     */
+                    out.append( 
+                            statement(destRef.newDestination.assign("null")
+                            ));
+                }
                 if (destRef.newDestination.isArray()) {
                     out.append(statement(destRef.newDestination.declareIterator()));
                 }
@@ -223,46 +231,50 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                 }
             }
             
-            if (currentNode.value != null) {
-                
-                /*
-                 * If we have a fieldMap for the current node, attempt to map the fields
-                 */
-                boolean wasConverted = mapFields(currentNode, srcNode, out, code);
-                if (currentNode.parent != null 
-                        && currentNode.parent.elementRef != null 
-                        && !currentNode.parent.addedToCollector) {
+            if (srcNode != null) {
+                if (currentNode.value != null) {
                     
-                    String assignNull = (currentNode.parent.elementRef.isPrimitive() ? currentNode.parent.nullCheckFlag.assign("true") : currentNode.parent.elementRef.assign("null"));
-                    if (mapperFactory.getConverterFactory().canConvert(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type())) {
-                        append(out,
-                                (currentNode.parent.isRoot() ? currentNode.parent.newDestination.add(currentNode.parent.elementRef) : currentNode.parent.multiOccurrenceVar.add(currentNode.parent.elementRef)),
-                                assignNull
-                                );
-                    } else {
-                        append(out,
-                                format("if (%s) {", currentNode.parent.shouldAddToCollectorFlag),
-                                (currentNode.parent.isRoot() ? currentNode.parent.newDestination.add(currentNode.parent.elementRef) : currentNode.parent.multiOccurrenceVar.add(currentNode.parent.elementRef)),
-                                currentNode.parent.shouldAddToCollectorFlag.assign("false"),
-                                (wasConverted ? assignNull : ""),
-                                "}");
+                    /*
+                     * If we have a fieldMap for the current node, attempt to map the fields
+                     */
+                    boolean wasConverted = mapFields(currentNode, srcNode, out, code);
+                    if (srcNode.parent != null 
+                            && srcNode.parent.elementRef != null
+                            && currentNode.parent != null 
+                            && currentNode.parent.elementRef != null 
+                            && !currentNode.parent.addedToCollector) {
+                        
+                        String assignNull = (currentNode.parent.elementRef.isPrimitive() ? currentNode.parent.nullCheckFlag.assign("true") : currentNode.parent.elementRef.assign("null"));
+                        if (mapperFactory.getConverterFactory().canConvert(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type())) {
+                            append(out,
+                                    (currentNode.parent.isRoot() ? currentNode.parent.newDestination.add(currentNode.parent.elementRef) : currentNode.parent.multiOccurrenceVar.add(currentNode.parent.elementRef)),
+                                    assignNull
+                                    );
+                        } else {
+                            append(out,
+                                    format("if (%s) {", currentNode.parent.shouldAddToCollectorFlag),
+                                    (currentNode.parent.isRoot() ? currentNode.parent.newDestination.add(currentNode.parent.elementRef) : currentNode.parent.multiOccurrenceVar.add(currentNode.parent.elementRef)),
+                                    currentNode.parent.shouldAddToCollectorFlag.assign("false"),
+                                    (wasConverted ? assignNull : ""),
+                                    "}");
+                        }
+                        currentNode.parent.addedToCollector = true;
                     }
-                    currentNode.parent.addedToCollector = true;
+                } else {
+                    VariableRef s = makeVariable(srcNode.property, srcNode, "source");
+                    VariableRef d = makeVariable(currentNode.property, currentNode, "destination");
+                    code.applyFilters(s, d, out, endWhiles);
+    
+    
+                    d = currentNode.isRoot() ? currentNode.newDestination : currentNode.multiOccurrenceVar;
+                    out.append(format("\nmappingContext.beginMapping(%s, %s, %s, %s);\n",
+                                code.usedType(s.type()),
+                                s.asWrapper(),
+                                code.usedType(d.type()),
+                                d.asWrapper()));
+                    out.append("try {\n");
+                    endWhiles.insert(0, "\n} finally {\n  mappingContext.endMapping();\n}\n");
                 }
-            } else {
-                VariableRef s = makeVariable(srcNode.property, srcNode, "source");
-                VariableRef d = makeVariable(currentNode.property, currentNode, "destination");
-                code.applyFilters(s, d, out, endWhiles);
-
-
-                d = currentNode.isRoot() ? currentNode.newDestination : currentNode.multiOccurrenceVar;
-                out.append(format("\nmappingContext.beginMapping(%s, %s, %s, %s);\n",
-                            code.usedType(s.type()),
-                            s.asWrapper(),
-                            code.usedType(d.type()),
-                            d.asWrapper()));
-                out.append("try {\n");
-                endWhiles.insert(0, "\n} finally {\n  mappingContext.endMapping();\n}\n");
             }
         }  
         
@@ -367,9 +379,14 @@ public class MultiOccurrenceToMultiOccurrence implements AggregateSpecification 
                     && currentNode.parent.elementRef != null) {
                 
                 MapperKey key = new MapperKey(srcNode.parent.elementRef.type(), currentNode.parent.elementRef.type());
+                
+                /*
+                 * 
+                 */
                 if (!ClassUtil.isImmutable(key.getAType()) 
                         && !ClassUtil.isImmutable(key.getBType()) 
-                        && !mapperFactory.existsRegisteredMapper(key.getAType(), key.getBType(), true)) {
+                        && !mapperFactory.existsRegisteredMapper(key.getAType(), key.getBType(), true)
+                        && mapperFactory.getClassMap(key) == null) {
                     ClassMapBuilder<?,?> builder = builders.get(key);
                     if (builder == null) {
                         builder = mapperFactory.classMap(key.getAType(), key.getBType());

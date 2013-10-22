@@ -165,7 +165,7 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                     resolvedType = TypeFactory.valueOf(t);
                 }
             } else if (genericType instanceof ParameterizedType) {
-                if (reference.isParameterized()) {
+                if (reference.isSelfOrAncestorParameterized()) {
                     resolvedType = TypeFactory.resolveValueOf((ParameterizedType) genericType, reference);
                 } else {
                     resolvedType = TypeFactory.valueOf((ParameterizedType) genericType);
