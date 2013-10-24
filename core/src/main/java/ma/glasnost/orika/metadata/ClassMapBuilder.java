@@ -452,12 +452,12 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
     }
     
     /**
-     * 
+     * Maps 'fieldA' of type A to 'fieldB' of type B.
      * 
      * @param fieldA
      * @param fieldNameB
      * @param byDefault
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A,B> field(Property.Builder fieldA, String fieldNameB) {
         return fieldMap(fieldA, fieldNameB, false).add(); 
@@ -468,17 +468,22 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * Exclude the specified field from mapping
      * 
      * @param fieldName the name of the field/property to exclude
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A, B> exclude(String fieldName) {
-        return fieldMap(fieldName).exclude().add();
+        if (propertyResolver.existsProperty(getAType(), fieldName)
+            && propertyResolver.existsProperty(getBType(), fieldName)) {
+            return fieldMap(fieldName).exclude().add();
+        } else {
+            return this;
+        }
     }
     
     /**
      * Set the custom mapper to use for this mapping.
      * 
      * @param legacyCustomizedMapper
-     * @return
+     * @return this ClassMapBuilder
      * @deprecated use {@link #customize(Mapper)} instead
      */
     @Deprecated
@@ -491,7 +496,7 @@ public class ClassMapBuilder<A, B> implements MappedTypePair<A, B> {
      * Set the custom mapper to use for this mapping.
      * 
      * @param customizedMapper
-     * @return
+     * @return this ClassMapBuilder
      */
     public ClassMapBuilder<A, B> customize(Mapper<A, B> customizedMapper) {
         this.customizedMapper = customizedMapper;
