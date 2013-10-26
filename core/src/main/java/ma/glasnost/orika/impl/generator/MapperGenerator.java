@@ -58,7 +58,7 @@ public final class MapperGenerator {
             
             if (LOGGER.isDebugEnabled()) {
             	logDetails = new StringBuilder();
-            	logDetails.append("Generating new mapper for (" + classMap.getAType()+", " + classMap.getBTypeName() +")");
+            	logDetails.append("Generating new mapper for (" + classMap.getAType()+", " + classMap.getBType() +")");
             } 
             
             final SourceCodeContext mapperCode = new SourceCodeContext(
@@ -233,8 +233,7 @@ public final class MapperGenerator {
         
         if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection() && !destinationProperty.isArray() && !destinationProperty.isMap())) {
             if (logDetails != null) {
-                
-            	logDetails.append("excluding because ");
+                code.debugField(fieldMap, "excluding because ");
     			if (!sourceProperty.isReadable()) {
     			    Type<?> sourceType = classMap.getAType().equals(destination.type()) ? classMap.getBType() : classMap.getAType();
     				logDetails.append(sourceType + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is not readable");
