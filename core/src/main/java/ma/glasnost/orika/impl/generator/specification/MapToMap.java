@@ -69,32 +69,25 @@ public class MapToMap extends AbstractSpecification {
         }
         
         
-        if (d.mapKeyType().equals(s.mapKeyType()) && d.mapValueType().equals(s.mapValueType())) {
-            /*
-             * Simple map-to-map case: both key and value types are identical
-             */
-            out.append(statement("%s.putAll(mapperFacade.mapAsMap(%s, %s, %s, mappingContext));", newDest, s, code.usedType(s.type()), code.usedType(d.type())));
-        } else {
-            VariableRef newKey = new VariableRef(d.mapKeyType(), "new" + StringUtil.capitalize(d.name()) + "Key");
-            VariableRef newVal = new VariableRef(d.mapValueType(), "new" + StringUtil.capitalize(d.name()) + "Val");
-            VariableRef entry = new VariableRef(TypeFactory.valueOf(Map.Entry.class), "source" + StringUtil.capitalize(d.name()) + "Entry");
-            VariableRef sourceKey = new MapEntryRef(s.mapKeyType(), entry.name(), EntryPart.KEY);
-            VariableRef sourceVal = new MapEntryRef(s.mapValueType(), entry.name(), EntryPart.VALUE);
-            /*
-             * Loop through the individual entries, map key/value and then put
-             * them into the destination
-             */
-            append(out,
-                    format("for( java.util.Iterator entryIter = %s.entrySet().iterator(); entryIter.hasNext(); ) {\n", s),
-                    entry.declare("entryIter.next()"),
-                    newKey.declare(),
-                    newVal.declare(),
-                    code.mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null),
-                    code.mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null),
-                    format("%s.put(%s, %s)", newDest, newKey, newVal),
-                    "\n",
-                    "}");
-        }
+        VariableRef newKey = new VariableRef(d.mapKeyType(), "new" + StringUtil.capitalize(d.name()) + "Key");
+        VariableRef newVal = new VariableRef(d.mapValueType(), "new" + StringUtil.capitalize(d.name()) + "Val");
+        VariableRef entry = new VariableRef(TypeFactory.valueOf(Map.Entry.class), "source" + StringUtil.capitalize(d.name()) + "Entry");
+        VariableRef sourceKey = new MapEntryRef(s.mapKeyType(), entry.name(), EntryPart.KEY);
+        VariableRef sourceVal = new MapEntryRef(s.mapValueType(), entry.name(), EntryPart.VALUE);
+        /*
+         * Loop through the individual entries, map key/value and then put
+         * them into the destination
+         */
+        append(out,
+                format("for( java.util.Iterator entryIter = %s.entrySet().iterator(); entryIter.hasNext(); ) {\n", s),
+                entry.declare("entryIter.next()"),
+                newKey.declare(),
+                newVal.declare(),
+                code.mapFields(FieldMapBuilder.mapKeys(s.mapKeyType(), d.mapKeyType()), sourceKey, newKey, null, null),
+                code.mapFields(FieldMapBuilder.mapValues(s.mapValueType(), d.mapValueType()), sourceVal, newVal, null, null),
+                format("%s.put(%s, %s)", newDest, newKey, newVal),
+                "\n",
+                "}");
         
         if (d.isAssignable()) {
             out.append(statement(d.assign(newDest)));
