@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -39,6 +40,7 @@ import java.util.regex.Pattern;
 import ma.glasnost.orika.MapEntry;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.PropertyNotFoundException;
+import ma.glasnost.orika.constructor.ConstructorParameterResolver;
 import ma.glasnost.orika.metadata.ArrayElementProperty;
 import ma.glasnost.orika.metadata.ListElementProperty;
 import ma.glasnost.orika.metadata.MapKeyProperty;
@@ -71,6 +73,9 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     
     private final Map<java.lang.reflect.Type, Map<String, Property>> propertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
     private final Map<java.lang.reflect.Type, Map<String, Property>> inlinePropertiesCache = new ConcurrentHashMap<java.lang.reflect.Type, Map<String, Property>>();
+    
+    private final ConstructorParameterResolver constructorParamResolver = 
+            new ConstructorParameterResolver();
     
     /**
      * Creates a new PropertyResolver instance
@@ -673,17 +678,18 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
                     property = properties.get(expr);
                 } else if (isInlinePropertyExpression(expr)) {
                     property = resolveInlineProperty(type, expr);
-                    if (property != null) {
-                        synchronized (type) {
-                            if (inlinePoperties == null) {
-                                inlinePoperties = new HashMap<String, Property>(1);
-                                inlinePropertiesCache.put(type, inlinePoperties);
-                            }
-                            inlinePoperties.put(property.getName(), property);
+                    synchronized (type) {
+                        if (inlinePoperties == null) {
+                            inlinePoperties = new HashMap<String, Property>(1);
+                            inlinePropertiesCache.put(type, inlinePoperties);
                         }
+                        inlinePoperties.put(property.getName(), property);
                     }
                 } else {
-                    throw new PropertyNotFoundException(expr, type);
+                    property = resolveConstructorProperty(type, expr);
+                    if (property == null) {
+                        throw new PropertyNotFoundException(expr, type);
+                    }
                 }
                 
                 if (owner != null) {
@@ -694,6 +700,15 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
         return property;
     }
     
+    private Property resolveConstructorProperty(java.lang.reflect.Type type, String expr) {
+        Set<Property> prop = constructorParamResolver.getPossibleConstructorParams(type, expr);
+        if (prop != null && !prop.isEmpty()) {
+            return prop.iterator().next();
+        } else {
+            return null;
+        }
+    }
+
     private static final Pattern INLINE_PROPERTY_PATTERN = Pattern.compile("([\\w]+)\\:\\{\\s*([\\w\\(\\)'\"\\% ]+)\\s*\\|\\s*([\\w\\(\\)'\"\\%, ]+)\\s*\\|?\\s*(?:(?:type=)([\\w.\\$ \\<\\>]+))?\\}");
     
     /**

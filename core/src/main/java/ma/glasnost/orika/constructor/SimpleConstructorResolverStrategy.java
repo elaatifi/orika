@@ -64,6 +64,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         boolean aToB = classMap.getBType().equals(sourceType);
         
         Type<?> targetClass = aToB ? classMap.getBType() : classMap.getAType();
+        Type<?> sourceClass = aToB ? classMap.getAType() : classMap.getBType();
         
         String[] declaredParameterNames = aToB ? classMap.getConstructorB() : classMap.getConstructorA();
         
@@ -81,7 +82,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
 	        			if ( !aToB) {
 	        				fieldMap = fieldMap.flip();
 	        			}
-	        			if (fieldMap.getSource().getName().equals(arg)) {
+	        			if (fieldMap.getDestination().getName().equals(arg)) {
 	        				targetParameters.put(arg, fieldMap);
 	        				iter.remove();
 	        			}
@@ -104,6 +105,7 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         	
         }
         
+        boolean foundDeclaredConstructor = false;
         Constructor<T>[] constructors = (Constructor<T>[]) targetClass.getRawType().getConstructors();
         TreeMap<Integer, ConstructorMapping<T>> constructorsByMatchedParams = new TreeMap<Integer, ConstructorMapping<T>>();
         for (Constructor<T> constructor: constructors) {
@@ -117,11 +119,15 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         		 * 2) ...
         		 */
         		String[] parameterNames = paranamer.lookupParameterNames(constructor);
+        		if (Arrays.equals(parameterNames, declaredParameterNames)) {
+        		    foundDeclaredConstructor = true;
+        		}
         		java.lang.reflect.Type[] genericParameterTypes = constructor.getGenericParameterTypes();
         		Type<?>[] parameterTypes = new Type[genericParameterTypes.length];
         		constructorMapping.setParameterNameInfoAvailable(true);
         		if (targetParameters.keySet().containsAll(Arrays.asList(parameterNames))) {
-        			constructorMapping.setConstructor(constructor);
+        		    
+        		    constructorMapping.setConstructor(constructor);
         			for (int i=0; i < parameterNames.length; ++i) {
         				String parameterName = parameterNames[i];
         				parameterTypes[i] = TypeFactory.valueOf(genericParameterTypes[i]);
@@ -176,9 +182,42 @@ public class SimpleConstructorResolverStrategy implements ConstructorResolverStr
         if (constructorsByMatchedParams.size() > 0) {
             return constructorsByMatchedParams.get(constructorsByMatchedParams.lastKey());
         } else if (declaredParameterNames != null) {
-        	throw new IllegalArgumentException("No constructors found for " + targetClass + 
-        			" matching the specified constructor parameters " + Arrays.toString(declaredParameterNames) +
-        			(declaredParameterNames.length == 0 ? " (no-arg constructor)": ""));
+            if (foundDeclaredConstructor) {
+                StringBuilder msg = new StringBuilder();
+                msg.append("Declared constructor for ")
+                    .append(targetClass)
+                    .append("(");
+                for (String param: declaredParameterNames) {
+                    msg.append('"').append(param).append('"').append(", ");
+                }
+                msg.setLength(msg.length()-2);
+                msg.append(")")
+                    .append(" could not be matched to the source fields of ")
+                    .append(sourceClass);
+                
+                throw new IllegalStateException(msg.toString());
+            } else {
+                StringBuilder msg = new StringBuilder();
+                msg.append("No constructors found for ")
+                    .append(targetClass)
+                    .append(" matching the specified constructor parameters (");
+                if (declaredParameterNames.length==0) {
+                    for (String param: declaredParameterNames) {
+                        msg.append('"').append(param).append('"').append(", ");
+                    }
+                    msg.setLength(msg.length()-1);
+                } else {
+                    msg.append("<default constructor>");
+                }
+                msg.append(")")
+                    .append(" could not be matched to the source fields of ")
+                    .append(sourceClass);
+                
+                
+            	throw new IllegalArgumentException("No constructors found for " + targetClass + 
+            			" matching the specified constructor parameters " + Arrays.toString(declaredParameterNames) +
+            			(declaredParameterNames.length == 0 ? " (no-arg constructor)": ""));
+            }
         } else {
         
 	        /* 

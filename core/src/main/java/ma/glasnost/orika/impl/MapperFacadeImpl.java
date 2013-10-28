@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -784,7 +785,11 @@ public class MapperFacadeImpl implements MapperFacade {
     @SuppressWarnings("unchecked")
     public <Sk, Sv, Dk, Dv> Map<Dk, Dv> mapAsMap(final Map<Sk, Sv> source, final Type<? extends Map<Sk, Sv>> sourceType,
             final Type<? extends Map<Dk, Dv>> destinationType, final MappingContext context) {
-        Map<Dk, Dv> destination = new HashMap<Dk, Dv>(source.size());
+        
+        // TODO: should use the registered concrete type for Map here...
+        //Type<? extends Map<Dk, Dv>> destType = mapperFactory.lookupConcreteDestinationType(sourceType, destinationType, context);
+        
+        Map<Dk, Dv> destination = new LinkedHashMap<Dk, Dv>(source.size());
         
         /*
          * Resolve the strategy used for the key and value; only re-resolve a

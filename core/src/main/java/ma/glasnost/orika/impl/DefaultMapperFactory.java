@@ -388,7 +388,8 @@ public class DefaultMapperFactory implements MapperFactory {
         }
         
         /**
-         * Configure the MappingContextFactory to use with the generated MapperFactory
+         * Configure the MappingContextFactory to use with the generated
+         * MapperFactory
          * 
          * @param mappingContextFactory
          * @return a reference to <code>this</code> MapperFactoryBuilder
@@ -788,22 +789,21 @@ public class DefaultMapperFactory implements MapperFactory {
     }
     
     /**
-     * 
      * @param destinationType
      * @param sourceType
      * @param context
-     * @return an ObjectFactory instance which is able to instantiate the
-     *         specified type
+     * @return an object factory capable of generating the provided destination type, if
+     * any exists.
      */
     @SuppressWarnings("unchecked")
-    public <T, S> ObjectFactory<T> lookupObjectFactory(final Type<T> destinationType, final Type<S> sourceType, final MappingContext context) {
+    protected <T, S> ObjectFactory<T> lookupExistingObjectFactory(final Type<T> destinationType, final Type<S> sourceType,
+            final MappingContext context) {
         
         if (destinationType == null || sourceType == null) {
             return null;
         }
-        
-        Type<T> targetType = destinationType;
         ObjectFactory<T> result;
+        Type<T> targetType = destinationType;
         
         ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> localCache = objectFactoryRegistry.get(targetType);
         if (localCache == null) {
@@ -824,6 +824,26 @@ public class DefaultMapperFactory implements MapperFactory {
                 result = (ObjectFactory<T>) localCache.get(TypeFactory.TYPE_OF_OBJECT);
             }
         }
+        return result;
+    }
+    
+    /**
+     * 
+     * @param destinationType
+     * @param sourceType
+     * @param context
+     * @return an ObjectFactory instance which is able to instantiate the
+     *         specified type
+     */
+    @SuppressWarnings("unchecked")
+    public <T, S> ObjectFactory<T> lookupObjectFactory(final Type<T> destinationType, final Type<S> sourceType, final MappingContext context) {
+        
+        if (destinationType == null || sourceType == null) {
+            return null;
+        }
+        
+        Type<T> targetType = destinationType;
+        ObjectFactory<T> result = lookupExistingObjectFactory(targetType, sourceType, context);
         
         if (result == null) {
             // Check if we can use default constructor...
@@ -853,6 +873,16 @@ public class DefaultMapperFactory implements MapperFactory {
                             if (result == null) {
                                 throw e;
                             }
+                        }
+                    }
+                    
+                    ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> localCache = objectFactoryRegistry.get(targetType);
+                    if (localCache == null) {
+                        localCache = new ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>>();
+                        ConcurrentHashMap<Type<? extends Object>, ObjectFactory<? extends Object>> existing = objectFactoryRegistry.putIfAbsent(
+                                targetType, localCache);
+                        if (existing != null) {
+                            localCache = existing;
                         }
                     }
                     
@@ -1051,7 +1081,6 @@ public class DefaultMapperFactory implements MapperFactory {
         
         Set<ClassMap<Object, Object>> classMaps = new HashSet<ClassMap<Object, Object>>(classMapRegistry.values());
         
-        
         for (final ClassMap<Object, Object> classMap : classMaps) {
             classMapsDictionary.put(new MapperKey(classMap.getAType(), classMap.getBType()), classMap);
         }
@@ -1077,12 +1106,12 @@ public class DefaultMapperFactory implements MapperFactory {
         Type<?> aType = classMap.getAType();
         Type<?> bType = classMap.getBType();
         
-        if (classMap.getConstructorA() != null && lookupObjectFactory(aType) == null) {
+        if (classMap.getConstructorA() != null && lookupExistingObjectFactory(aType, TypeFactory.TYPE_OF_OBJECT, context) == null) {
             GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(aType, bType, context);
             registerObjectFactory(objectFactory, (Type<Object>) aType);
         }
         
-        if (classMap.getConstructorB() != null && lookupObjectFactory(bType) == null) {
+        if (classMap.getConstructorB() != null && lookupExistingObjectFactory(bType, TypeFactory.TYPE_OF_OBJECT, context) == null) {
             GeneratedObjectFactory objectFactory = objectFactoryGenerator.build(bType, aType, context);
             registerObjectFactory(objectFactory, (Type<Object>) bType);
         }
@@ -1314,9 +1343,12 @@ public class DefaultMapperFactory implements MapperFactory {
     public UnenhanceStrategy getUserUnenhanceStrategy() {
         return userUnenahanceStrategy;
     }
-
-    /* (non-Javadoc)
-     * @see ma.glasnost.orika.MapperFactory#registerFilter(ma.glasnost.orika.Filter)
+    
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * ma.glasnost.orika.MapperFactory#registerFilter(ma.glasnost.orika.Filter)
      */
     @SuppressWarnings("unchecked")
     public void registerFilter(Filter<?, ?> filter) {

@@ -147,64 +147,65 @@ public class ObjectFactoryGenerator {
         }
         
         StringBuilder out = new StringBuilder();
-        
-        if (destinationType.isArray()) {
-            out.append(addArrayClassConstructor(code, destinationType, sourceType, classMap.getFieldsMapping().size()));
-        } else {
-            
-            ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap,
-                    destinationType);
-            Constructor<?> constructor = constructorMapping.getConstructor();
-            
-            if (constructor == null) {
-                throw new IllegalArgumentException("no suitable constructors found for " + destinationType);
-            } else if (logDetails != null) {
-                logDetails.append("\n\tUsing constructor: " + constructor);
-            }
-            
-            List<FieldMap> properties = constructorMapping.getMappedFields();
-            Type<?>[] constructorArguments = constructorMapping.getParameterTypes();
-            
-            if (properties.size() != constructorArguments.length) {
-                throw new MappingException("While attempting to generate ObjectFactory using constructor '" + constructor
-                        + "', an automatic mapping of the source type ('" + sourceType
-                        + "') to this constructor call could not be determined. Please "
-                        + "register a custom ObjectFactory implementation which is able to create an instance of '" + destinationType
-                        + "' from an instance of '" + sourceType + "'.");
-            }
-            
-            int argIndex = 0;
-            
-            out.append(format("if (s instanceof %s) {", sourceType.getCanonicalName()));
-            out.append(format("%s source = (%s) s;", sourceType.getCanonicalName(), sourceType.getCanonicalName()));
-            out.append("\ntry {\n");
-            argIndex = 0;
-            
-            for (FieldMap fieldMap : properties) {
-                VariableRef v = new VariableRef(constructorArguments[argIndex], "arg" + argIndex++);
-                VariableRef s = new VariableRef(fieldMap.getSource(), "source");
-                VariableRef destOwner = new VariableRef(fieldMap.getDestination(), "");
-                v.setOwner(destOwner);
-                out.append(statement(v.declare()));
-                out.append(code.mapFields(fieldMap, s, v, destinationType, logDetails));
-            }
-            
-            out.append(format("return new %s(", destinationType.getCanonicalName()));
-            for (int i = 0; i < properties.size(); i++) {
-                out.append(format("arg%d", i));
-                if (i < properties.size() - 1) {
-                    out.append(",");
+        if (classMap != null) {
+            if (destinationType.isArray()) {
+                out.append(addArrayClassConstructor(code, destinationType, sourceType, classMap.getFieldsMapping().size()));
+            } else {
+                
+                ConstructorMapping<?> constructorMapping = (ConstructorMapping<?>) constructorResolverStrategy.resolve(classMap,
+                        destinationType);
+                Constructor<?> constructor = constructorMapping.getConstructor();
+                
+                if (constructor == null) {
+                    throw new IllegalArgumentException("no suitable constructors found for " + destinationType);
+                } else if (logDetails != null) {
+                    logDetails.append("\n\tUsing constructor: " + constructor);
                 }
+                
+                List<FieldMap> properties = constructorMapping.getMappedFields();
+                Type<?>[] constructorArguments = constructorMapping.getParameterTypes();
+                
+                if (properties.size() != constructorArguments.length) {
+                    throw new MappingException("While attempting to generate ObjectFactory using constructor '" + constructor
+                            + "', an automatic mapping of the source type ('" + sourceType
+                            + "') to this constructor call could not be determined. Please "
+                            + "register a custom ObjectFactory implementation which is able to create an instance of '" + destinationType
+                            + "' from an instance of '" + sourceType + "'.");
+                }
+                
+                int argIndex = 0;
+                
+                out.append(format("if (s instanceof %s) {", sourceType.getCanonicalName()));
+                out.append(format("%s source = (%s) s;", sourceType.getCanonicalName(), sourceType.getCanonicalName()));
+                out.append("\ntry {\n");
+                argIndex = 0;
+                
+                for (FieldMap fieldMap : properties) {
+                    VariableRef v = new VariableRef(constructorArguments[argIndex], "arg" + argIndex++);
+                    VariableRef s = new VariableRef(fieldMap.getSource(), "source");
+                    VariableRef destOwner = new VariableRef(fieldMap.getDestination(), "");
+                    v.setOwner(destOwner);
+                    out.append(statement(v.declare()));
+                    out.append(code.mapFields(fieldMap, s, v, destinationType, logDetails));
+                }
+                
+                out.append(format("return new %s(", destinationType.getCanonicalName()));
+                for (int i = 0; i < properties.size(); i++) {
+                    out.append(format("arg%d", i));
+                    if (i < properties.size() - 1) {
+                        out.append(",");
+                    }
+                }
+                out.append(");");
+                
+                /*
+                 * Any exceptions thrown calling constructors should be propagated
+                 */
+                append(out, "\n} catch (java.lang.Exception e) {\n", "if (e instanceof RuntimeException) {\n", "throw (RuntimeException)e;\n",
+                        "} else {",
+                        "throw new java.lang.RuntimeException(" + "\"Error while constructing new " + destinationType.getSimpleName()
+                                + " instance\", e);", "\n}\n}\n}");
             }
-            out.append(");");
-            
-            /*
-             * Any exceptions thrown calling constructors should be propagated
-             */
-            append(out, "\n} catch (java.lang.Exception e) {\n", "if (e instanceof RuntimeException) {\n", "throw (RuntimeException)e;\n",
-                    "} else {",
-                    "throw new java.lang.RuntimeException(" + "\"Error while constructing new " + destinationType.getSimpleName()
-                            + " instance\", e);", "\n}\n}\n}");
         }
         return out.toString();
     }
