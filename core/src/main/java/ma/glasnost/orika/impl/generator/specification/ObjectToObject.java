@@ -41,8 +41,11 @@ public class ObjectToObject extends AbstractSpecification {
             code.debugField(fieldMap, "mapping object to object");
         }
         
-        String mapNewObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination.type()), source));
-        String mapExistingObject = destination.assign(format("(%s)%s", destination.typeName(), code.callMapper(source, destination)));
+        String mapNewObject = destination.assignIfPossible(format("(%s)%s", destination.typeName(), code.callMapper(source, destination.type()), source));
+        String mapExistingObject = code.callMapper(source, destination);
+        if (destination.isAssignable()) {
+        	mapExistingObject = destination.assignIfPossible(format("(%s)%s", destination.typeName(), mapExistingObject));
+        }
         String mapStmt = format(" %s { %s; } else { %s; }", destination.ifNull(), mapNewObject, mapExistingObject);
         
         String ipStmt = "";
@@ -60,8 +63,8 @@ public class ObjectToObject extends AbstractSpecification {
             }
         }
         
-        String mapNull = shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}\n", destination.assign("null")): "";
-        return statement("%s { %s;  %s } %s", source.ifNotNull(), mapStmt, ipStmt, mapNull);
+        String mapNull = destination.isAssignable() && shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}\n", destination.assign("null")): "";
+        return statement("%s { %s  %s } %s", source.ifNotNull(), mapStmt, ipStmt, mapNull);
         
     }
     

@@ -52,13 +52,10 @@ import ma.glasnost.orika.impl.generator.Node.NodeList;
 import ma.glasnost.orika.impl.generator.UsedMapperFacadesContext.UsedMapperFacadesIndex;
 import ma.glasnost.orika.impl.generator.specification.AbstractSpecification;
 import ma.glasnost.orika.impl.util.ClassUtil;
-import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
-import ma.glasnost.orika.metadata.MapperKey;
 import ma.glasnost.orika.metadata.Property;
 import ma.glasnost.orika.metadata.Type;
 import ma.glasnost.orika.metadata.TypeFactory;
-import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 /**
@@ -158,7 +155,7 @@ public class SourceCodeContext {
         }
     }
     
-    public void debugField(FieldMap fieldMap, String msg)  {
+    public void debugField(FieldMap fieldMap, String msg) {
         if (isDebugEnabled()) {
             logDetails.append(fieldTag(fieldMap));
             logDetails.append(msg);
@@ -508,7 +505,8 @@ public class SourceCodeContext {
      * @param dest
      * @param srcNodes
      * @param destNodes
-     * @param mappings any relevant declared field mappings
+     * @param mappings
+     *            any relevant declared field mappings
      * @return a code snippet suitable to use as an equality comparison test for
      *         the provided source and destination nodes
      */
@@ -535,14 +533,14 @@ public class SourceCodeContext {
                 
                 VariableRef sourceRef = getVariableForComparison(fieldMap, srcNodes, true, source);
                 VariableRef destRef = getVariableForComparison(fieldMap, destNodes, false, dest);
-
+                
                 if (sourceRef != null && destRef != null) {
                     if (!sourceRef.isValidPropertyReference(propertyResolver)) {
                         throw new IllegalStateException(sourceRef + " is not valid!!");
                     } else if (!destRef.isValidPropertyReference(propertyResolver)) {
                         throw new IllegalStateException(destRef + " is not valid!!");
                     }
-                        
+                    
                     String code = this.compareFields(fieldMap, sourceRef, destRef, dest.elementRef.type(), null);
                     if (!"".equals(code) && comparisons.add(code)) {
                         comparator.append(or + "!(" + code + ")");
@@ -575,14 +573,14 @@ public class SourceCodeContext {
             } else {
                 return null;
             }
-        } else if (prop.getContainer() != null){
+        } else if (prop.getContainer() != null) {
             parentRef = defaultParent.elementRef;
             return new VariableRef(parentRef.type(), parentRef.name());
         } else {
             /*
              * Need to check whether the defaultParent.elementRef.type() can
-             * actually have a property of the specified type; if not, then
-             * it must be a reference to the outermost 'source' or 'destination'
+             * actually have a property of the specified type; if not, then it
+             * must be a reference to the outermost 'source' or 'destination'
              * variables -- though we should have been able to properly detect
              * this earlier...
              */
@@ -676,7 +674,8 @@ public class SourceCodeContext {
      * returning true. Otherwise, false is returned.
      * 
      * @param fieldMap
-     * @return true if aggregate specifications should be applied to the provided field map
+     * @return true if aggregate specifications should be applied to the
+     *         provided field map
      */
     public boolean aggregateSpecsApply(FieldMap fieldMap) {
         for (AggregateSpecification spec : codeGenerationStrategy.getAggregateSpecifications()) {
@@ -729,7 +728,8 @@ public class SourceCodeContext {
         StringBuilder out = new StringBuilder();
         StringBuilder closing = new StringBuilder();
         
-        if (destinationProperty.isAssignable() || destinationProperty.type().isMultiOccurrence()) {
+        if (destinationProperty.isAssignable() || destinationProperty.type().isMultiOccurrence()
+                || !ClassUtil.isImmutable(destinationProperty.type())) {
             
             if (sourceProperty.isNestedProperty()) {
                 out.append(sourceProperty.ifPathNotNull());
@@ -773,21 +773,17 @@ public class SourceCodeContext {
         }
         return out.toString();
     }
-
+    
     public VariableRef[] applyFilters(VariableRef sourceProperty, VariableRef destinationProperty, StringBuilder out, StringBuilder closing) {
         /*
-         * TODO: need code which collects all of the applicable filters and
-         * adds them into an aggregate filter object
+         * TODO: need code which collects all of the applicable filters and adds
+         * them into an aggregate filter object
          */
         Filter<Object, Object> filter = getFilter(sourceProperty, destinationProperty);
         if (filter != null) {
-            out.append(format("if (%s.shouldMap(%s, \"%s\", %s, %s, \"%s\", mappingContext)) {",
-                    usedFilter(filter),
-                    usedType(sourceProperty.type()),
-                    varPath(sourceProperty),
-                    sourceProperty.asWrapper(),
-                    usedType(destinationProperty.type()),
-                    varPath(destinationProperty)));
+            out.append(format("if (%s.shouldMap(%s, \"%s\", %s, %s, \"%s\", mappingContext)) {", usedFilter(filter),
+                    usedType(sourceProperty.type()), varPath(sourceProperty), sourceProperty.asWrapper(),
+                    usedType(destinationProperty.type()), varPath(destinationProperty)));
             
             sourceProperty = getSourceFilter(sourceProperty, destinationProperty, filter);
             destinationProperty = getDestFilter(sourceProperty, destinationProperty, filter);
@@ -797,7 +793,7 @@ public class SourceCodeContext {
         }
         return new VariableRef[] { sourceProperty, destinationProperty };
     }
-
+    
     private static String varPath(VariableRef var) {
         List<VariableRef> path = var.getPath();
         if (path.isEmpty()) {
@@ -829,8 +825,9 @@ public class SourceCodeContext {
                         if (dest.isPrimitive()) {
                             destinationValue = ClassUtil.getWrapperType(dest.rawType()).getCanonicalName() + ".valueOf(%s)";
                         }
-                        String filteredValue = format("%s.filterDestination(%s, %s, \"%s\", %s, \"%s\", mappingContext)", usedFilter(filter),
-                                destinationValue, usedType(src.type()), src.name(), usedType(dest.type()), dest.name()).replace("$$$", "%s");
+                        String filteredValue = format("%s.filterDestination(%s, %s, \"%s\", %s, \"%s\", mappingContext)",
+                                usedFilter(filter), destinationValue, usedType(src.type()), src.name(), usedType(dest.type()), dest.name()).replace(
+                                "$$$", "%s");
                         
                         setter = super.setter().replace("%s", dest.cast(filteredValue));
                     }
@@ -856,7 +853,7 @@ public class SourceCodeContext {
                 {
                     setConverter(src.getConverter());
                 }
-
+                
                 private String getter;
                 
                 @Override
@@ -942,7 +939,7 @@ public class SourceCodeContext {
                 if (code == null || "".equals(code)) {
                     throw new IllegalStateException("empty code returned for spec " + spec + ", sourceProperty = " + sourceProperty
                             + ", destinationProperty = " + destinationProperty);
-                } 
+                }
                 out.append(code);
                 break;
             }

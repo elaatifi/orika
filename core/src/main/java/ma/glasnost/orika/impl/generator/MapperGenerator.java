@@ -29,6 +29,7 @@ import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingContext;
 import ma.glasnost.orika.MappingException;
 import ma.glasnost.orika.impl.GeneratedMapperBase;
+import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.metadata.ClassMap;
 import ma.glasnost.orika.metadata.FieldMap;
 import ma.glasnost.orika.metadata.MapperKey;
@@ -100,10 +101,6 @@ public final class MapperGenerator {
             }
             throw new MappingException(e);
         }
-    }
-    
-    private String getFieldTag(FieldMap fieldMap) {
-    	return "\n\t Field(" + fieldMap.getSource() + ", " + fieldMap.getDestination() + ") : ";
     }
     
     private Set<FieldMap> addMapMethod(SourceCodeContext code, boolean aToB, ClassMap<?, ?> classMap, StringBuilder logDetails) throws CannotCompileException {
@@ -231,17 +228,15 @@ public final class MapperGenerator {
         final VariableRef destinationProperty = new VariableRef(fieldMap.getDestination(), "destination");
         destinationProperty.setOwner(destination);
         
-        if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && !destinationProperty.isCollection() && !destinationProperty.isArray() && !destinationProperty.isMap())) {
+        if (!sourceProperty.isReadable() || ((!destinationProperty.isAssignable()) && ClassUtil.isImmutable(destinationProperty.type()))) {
             if (logDetails != null) {
-                code.debugField(fieldMap, "excluding because ");
+            	code.debugField(fieldMap, "excluding because ");
     			if (!sourceProperty.isReadable()) {
     			    Type<?> sourceType = classMap.getAType().equals(destination.type()) ? classMap.getBType() : classMap.getAType();
     				logDetails.append(sourceType + "." + fieldMap.getSource().getName() + "(" + fieldMap.getSource().getType() + ") is not readable");
     			} else {
-    				// TODO: this brings up an important case: sometimes the destination is not assignable, 
-    				// but it's properties can still be mapped in-place. Should we handle it?
-    			    
-    				logDetails.append(destination.type() + "." + fieldMap.getDestination().getName() + "(" + fieldMap.getDestination().getType() + ") is neither assignable nor an array, collection, or map");
+    				logDetails.append(destination.type() + "." + fieldMap.getDestination().getName() + 
+    				        "(" + fieldMap.getDestination().getType() + ") is not assignable and cannot be mapped in-place");
     			}		
             }
         	return "";
