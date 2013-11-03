@@ -121,7 +121,7 @@ public class MultiThreadedTestCase {
      * classes receive the same set of values over a large number of classes.
      */
     @Test
-    @Concurrent(100)
+    @Concurrent(25)
     public void testDefineTypesSimultaneously() {
         
         int i = myIndex.getAndIncrement();
