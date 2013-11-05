@@ -18,8 +18,6 @@
 package ma.glasnost.orika.util;
 
 import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -56,7 +54,8 @@ public class SortedSet<V> extends SortedCollection<V> implements Set<V> {
 		super(c, ordering);
 	}
 
-	protected Collection<V> filter(List<V> items) {
-		return new LinkedHashSet<V>(items);
+	@Override
+	protected boolean mustAdd(V item) {
+		return !super.contains(item);
 	}
 }
