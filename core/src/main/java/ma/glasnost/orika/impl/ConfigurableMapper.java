@@ -84,24 +84,34 @@ import ma.glasnost.orika.metadata.Type;
  */
 public class ConfigurableMapper implements MapperFacade {
 
-    private final MapperFacade facade;
-    private final DefaultMapperFactory factory;
-    
-    protected ConfigurableMapper() {
-        
+    private MapperFacade facade;
+    private DefaultMapperFactory factory;
+      
+    public ConfigurableMapper() {
+        init();  
+    }
+     
+    public ConfigurableMapper(boolean autoInit) {
+        if (autoInit) {
+            init();  
+        }
+    }
+     
+    protected void init() {
+       
         DefaultMapperFactory.Builder factoryBuilder = new DefaultMapperFactory.Builder();
         /*
          * Apply optional user customizations to the factory builder
          */
         configureFactoryBuilder(factoryBuilder);
-        
+           
         factory = factoryBuilder.build();
-        
+           
         /*
          * Apply customizations/configurations
          */
         configure(factory);
-        
+         
         facade = factory.getMapperFacade();
     }
    
