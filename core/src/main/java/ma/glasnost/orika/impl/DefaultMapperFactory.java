@@ -1122,7 +1122,7 @@ public class DefaultMapperFactory implements MapperFactory {
         
         Mapper<Object, Object> mapper = lookupMapper(new MapperKey(classMap.getAType(), classMap.getBType()));
         
-        List<Mapper<Object, Object>> parentMappers = new ArrayList<Mapper<Object, Object>>();
+        Set<Mapper<Object, Object>> parentMappers = new LinkedHashSet<Mapper<Object, Object>>();
         
         if (!classMap.getUsedMappers().isEmpty()) {
             for (MapperKey parentMapperKey : classMap.getUsedMappers()) {
@@ -1149,6 +1149,8 @@ public class DefaultMapperFactory implements MapperFactory {
             }
         }
         
+        parentMappers.remove(mapper);
+        
         /*
          * Flip any used mappers which are specified in the wrong direction
          */
@@ -1163,7 +1165,7 @@ public class DefaultMapperFactory implements MapperFactory {
         mapper.setUsedMappers(usedMappers);
     }
     
-    private void collectUsedMappers(ClassMap<?, ?> classMap, List<Mapper<Object, Object>> parentMappers, MapperKey parentMapperKey) {
+    private void collectUsedMappers(ClassMap<?, ?> classMap, Set<Mapper<Object, Object>> parentMappers, MapperKey parentMapperKey) {
         Mapper<Object, Object> parentMapper = lookupMapper(parentMapperKey);
         if (parentMapper == null) {
             throw new MappingException("Cannot find used mappers for : " + classMap.getMapperClassName());

@@ -66,7 +66,7 @@ public class DefaultConverterFactory implements ConverterFactory {
                 new LinkedHashSet<Converter<Object, Object>>());
     }
     
-    public void setMapperFacade(MapperFacade mapperFacade) {
+    public synchronized void setMapperFacade(MapperFacade mapperFacade) {
     	this.mapperFacade = mapperFacade;
     	for (Converter<?,?> converter: converters) {
     		converter.setMapperFacade(mapperFacade);
@@ -84,48 +84,7 @@ public class DefaultConverterFactory implements ConverterFactory {
      * java.lang.Class)
      */
     public boolean canConvert(Type<?> sourceType, Type<?> destinationType) {
-        boolean canConvert = _canConvert(sourceType, destinationType);
-        if (canConvert)
-            return true;
-        
-        // Maybe the converter is registered with wrapper type and meant to be
-        // used
-        // for primitive one (source or destination)
-        // source
-        if (sourceType.isPrimitive()) {
-            sourceType = TypeFactory.valueOf(ClassUtil.getWrapperType(sourceType.getRawType()));
-            canConvert = _canConvert(sourceType, destinationType);
-        }
-        if (canConvert)
-            return true;
-        
-        // Destination
-        if (destinationType.isPrimitive()) {
-            destinationType = TypeFactory.valueOf(ClassUtil.getWrapperType(destinationType.getRawType()));
-            canConvert = _canConvert(sourceType, destinationType);
-        }
-        if (canConvert)
-            return true;
-        
-        return false;
-    }
-    
-    @SuppressWarnings("unchecked")
-    private boolean _canConvert(Type<?> sourceType, Type<?> destinationType) {
-        boolean canConvert = false;
-        ConverterKey key = new ConverterKey(sourceType, destinationType);
-        if (converterCache.containsKey(key)) {
-            return true;
-        }
-        for (@SuppressWarnings("rawtypes")
-        Converter converter : converters) {
-            if (converter.canConvert(sourceType, destinationType)) {
-                converterCache.put(key, converter);
-                canConvert = true;
-                break;
-            }
-        }
-        return canConvert;
+        return getConverter(sourceType, destinationType) != null;
     }
     
     /*
@@ -146,7 +105,7 @@ public class DefaultConverterFactory implements ConverterFactory {
      * ma.glasnost.orika.converter.ConverterFactory#getConverter(java.lang.Class
      * , java.lang.Class)
      */
-    public Converter<Object, Object> getConverter(Type<?> sourceClass, Type<?> destinationClass) {
+    public synchronized Converter<Object, Object> getConverter(Type<?> sourceClass, Type<?> destinationClass) {
         
         // Step verify if converter exists for sourceClass and destination
         Converter<Object, Object> converter = _converter(sourceClass, destinationClass);
@@ -154,10 +113,7 @@ public class DefaultConverterFactory implements ConverterFactory {
         if (converter != null)
             return converter;
         
-        // Maybe the converter is registred with wrapper type and meant to be
-        // used
-        // for primitive one (source or destination)
-        // source
+        // Apply auto-boxing in converter lookup 
         if (sourceClass.isPrimitive()) {
             sourceClass = TypeFactory.valueOf(ClassUtil.getWrapperType(sourceClass.getRawType()));
             converter = _converter(sourceClass, destinationClass);
