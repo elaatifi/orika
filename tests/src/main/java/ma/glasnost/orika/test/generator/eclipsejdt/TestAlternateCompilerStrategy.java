@@ -38,7 +38,7 @@ import org.junit.runner.RunWith;
  *
  */ 
 @RunWith(DynamicSuite.class)
-@TestCasePattern(".*TestCase")
+@TestCasePattern(".*(?<!MultiLayeredClassloader)TestCase")
 @Scenario(name="eclipseJdt")
 public class TestAlternateCompilerStrategy {
     
