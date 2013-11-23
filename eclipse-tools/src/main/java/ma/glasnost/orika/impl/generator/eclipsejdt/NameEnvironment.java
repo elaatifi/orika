@@ -70,7 +70,13 @@ public class NameEnvironment implements INameEnvironment {
 
 		result.append(sep);
 		result.append(typeName);
-		return findType(result.toString());
+		NameEnvironmentAnswer answer = findType(result.toString());
+		if (answer == null && Character.isUpperCase(typeName[0])) {
+		    result.setLength(0);
+		    result.append(typeName);
+		    answer = findType(result.toString());
+		}
+		return answer;
 	}
 
 	public NameEnvironmentAnswer findType(String className) {
