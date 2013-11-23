@@ -53,6 +53,7 @@ public abstract class CustomFilter<A, B> implements Filter<A, B> {
      * @return the A-type and B-type
      * @throws IllegalStateException if the types cannot be inferred
      */
+    @SuppressWarnings("unchecked")
     protected MappedTypePair<A, B> inferTypes() {
         java.lang.reflect.Type genericSuperclass = getClass().getGenericSuperclass();
         if (genericSuperclass != null && genericSuperclass instanceof ParameterizedType) {

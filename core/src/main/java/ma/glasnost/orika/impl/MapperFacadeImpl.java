@@ -170,13 +170,6 @@ public class MapperFacadeImpl implements MapperFacade {
             MappingStrategyRecorder strategyRecorder = new MappingStrategyRecorder(key, unenhanceStrategy);
             
             final Type<S> resolvedSourceType = normalizeSourceType(sourceObject, sourceType, destinationType);
-            final S resolvedSourceObject;
-            
-            if (mapInPlace) {
-                resolvedSourceObject = sourceObject;
-            } else {
-                resolvedSourceObject = unenhanceStrategy.unenhanceObject(sourceObject, sourceType);
-            }
             
             strategyRecorder.setResolvedSourceType(resolvedSourceType);
             strategyRecorder.setResolvedDestinationType(destinationType);

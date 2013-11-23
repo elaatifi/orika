@@ -121,6 +121,11 @@ public class DefaultCodeGenerationStrategy implements CodeGenerationStrategy {
                     case AFTER:
                         ++i;
                         break;
+                    case LAST:
+                        break;
+                    case FIRST:
+                    default:
+                        break;
                     }
                     specifications.add(i, spec);
                     break;
