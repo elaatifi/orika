@@ -18,8 +18,8 @@
 
 package ma.glasnost.orika.metadata;
 
-import static ma.glasnost.orika.impl.Specifications.aMultiOccurrenceElementMap;
 import static ma.glasnost.orika.impl.Specifications.aManyToOneElementMap;
+import static ma.glasnost.orika.impl.Specifications.aMultiOccurrenceElementMap;
 import static ma.glasnost.orika.impl.Specifications.aOneToManyElementMap;
 
 import java.lang.ref.WeakReference;
@@ -28,15 +28,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MappedTypePair;
 import ma.glasnost.orika.Mapper;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.MappingException;
-import ma.glasnost.orika.impl.Specifications;
 import ma.glasnost.orika.impl.UtilityResolver;
 import ma.glasnost.orika.impl.util.ClassUtil;
 import ma.glasnost.orika.property.PropertyResolver;

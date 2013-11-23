@@ -416,8 +416,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
     }
     
     private static final String DYNAMIC_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\<\\> ]+";
-    private static final String NON_NESTED_PROPERTY_CHARACTERS = "[\\w.='\"\\|\\%,\\(\\)\\$\\[\\]\\{\\} ]+";
-    
     
     private static final String NESTED_PROPERTY_SPLITTER = "(?!\\:\\{" + DYNAMIC_PROPERTY_CHARACTERS + ")[.](?!" + DYNAMIC_PROPERTY_CHARACTERS
             + "\\})";
@@ -460,7 +458,6 @@ public abstract class PropertyResolver implements PropertyResolverStrategy {
      */
     protected NestedProperty getNestedProperty(java.lang.reflect.Type type, String p, Property owner) {
         
-        String typeName = type.toString();
         Property property = null;
         java.lang.reflect.Type propertyType = type;
         final List<Property> path = new ArrayList<Property>();

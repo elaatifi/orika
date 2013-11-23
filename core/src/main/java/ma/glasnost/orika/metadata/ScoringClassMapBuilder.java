@@ -19,8 +19,6 @@ package ma.glasnost.orika.metadata;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -31,8 +29,6 @@ import java.util.Set;
 
 import ma.glasnost.orika.DefaultFieldMapper;
 import ma.glasnost.orika.MapperFactory;
-import ma.glasnost.orika.impl.util.ClassUtil;
-import ma.glasnost.orika.property.PropertyResolver;
 import ma.glasnost.orika.property.PropertyResolverStrategy;
 
 import org.slf4j.Logger;
