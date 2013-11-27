@@ -8,6 +8,7 @@ import ma.glasnost.orika.MapperFacade;
 import ma.glasnost.orika.MapperFactory;
 import ma.glasnost.orika.impl.DefaultMapperFactory;
 import ma.glasnost.orika.impl.generator.EclipseJdtCompilerStrategy;
+import ma.glasnost.orika.test.MappingUtil;
 
 public class Issue135Test {
 
@@ -15,13 +16,13 @@ public class Issue135Test {
 
 	@Before
 	public void setup() {
-		MapperFactory mapperFactory = new DefaultMapperFactory.Builder().compilerStrategy(new EclipseJdtCompilerStrategy()).build();
+		MapperFactory mapperFactory = MappingUtil.getMapperFactory();
 		mapperFactory.classMap(Domain.class, Representation.class)
 		.mapNulls(true)
 		.mapNullsInReverse(true)
-		.field("subA", "repA")
 		.field("subB", "repA.repB") // this causes NPE if repA is null
-		.byDefault()
+		.field("active", "repA.active")
+		.field("primitive", "repA.primitive")
 		.register();
 
 		mapper = mapperFactory.getMapperFacade();
