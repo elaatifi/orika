@@ -62,7 +62,7 @@ public class MappingException extends RuntimeException {
 			message.append("\ndestinationProperty = " + destinationProperty);
 		}
 		if (message.length() > 0) {
-			message.insert(0, "While attempting the folling mapping:");
+			message.insert(0, "While attempting the following mapping:");
 			message.append("\nError occurred: ");
 		}
 		
