@@ -63,7 +63,7 @@ public class ObjectToObject extends AbstractSpecification {
             }
         }
         
-        String mapNull = destination.isAssignable() && shouldMapNulls(fieldMap, code) ? format(" else {\n %s;\n}\n", destination.assign("null")): "";
+        String mapNull = destination.isAssignable() && shouldMapNulls(fieldMap, code) ? format(" else {\n %s { %s; }\n}\n", destination.ifPathNotNull(), destination.assign("null")): "";
         return statement("%s { %s  %s } %s", source.ifNotNull(), mapStmt, ipStmt, mapNull);
         
     }
