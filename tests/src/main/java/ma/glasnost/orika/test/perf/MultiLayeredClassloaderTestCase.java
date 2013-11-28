@@ -71,6 +71,9 @@ public class MultiLayeredClassloaderTestCase {
         try {
             Thread.currentThread().setContextClassLoader(childLoader);
         
+            childLoader.loadClass("dtotypes.BookHiddenDto");
+            childLoader.loadClass("types.BookHidden");
+            
             runnerClass.getMethod("test").invoke(runner);
             
         } finally {
