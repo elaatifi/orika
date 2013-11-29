@@ -33,6 +33,20 @@ import org.junit.Test;
  */
 public class MultiLayeredClassloaderTestCase {
     
+	/**
+	 * @return a copy of the current thread context class-loader
+	 */
+	public static ClassLoader copyThreadContextClassLoader() {
+		ClassLoader cl = Thread.currentThread().getContextClassLoader();
+		if (cl instanceof URLClassLoader) {
+			@SuppressWarnings("resource")
+			URLClassLoader ucl = (URLClassLoader)cl;
+			return new URLClassLoader(ucl.getURLs());
+		} else {
+			throw new IllegalStateException("ThreadContextClassLoader is not a URLClassLoader");
+		}
+	}
+	
     /**
      * Creates a new temporary directory
      * 
@@ -58,13 +72,12 @@ public class MultiLayeredClassloaderTestCase {
         File projectRoot = MavenProjectUtil.findProjectRoot();
         
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        
         File tempClasses = createTempDirectory();
         
         EclipseJdtCompiler complier = new EclipseJdtCompiler(tccl);
         complier.compile(new File(projectRoot, "src/main/java-hidden"),tempClasses);
-        
-        ClassLoader childLoader = new URLClassLoader(new URL[]{tempClasses.toURI().toURL()}, tccl);
+        ClassLoader childLoader = new URLClassLoader(new URL[]{tempClasses.toURI().toURL()},
+        		copyThreadContextClassLoader());
         
         Class<?> runnerClass = childLoader.loadClass("dtotypes.Runner");
         Object runner = runnerClass.newInstance();
