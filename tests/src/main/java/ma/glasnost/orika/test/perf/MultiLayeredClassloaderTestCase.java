@@ -67,6 +67,9 @@ public class MultiLayeredClassloaderTestCase {
         return temp;
     }
     
+    /**
+     * Test that Orika can be run from a nested class-loader
+     */
     @Test
     public void nestedClassLoader() throws Exception {
         File projectRoot = MavenProjectUtil.findProjectRoot();
