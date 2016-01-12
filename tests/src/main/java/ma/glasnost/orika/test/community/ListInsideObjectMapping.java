@@ -9,7 +9,7 @@ import ma.glasnost.orika.test.MappingUtil;
 
 import org.junit.Test;
 
-public class Issue119TestCase {
+public class ListInsideObjectMapping {
     
     public static class Source {
         public String id;
