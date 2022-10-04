@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -56,13 +57,7 @@ public class FilePathUtility {
 	}
 
 	static File createTempDirectory() throws IOException {
-		final File temp = File.createTempFile("temp", Long.toString(System.nanoTime()));
-	   if(!(temp.delete())) {
-	       throw new IOException("Could not delete temp file: " + temp.getAbsolutePath());
-	   }
-	   if(!(temp.mkdir())) {
-	       throw new IOException("Could not create temp directory: " + temp.getAbsolutePath());
-	   }
+		final File temp = Files.createTempDirectory("temp" + Long.toString(System.nanoTime())).toFile();
 	   return temp;
 	}
 	
